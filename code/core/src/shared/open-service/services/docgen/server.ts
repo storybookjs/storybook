@@ -1,3 +1,4 @@
+import type { ChannelLike } from 'storybook/internal/channels';
 import { getStoryImportPathFromEntry } from '../../../../common/utils/select-component-entry.ts';
 import type { StoryIndex } from '../../../../types/modules/indexer.ts';
 import {
@@ -36,12 +37,14 @@ export function registerDocgenService(options: RegisterDocgenServiceOptions) {
 }
 
 export function subscribeDocgenToModuleGraphChanges(options: {
+  channel: ChannelLike;
   getIndex: () => Promise<StoryIndex>;
   workingDir: string;
 }) {
   subscribeExtractionServiceToModuleGraphChanges(docgenServiceDef, {
     ...options,
     queryName: 'docgen',
+    allQueryName: 'docgenForAllComponents',
     extractCommand: 'extractDocgen',
   });
 }

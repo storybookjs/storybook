@@ -21,21 +21,28 @@ import {
 } from 'storybook/internal/csf-tools';
 
 import type { ClassifiedArg } from '../classify-args/classify-args.ts';
-import { isFunctionExpression, printValue } from '../../shared/classify-value.ts';
+import { isFunctionExpression, printValue, snippetValueOf } from '../../shared/classify-value.ts';
 import { readForwardableSetup, type ForwardableSetup } from './forward-setup.ts';
 import {
+  attributeHole,
   createRenderContext,
-  escapeTextContent,
   hoistArgValue,
   hoistModelRef,
   importStatementForBinding,
-  inlinePrimitiveSource,
+  marked,
   renderArgsBindingExpansion,
   renderBoundArgAttribute,
   renderPreparedSfcSnippet,
-  wrapSlotContent,
+  sharesWrittenConst,
   type RenderContext,
 } from '../../shared/render-primitives.ts';
+import {
+  type VueHolePlace,
+  expressionCode,
+  interpolatedText,
+  operand,
+  wrapSlotContent,
+} from '../../../snippet-values.ts';
 import { renderSlotArgContent } from './render-slot-content.ts';
 
 export interface TemplateRenderConfig {
@@ -75,6 +82,11 @@ export interface TransformTemplateInput {
   componentImports: Map<string, string>;
   /** Story component tag; role-aware args expansion applies only to it. */
   componentName?: string;
+  // The story component's slots, which `v-bind="args"` does not pass as props.
+  slots?: ReadonlySet<string>;
+  // Whether the template is the one a story without a render function renders with, which passes
+  // its slot args as slots.
+  argsStory?: boolean;
   /** Import bindings from the CSF module, for components a function slot renders. */
   importBindings?: Map<string, ImportBinding>;
   /** Pre-seeded context carrying imports and hoists an upstream printer collected. */
@@ -101,6 +113,8 @@ interface TransformState {
   edits: Edit[];
   componentImports: Map<string, string>;
   componentName?: string;
+  slots: ReadonlySet<string>;
+  argsStory: boolean;
   importBindings: Map<string, ImportBinding>;
   template: string;
 }
@@ -112,6 +126,8 @@ interface ElementContext {
   storyTag: boolean;
   /** Wrapped slot children waiting to be spliced into the element. */
   slotChildren: string[];
+  // The story component's slots the story leaves unset, which a control can set as its children.
+  unsetSlots: string[];
 }
 
 interface ArgsExpansionPlan {
@@ -219,6 +235,8 @@ export function transformTemplate(
     edits: [],
     componentImports: input.componentImports,
     componentName: input.componentName,
+    slots: input.slots ?? new Set(),
+    argsStory: input.argsStory ?? false,
     importBindings: input.importBindings ?? new Map(),
     template,
   };
@@ -271,6 +289,8 @@ function appendSetupStatements(setup: ForwardableSetup, state: TransformState): 
     let text = statement.source;
     for (const read of [...statement.argsReads].sort((a, b) => b.start - a.start)) {
       const arg = state.argsByName.get(read.name);
+      const inline =
+        !arg || arg.plan.kind === 'inline' || sharesWrittenConst(arg.name, arg.value, state.ctx);
       const rendered = arg
         ? arg.role === 'prop'
           ? arg.plan.kind === 'inline'
@@ -283,7 +303,14 @@ function appendSetupStatements(setup: ForwardableSetup, state: TransformState): 
       if (rendered === undefined) {
         return false;
       }
-      const wrapped = wrapSubstitution(rendered, text.slice(read.end));
+      const following = text.slice(read.end);
+      const wrapped = inline
+        ? marked(
+            state.ctx,
+            { kind: 'value', in: 'statement', ...readsOn(following), arg: read.name },
+            wrapSubstitution(rendered, following)
+          )
+        : rendered;
       text = text.slice(0, read.start) + wrapped + text.slice(read.end);
     }
     state.ctx.statements.push(dedentBy(text, statement.column));
@@ -298,11 +325,11 @@ function appendSetupStatements(setup: ForwardableSetup, state: TransformState): 
  * lexes the dot into the number
  */
 function wrapSubstitution(text: string, following: string): string {
-  if (text.startsWith('-') || (following.startsWith('.') && /^\d/.test(text))) {
-    return `(${text})`;
-  }
-  return text;
+  return operand(text, following.startsWith('.'));
 }
+
+// A value hole followed by a `.` reads on, where a number needs parentheses.
+const readsOn = (following: string) => (following.startsWith('.') ? { readsOn: true } : {});
 
 // Continuation lines keep the story file's nesting; strip the statement's own column from them.
 function dedentBy(source: string, column: number): string {
@@ -352,34 +379,30 @@ function transformInterpolation(
   }
 
   const arg = state.argsByName.get(argName);
+  const start = node.loc.start.offset;
+  const end = node.loc.end.offset;
+  const hole = { kind: 'text', arg: argName } as const;
   if (!arg && state.unsetArgs.has(argName)) {
-    state.edits.push({ start: node.loc.start.offset, end: node.loc.end.offset, text: '' });
+    state.edits.push({ start, end, text: marked(state.ctx, hole, '') });
     return true;
   }
   if (!arg) {
     return false;
   }
 
-  const rendered = inlinePrimitiveSource(arg.value);
-  if (rendered === undefined) {
-    return false;
-  }
-
   // Runtime interpolation renders escaped text, so markup and mustache characters in the value
   // are entity-escaped to decode back to the same text when the snippet re-parses.
-  const text = escapeTextContent(rendered);
-
+  const text = interpolatedText(snippetValueOf(arg.value));
   // A value edge touching an author '{' would concatenate into a new '{{'.
-  const start = node.loc.start.offset;
-  const end = node.loc.end.offset;
   if (
+    text === undefined ||
     (text.startsWith('{') && state.template[start - 1] === '{') ||
     (text.endsWith('{') && state.template[end] === '{')
   ) {
     return false;
   }
 
-  state.edits.push({ start, end, text });
+  state.edits.push({ start, end, text: marked(state.ctx, hole, text) });
   return true;
 }
 
@@ -399,6 +422,7 @@ function transformElement(node: ElementNode, state: TransformState): boolean {
   const element: ElementContext = {
     storyTag: node.tag === state.componentName,
     slotChildren: [],
+    unsetSlots: [],
   };
   const attributesByName = attributePropsByName(node);
   const plan = planArgsBindingExpansion(node, attributesByName, state);
@@ -412,9 +436,20 @@ function transformElement(node: ElementNode, state: TransformState): boolean {
       continue;
     }
     if (plan.directive && prop === plan.directive) {
-      if (!expandArgsBinding(plan.directive, plan.surviving, element, state)) {
+      if (
+        !expandArgsBinding({ ...plan, directive: plan.directive }, attributesByName, element, state)
+      ) {
         return false;
       }
+      continue;
+    }
+    const bound =
+      plan.directive && boundProp(prop, plan.directive, attributesByName, element, state);
+    if (bound === false) {
+      return false;
+    }
+    if (bound) {
+      state.edits.push(bound);
       continue;
     }
     if (
@@ -425,17 +460,29 @@ function transformElement(node: ElementNode, state: TransformState): boolean {
     }
   }
 
+  // The slots a control sets join those the story sets, or open the tag if it closes itself.
+  const slotsHole = (text: string, tag?: string) =>
+    marked(
+      state.ctx,
+      { kind: 'slots', slots: element.unsetSlots, indent: '', ...(tag && { tag }), spread: true },
+      text
+    );
   if (element.slotChildren.length > 0) {
     // Slot children joining an element that already renders its own content would reorder or
     // duplicate what the story shows, so only an empty element takes them.
     if (hasNonWhitespaceChildren(node)) {
       return false;
     }
-    const edit = slotChildrenEdit(node, element.slotChildren, state.template);
+    const after = element.unsetSlots.length > 0 ? slotsHole('') : '';
+    const edit = slotChildrenEdit(node, element.slotChildren, after, state.template);
     if (!edit) {
       return false;
     }
     state.edits.push(edit);
+  } else if (node.isSelfClosing && element.unsetSlots.length > 0) {
+    const end = node.loc.end.offset;
+    const start = blankRunStart(state.template, end - 2);
+    state.edits.push({ start, end, text: slotsHole(state.template.slice(start, end), node.tag) });
   }
 
   return node.children.every((child) => transformNode(child, state));
@@ -498,8 +545,8 @@ function planArgsBindingExpansion(
 }
 
 function expandArgsBinding(
-  directive: DirectiveNode,
-  surviving: ClassifiedArg[],
+  { directive, surviving, removed }: Required<ArgsExpansionPlan>,
+  attributesByName: Map<string, ElementProp[]>,
   element: ElementContext,
   state: TransformState
 ): boolean {
@@ -513,9 +560,119 @@ function expandArgsBinding(
   }
 
   element.slotChildren.push(...rendered.slotChildren);
-  state.edits.push(replacementFor(directive, rendered.attributes.join(' '), state.template));
+  if (element.storyTag && state.argsStory) {
+    element.unsetSlots = [...state.slots].filter(
+      (slot) => !surviving.some((arg) => arg.name === slot)
+    );
+  }
+  // The args a control sets go after the args the story writes, but those the element prints
+  // itself, but for a `.prop` or `.attr` binding, which sets another key, and its slots.
+  const printed = [
+    ...[...attributesByName.entries()].flatMap(([name, props]) =>
+      props.every(setsOwnKey) ? [] : spellings(name)
+    ),
+    ...surviving.map((arg) => arg.name),
+    ...state.slots,
+  ];
+  const added = marked(
+    state.ctx,
+    { kind: 'props', except: [...new Set(printed)], spread: true },
+    '',
+    ' '
+  );
+  const edit = replacementFor(directive, rendered.attributes.join(' '), state.template);
+  state.edits.push({ ...edit, text: edit.text + added });
   return true;
 }
+
+// A prop the element writes before its args binding, which the binding writes over once a control
+// sets the arg it names, as an `attr` hole for that arg. Its text is the prop as the snippet prints
+// it, with the args it reads filled in.
+function boundProp(
+  prop: ElementProp,
+  directive: DirectiveNode,
+  attributesByName: Map<string, ElementProp[]>,
+  element: ElementContext,
+  state: TransformState
+): Edit | false | undefined {
+  const binding = prop.type === NodeTypes.DIRECTIVE ? prop : undefined;
+  const name = binding
+    ? binding.name === 'bind' && !setsOwnKey(binding)
+      ? staticDirectiveArg(binding)
+      : undefined
+    : prop.name;
+  const exp = binding?.exp?.type === NodeTypes.SIMPLE_EXPRESSION ? binding.exp : undefined;
+  const read = exp && state.argsByName.get(exactArgsMemberName(exp.content.trim()) ?? '');
+  // An earlier one of two props of a name leaves it to the later one, which Vue keeps.
+  const later = attributesByName
+    .get(name ?? '')
+    ?.some(
+      (other) =>
+        other.loc.start.offset > prop.loc.start.offset &&
+        (other.type === NodeTypes.ATTRIBUTE || other.name === 'bind') &&
+        !setsOwnKey(other)
+    );
+  if (
+    !name ||
+    prop.loc.start.offset > directive.loc.start.offset ||
+    later ||
+    read?.role === 'slot'
+  ) {
+    return undefined;
+  }
+
+  // The prop's own edits, which fill in the args it reads but mark no hole in it, as one hole holds
+  // it; a value it declares in `<script setup>` keeps its hole there.
+  const { mark } = state.ctx;
+  const own = {
+    ...state,
+    edits: [] as Edit[],
+    ctx: {
+      ...state.ctx,
+      mark:
+        mark &&
+        ((hole, text, space) =>
+          hole.kind === 'value' && hole.in === 'script' ? mark(hole, text, space) : text),
+    } satisfies RenderContext,
+  };
+  if (binding && !transformDirective(binding, attributesByName, element, own)) {
+    return false;
+  }
+  const start = Math.min(prop.loc.start.offset, ...own.edits.map((edit) => edit.start));
+  const end = Math.max(prop.loc.end.offset, ...own.edits.map((edit) => edit.end));
+  const text = applyEdits(
+    state.template.slice(start, end),
+    own.edits.map((edit) => ({ ...edit, start: edit.start - start, end: edit.end - start }))
+  );
+  const by = camelCase(name);
+  return {
+    start,
+    end,
+    // A prop the snippet leaves out takes the space before it once a control sets it.
+    text: marked(
+      state.ctx,
+      { kind: 'attr', arg: by, ...(name !== by && { name }) },
+      text,
+      text ? undefined : ' '
+    ),
+  };
+}
+
+// A `.prop` or `.attr` binding sets a key of its own, which no args binding writes over.
+const setsOwnKey = (prop: ElementProp) =>
+  prop.type === NodeTypes.DIRECTIVE &&
+  prop.name === 'bind' &&
+  prop.modifiers.some(({ content }) => content === 'prop' || content === 'attr');
+
+const camelCase = (name: string) =>
+  name.replace(/-(\w)/g, (_, letter: string) => letter.toUpperCase());
+
+// The arg names that set the same prop as an attribute: `max-count` and `maxCount`.
+const spellings = (name: string) => [
+  name,
+  camelCase(name),
+  name.replace(/\B([A-Z])/g, '-$1').toLowerCase(),
+];
 
 function transformDirective(
   directive: DirectiveNode,
@@ -544,7 +701,9 @@ function transformDirective(
     }
     if (!arg && state.unsetArgs.has(argName)) {
       // Vue resolves a prop bound to undefined to its declared default, exactly as an absent attribute does.
-      state.edits.push(replacementFor(directive, '', state.template));
+      const edit = replacementFor(directive, '', state.template);
+      const hole = attributeHole(boundProp, argName);
+      state.edits.push({ ...edit, text: marked(state.ctx, hole, '', ' ') });
       return true;
     }
     if (!arg) {
@@ -658,7 +817,7 @@ function substituteArgsExpression(
     return undefined;
   }
 
-  const replacements = new Map<string, string>();
+  const replacements = new Map<string, Replacement>();
   for (const reference of references) {
     const replacement =
       replacements.get(reference.name) ?? replacementForArgsReference(reference, quote, state);
@@ -668,14 +827,20 @@ function substituteArgsExpression(
     replacements.set(reference.name, replacement);
   }
 
+  // A value the template writes inline is a hole that says how it is quoted and read on.
+  const where = quote ? { in: 'attribute' as const, quote } : { in: 'interpolation' as const };
   const text = references
     .sort((a, b) => b.start - a.start)
     .reduce((expression, reference) => {
-      const wrapped = wrapSubstitution(
-        replacements.get(reference.name)!,
+      const { text: replacement, inline } = replacements.get(reference.name)!;
+      const following = expression.slice(reference.end);
+      const wrapped = wrapSubstitution(replacement, following);
+      const hole = { kind: 'value' as const, ...where, ...readsOn(following), arg: reference.name };
+      return (
+        expression.slice(0, reference.start) +
+        (inline ? marked(state.ctx, hole, wrapped) : wrapped) +
         expression.slice(reference.end)
       );
-      return expression.slice(0, reference.start) + wrapped + expression.slice(reference.end);
     }, exp.content);
 
   return { start: exp.loc.start.offset, end: exp.loc.end.offset, text };
@@ -855,14 +1020,18 @@ function isAllowedArgsObject(node: Node, parent: Node | null): boolean {
   return parent?.type === 'MemberExpression' && parent.object === node && !parent.computed;
 }
 
+// What an args read is replaced with, which is `inline` where it is the value rather than the
+// name of a const the script declares it as.
+type Replacement = { text: string; inline: boolean };
+
 function replacementForArgsReference(
   reference: ArgsReference,
   quote: '"' | "'" | undefined,
   state: TransformState
-): string | undefined {
+): Replacement | undefined {
   const arg = state.argsByName.get(reference.name);
   if (!arg && state.unsetArgs.has(reference.name)) {
-    return 'undefined';
+    return { text: 'undefined', inline: true };
   }
   if (!arg) {
     return undefined;
@@ -878,11 +1047,14 @@ function replacementForArgsReference(
       : hoistArgValue(arg.name, arg.value, state.ctx);
 
   // Vue entity-decodes generated markup on re-parse, so `&` cannot be substituted faithfully.
-  if ((quote && text.includes(quote)) || text.includes('}}') || text.includes('&')) {
+  if (expressionCode(text, quote) === undefined) {
     return undefined;
   }
 
-  return text;
+  return {
+    text,
+    inline: arg.plan.kind === 'inline' || sharesWrittenConst(arg.name, arg.value, state.ctx),
+  };
 }
 
 /**
@@ -931,12 +1103,13 @@ function blankRunEnd(template: string, index: number): number {
 function slotChildrenEdit(
   node: ElementNode,
   children: string[],
+  after: string,
   template: string
 ): Edit | undefined {
   const baseIndent = ' '.repeat(Math.max(node.loc.start.column - 1, 0));
   const joined = `\n${children
     .map((child) => indentBy(child, `${baseIndent}  `))
-    .join('\n')}\n${baseIndent}`;
+    .join('\n')}${after}\n${baseIndent}`;
 
   if (node.isSelfClosing) {
     let start = node.loc.end.offset - 2;

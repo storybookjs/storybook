@@ -6,7 +6,7 @@ import { getSvelteAST } from '../../../ast.ts';
 import { extractSvelteASTNodes } from '../nodes.ts';
 
 describe(extractStoryAttributesNodes.name, () => {
-  it("extracts '<Story />' attributes correctly", async () => {
+  it("extracts the selected '<Story />' attributes", async () => {
     const ast = getSvelteAST({
       code: `
         <script module>
@@ -29,7 +29,7 @@ describe(extractStoryAttributesNodes.name, () => {
     expect(attributes.args).toBeUndefined();
   });
 
-  it('it ignores the attributes of <Story> children components', async () => {
+  it('ignores the attributes of the children components of <Story>', async () => {
     const ast = getSvelteAST({
       code: `
         <script module>

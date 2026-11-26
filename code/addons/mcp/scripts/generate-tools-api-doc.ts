@@ -42,11 +42,8 @@ function toolMetadata(): ToolMetadata[] {
 
 const instructions = () =>
   buildServerInstructions({
-    transport: 'mcp',
-    devEnabled: true,
     testSupported: true,
     docsEnabled: true,
-    moduleGraphSupported: true,
   });
 
 async function toJsonSchema(schema: unknown): Promise<Record<string, unknown>> {
@@ -267,7 +264,7 @@ const document = [
   `> Generated ${generatedAt} by \`code/addons/mcp/scripts/generate-tools-api-doc.ts\` — do not edit by hand.`,
   '> Regenerate from the repo root with `bun code/addons/mcp/scripts/generate-tools-api-doc.ts`.',
   '',
-  'Assumed configuration: all toolsets enabled (`dev`, `test`, `docs`), component manifests available, `@storybook/addon-vitest` installed, `@storybook/addon-a11y` enabled, module graph supported, single source.',
+  'Assumed configuration: component manifests available, `@storybook/addon-vitest` installed, `@storybook/addon-a11y` enabled, module graph supported, single source.',
   '',
   'Tool inputs and outputs are rendered as TypeScript types derived from the JSON Schemas the server actually serves; field docs, defaults, and constraints are preserved as doc comments.',
   '',

@@ -79,6 +79,8 @@ export type DocsShowStoryOutput = {
   storyId?: string;
   entry?: ResolvedDocsEntry;
   storybookId?: string;
+  /** The source the component came from, set only when that is not the one that was asked. */
+  resolvedStorybookId?: string;
   sourceError?: string;
   notice?: string;
 };
@@ -187,7 +189,7 @@ export function isDocsShowStoryError(output: DocsShowStoryOutput): boolean {
 }
 
 function describeList(ctx: ToolsetCtx): string {
-  return `List all available UI components and documentation entries from the Storybook, returning the IDs the other documentation tools take as input. Call this first for any UI task — before writing a new component, check what the design system already provides and build on it instead of hand-rolling a duplicate; before answering any question about props, API, or usage, discover the relevant IDs here rather than reading component source. Then fetch the entries with ${getToolName(ctx)(DOCS_METHOD_REFS.show)}, referencing only IDs returned here — never guess IDs. When multiple Storybook sources are configured, entries from every source are included; scope follow-up calls to one source via their storybookId input. Pass withStoryIds: true when you need story IDs for other tools.`;
+  return `List all available UI components and documentation entries from the Storybook, returning the IDs the other documentation tools take as input. Call this first for any UI task — before writing a new component, check what the design system already provides and build on it instead of hand-rolling a duplicate; before answering any question about props, API, or usage, discover the relevant IDs here rather than reading component source. Then fetch the entries with ${getToolName(ctx)(DOCS_METHOD_REFS.show)}, referencing only IDs returned here — never guess IDs. When multiple Storybook sources are configured, entries from every source are included; scope follow-up calls to one source via their storybookId input. Pass withStoryIds: true only when you need the story IDs of many components; the show tool already lists the story IDs of one component.`;
 }
 
 function describeShow(ctx: ToolsetCtx): string {
@@ -241,7 +243,8 @@ function formatEntryNotFound(
 }
 
 function formatResolvedElsewhere(
-  { id, storybookId, resolvedStorybookId }: DocsShowOutput,
+  id: string,
+  { storybookId, resolvedStorybookId }: DocsShowOutput | DocsShowStoryOutput,
   ctx: ToolsetCtx
 ): string {
   const scope =
@@ -264,9 +267,12 @@ function renderShow(data: DocsShowOutput, ctx: ToolsetCtx): string {
       const documentation =
         resolution.entry.kind === 'doc'
           ? formatDocsManifest(resolution.entry.doc)
-          : formatComponentManifest(resolution.entry.component);
+          : formatComponentManifest(
+              resolution.entry.component,
+              getToolName(ctx)(DOCS_METHOD_REFS.showStory)
+            );
       return data.resolvedStorybookId
-        ? `${formatResolvedElsewhere(data, ctx)}\n\n${documentation}`
+        ? `${formatResolvedElsewhere(data.id, data, ctx)}\n\n${documentation}`
         : documentation;
     }
     default: {
@@ -306,8 +312,12 @@ function renderShowStory(
         ? `Story not found: "${data.storyId}" for component "${resolution.component.id}". Available stories: ${availableStories}`
         : `Story "${data.storyName}" not found for component "${data.componentId}". Available stories: ${availableStories}`;
     }
-    case 'found':
-      return formatStoryDocumentation(resolution.component, resolution.story.name);
+    case 'found': {
+      const documentation = formatStoryDocumentation(resolution.component, resolution.story.name);
+      return data.resolvedStorybookId
+        ? `${formatResolvedElsewhere(resolution.component.id, data, ctx)}\n\n${documentation}`
+        : documentation;
+    }
     default: {
       const exhaustive: never = resolution;
       return exhaustive;
@@ -456,13 +466,12 @@ export function createDocsToolset(options: CreateDocsToolsetOptions) {
       }))
     : [{ access: docsAccess! }];
 
-  // An id the requested source does not have is shown from the one other source that has it.
-  // Otherwise the closest listed entries are suggested, and every source that could not be read is
-  // named.
-  const recoverMissedId = async (
+  // The entry from the one other source that has the id, since agents often leave out or mix up
+  // storybookId.
+  const resolveInOtherSource = async (
     id: string,
     requestedStorybookId: string | undefined
-  ): Promise<Partial<DocsShowOutput>> => {
+  ): Promise<Pick<DocsShowOutput, 'entry' | 'resolvedStorybookId'> | undefined> => {
     const others = sourceAccesses.filter((source) => source.storybookId !== requestedStorybookId);
     const lookups = await Promise.all(
       others.map(async (source) => ({
@@ -472,9 +481,23 @@ export function createDocsToolset(options: CreateDocsToolsetOptions) {
     );
 
     const hits = lookups.filter(({ entry }) => entry !== undefined);
-    if (hits.length === 1) {
-      const [{ source, entry }] = hits;
-      return { entry, resolvedStorybookId: source.storybookId };
+    if (hits.length !== 1) {
+      return undefined;
+    }
+    const [{ source, entry }] = hits;
+    return { entry, resolvedStorybookId: source.storybookId };
+  };
+
+  // An id the requested source does not have is shown from the one other source that has it.
+  // Otherwise the closest listed entries are suggested, and every source that could not be read is
+  // named.
+  const recoverMissedId = async (
+    id: string,
+    requestedStorybookId: string | undefined
+  ): Promise<Partial<DocsShowOutput>> => {
+    const elsewhere = await resolveInOtherSource(id, requestedStorybookId);
+    if (elsewhere) {
+      return elsewhere;
     }
 
     const listings = await Promise.all(sourceAccesses.map(readEntries));
@@ -504,7 +527,7 @@ export function createDocsToolset(options: CreateDocsToolsetOptions) {
             v.pipe(
               v.boolean(),
               v.description(
-                'When true, includes story sub-bullets under each component with story name and story ID. Use this to discover IDs for downstream story-focused workflows without filesystem lookup.'
+                'When true, includes story sub-bullets under each component with story name and story ID. This makes the list much longer: leave it off to look up components, and use it only to discover story IDs for downstream story-focused workflows without filesystem lookup.'
               )
             ),
             false
@@ -596,10 +619,17 @@ export function createDocsToolset(options: CreateDocsToolsetOptions) {
                 : undefined;
 
           const selected = resolveId !== undefined ? access(storybookId, ctx) : {};
-          const data: DocsShowStoryOutput =
+          let data: DocsShowStoryOutput =
             selected.access && resolveId !== undefined
               ? { ...request, ...(await resolveFromSource(selected.access, resolveId)) }
               : { ...request, sourceError: selected.sourceError };
+          if (
+            multiSource &&
+            resolveId !== undefined &&
+            resolveShowStory(data).kind === 'component-missing'
+          ) {
+            data = { ...data, ...(await resolveInOtherSource(resolveId, storybookId)) };
+          }
 
           const resolution = resolveShowStory(data);
           const markdown = renderShowStory(resolution, data, ctx);
@@ -609,6 +639,7 @@ export function createDocsToolset(options: CreateDocsToolsetOptions) {
               found: resolution.kind === 'found',
               storyId: resolution.kind === 'found' ? resolution.story.id : storyId,
               lookup: storyId !== undefined ? 'storyId' : 'name',
+              resolvedElsewhere: data.resolvedStorybookId !== undefined,
               resultTokenCount: estimateTokens(markdown),
             },
           };

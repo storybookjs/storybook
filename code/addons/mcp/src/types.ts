@@ -18,23 +18,9 @@ export const AddonOptions = v.object({
       v.check(isLiteralEndpointPathname, 'Endpoint must be a literal URL pathname')
     )
   ),
-  toolsets: v.optional(
-    v.object({
-      dev: v.exactOptional(v.boolean(), true),
-      docs: v.exactOptional(v.boolean(), true),
-      test: v.exactOptional(v.boolean(), true),
-    }),
-    {
-      // Default values for toolsets
-      dev: true,
-      docs: true,
-      test: true,
-    }
-  ),
 });
 
 export type AddonOptionsInput = v.InferInput<typeof AddonOptions>;
-export type AddonOptionsOutput = v.InferOutput<typeof AddonOptions>;
 /**
  * What serving the docs tools needs from the request being handled.
  *
@@ -90,6 +76,4 @@ export type AddonContext = DocsServingContext & {
    * Used to dynamically tailor tool descriptions and guidance.
    */
   a11yEnabled?: boolean;
-
-  toolsets?: NonNullable<AddonOptionsOutput>['toolsets'];
 };

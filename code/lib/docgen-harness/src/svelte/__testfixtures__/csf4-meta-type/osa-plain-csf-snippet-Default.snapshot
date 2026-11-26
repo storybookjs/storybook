@@ -1,0 +1,5 @@
+<script>
+  import Avatar from './Avatar.svelte';
+</script>
+
+<Avatar size={48} name="Ada Lovelace" />

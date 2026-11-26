@@ -2,6 +2,7 @@
 
 // THE ORDER OF THESE IMPORTS MATTERS! IT DEFINES THE ORDER OF PANELS AND TOOLS!
 import docgenManager from '../../shared/open-service/services/docgen/manager.tsx';
+import storyDocsManager from '../../shared/open-service/services/story-docs/manager.tsx';
 import reviewManager from '../../shared/open-service/services/review/manager.tsx';
 import controlsManager from '../../controls/manager.tsx';
 import actionsManager from '../../actions/manager.tsx';
@@ -13,6 +14,7 @@ import viewportManager from '../../viewport/manager.tsx';
 
 export default [
   docgenManager,
+  storyDocsManager,
   reviewManager,
   measureManager,
   actionsManager,

@@ -11,6 +11,8 @@ import {
   unwrapExpression,
 } from '../estree/ast.ts';
 import type { SourceEditor } from '../estree/editor.ts';
+import { type Binding, constantInit } from '../estree/scope.ts';
+import { type DestructuredAccess, destructuredAccess } from './destructured-access.ts';
 import { importedName, isTypeSpecifier } from './imports.ts';
 import { csfFactoryReceiver, isCanonicalCsf2BindCall, isCsfFactoryCall } from './utils.ts';
 import { isFunction } from '../estree/ast.ts';
@@ -93,7 +95,9 @@ export const resolveObjectMembers = (
  */
 export const resolveArgsRecord = (
   node: Node | undefined,
-  ctx: ReferenceContext
+  ctx: ReferenceContext,
+  // Where the record is read, when that is not where `node` is written.
+  position?: number
 ): ResolvedMembers => {
   if (node === undefined) {
     return complete();
@@ -103,7 +107,7 @@ export const resolveArgsRecord = (
     return asArgsRecord(membersOf(unwrapped, ctx, new Set()));
   }
   // `args: shared` names its record instead of writing one, which reads the same as spreading it.
-  const referenced = resolveReference(ctx, unwrapped, startOf(node), new Set());
+  const referenced = resolveReference(ctx, unwrapped, position ?? startOf(node), new Set());
   return referenced
     ? asArgsRecord(referenced)
     : {
@@ -296,10 +300,15 @@ const resolveReference = (
   visited: Set<string>
 ): ResolvedMembers | undefined => {
   const chain = memberChain(expression);
-  if (!chain) {
-    return undefined;
-  }
+  return chain ? resolveChain(ctx, chain, position, visited) : undefined;
+};
 
+const resolveChain = (
+  ctx: ReferenceContext,
+  chain: { root: string; path: string[] },
+  position: number | undefined,
+  visited: Set<string>
+): ResolvedMembers | undefined => {
   // Reading a reference can lead back to itself, as `{ args: { ...Self.args } }` does. The guard
   // spans the whole read, since the object a chain lands on is only known once it is descended.
   const key = `ref:${ctx.filePath}#${chain.root}.${chain.path.join('.')}`;
@@ -324,17 +333,26 @@ const unguardedResolveReference = (
   if (!located) {
     return undefined;
   }
+  const members = membersAtPath(located.members, located.ctx, located.path, visited);
+  return members && located.external ? externalized(members, located.ctx) : members;
+};
 
-  let members = located.members;
-  const scope = located.ctx;
-  for (const [index, key] of located.path.entries()) {
+// The members of the object `path` reaches from `start`, read in the scope its nodes belong to.
+const membersAtPath = (
+  start: ResolvedMembers,
+  scope: ReferenceContext,
+  path: string[],
+  visited: Set<string>
+): ResolvedMembers | undefined => {
+  let members = start;
+  for (const [index, key] of path.entries()) {
     if (members.unresolved.length > 0) {
       return undefined;
     }
-    const value = members.properties[key];
+    const value = Object.hasOwn(members.properties, key) ? members.properties[key] : undefined;
     if (value === undefined) {
       // Spreading a member the object does not have copies nothing; reading through one throws.
-      return index === located.path.length - 1 ? complete() : undefined;
+      return index === path.length - 1 ? complete() : undefined;
     }
     const unwrapped = unwrapExpression(value);
     if (unwrapped.type !== 'ObjectExpression') {
@@ -342,8 +360,7 @@ const unguardedResolveReference = (
     }
     members = membersOf(unwrapped, scope, visited);
   }
-
-  return located.external ? externalized(members, scope) : members;
+  return members;
 };
 
 interface LocatedMembers {
@@ -473,12 +490,7 @@ const unguardedBindingMembers = (
 
   const rootName = localAliasRoot(ctx, name);
   const rootBinding = ctx.editor.scopes.program.bindings.get(rootName);
-  const declared = declaredBindingMembers(
-    ctx,
-    rootBinding?.node ?? binding.node,
-    position,
-    visited
-  );
+  const declared = declaredBindingMembers(ctx, rootBinding ?? binding, position, visited);
   if (declared === undefined) {
     return undefined;
   }
@@ -500,21 +512,137 @@ const unguardedBindingMembers = (
 
 const declaredBindingMembers = (
   ctx: ReferenceContext,
-  node: Node,
+  binding: Binding,
   position: number | undefined,
   visited: Set<string>
 ): { members: ResolvedMembers; accessor?: 'input' } | undefined => {
+  const { node } = binding;
   if (node.type === 'FunctionDeclaration') {
     // Hoisted, so it is readable at any position; the CSF2 form gives it members by assignment.
     return { members: complete() };
   }
-  if (node.type !== 'VariableDeclarator' || node.id.type !== 'Identifier') {
+  if (node.type !== 'VariableDeclarator') {
     return undefined;
+  }
+  if (node.id.type !== 'Identifier') {
+    const members = destructuredMembers(ctx, destructuredAccess(binding), position, visited);
+    return members && { members };
   }
   if (position !== undefined && node.start > position) {
     return undefined;
   }
   return node.init ? declaredMembers(ctx, node.init, position, visited) : { members: complete() };
+};
+
+// A rest element copies the object its pattern reads, without the keys the other properties take.
+const destructuredMembers = (
+  ctx: ReferenceContext,
+  access: DestructuredAccess | undefined,
+  position: number | undefined,
+  visited: Set<string>
+): ResolvedMembers | undefined => {
+  if (!access || (position !== undefined && access.position > position)) {
+    return undefined;
+  }
+  const source = sourceMembers(ctx, access, access.path, visited);
+  const { rest } = access;
+  // The name shares every object below it with its source, so a write into the source that this
+  // pass cannot place, made after the pattern ran, may have changed what the name holds.
+  if (source && unreadableSourceWrites(ctx, access, access.position, position)) {
+    return undefined;
+  }
+  if (!source || rest === undefined) {
+    return source;
+  }
+  return {
+    properties: Object.fromEntries(
+      Object.entries(source.properties).filter(([key]) => !rest.includes(key))
+    ),
+    shadowed: source.shadowed.filter((key) => !rest.includes(key)),
+    unresolved: source.unresolved,
+  };
+};
+
+// The object `path` reaches from what the pattern destructures, as it is when the pattern runs.
+const sourceMembers = (
+  ctx: ReferenceContext,
+  access: DestructuredAccess,
+  path: string[],
+  visited: Set<string>
+): ResolvedMembers | undefined => {
+  const init = unwrapExpression(access.init);
+  if (init.type === 'ObjectExpression') {
+    return membersAtPath(membersOf(init, ctx, visited), ctx, path, visited);
+  }
+  const chain = memberChain(init);
+  return chain
+    ? resolveChain(
+        ctx,
+        { root: chain.root, path: [...chain.path, ...path] },
+        access.position,
+        visited
+      )
+    : undefined;
+};
+
+// Whether a write this pass cannot place reached the object a pattern reads, after `from` and up to
+// `to`: `source.size += 1`, `source[key] = value` or `source.args.label = 'x'`.
+const unreadableSourceWrites = (
+  ctx: ReferenceContext,
+  access: DestructuredAccess,
+  from: number,
+  to: number | undefined
+): boolean => {
+  const chain = memberChain(unwrapExpression(access.init));
+  const root = chain && ctx.editor.scopes.program.bindings.get(chain.root);
+  if (!chain || !root?.constant) {
+    return false;
+  }
+  const aliases = localAliases(ctx, localAliasRoot(ctx, chain.root));
+  if (root.kind === 'import') {
+    // An imported source is read as its own module leaves it, so no write made here is placed.
+    const written = assignedMembers(ctx, aliases, to);
+    return Object.keys(written.properties).length > 0 || written.unresolved.length > 0;
+  }
+  const count = (position: number | undefined) =>
+    assignedMembers(ctx, aliases, position).unresolved.length;
+  return from === Number.NEGATIVE_INFINITY ? count(to) > 0 : count(to) > count(from);
+};
+
+// The value a name bound by an object pattern holds, such as `'Save'` for `label` in
+// `const { label } = { label: 'Save' }`. Undefined when the key may hold something else at runtime,
+// or holds a method.
+export const resolveDestructuredValue = (ctx: ReferenceContext, name: string): Node | undefined => {
+  const access = destructuredAccess(ctx.editor.scopes.program.bindings.get(name));
+  const key = access?.path.at(-1);
+  if (!access || access.rest !== undefined || key === undefined) {
+    return undefined;
+  }
+  const source = sourceMembers(ctx, access, access.path.slice(0, -1), new Set());
+  // `properties` is a plain record, so a key like `toString` must be its own to count as a member.
+  if (!source || !Object.hasOwn(source.properties, key) || source.shadowed.includes(key)) {
+    return undefined;
+  }
+  const value = source.properties[key];
+  if (
+    isMethod(value) ||
+    unreadableSourceWrites(ctx, access, Number.NEGATIVE_INFINITY, access.position)
+  ) {
+    return undefined;
+  }
+  // A name holding an object, written out or named, shares it with its source, and nothing says
+  // where the name is read: any later write into either may have changed it.
+  if (unwrapExpression(value).type !== 'Literal') {
+    const own = assignedMembers(ctx, localAliases(ctx, name), undefined);
+    if (
+      Object.keys(own.properties).length > 0 ||
+      own.unresolved.length > 0 ||
+      unreadableSourceWrites(ctx, access, access.position, undefined)
+    ) {
+      return undefined;
+    }
+  }
+  return value;
 };
 
 /** Members an initializer declares, plus the accessor a CSF factory keeps them behind. */
@@ -598,12 +726,11 @@ const localAliasRoot = (ctx: ReferenceContext, name: string): string => {
   let current = name;
   while (!visited.has(current)) {
     visited.add(current);
-    const binding = bindings.get(current);
-    const node = binding?.node;
-    if (!binding?.constant || node?.type !== 'VariableDeclarator' || !node.init) {
+    const declared = constantInit(bindings.get(current));
+    if (!declared) {
       break;
     }
-    const init = unwrapExpression(node.init);
+    const init = unwrapExpression(declared);
     if (init.type !== 'Identifier') {
       break;
     }

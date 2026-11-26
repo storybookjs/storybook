@@ -6,28 +6,26 @@ import {
   UPDATE_QUERY_PARAMS,
 } from 'storybook/internal/core-events';
 
-import { global } from '@storybook/global';
-
 import EventEmitter from 'events';
 
 import { init as initURL } from '../modules/url';
+import { createCommitLaggingStore } from '../test-utils/store';
 
 vi.mock('storybook/internal/client-logger');
-vi.mock('@storybook/global', () => ({
-  global: {
-    window: {
-      location: {
-        hash: '',
-        href: 'http://localhost:6006',
-        origin: 'http://localhost:6006',
-      },
+
+beforeEach(() => {
+  vi.stubGlobal('window', {
+    location: {
+      hash: '',
+      href: 'http://localhost:6006',
+      origin: 'http://localhost:6006',
     },
-    document: {
-      baseURI: 'http://localhost:6006/',
-    },
-    STORYBOOK_NETWORK_ADDRESS: 'http://192.168.1.1:6006/',
-  },
-}));
+  });
+  vi.stubGlobal('document', {
+    baseURI: 'http://localhost:6006/',
+  });
+  vi.stubGlobal('STORYBOOK_NETWORK_ADDRESS', 'http://192.168.1.1:6006/');
+});
 
 const storyState = (storyId) => ({
   path: `/story/${storyId}`,
@@ -214,6 +212,22 @@ describe('queryParams', () => {
 
     expect(listener).toHaveBeenCalledWith({ foo: 'bar' });
   });
+
+  it('keeps query params set in the same tick before the store commits them', async () => {
+    const store = createCommitLaggingStore({ customQueryParams: {} });
+    const { api } = initURL({
+      state: { location: { search: '' } },
+      navigate: vi.fn(),
+      store,
+      provider: { channel: new EventEmitter() },
+    });
+
+    api.setQueryParams({ foo: 'bar' });
+    api.setQueryParams({ baz: 'qux' });
+    await new Promise((resolve) => setTimeout(resolve));
+
+    expect(store.getState().customQueryParams).toEqual({ foo: 'bar', baz: 'qux' });
+  });
 });
 
 describe('initModule', () => {
@@ -329,7 +343,7 @@ describe('getStoryHrefs', () => {
   };
 
   beforeEach(() => {
-    global.document.baseURI = 'http://localhost:6006/';
+    globalThis.document.baseURI = 'http://localhost:6006/';
   });
 
   it('returns manager and preview URLs for a story', () => {
@@ -566,7 +580,7 @@ describe('getStoryHrefs', () => {
       fullAPI: { getCurrentStoryData: () => ({ id: 'test--story' }) },
     });
     store.setState(state);
-    global.document.baseURI = 'http://localhost:6006/index.html';
+    globalThis.document.baseURI = 'http://localhost:6006/index.html';
 
     const { managerHref, previewHref } = api.getStoryHrefs('test--story');
     expect(managerHref).toEqual('/index.html?path=/story/test--story');
@@ -582,7 +596,7 @@ describe('getStoryHrefs', () => {
       fullAPI: { getCurrentStoryData: () => ({ id: 'test--story' }) },
     });
     store.setState(state);
-    global.document.baseURI = 'http://localhost:6006/design-system/';
+    globalThis.document.baseURI = 'http://localhost:6006/design-system/';
 
     const { previewHref } = api.getStoryHrefs('test--story');
     expect(previewHref).toEqual('/design-system/iframe.html?id=test--story&viewMode=story');
@@ -597,7 +611,7 @@ describe('getStoryHrefs', () => {
       fullAPI: { getCurrentStoryData: () => ({ id: 'test--story' }) },
     });
     store.setState(state);
-    global.document.baseURI = 'http://localhost:6006/storybook';
+    globalThis.document.baseURI = 'http://localhost:6006/storybook';
 
     const { managerHref, previewHref } = api.getStoryHrefs('test--story');
     expect(managerHref).toEqual('/storybook?path=/story/test--story');
@@ -613,7 +627,7 @@ describe('getStoryHrefs', () => {
       fullAPI: { getCurrentStoryData: () => ({ id: 'test--story' }) },
     });
     store.setState(state);
-    global.document.baseURI = 'http://localhost:6006/design-system/';
+    globalThis.document.baseURI = 'http://localhost:6006/design-system/';
 
     const { managerHref, previewHref } = api.getStoryHrefs('test--story');
     expect(managerHref).toEqual('/design-system/?path=/story/test--story');
@@ -629,7 +643,7 @@ describe('getStoryHrefs', () => {
       fullAPI: { getCurrentStoryData: () => ({ id: 'test--story' }) },
     });
     store.setState(state);
-    global.document.baseURI = 'http://localhost:6006/design-system/index.html';
+    globalThis.document.baseURI = 'http://localhost:6006/design-system/index.html';
 
     const { managerHref, previewHref } = api.getStoryHrefs('test--story');
     expect(managerHref).toEqual('/design-system/index.html?path=/story/test--story');
@@ -645,7 +659,7 @@ describe('getStoryHrefs', () => {
       fullAPI: { getCurrentStoryData: () => ({ id: 'test--story' }) },
     });
     store.setState(state);
-    global.document.baseURI = 'http://localhost:6006/a/b/c/';
+    globalThis.document.baseURI = 'http://localhost:6006/a/b/c/';
 
     const { previewHref } = api.getStoryHrefs('test--story');
     expect(previewHref).toEqual('/a/b/c/iframe.html?id=test--story&viewMode=story');
@@ -660,7 +674,7 @@ describe('getStoryHrefs', () => {
       fullAPI: { getCurrentStoryData: () => ({ id: 'test--story' }) },
     });
     store.setState(state);
-    global.document.baseURI = 'http://localhost:6006/a/b/c';
+    globalThis.document.baseURI = 'http://localhost:6006/a/b/c';
 
     const { previewHref } = api.getStoryHrefs('test--story');
     expect(previewHref).toEqual('/a/b/iframe.html?id=test--story&viewMode=story');

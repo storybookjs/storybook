@@ -5,7 +5,6 @@ import {
   type ArgsStoryFn,
   type RenderContext,
   type StoryContext,
-  type StoryContextForRender,
 } from 'storybook/internal/types';
 
 import type { PreviewWeb } from 'storybook/preview-api';
@@ -22,7 +21,7 @@ export const render: ArgsStoryFn<VueRenderer> = (props, context) => {
     );
   }
 
-  return () => h(Component, props, getSlots(props, context));
+  return () => h(Component, props, getSlots(props, Component));
 };
 
 export const setup = <AppHostElement = any>(
@@ -54,6 +53,9 @@ export async function renderToCanvas(
   { storyFn, forceRemount, showMain, showException, storyContext, id }: RenderContext<VueRenderer>,
   canvasElement: VueRenderer['canvasElement']
 ) {
+  // The errorHandler reports errors from the mount or update below, which a later showMain would hide.
+  showMain();
+
   const existingApp = map.get(canvasElement);
 
   // if the story is already rendered and we are not forcing a remount, we just update the reactive args
@@ -115,26 +117,21 @@ export async function renderToCanvas(
   await runSetupFunctions(vueApp, storyContext);
   vueApp.mount(canvasElement);
 
-  showMain();
   return () => {
     teardown(vueApp, canvasElement);
   };
 }
 
-/** Generate slots for default story without render function template */
-function getSlots(props: Args, context: StoryContextForRender<VueRenderer, Args>) {
-  const { argTypes, component } = context;
-  // Server docgen keeps docgen argTypes out of the preview, so the slot category is unknown here.
-  // Every arg that is neither a runtime-declared prop nor an event listener is then a slot.
-  const runtimeProps = (component as { props?: ComponentPropsOptions } | undefined)?.props;
-  const declaredProps = globalThis.FEATURES?.docgenServer
-    ? new Set(
-        (Array.isArray(runtimeProps) ? runtimeProps : Object.keys(runtimeProps ?? {})).map(camelize)
-      )
-    : undefined;
-  const isSlot = (key: string) =>
-    argTypes[key]?.table?.category === 'slots' ||
-    (declaredProps !== undefined && !declaredProps.has(key) && !/^on[A-Z]/.test(key));
+/**
+ * Passes every arg that is neither a runtime-declared prop nor an event listener as a slot. An arg
+ * named like a declared prop always goes to the prop.
+ */
+function getSlots(props: Args, component: VueRenderer['component']) {
+  const runtimeProps = (component as { props?: ComponentPropsOptions }).props;
+  const declaredProps = new Set(
+    (Array.isArray(runtimeProps) ? runtimeProps : Object.keys(runtimeProps ?? {})).map(camelize)
+  );
+  const isSlot = (key: string) => !declaredProps.has(key) && !/^on[A-Z]/.test(key);
 
   const slots = Object.entries(props)
     .filter(([key]) => isSlot(key))

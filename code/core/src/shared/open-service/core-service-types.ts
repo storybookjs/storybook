@@ -26,7 +26,7 @@ import type {
  *
  * Stateful services shared across realms appear in each matching list so their state can synchronize.
  */
-export const managerCoreServiceDefs = [docgenServiceDef, reviewServiceDef];
+export const managerCoreServiceDefs = [docgenServiceDef, storyDocsServiceDef, reviewServiceDef];
 export const previewCoreServiceDefs = [docgenServiceDef, storyDocsServiceDef];
 export const serverCoreServiceDefs = [
   docgenServiceDef,

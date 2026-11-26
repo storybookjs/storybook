@@ -1,15 +1,29 @@
 import { describe, expect, test } from 'vitest';
 
 import heredocCommands from './__fixtures__/claude-plugin-801-heredoc-commands.json' with { type: 'json' };
-import { parseStorybookWorkflowShellCommands, workflowCallMatchesName } from './shell-parse.ts';
+import {
+  normalizeStorybookWorkflowName,
+  parseStorybookWorkflowShellCommands,
+  shellCommandReadsFile,
+  skillComesBeforeTool,
+  workflowCallMatchesName,
+} from './shell-parse.ts';
 
 // Not a static import: tsc would then check the core source against this
 // package's stricter `noUncheckedIndexedAccess`.
 const toolTokensUrl = new URL('../../code/core/src/cli/tools/tool-tokens.ts', import.meta.url);
-const { parseToolsTokens } = (await import(toolTokensUrl.href)) as {
-  parseToolsTokens: (
-    tokens: string[]
-  ) => { ok: true; help: boolean; args: Record<string, unknown> } | { ok: false };
+type ParsedTokens = {
+  ok: true;
+  help: boolean;
+  args: Record<string, unknown>;
+  positionals: string[];
+};
+const { parseToolsTokens, withPositionals } = (await import(toolTokensUrl.href)) as {
+  parseToolsTokens: (tokens: string[]) => ParsedTokens | { ok: false };
+  withPositionals: (
+    parsed: ParsedTokens,
+    key: string | undefined
+  ) => { ok: true; args: Record<string, unknown> } | { ok: false };
 };
 
 function shellQuote(token: string): string {
@@ -24,6 +38,12 @@ describe('storybook tools arguments after the tool name', () => {
     { tokens: ['--a11y', 'false'], input: { a11y: false } },
     { tokens: ['--a11y=false'], input: { a11y: false } },
     { tokens: ['--verbose'], input: { verbose: true } },
+    { tokens: ['--changed'], input: { changed: true } },
+    { tokens: ['Button', '--changed'], input: { changed: true, files: ['Button'] } },
+    {
+      tokens: ['--input', '{"files":["A"]}', 'B'],
+      input: { files: ['A', 'B'] },
+    },
     { tokens: ['--delta', '-1'], input: { delta: -1 } },
     { tokens: ['--grep', '-h'], input: { grep: '-h' } },
     { tokens: ['--title', 'plain text'], input: { title: 'plain text' } },
@@ -68,9 +88,19 @@ describe('storybook tools arguments after the tool name', () => {
     { tokens: ['--a11y', 'false', '--help'], input: undefined },
     { tokens: ['-a11y', 'false'], input: undefined },
     { tokens: ['-p', '6006'], input: undefined },
-    { tokens: ['stories.json'], input: undefined },
-    { tokens: ['--componentPaths', 'src/A.tsx', 'src/B.tsx'], input: undefined },
-    { tokens: ['--'], input: undefined },
+    { tokens: ['src/A.stories.tsx'], input: { files: ['src/A.stories.tsx'] } },
+    // A single flag value is a list of one, as one bare argument is.
+    { tokens: ['--files', 'src/A.stories.tsx'], input: { files: ['src/A.stories.tsx'] } },
+    {
+      tokens: ['src/A.stories.tsx', '--a11y', 'false', 'src/B.tsx'],
+      input: { a11y: false, files: ['src/A.stories.tsx', 'src/B.tsx'] },
+    },
+    {
+      tokens: ['--componentPaths', 'src/A.tsx', 'src/B.tsx'],
+      input: { componentPaths: 'src/A.tsx', files: ['src/B.tsx'] },
+    },
+    { tokens: ['--', '-weird.tsx'], input: { files: ['-weird.tsx'] } },
+    { tokens: ['--'], input: {} },
     { tokens: ['--=x'], input: undefined },
     { tokens: ['--json=true'], input: undefined },
     { tokens: ['--attach', '--no-attach'], input: undefined },
@@ -89,9 +119,12 @@ describe('storybook tools arguments after the tool name', () => {
         ['npx storybook tools test run', ...tokens.map(shellQuote)].join(' '),
       ]);
       const parsed = parseToolsTokens(tokens);
+      // `files` is the `positional` key of `test run`.
+      const merged = parsed.ok ? withPositionals(parsed, 'files') : undefined;
+      const args = merged?.ok ? merged.args : undefined;
 
       expect(calls.map((call) => call.input)).toEqual(input === undefined ? [] : [input]);
-      expect(parsed.ok && !parsed.help ? parsed.args : undefined).toEqual(input);
+      expect(parsed.ok && !parsed.help ? args : undefined).toEqual(input);
     });
   }
 });
@@ -133,6 +166,21 @@ describe('parseStorybookWorkflowShellCommands', () => {
     ]);
   });
 
+  test('records file arguments only for a tool that takes them', () => {
+    const calls = parseStorybookWorkflowShellCommands([
+      'npx storybook tools test run src/Button.stories.tsx src/Card.tsx',
+      'npx storybook tools stories preview src/Button.stories.tsx',
+    ]);
+
+    expect(calls).toEqual([
+      {
+        name: 'test-run',
+        input: { files: ['src/Button.stories.tsx', 'src/Card.tsx'] },
+        source: 'cli',
+      },
+    ]);
+  });
+
   test('does not record help requests before the toolset name', () => {
     const calls = parseStorybookWorkflowShellCommands([
       'npx storybook tools --help test run',
@@ -145,45 +193,89 @@ describe('parseStorybookWorkflowShellCommands', () => {
 
   test('records `skills <id>` invocations literally, with their skill id', () => {
     const calls = parseStorybookWorkflowShellCommands([
-      'npx storybook skills write-story 2>&1 | grep -v "npm warn"',
-      'npx storybook skills ui-workflow',
+      'npx storybook skills write-stories 2>&1 | grep -v "npm warn"',
+      'npx storybook skills ui-review',
       'npx storybook skills',
     ]);
 
     expect(calls).toEqual([
-      { name: 'skills-get', input: { id: 'write-story' }, source: 'cli' },
-      { name: 'skills-get', input: { id: 'ui-workflow' }, source: 'cli' },
+      { name: 'skills-get', input: { id: 'write-stories' }, source: 'cli' },
+      { name: 'skills-get', input: { id: 'ui-review' }, source: 'cli' },
     ]);
   });
 
-  test('matches write-story, ui-workflow and --all, but not other ids, to the historic instructions name', () => {
+  test('records the skill id after options, also ones that take a value', () => {
     const calls = parseStorybookWorkflowShellCommands([
-      'npx storybook skills write-story',
+      'npx storybook skills --cwd packages/ui ui-review --mcp',
+      'npx storybook skills -c .storybook --debug component-docs',
+      'npx storybook skills --config-dir=.storybook ui-review',
+      'npx storybook skills --cwd packages/ui --help',
+    ]);
+
+    expect(calls.map((call) => call.input)).toEqual([
+      { id: 'ui-review', mcp: true },
+      { id: 'component-docs' },
+      { id: 'ui-review' },
+    ]);
+  });
+
+  test('matches a skill id to its `skills` call (also with --mcp) and to --all, but not to other ids', () => {
+    const calls = parseStorybookWorkflowShellCommands([
+      'npx storybook skills write-stories',
       'npx storybook skills --all',
-      'npx storybook skills ui-workflow',
+      'npx storybook skills ui-review',
+      'npx storybook skills ui-review --mcp',
+      'npx storybook skills --mcp component-docs',
       'npx storybook skills all',
       'npx storybook skills setup',
     ]);
 
     expect(calls.map((call) => call.input)).toEqual([
-      { id: 'write-story' },
+      { id: 'write-stories' },
       { all: true },
-      { id: 'ui-workflow' },
+      { id: 'ui-review' },
+      { id: 'ui-review', mcp: true },
+      { id: 'component-docs', mcp: true },
       { id: 'all' },
       { id: 'setup' },
     ]);
+    expect(calls.map((call) => workflowCallMatchesName(call, 'ui-review'))).toEqual([
+      false,
+      true,
+      true,
+      true,
+      false,
+      false,
+      false,
+    ]);
+  });
+
+  test('matches --all to skill ids only, not to a tool name', () => {
+    const [all] = parseStorybookWorkflowShellCommands(['npx storybook skills --all']);
+
+    expect(workflowCallMatchesName(all!, 'test-stories')).toBe(true);
+    expect(workflowCallMatchesName(all!, 'test-run')).toBe(false);
+  });
+
+  test("matches the stable server's get-storybook-story-instructions tool to write-stories", () => {
     expect(
-      calls.map((call) => workflowCallMatchesName(call, 'get-storybook-story-instructions'))
-    ).toEqual([true, true, true, false, false]);
+      workflowCallMatchesName(
+        { name: 'get-storybook-story-instructions', input: {}, source: 'mcp' },
+        'write-stories'
+      )
+    ).toBe(true);
+    expect(normalizeStorybookWorkflowName('mcp__storybook__get-storybook-story-instructions')).toBe(
+      'get-storybook-story-instructions'
+    );
   });
 
   test('does not record skills help requests, rejected --all combinations, or quoted mentions', () => {
     const calls = parseStorybookWorkflowShellCommands([
-      'npx storybook skills write-story --help',
-      'npx storybook skills write-story -h && npx storybook skills --all --help',
-      'npx storybook skills ui-workflow --all',
-      'npx storybook skills --all ui-workflow',
-      "echo 'storybook skills write-story'",
+      'npx storybook skills write-stories --help',
+      'npx storybook skills write-stories -h && npx storybook skills --all --help',
+      'npx storybook skills ui-review --all',
+      'npx storybook skills --all ui-review',
+      "echo 'storybook skills write-stories'",
     ]);
 
     expect(calls).toHaveLength(0);
@@ -487,5 +579,54 @@ npx storybook tools stories changed`,
       'test-run',
       'stories-find-by-component',
     ]);
+  });
+});
+
+describe('shellCommandReadsFile', () => {
+  const skillFile = '/skills/storybook-upgrade/SKILL.md';
+
+  test.each([
+    'cat /tmp/plugin/skills/storybook-upgrade/SKILL.md',
+    'cd /tmp/plugin && head -100 "./skills/storybook-upgrade/SKILL.md"',
+    'ls /tmp/plugin/skills; sed -n 1,80p /tmp/plugin/skills/storybook-upgrade/SKILL.md | tail -40',
+  ])('counts a command that prints the file: %s', (command) => {
+    expect(shellCommandReadsFile(command, skillFile)).toBe(true);
+  });
+
+  test.each([
+    'ls /tmp/plugin/skills/storybook-upgrade/SKILL.md',
+    'test -f /tmp/plugin/skills/storybook-upgrade/SKILL.md && echo found',
+    'echo "read /skills/storybook-upgrade/SKILL.md first"',
+    'cat package.json; ls /tmp/plugin/skills/storybook-upgrade/SKILL.md',
+    'cat /tmp/plugin/skills/storybook-init/SKILL.md',
+  ])('does not count a command that only names the file: %s', (command) => {
+    expect(shellCommandReadsFile(command, skillFile)).toBe(false);
+  });
+});
+
+describe('skillComesBeforeTool', () => {
+  const order = (commands: string[]) =>
+    skillComesBeforeTool(parseStorybookWorkflowShellCommands(commands), 'test-stories', 'test-run');
+
+  test('passes when the skill is opened before the first call of its tool', () => {
+    expect(
+      order([
+        'npx storybook skills test-stories',
+        'npx storybook tools test run',
+        'npx storybook skills test-stories',
+      ])
+    ).toBe(true);
+    expect(order(['npx storybook skills --all', 'npx storybook tools test run'])).toBe(true);
+  });
+
+  test('fails when the tool runs before the skill, or without it', () => {
+    expect(order(['npx storybook tools test run', 'npx storybook skills test-stories'])).toBe(
+      false
+    );
+    expect(order(['npx storybook skills ui-review', 'npx storybook tools test run'])).toBe(false);
+  });
+
+  test('passes when the tool is never called', () => {
+    expect(order(['npx storybook skills ui-review'])).toBe(true);
   });
 });

@@ -50,6 +50,8 @@ export type CurrentRun = {
   a11yReports: Record<StoryId, A11yRunReport[]>;
   reports: Record<StoryId, Report[]>;
   totalTestCount: number | undefined;
+  // How many story files the file filters of the run matched; undefined without file filters
+  matchedFileCount: number | undefined;
   storyIds: StoryId[] | undefined;
   startedAt: number | undefined;
   finishedAt: number | undefined;
@@ -84,6 +86,10 @@ export type TriggerRunEvent = {
   type: 'TRIGGER_RUN';
   payload: {
     storyIds?: string[] | undefined;
+    /** Vitest file filters, as in `vitest Button`: only the story files they match run. */
+    fileFilters?: string[];
+    /** Story index import paths: only these story files run. */
+    storyFiles?: string[];
     triggeredBy: RunTrigger;
     configOverride?: RunConfig;
   };

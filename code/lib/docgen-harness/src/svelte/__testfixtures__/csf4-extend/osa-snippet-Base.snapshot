@@ -1,0 +1,5 @@
+<script>
+  import Alert from './Alert.svelte';
+</script>
+
+<Alert title="Base title" level="warning" />

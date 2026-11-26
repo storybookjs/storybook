@@ -15,6 +15,7 @@ interface ConfigureMainOptions {
   prefixes: string[];
   frameworkPackage: string;
   features: Set<Feature>;
+  csfFactories?: boolean;
   /**
    * Extra values for main.js
    *
@@ -36,6 +37,7 @@ interface ConfigurePreviewOptions {
   language: SupportedLanguage;
   frameworkPackage?: string;
   renderer: SupportedRenderer;
+  csfFactories?: boolean;
 }
 
 const pathExists = async (path: string) => {
@@ -53,6 +55,7 @@ export async function configureMain({
   prefixes = [],
   features,
   frameworkOptions,
+  csfFactories = false,
   ...custom
 }: ConfigureMainOptions) {
   const srcPath = resolve(storybookConfigFolder, '../src');
@@ -75,8 +78,11 @@ export async function configureMain({
   }
 
   const isTypescript = language === SupportedLanguage.TYPESCRIPT;
+  const useCsfFactories = csfFactories && Boolean(frameworkPackage);
 
-  let mainConfigTemplate = dedent`<<import>><<prefix>>const config<<type>> = <<mainContents>>;
+  let mainConfigTemplate = useCsfFactories
+    ? dedent`<<import>><<prefix>>export default defineMain(<<mainContents>>);`
+    : dedent`<<import>><<prefix>>const config<<type>> = <<mainContents>>;
     export default config;`;
 
   if (!frameworkPackage) {
@@ -95,9 +101,11 @@ export async function configureMain({
     imports.push(`import path from 'node:path';`);
   }
 
-  if (isTypescript) {
+  if (useCsfFactories) {
+    imports.push(`import { defineMain } from '${frameworkPackage}/node';`);
+  } else if (isTypescript) {
     imports.push(`import type { StorybookConfig } from '${frameworkPackage}';`);
-  } else {
+  } else if (frameworkPackage) {
     finalPrefixes.push(`/** @type { import('${frameworkPackage}').StorybookConfig } */`);
   }
 
@@ -124,6 +132,7 @@ export async function configurePreview(options: ConfigurePreviewOptions) {
     SupportedRenderer.REACT_NATIVE,
     SupportedRenderer.SOLID,
   ].includes(options.renderer);
+  const useCsfFactories = Boolean(options.csfFactories && options.frameworkPackage);
 
   const previewConfigPath = `./${options.storybookConfigFolder}/preview.${isTypescript ? 'ts' : 'js'}${isJsx ? 'x' : ''}`;
 
@@ -135,14 +144,33 @@ export async function configurePreview(options: ConfigurePreviewOptions) {
   const frameworkPackage = options.frameworkPackage;
 
   const prefix = [
-    isTypescript && frameworkPackage ? `import type { Preview } from '${frameworkPackage}'` : '',
+    useCsfFactories && frameworkPackage
+      ? `import { definePreview } from '${frameworkPackage}'`
+      : isTypescript && frameworkPackage
+        ? `import type { Preview } from '${frameworkPackage}'`
+        : '',
     frameworkPrefix,
   ]
     .filter(Boolean)
     .join('\n');
 
-  let preview = '';
-  preview = dedent`
+  const preview = (
+    useCsfFactories
+      ? dedent`
+    ${prefix}${prefix.length > 0 ? '\n' : ''}
+    export default definePreview({
+      addons: [],
+      parameters: {
+        controls: {
+          matchers: {
+           color: /(background|color)$/i,
+           date: /Date$/i,
+          },
+        },
+      },
+    });
+    `
+      : dedent`
     ${prefix}${prefix.length > 0 ? '\n' : ''}
     ${
       !isTypescript && frameworkPackage
@@ -161,6 +189,7 @@ export async function configurePreview(options: ConfigurePreviewOptions) {
     
     export default preview;
     `
+  )
     .replace('  \n', '')
     .trim();
 

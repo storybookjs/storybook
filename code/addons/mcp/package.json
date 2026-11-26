@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-mcp",
-  "version": "11.0.0-alpha.8",
+  "version": "11.0.0-rc.0",
   "description": "Help agents automatically write and test stories for your UI components",
   "keywords": [
     "ai",
@@ -37,8 +37,8 @@
   ],
   "dependencies": {
     "@tmcp/adapter-valibot": "^0.1.5",
-    "@tmcp/transport-http": "^0.8.5",
-    "tmcp": "^1.19.4",
+    "@tmcp/transport-http": "^0.9.1",
+    "tmcp": "^1.20.1",
     "valibot": "^1.4.0"
   },
   "devDependencies": {

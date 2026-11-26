@@ -1,109 +1,98 @@
 import { dedent } from 'ts-dedent';
 
-import { StorybookSvelteCSFError } from '../../../error.ts';
-import type { extractStoriesNodesFromExportDefaultFn } from '../../../../parser/extract/compiled/stories.ts';
+import { StorybookSvelteCSFError, filepathURL } from '../../../error.ts';
+
+const category = StorybookSvelteCSFError.CATEGORY.parserExtractCompiled;
+
+const REPORT_BUG =
+  'This is a bug in Storybook. Please report it at https://github.com/storybookjs/storybook/issues/new?template=bug_report.yml, and include the stories file.';
 
 export class MissingImportedDefineMetaError extends StorybookSvelteCSFError {
-  readonly category = StorybookSvelteCSFError.CATEGORY.parserExtractCompiled;
-  readonly code = 1;
-  readonly documentation = true;
+  constructor(filename?: string) {
+    super({
+      name: 'MissingImportedDefineMetaError',
+      category,
+      code: 1,
+      message: dedent`
+        Could not find the import statement of 'defineMeta' from ${StorybookSvelteCSFError.importSourcesText}, or of the preview from .storybook/preview, in the compiled output of: ${filepathURL(filename)}
 
-  constructor(filename?: StorybookSvelteCSFError['filename']) {
-    super({ filename });
-  }
-
-  template() {
-    return dedent`
-      Could not find the import statement of 'defineMeta' from ${StorybookSvelteCSFError.importSourcesText}, or of the preview from .storybook/preview, in the compiled output of: ${this.filepathURL}
-    `;
+        ${REPORT_BUG}
+      `,
+    });
   }
 }
 
 export class MissingDefineMetaVariableDeclarationError extends StorybookSvelteCSFError {
-  readonly category = StorybookSvelteCSFError.CATEGORY.parserExtractCompiled;
-  readonly code = 2;
-  readonly documentation = true;
+  constructor(filename?: string) {
+    super({
+      name: 'MissingDefineMetaVariableDeclarationError',
+      category,
+      code: 2,
+      message: dedent`
+        Could not find variable declaration from 'defineMeta' or 'preview.meta' call in the compiled output of the stories file: ${filepathURL(filename)}
 
-  constructor(filename?: StorybookSvelteCSFError['filename']) {
-    super({ filename });
-  }
-
-  template() {
-    return dedent`
-			Could not find variable declaration from 'defineMeta' or 'preview.meta' call in the compiled output of the stories file: ${this.filepathURL}
-    `;
+        ${REPORT_BUG}
+      `,
+    });
   }
 }
 
 export class NoExportDefaultError extends StorybookSvelteCSFError {
-  readonly category = StorybookSvelteCSFError.CATEGORY.parserExtractCompiled;
-  readonly code = 3;
-  readonly documentation = true;
+  constructor(filename?: string) {
+    super({
+      name: 'NoExportDefaultError',
+      category,
+      code: 3,
+      message: dedent`
+        Could not find 'export default' in the compiled output of the stories file: ${filepathURL(filename)}
 
-  constructor(filename?: StorybookSvelteCSFError['filename']) {
-    super({ filename });
-  }
-
-  template() {
-    return dedent`
-			Could not find 'export default' in the compiled output of the stories file: ${this.filepathURL}
-    `;
+        ${REPORT_BUG}
+      `,
+    });
   }
 }
 
 export class NoStoryIdentifierFoundError extends StorybookSvelteCSFError {
-  readonly category = StorybookSvelteCSFError.CATEGORY.parserExtractCompiled;
-  readonly code = 4;
-  readonly documentation = true;
+  constructor(filename?: string) {
+    super({
+      name: 'NoStoryIdentifierFoundError',
+      category,
+      code: 4,
+      message: dedent`
+        Could not find a 'Story' identifier in the compiled output of the stories file: ${filepathURL(filename)}
 
-  constructor(filename?: StorybookSvelteCSFError['filename']) {
-    super({ filename });
-  }
-
-  template() {
-    return dedent`
-			Could not find a 'Story' identifier in the compiled output of the stories file: ${this.filepathURL}
-    `;
+        ${REPORT_BUG}
+      `,
+    });
   }
 }
 
 export class NoStoriesFunctionDeclarationError extends StorybookSvelteCSFError {
-  readonly category = StorybookSvelteCSFError.CATEGORY.parserExtractCompiled;
-  readonly code = 5;
-  readonly documentation = true;
+  constructor(filename?: string) {
+    super({
+      name: 'NoStoriesFunctionDeclarationError',
+      category,
+      code: 5,
+      message: dedent`
+        Could not find the stories component '*.stories.svelte' function declaration compiled output of the stories file: ${filepathURL(filename)}
 
-  constructor(filename?: StorybookSvelteCSFError['filename']) {
-    super({ filename });
-  }
-
-  template() {
-    return dedent`
-			Could not find the stories component '*.stories.svelte' function declaration compiled output of the stories file: ${this.filepathURL}
-    `;
+        ${REPORT_BUG}
+      `,
+    });
   }
 }
 
 export class NoCompiledStoryPropsObjectExpression extends StorybookSvelteCSFError {
-  readonly category = StorybookSvelteCSFError.CATEGORY.parserExtractCompiled;
-  readonly code = 6;
-  readonly documentation = true;
+  constructor(filename?: string) {
+    super({
+      name: 'NoCompiledStoryPropsObjectExpression',
+      category,
+      code: 6,
+      message: dedent`
+        Failed to extract compiled Story component props as object expression in the compiled output of stories file: ${filepathURL(filename)}
 
-  public node: Awaited<ReturnType<typeof extractStoriesNodesFromExportDefaultFn>>[number];
-
-  constructor({
-    filename,
-    node,
-  }: {
-    filename: StorybookSvelteCSFError['filename'];
-    node: NoCompiledStoryPropsObjectExpression['node'];
-  }) {
-    super({ filename });
-    this.node = node;
-  }
-
-  template() {
-    return dedent`
-      Failed to extract compiled Story component props as object expression in the compiled output of stories file: ${this.filepathURL}
-    `;
+        ${REPORT_BUG}
+      `,
+    });
   }
 }

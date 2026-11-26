@@ -6,11 +6,13 @@ import { compile } from 'svelte/compiler';
 import { fs as memoryFs, vol } from 'memfs';
 import type { IndexEntry } from 'storybook/internal/types';
 
+import { resolveCsfComponent } from '../component-docgen/resolve-component/resolve-component.ts';
 import { buildStoryDocsPayload } from './build-story-docs.ts';
 import { printTemplate } from './print-template.ts';
 
 vi.mock('node:fs/promises', { spy: true });
 vi.mock('./print-template.ts', { spy: true });
+vi.mock('../component-docgen/resolve-component/resolve-component.ts', { spy: true });
 
 const entry: IndexEntry = {
   id: 'example--default',
@@ -28,6 +30,7 @@ beforeEach(() => {
     const value = await memoryFs.promises.readFile(path, 'utf8');
     return typeof value === 'string' ? value : value.toString('utf8');
   });
+  vi.mocked(resolveCsfComponent).mockReturnValue(undefined);
 });
 
 afterEach(() => vi.restoreAllMocks());
@@ -80,6 +83,157 @@ export const Default = { args: { label: 'Save' } };`,
     );
     expect(payload?.import).toBeUndefined();
   });
+});
+
+describe('the @import tag of the @component comment', () => {
+  const svelteEntry = { ...entry, importPath: resolve('input.stories.svelte') };
+  const componentPath = resolve('Tag.svelte');
+  const storyFile = (metaJsDoc = '') => `<script module>
+    import { defineMeta } from '@storybook/svelte';
+    import Tag from './Tag.svelte';
+    ${metaJsDoc}
+    const { Story } = defineMeta({ title: 'Example', component: Tag });
+  </script>
+  <Story name="Default" args={{ label: 'Design' }} />`;
+  const namespaceStoryFile = (
+    story = `<Story name="Default" args={{ label: 'Design' }} />`,
+    declarations = ''
+  ) => `<script module>
+    import { defineMeta } from '@storybook/svelte';
+    import * as UI from './components';
+    ${declarations}
+    const { Story } = defineMeta({ title: 'Example', component: UI.Tag });
+  </script>
+  ${story}`;
+  const tagged = (statement: string) => `<!--
+@component
+A small label for a category.
+@import ${statement}
+-->
+<script lang="ts">
+  let { label }: { label: string } = $props();
+</script>
+
+<span>{label}</span>`;
+  const component = tagged("import Tag from '#lib/Tag.svelte';");
+  const story = async () =>
+    (await buildStoryDocsPayload({ entry: svelteEntry }))?.stories['example--default'];
+
+  beforeEach(() => {
+    vi.mocked(resolveCsfComponent).mockReturnValue({
+      componentPath,
+      exportName: 'default',
+      name: 'Tag',
+    });
+  });
+
+  it('replaces the import of the meta component', async () => {
+    vol.fromJSON({ [svelteEntry.importPath]: storyFile(), [componentPath]: component });
+    expect((await story())?.snippet).toBe(
+      '<script>\n  import Tag from \'#lib/Tag.svelte\';\n</script>\n\n<Tag label="Design" />'
+    );
+  });
+
+  it('reads the comment that starts with @component, not an earlier one that mentions it', async () => {
+    vol.fromJSON({
+      [svelteEntry.importPath]: storyFile(),
+      [componentPath]: `<!-- TODO: move the @component docs here -->\n${component}`,
+    });
+    expect((await story())?.snippet).toBe(
+      '<script>\n  import Tag from \'#lib/Tag.svelte\';\n</script>\n\n<Tag label="Design" />'
+    );
+  });
+
+  it.each(["import { Tag } from '@acme/ui';", "import * as Acme from '@acme/ui';"])(
+    'imports the namespace of a member component from the source of `%s`',
+    async (statement) => {
+      vol.fromJSON({
+        [svelteEntry.importPath]: namespaceStoryFile(),
+        [componentPath]: tagged(statement),
+      });
+      expect((await story())?.snippet).toBe(
+        '<script>\n  import * as UI from \'@acme/ui\';\n</script>\n\n<UI.Tag label="Design" />'
+      );
+    }
+  );
+
+  it('keeps the namespace import of the story file when the tag imports the member another way', async () => {
+    vol.fromJSON({ [svelteEntry.importPath]: namespaceStoryFile(), [componentPath]: component });
+    expect((await story())?.snippet).toBe(
+      '<script>\n  import * as UI from \'./components\';\n</script>\n\n<UI.Tag label="Design" />'
+    );
+  });
+
+  it.each([
+    ['another member of the namespace', '<UI.Wrapper><UI.Tag {...args} /></UI.Wrapper>', ''],
+    ['the namespace in an expression', '<UI.Tag {...args} size={UI.sizes.small} />', ''],
+    [
+      'a declaration it copies',
+      '<UI.Tag {...args} size={sizes.small} />',
+      'const sizes = UI.sizes;',
+    ],
+  ])(
+    'keeps the namespace import of the story file when the snippet also reads %s',
+    async (_, markup, declarations) => {
+      vol.fromJSON({
+        [svelteEntry.importPath]: namespaceStoryFile(
+          `<Story name="Default" args={{ label: 'Design' }} asChild>${markup}</Story>`,
+          declarations
+        ),
+        [componentPath]: tagged("import { Tag } from '@acme/ui';"),
+      });
+      const snippet = (await story())?.snippet;
+      expect(snippet).toContain("import * as UI from './components';");
+      expect(snippet).not.toContain('@acme/ui');
+    }
+  );
+
+  it('gives way to the @import tag of the meta', async () => {
+    vol.fromJSON({
+      [svelteEntry.importPath]: storyFile("/** @import import { Tag } from 'my-ds'; */"),
+      [componentPath]: component,
+    });
+    expect((await story())?.snippet).toBe(
+      '<script>\n  import { Tag } from \'my-ds\';\n</script>\n\n<Tag label="Design" />'
+    );
+  });
+
+  it.each([
+    [
+      'the component does not resolve',
+      () =>
+        vi.mocked(resolveCsfComponent).mockImplementation(() => {
+          throw new Error('Could not resolve');
+        }),
+    ],
+    ['the component file is missing', () => vol.unlinkSync(componentPath)],
+    ['the component does not parse', () => vol.writeFileSync(componentPath, `${component}\n<div`)],
+  ])('keeps the import of the story file when %s', async (_, arrange) => {
+    vol.fromJSON({ [svelteEntry.importPath]: storyFile(), [componentPath]: component });
+    arrange();
+    const doc = await story();
+    expect(doc?.snippet).toBe(
+      '<script>\n  import Tag from \'./Tag.svelte\';\n</script>\n\n<Tag label="Design" />'
+    );
+    expect(doc?.warning).toBeUndefined();
+  });
+});
+
+it('writes a template for a story whose snippet has a warning', async () => {
+  const svelteEntry = { ...entry, importPath: resolve('input.stories.svelte') };
+  vol.fromJSON({
+    [svelteEntry.importPath]: `<script module>
+      import { defineMeta } from '@storybook/svelte';
+      import Button from './Button.svelte';
+      const { Story } = defineMeta({ title: 'Example', component: Button });
+    </script>
+    <Story name="Default" args={{ label: 'Go' }}>
+      {#snippet template(args)}<Button {...args} value={missing} />{/snippet}
+    </Story>`,
+  });
+  const story = (await buildStoryDocsPayload({ entry: svelteEntry }))?.stories['example--default'];
+  expect(story?.template).toBeDefined();
+  expect(story?.warning).toBe('Identifier not resolved: `missing`.');
 });
 
 it('warns about an unknown identifier in the final markup', async () => {
@@ -531,6 +685,104 @@ it('documents only the stories of a Svelte CSF file whose module script exports 
   const payload = await buildStoryDocsPayload({ entry: svelteEntry });
   expect(Object.keys(payload?.stories ?? {})).toEqual(['example--default']);
   expect(payload?.stories['example--default']?.snippet).toContain('<Button label="Save" />');
+});
+
+describe('the HTML comment above a Svelte CSF story', () => {
+  const svelteEntry = { ...entry, importPath: resolve('input.stories.svelte') };
+  const storyFile = (comment: string) => `<script module>
+    import { defineMeta } from '@storybook/svelte';
+    import Tag from './Tag.svelte';
+    const { Story } = defineMeta({ title: 'Example', component: Tag });
+  </script>
+  ${comment}
+  <Story name="Default" args={{ label: 'Design' }} />`;
+
+  it('gives the story the summary of its @summary tag, like the JSDoc of a CSF story', async () => {
+    vol.fromJSON({
+      [svelteEntry.importPath]: storyFile(`<!--
+    The default tag, in a list of posts.
+    @summary the default tag
+  -->`),
+    });
+    const story = (await buildStoryDocsPayload({ entry: svelteEntry }))?.stories[
+      'example--default'
+    ];
+    expect(story).toMatchObject({
+      description: 'The default tag, in a list of posts.',
+      summary: 'the default tag',
+    });
+  });
+
+  it('takes the description of a @describe tag over the text of the comment', async () => {
+    vol.fromJSON({
+      [svelteEntry.importPath]: storyFile(`<!--
+    The default tag, in a list of posts.
+    @describe A tag that names a topic.
+  -->`),
+    });
+    const story = (await buildStoryDocsPayload({ entry: svelteEntry }))?.stories[
+      'example--default'
+    ];
+    expect(story?.description).toBe('A tag that names a topic.');
+    expect(story?.summary).toBeUndefined();
+  });
+
+  it('keeps an @ inside a line as text, like the JSDoc of a CSF story', async () => {
+    vol.fromJSON({
+      [svelteEntry.importPath]: storyFile('<!-- Ask @design before you add a tag. -->'),
+    });
+    const story = (await buildStoryDocsPayload({ entry: svelteEntry }))?.stories[
+      'example--default'
+    ];
+    expect(story?.description).toBe('Ask @design before you add a tag.');
+    expect(story?.summary).toBeUndefined();
+  });
+
+  it.each([
+    [
+      'above a snippet block',
+      '<!--\n  The template of every story.\n  @summary template\n-->\n  {#snippet template(args)}<Tag {...args} />{/snippet}',
+    ],
+    ['above an element', '<!-- svelte-ignore a11y_missing_attribute -->\n  <h1>Tags</h1>'],
+    [
+      'inside an element',
+      '<div>\n    <!-- svelte-ignore a11y_no_static_element_interactions -->\n    <span>Tags</span>\n  </div>',
+    ],
+  ])('leaves the description and summary unset when the comment is %s', async (_, markup) => {
+    vol.fromJSON({ [svelteEntry.importPath]: storyFile(markup) });
+    const story = (await buildStoryDocsPayload({ entry: svelteEntry }))?.stories[
+      'example--default'
+    ];
+    expect(story?.description).toBeUndefined();
+    expect(story?.summary).toBeUndefined();
+  });
+
+  it('keeps the lines after a line that ends in */', async () => {
+    vol.fromJSON({
+      [svelteEntry.importPath]: storyFile(`<!--
+    Reset the styles with /* reset */
+    before you add a tag.
+    @summary reset first
+  -->`),
+    });
+    const story = (await buildStoryDocsPayload({ entry: svelteEntry }))?.stories[
+      'example--default'
+    ];
+    // The indentation of the second line is #37476.
+    expect(story?.description).toMatch(
+      /^Reset the styles with \/\* reset \*\/\n\s*before you add a tag\.$/
+    );
+    expect(story?.summary).toBe('reset first');
+  });
+
+  it('leaves the description and summary unset for a story without a comment', async () => {
+    vol.fromJSON({ [svelteEntry.importPath]: storyFile('') });
+    const story = (await buildStoryDocsPayload({ entry: svelteEntry }))?.stories[
+      'example--default'
+    ];
+    expect(story?.description).toBeUndefined();
+    expect(story?.summary).toBeUndefined();
+  });
 });
 
 it('names a plain CSF story without a name after its export, like the index does', async () => {

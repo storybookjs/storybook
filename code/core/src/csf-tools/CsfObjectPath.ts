@@ -15,8 +15,18 @@ import {
   listRoot,
   literalRoot,
 } from './ObjectRoot.ts';
-import type { E, Node, Property } from './estree/ast.ts';
+import {
+  type E,
+  type Node,
+  type Property,
+  children,
+  isNumericLiteral,
+  isStringLiteral,
+  staticKey,
+  unwrapExpression,
+} from './estree/ast.ts';
 import { type SourceEditor, detachedSource, printKey, printObject } from './estree/editor.ts';
+import { type Binding, constantInit } from './estree/scope.ts';
 import { resolveExpression, valueSource } from './estree/values.ts';
 
 /**
@@ -25,9 +35,28 @@ import { resolveExpression, valueSource } from './estree/values.ts';
  */
 export type CsfPath = readonly (string | number)[];
 
+/**
+ * A path segment for every key of an object, as in `remove(['argTypes', anyKey, 'defaultValue'])`,
+ * which removes `defaultValue` from each arg.
+ */
+export const anyKey = Symbol.for('storybook/csf-tools/anyKey') as AnyKey;
+
+// Branded by its description, not declared `unique symbol`: the types of the source and of a
+// build of it, which a check of the source can see both of, are then the same.
+export type AnyKey = symbol & { readonly description: 'storybook/csf-tools/anyKey' };
+
+const isAnyKey = (segment: unknown): segment is AnyKey => segment === anyKey;
+
+/** A path that may hold `anyKey` segments. */
+export type CsfPattern = readonly (string | number | AnyKey)[];
+
+/** A pattern as a path, with `*` for each `anyKey`. */
+export const patternPath = (pattern: CsfPattern): (string | number)[] =>
+  pattern.map((segment) => (isAnyKey(segment) ? '*' : segment));
+
 /** Print a path as `parameters.msw.handlers[0]`. */
-export const printCsfPath = (path: CsfPath) =>
-  path
+export const printCsfPath = (path: CsfPattern) =>
+  patternPath(path)
     .map((segment, index) =>
       typeof segment === 'number' ? `[${segment}]` : index === 0 ? segment : `.${segment}`
     )
@@ -181,6 +210,268 @@ export const locate = (
     }
     step = next;
   }
+};
+
+// Whether the source shows a value at `path` below `properties`. The path is followed exactly
+// through object literals, spreads, local constants and member reads with a static key; from any
+// other code, such as a call, a function or a destructured name, it is shown when that code, with
+// the local code it reaches, has a member with each key of the rest of the path. A value from another module,
+// or a global, is out of sight. An index is always in sight: positions are not followed.
+export const showsPath = (
+  editor: SourceEditor,
+  properties: readonly E.ObjectPropertyKind[],
+  path: CsfPattern
+): boolean => showsMembers(editor, properties, path, sight());
+
+/** Whether the source shows a value at `path` below the value `node`, as `showsPath` does. */
+export const showsPathIn = (editor: SourceEditor, node: Node, path: CsfPattern): boolean =>
+  path.length === 0 || showsValue(editor, node, path, sight());
+
+// Each constant's answer per path, so a constant spread more than once is followed once per path.
+interface Sight {
+  constants: Map<Node, Map<string, boolean>>;
+}
+
+const sight = (): Sight => ({ constants: new Map() });
+
+const showsMembers = (
+  editor: SourceEditor,
+  properties: readonly E.ObjectPropertyKind[],
+  path: CsfPattern,
+  seen: Sight
+): boolean => {
+  const [segment, ...rest] = path;
+  if (typeof segment === 'number') {
+    return true;
+  }
+  return properties.some((member) => {
+    if (member.type === 'SpreadElement') {
+      return showsValue(editor, member.argument, path, seen);
+    }
+    const key = staticKey(member);
+    if (key !== undefined && !isAnyKey(segment) && key !== segment) {
+      return false;
+    }
+    return rest.length === 0 || showsValue(editor, member.value, rest, seen);
+  });
+};
+
+// The key of `object.key` or `object['key']`.
+const memberKey = (member: E.MemberExpression): string | undefined => {
+  const property = member.property as Node;
+  if (!member.computed) {
+    return property.type === 'Identifier' ? property.name : undefined;
+  }
+  if (isStringLiteral(property)) {
+    return property.value;
+  }
+  return isNumericLiteral(property) ? String(property.value) : undefined;
+};
+
+const showsValue = (
+  editor: SourceEditor,
+  node: Node | undefined,
+  path: CsfPattern,
+  seen: Sight
+): boolean => {
+  const value = unwrapExpression(node);
+  if (!value) {
+    return false;
+  }
+  if (typeof path[0] === 'number') {
+    return true;
+  }
+  if (value.type === 'ObjectExpression') {
+    return showsMembers(editor, value.properties, path, seen);
+  }
+  const key = value.type === 'MemberExpression' ? memberKey(value) : undefined;
+  if (key !== undefined) {
+    return showsValue(editor, (value as E.MemberExpression).object, [key, ...path], seen);
+  }
+  if (value.type === 'Identifier') {
+    const binding = editor.scopes.bindingOf(value);
+    if (!binding || binding.kind === 'import' || binding.kind === 'param') {
+      return false;
+    }
+    const init = constantInit(binding);
+    if (init && !writtenThrough(editor, binding)) {
+      return showsConstant(editor, init, path, seen);
+    }
+  }
+  // A position, as `0` in `list[0]`, is no key a member could name.
+  const keys = path.filter(
+    (segment): segment is string => typeof segment === 'string' && !/^\d+$/.test(segment)
+  );
+  return keys.length === 0 || mentions(editor, value, new Set(keys));
+};
+
+// A constant spread more than once is followed once per path. A constant whose value refers to
+// itself cannot run, so it shows nothing more.
+const showsConstant = (editor: SourceEditor, init: Node, path: CsfPattern, seen: Sight) => {
+  const answers = seen.constants.get(init) ?? new Map<string, boolean>();
+  seen.constants.set(init, answers);
+  const key = patternPath(path).map(String).join('\0');
+  const known = answers.get(key);
+  if (known !== undefined) {
+    return known;
+  }
+  answers.set(key, false);
+  const shown = showsValue(editor, init, path, seen);
+  answers.set(key, shown);
+  return shown;
+};
+
+// Whether code, with the local code it refers to, has a member or a member write with each of
+// `keys`, or one whose key only running code knows. The local code is the declarations of the names
+// it reads and the values assigned to them, each read once; a name written through a pattern, as
+// in `[base] = list`, may hold anything.
+const mentions = (editor: SourceEditor, code: Node, keys: ReadonlySet<string>): boolean => {
+  const missing = new Set(keys);
+  const searched = new Set<Node>();
+  // Types do not change what code returns, so they are not read.
+  const search = (child: Node): void => {
+    if (missing.size === 0) {
+      return;
+    }
+    const named = namedKey(child);
+    if (isAnyKey(named)) {
+      missing.clear();
+    } else if (named !== undefined) {
+      missing.delete(named);
+    }
+    const binding = child.type === 'Identifier' ? editor.scopes.bindingOf(child) : undefined;
+    if (
+      binding &&
+      binding.kind !== 'import' &&
+      binding.kind !== 'param' &&
+      !searched.has(binding.node)
+    ) {
+      searched.add(binding.node);
+      searchBinding(binding);
+    }
+    children(child, { skipTypes: true }).forEach(search);
+  };
+  const searchBinding = (binding: Binding) => {
+    if (writtenThrough(editor, binding)) {
+      missing.clear();
+      return;
+    }
+    search(binding.node);
+    for (const reference of binding.references) {
+      const parent = editor.parentOf(reference);
+      if (parent?.type === 'AssignmentExpression' && parent.left === reference) {
+        search(parent.right);
+      } else if (parent && (parent.type.endsWith('Pattern') || parent.type === 'RestElement')) {
+        missing.clear();
+      }
+    }
+  };
+  search(code);
+  return missing.size === 0;
+};
+
+// The key of a member of an object or a class, or of a write to a member, `anyKey` when only
+// running code knows it.
+const namedKey = (node: Node): string | AnyKey | undefined => {
+  if (node.type === 'AssignmentExpression' && node.left.type === 'MemberExpression') {
+    return memberKey(node.left) ?? anyKey;
+  }
+  if (
+    node.type !== 'Property' &&
+    node.type !== 'PropertyDefinition' &&
+    node.type !== 'MethodDefinition' &&
+    node.type !== 'AccessorProperty'
+  ) {
+    return undefined;
+  }
+  const key = node.key as Node;
+  if (!node.computed) {
+    return key.type === 'Identifier' ? key.name : (staticKey(node) ?? anyKey);
+  }
+  if (isStringLiteral(key)) {
+    return key.value;
+  }
+  return isNumericLiteral(key) ? String(key.value) : anyKey;
+};
+
+// Whether the source changes a constant's value through it, as in `base.label = value`,
+// `delete base.label` or `Object.assign(base, value)`.
+const writtenThrough = (editor: SourceEditor, binding: Binding) =>
+  binding.references.some((reference) => {
+    let target: Node = reference;
+    let parent = editor.parentOf(target);
+    while (parent?.type === 'MemberExpression' && parent.object === target) {
+      target = parent;
+      parent = editor.parentOf(target);
+    }
+    if (parent?.type === 'CallExpression' && parent.arguments[0] === target) {
+      const callee = unwrapExpression(parent.callee);
+      return (
+        callee.type === 'MemberExpression' &&
+        callee.object.type === 'Identifier' &&
+        callee.object.name === 'Object' &&
+        memberKey(callee) === 'assign'
+      );
+    }
+    return (
+      target !== reference &&
+      ((parent?.type === 'AssignmentExpression' && parent.left === target) ||
+        parent?.type === 'UpdateExpression' ||
+        (parent?.type === 'UnaryExpression' && parent.operator === 'delete'))
+    );
+  });
+
+/**
+ * The paths a pattern stands for below `root`, an `anyKey` segment for each key of the object
+ * there, or why they are unknown: a value that is not an object literal, a spread or a computed
+ * key, which shows the rest of the pattern. Nothing is edited, so the nodes stay current.
+ */
+export const expandPattern = (
+  editor: SourceEditor,
+  root: ObjectRoot,
+  pattern: CsfPattern
+): { ok: true; paths: CsfPath[] } | Refusal => {
+  const index = pattern.findIndex(isAnyKey);
+  if (index < 0) {
+    return { ok: true, paths: [pattern as CsfPath] };
+  }
+  const prefix = pattern.slice(0, index) as CsfPath;
+  const rest = pattern.slice(index + 1);
+  let members = root.properties;
+  if (prefix.length > 0) {
+    const located = locate(editor, root, prefix);
+    const slot = located.ok ? valueAt(editor, located) : undefined;
+    const value = slot?.expression && resolveExpression(editor.scopes, slot.expression);
+    if (located.ok && !slot) {
+      return { ok: true, paths: [] };
+    }
+    if (value?.type !== 'ObjectExpression') {
+      if (!showsPath(editor, root.properties, pattern)) {
+        return { ok: true, paths: [] };
+      }
+      return located.ok ? { ok: false, code: 'unsupported-member', node: slot!.node } : located;
+    }
+    members = value.properties;
+  }
+  const unread = members.find(
+    (member) => staticKey(member) === undefined && showsPath(editor, [member], [anyKey, ...rest])
+  );
+  if (unread) {
+    return {
+      ok: false,
+      code: unread.type === 'SpreadElement' ? 'spread-field' : 'dynamic-key',
+      node: unread,
+    };
+  }
+  const paths: CsfPath[] = [];
+  for (const key of new Set(members.flatMap((member) => staticKey(member) ?? []))) {
+    const expanded = expandPattern(editor, root, [...prefix, key, ...rest]);
+    if (!expanded.ok) {
+      return expanded;
+    }
+    paths.push(...expanded.paths);
+  }
+  return { ok: true, paths };
 };
 
 // Why `parent` refuses a new member `key`, such as a function story's `name`.

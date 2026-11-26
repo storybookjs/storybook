@@ -8,12 +8,14 @@ import {
 	startStorybook,
 	stopStorybook,
 } from './helpers';
+import { startRefFixtures, type RefFixtures } from './ref-fixtures.ts';
 
 const PORT = 6009;
 const MCP_ENDPOINT = `http://localhost:${PORT}/mcp`;
 const STARTUP_TIMEOUT = 60_000;
 
 let storybookProcess: ReturnType<typeof x> | null = null;
+let fixtures: RefFixtures | null = null;
 
 async function mcpRequest(method: string, params: any = {}) {
 	const response = await fetch(MCP_ENDPOINT, {
@@ -32,13 +34,16 @@ async function mcpRequest(method: string, params: any = {}) {
 describe('MCP Composition + Docgen Server E2E Tests', () => {
 	beforeAll(async () => {
 		await killPort(PORT);
-		storybookProcess = startStorybook('.storybook-composition-docgen-server', PORT);
+		fixtures = await startRefFixtures();
+		({ storybookProcess } = await startStorybook('.storybook-composition-docgen-server', PORT, fixtures.env));
 		await waitForMcpEndpoint(MCP_ENDPOINT);
 	}, STARTUP_TIMEOUT);
 
 	afterAll(async () => {
 		await stopStorybook(storybookProcess);
 		storybookProcess = null;
+		await fixtures?.close();
+		fixtures = null;
 	});
 
 	describe('Multi-Source Documentation', () => {

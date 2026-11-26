@@ -17,6 +17,7 @@ import {
   argumentRoot,
   detachedMember,
   literalRoot,
+  opaqueRoot,
 } from './ObjectRoot.ts';
 import {
   type E,
@@ -38,7 +39,7 @@ import {
   removeStatements,
 } from './estree/editor.ts';
 import { placeableValueSource } from './estree/values.ts';
-import type { Binding } from './estree/scope.ts';
+import { constantInit } from './estree/scope.ts';
 
 type ReportDiagnostic = (diagnostic: CsfMutationDiagnostic) => void;
 type MarkChanged = () => void;
@@ -94,6 +95,18 @@ const addQualifiedBinding = (
         target: { kind: 'story', exportName, localName },
         path: [],
         message: `Cannot mutate ${exportName} because ${localName} is not a unique constant binding`,
+        ...loc(csf, node),
+      });
+    }
+  } else if (binding.node.type === 'VariableDeclarator' && binding.node.id.type !== 'Identifier') {
+    // A destructured name holds only part of its initializer, so editing the initializer would edit
+    // something else, and the other names it binds are other stories.
+    if (isStory) {
+      report({
+        code: 'unsupported-initializer',
+        target: { kind: 'story', exportName, localName },
+        path: [],
+        message: `Cannot mutate ${exportName} because ${localName} is bound by destructuring`,
         ...loc(csf, node),
       });
     }
@@ -189,7 +202,7 @@ const aliasedStory = (csf: CsfFile, stories: StoryBinding[], node: Node | undefi
     if (!story) {
       return undefined;
     }
-    const init = variableInit(csf.editor.scopes.program.bindings.get(name));
+    const init = constantInit(csf.editor.scopes.program.bindings.get(name));
     current = init ? unwrapExpression(init) : undefined;
     if (current?.type !== 'Identifier') {
       return story;
@@ -243,9 +256,6 @@ const storyBindings = (csf: CsfFile, report: ReportDiagnostic): Stories => {
   return { bindings, canonical };
 };
 
-const variableInit = (binding: Binding | undefined) =>
-  binding?.constant && binding.node.type === 'VariableDeclarator' ? binding.node.init : undefined;
-
 const factoryMember = (node: Node | null | undefined): 'story' | 'extend' | undefined => {
   const unwrapped = node && unwrapExpression(node);
   if (unwrapped?.type !== 'CallExpression' || unwrapped.callee.type !== 'MemberExpression') {
@@ -259,7 +269,7 @@ const factoryMember = (node: Node | null | undefined): 'story' | 'extend' | unde
 };
 
 const isFactoryMeta = (csf: CsfFile, name: string, seen = new Set<string>()): boolean => {
-  const init = variableInit(csf.editor.scopes.program.bindings.get(name));
+  const init = constantInit(csf.editor.scopes.program.bindings.get(name));
   if (seen.has(name) || !csf._metaFactoryCall || !init) {
     return false;
   }
@@ -283,7 +293,7 @@ const isFactoryStory = (csf: CsfFile, node: Node, seen = new Set<string>()): boo
     return false;
   }
   seen.add(receiver);
-  const initializer = variableInit(csf.editor.scopes.program.bindings.get(receiver));
+  const initializer = constantInit(csf.editor.scopes.program.bindings.get(receiver));
   return initializer ? isFactoryStory(csf, unwrapExpression(initializer), seen) : false;
 };
 
@@ -293,16 +303,14 @@ const factoryMetaConfigurationIsSafe = (csf: CsfFile): boolean => {
     return true;
   }
   const binding = csf.editor.scopes.program.bindings.get(argument.name);
+  const initializer = constantInit(binding);
   if (
-    !binding?.constant ||
-    binding.node.type !== 'VariableDeclarator' ||
+    !binding ||
     binding.declaration?.type !== 'VariableDeclaration' ||
-    binding.declaration.kind !== 'const'
+    binding.declaration.kind !== 'const' ||
+    !initializer ||
+    unwrapExpression(initializer).type !== 'ObjectExpression'
   ) {
-    return false;
-  }
-  const initializer = binding.node.init;
-  if (!initializer || unwrapExpression(initializer).type !== 'ObjectExpression') {
     return false;
   }
   return binding.references.length === 1 && binding.references[0] === argument;
@@ -625,14 +633,31 @@ const discoverStories = (
           return [{ target: storyTarget(binding), root: literalRoot(csf.editor, argumentNode) }];
         }
       }
-      report({
-        code: 'unsupported-initializer',
-        target: storyTarget(binding),
-        path: [],
-        message: `Cannot mutate CSF factory story ${binding.exportName} because its configuration is not an inline object literal`,
-        ...loc(csf, node),
-      });
-      return [];
+      // A factory story's value is its configuration; any other call may return anything. Its
+      // `Story.name = value` assignments are fields too, and any other write is refused.
+      const factory = node.type === 'CallExpression' && isFactoryStory(csf, node);
+      const { assignments, write } = assignmentsOf(csf, binding);
+      if (write) {
+        report({
+          code: write.code,
+          target: storyTarget(binding),
+          path: write.path,
+          message: write.message,
+          ...loc(csf, write.node),
+        });
+        return [];
+      }
+      return [
+        {
+          target: storyTarget(binding),
+          root: opaqueRoot({
+            node: factory && node.arguments.length === 1 && argumentNode ? argumentNode : node,
+            assignments: assignments.map(({ property }) => property),
+            code: 'unsupported-initializer',
+            message: `Cannot mutate CSF factory story ${binding.exportName} because its configuration is not an inline object literal`,
+          }),
+        },
+      ];
     }
     const object = node?.type === 'ObjectExpression' ? node : undefined;
     const { assignments, write, shared } = assignmentsOf(csf, binding);
@@ -652,24 +677,43 @@ const discoverStories = (
         report(aliasDiagnostic(csf, binding, aliased, node!));
         return [];
       }
-      return reject({
-        code: 'unsupported-initializer',
-        node: node ?? declaration,
-        path: [],
-        message: `Cannot mutate story ${binding.exportName} because it is not a story object, function or bound template`,
-      });
+      return [
+        {
+          target: storyTarget(binding),
+          root: opaqueRoot({
+            node: node ?? declaration,
+            code: 'unsupported-initializer',
+            message: `Cannot mutate story ${binding.exportName} because it is not a story object, function or bound template`,
+          }),
+        },
+      ];
     }
     if (shared) {
       return reject(shared);
     }
     if (!object && !isAnnotatable(node)) {
       const name = annotationName(assignments[0].left)!;
-      return reject({
-        code: 'unsupported-initializer',
-        node: assignments[0].property.value,
-        path: [name],
-        message: `Cannot mutate ${binding.localName}.${name} because ${binding.localName} is not a story object, function or bound template`,
-      });
+      const message = `Cannot mutate ${binding.localName}.${name} because ${binding.localName} is not a story object, function or bound template`;
+      // An alias has no editor of its own, also when it is annotated.
+      if (canonical.has(binding)) {
+        return reject({
+          code: 'unsupported-initializer',
+          node: assignments[0].property.value,
+          path: [name],
+          message,
+        });
+      }
+      return [
+        {
+          target: storyTarget(binding),
+          root: opaqueRoot({
+            node: node ?? declaration,
+            assignments: assignments.map(({ property }) => property),
+            code: 'unsupported-initializer',
+            message,
+          }),
+        },
+      ];
     }
     return [{ target: storyTarget(binding), root: storyRoot(csf, binding, object, assignments) }];
   });
@@ -737,6 +781,19 @@ export const discoverStory = (
   const found = discover(csf, { meta: false }, (diagnostic) => diagnostics.push(diagnostic)).find(
     ({ target }) => isOwn(target)
   );
+  // A lookup by name is for editing that story, so one it cannot read is refused here.
+  const opaque = found?.root.opaque;
+  if (found && opaque) {
+    const diagnostic: CsfMutationDiagnostic = {
+      code: opaque.code,
+      target: found.target,
+      path: [],
+      message: opaque.message,
+      ...loc(csf, opaque.node),
+    };
+    report(diagnostic);
+    return { ok: false, diagnostic };
+  }
   if (found) {
     return { ok: true, object: editorOf(csf, { meta: false }, found.target, report, markChanged) };
   }

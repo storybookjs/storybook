@@ -73,3 +73,16 @@ describe('importModule', () => {
     }
   );
 });
+
+describe('usesRegisterHooks', () => {
+  it.each([
+    ['25.9.0', false],
+    ['26.0.0', true],
+    ['26.0.0-pre', true],
+    ['27.1.0', true],
+  ])('on Node.js %s returns %s', async (nodeVersion, expected) => {
+    const { usesRegisterHooks } = await importFreshModule();
+
+    expect(usesRegisterHooks(nodeVersion)).toBe(expected);
+  });
+});

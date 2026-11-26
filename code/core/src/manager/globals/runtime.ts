@@ -15,7 +15,6 @@ import * as TYPES from 'storybook/internal/types';
 import * as ICONS from '@storybook/icons';
 
 import * as MANAGER_API from 'storybook/manager-api';
-import * as TEST from 'storybook/test';
 import * as THEMING from 'storybook/theming/emotion';
 import * as THEMINGCREATE from 'storybook/theming/create';
 
@@ -40,8 +39,6 @@ export const globalsNameValueMap: Required<Record<keyof typeof globalsNameRefere
   'storybook/theming': THEMING,
   'storybook/theming/emotion': THEMING,
   'storybook/theming/create': THEMINGCREATE,
-
-  'storybook/test': TEST,
 
   'storybook/internal/channels': CHANNELS,
   'storybook/internal/client-logger': CLIENT_LOGGER,

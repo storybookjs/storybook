@@ -6,8 +6,8 @@ export function mockSveltekitModules() {
     config: () => ({
       resolve: {
         alias: {
-          '$app/forms': '@storybook/sveltekit/internal/mocks/app/forms',
-          '$app/navigation': '@storybook/sveltekit/internal/mocks/app/navigation',
+          '$app/forms': '@storybook/sveltekit/forms.mock',
+          '$app/navigation': '@storybook/sveltekit/navigation.mock',
           '$app/state': '@storybook/sveltekit/internal/mocks/app/state.svelte.js',
         },
       },

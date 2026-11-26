@@ -18,8 +18,30 @@ export const TEST_PACKAGES = [
   'msw',
   'miragejs',
   'sinon',
-  'chromatic',
+] as const;
+
+export const VRT_PACKAGES = [
+  '@alwaysmeticulous/*',
+  '@applitools/*',
+  '@argos-ci/*',
+  '@blazediff/*',
   '@chromatic-com/*',
+  '@lambdatest/smartui-*',
+  '@percy/*',
+  '@saucelabs/visual*',
+  '@visual-regression-tracker/*',
+  '@vizzly-testing/*',
+  'backstopjs',
+  'chromatic',
+  'happo',
+  'happo.io',
+  'jest-image-snapshot',
+  'loki',
+  'lost-pixel',
+  'reg-cli',
+  'reg-suit',
+  'sherlo',
+  'testplane',
 ] as const;
 
 export const STYLING_PACKAGES = [

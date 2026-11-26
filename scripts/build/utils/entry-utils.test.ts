@@ -51,5 +51,8 @@ describe('createPackageMatcher', () => {
     expect(isCoreTypesExternal('path')).toBe(true);
     expect(isCoreTypesExternal('/repo/node_modules/ast-types/lib/main.d.ts')).toBe(true);
     expect(isCoreTypesExternal('@babel/types')).toBe(false);
+    // storybook/test bundles its test libraries, types included, so users don't install them.
+    expect(isCoreTypesExternal('@vitest/expect')).toBe(false);
+    expect(isCoreTypesExternal('@testing-library/jest-dom/matchers')).toBe(false);
   });
 });

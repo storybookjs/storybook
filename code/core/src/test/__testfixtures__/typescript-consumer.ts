@@ -133,3 +133,16 @@ expect.extend({
     return { message: () => 'expected a divisible number', pass };
   },
 });
+
+// A generic helper can return the mock of `fn` as `Mock`.
+function makeMock<T extends (...args: any[]) => any>(implementation: T): Mock<T> {
+  return fn(implementation);
+}
+makeMock((value: string) => value.length)('value').toFixed();
+
+expect.extend({
+  toBeChecked(received) {
+    this.assertion.to.equal(received);
+    return { message: () => 'unchecked', pass: true };
+  },
+});

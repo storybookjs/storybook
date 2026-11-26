@@ -1,5 +1,3 @@
-import { global } from '@storybook/global';
-
 import { deprecate } from 'storybook/internal/client-logger';
 
 const RUNTIME_MANIFEST_DEPRECATION =
@@ -36,16 +34,18 @@ export function isValidMetaData(customElements: any): boolean {
 /** @deprecated Use framework.options.customElementsManifest with features.docgenServer instead. This runtime manifest setter will be removed in Storybook 12. */
 export function setCustomElements(customElements: any): void {
   deprecate(`setCustomElements() is deprecated: ${RUNTIME_MANIFEST_DEPRECATION}`);
-  global.__STORYBOOK_CUSTOM_ELEMENTS__ = customElements;
+  globalThis.__STORYBOOK_CUSTOM_ELEMENTS__ = customElements;
 }
 
 /** @deprecated Use framework.options.customElementsManifest with features.docgenServer instead. This runtime manifest setter will be removed in Storybook 12. */
 export function setCustomElementsManifest(customElements: any): void {
   deprecate(`setCustomElementsManifest() is deprecated: ${RUNTIME_MANIFEST_DEPRECATION}`);
-  global.__STORYBOOK_CUSTOM_ELEMENTS_MANIFEST__ = customElements;
+  globalThis.__STORYBOOK_CUSTOM_ELEMENTS_MANIFEST__ = customElements;
 }
 
 /** @deprecated Use framework.options.customElementsManifest with features.docgenServer instead. This runtime manifest getter will be removed in Storybook 12. */
 export function getCustomElements(): any {
-  return global.__STORYBOOK_CUSTOM_ELEMENTS_MANIFEST__ || global.__STORYBOOK_CUSTOM_ELEMENTS__;
+  return (
+    globalThis.__STORYBOOK_CUSTOM_ELEMENTS_MANIFEST__ || globalThis.__STORYBOOK_CUSTOM_ELEMENTS__
+  );
 }

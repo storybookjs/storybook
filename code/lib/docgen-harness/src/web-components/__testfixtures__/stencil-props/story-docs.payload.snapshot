@@ -12,17 +12,48 @@
   variant="full"
   aria-label-text="Default rating"
 ></stencil-props>",
+      "template": "<stencil-props⟦attr value mode="field" ~"\n  "⟫
+  value="1"⟧⟦attr max mode="field" ~"\n  "⟫
+  max="5"⟧⟦attr variant mode="field" ~"\n  "⟫
+  variant="full"⟧⟦attr labelText name="aria-label-text" mode="field" ~"\n  "⟫
+  aria-label-text="Default rating"⟧⟦attr labels mode="field" ~"\n  "⟫⟧
+></stencil-props>⟦props * properties=[{"arg":"hovered","name":"hovered","tag":"stencil-props"}] ~"\n"⟫⟧",
     },
     "webcomponentsfixtures-stencil-props--dom-node": {
       "id": "webcomponentsfixtures-stencil-props--dom-node",
       "name": "Dom Node",
-      "snippet": "<stencil-props value="3" max="5" variant="compact" aria-label-text="Rating"></stencil-props>",
-      "warning": "Incomplete snippet: `(args) => { const el = document.createElement('stencil-props'); el.setAttribute('value', String(args.value)); el.setAttribute('max', String(args.max)); el.setAttribute('variant', String(args.variant)); el.setAttribute('aria-label-text', String(args.labelText)); return el; }` could not be resolved statically.",
+      "snippet": "const DomNode = () => {
+  const el = document.createElement('stencil-props');
+  el.setAttribute('value', String(3));
+  el.setAttribute('max', String(5));
+  el.setAttribute('variant', String('compact'));
+  el.setAttribute('aria-label-text', String('Rating'));
+  return el;
+};",
+      "template": "const DomNode = () => {
+  const el = document.createElement('stencil-props');
+  el.setAttribute('value', String(⟦code value⟫3⟧));
+  el.setAttribute('max', String(⟦code max⟫5⟧));
+  el.setAttribute('variant', String(⟦code variant⟫'compact'⟧));
+  el.setAttribute('aria-label-text', String(⟦code labelText⟫'Rating'⟧));
+  return el;
+};",
     },
     "webcomponentsfixtures-stencil-props--lit-template": {
       "id": "webcomponentsfixtures-stencil-props--lit-template",
       "name": "Lit Template",
-      "snippet": "<stencil-props value="3" max="5" variant="compact" aria-label-text="Rating"></stencil-props>",
+      "snippet": "html`<stencil-props
+  value=${3}
+  max=${5}
+  variant=${'compact'}
+  aria-label-text=${'Rating'}
+></stencil-props>`",
+      "template": "html`<stencil-props
+  value=${⟦code value⟫3⟧}
+  max=${⟦code max⟫5⟧}
+  variant=${⟦code variant⟫'compact'⟧}
+  aria-label-text=${⟦code labelText⟫'Rating'⟧}
+></stencil-props>`",
     },
   },
 }

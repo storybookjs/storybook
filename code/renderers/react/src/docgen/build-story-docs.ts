@@ -54,5 +54,6 @@ export async function buildStoryDocsPayload(
     componentName,
     component,
     allComponents,
+    withTemplate: true,
   });
 }

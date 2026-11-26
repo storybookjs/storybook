@@ -1,12 +1,13 @@
 import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { fs as memfs, vol } from 'memfs';
 
 import type { Options } from '../../types/index.ts';
 
+import { StoryIndexGenerator } from '../../core-server/utils/StoryIndexGenerator.ts';
 import { resolveSkillInputs } from './inputs.ts';
 
 vi.mock('node:fs', { spy: true });
@@ -22,9 +23,11 @@ beforeEach(() => {
 function createMockOptions({
   framework = '@storybook/react-vite',
   configDir,
+  presets = {},
 }: {
   framework?: string | { name: string };
   configDir?: string;
+  presets?: Record<string, () => unknown>;
 } = {}): Options {
   return {
     configDir,
@@ -33,20 +36,19 @@ function createMockOptions({
         if (key === 'framework') {
           return framework;
         }
-        return defaultValue;
+        return key in presets ? presets[key]() : defaultValue;
       }),
     },
   } as unknown as Options;
 }
 
 describe('resolveSkillInputs', () => {
-  it('resolves the framework and its mapped renderer from a string preset', async () => {
+  it('resolves the framework from a string preset', async () => {
     const options = createMockOptions({ framework: '@storybook/vue3-vite' });
 
     const inputs = await resolveSkillInputs(options);
 
     expect(inputs.framework).toBe('@storybook/vue3-vite');
-    expect(inputs.renderer).toBe('@storybook/vue3');
   });
 
   it('resolves the framework from an object preset', async () => {
@@ -55,33 +57,15 @@ describe('resolveSkillInputs', () => {
     const inputs = await resolveSkillInputs(options);
 
     expect(inputs.framework).toBe('@storybook/nextjs');
-    expect(inputs.renderer).toBe('@storybook/react');
   });
 
   it.each([
-    ['/repo/node_modules/@storybook/vue3-vite', '@storybook/vue3-vite', '@storybook/vue3'],
-    [
-      'C:\\repo\\node_modules\\@storybook\\angular-vite',
-      '@storybook/angular-vite',
-      '@storybook/angular',
-    ],
-    [
-      '/repo/node_modules/.pnpm/@storybook+react-vite@11.0.0',
-      '@storybook/react-vite',
-      '@storybook/react',
-    ],
-  ])('normalizes absolute framework preset %s', async (name, framework, renderer) => {
+    ['/repo/node_modules/@storybook/vue3-vite', '@storybook/vue3-vite'],
+    ['C:\\repo\\node_modules\\@storybook\\angular-vite', '@storybook/angular-vite'],
+    ['/repo/node_modules/.pnpm/@storybook+react-vite@11.0.0', '@storybook/react-vite'],
+  ])('normalizes absolute framework preset %s', async (name, framework) => {
     const inputs = await resolveSkillInputs(createMockOptions({ framework: { name } }));
-    expect(inputs).toMatchObject({ framework, renderer });
-  });
-
-  it('leaves renderer undefined for an unmapped framework', async () => {
-    const options = createMockOptions({ framework: '@storybook/some-unmapped-framework' });
-
-    const inputs = await resolveSkillInputs(options);
-
-    expect(inputs.framework).toBe('@storybook/some-unmapped-framework');
-    expect(inputs.renderer).toBeUndefined();
+    expect(inputs.framework).toBe(framework);
   });
 
   it('spreads the resolved tool availability onto the result', async () => {
@@ -134,5 +118,85 @@ describe('resolveSkillInputs', () => {
       previewFile: '.storybook/preview.ts',
       typescript: true,
     });
+  });
+
+  describe('svelteCsf', () => {
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    const svelteCsf = async (
+      framework: string,
+      stories: string[],
+      files: string[] | Error
+    ): Promise<boolean> => {
+      const find = vi.spyOn(StoryIndexGenerator, 'findMatchingFiles');
+      if (files instanceof Error) {
+        find.mockRejectedValue(files);
+      } else {
+        find.mockResolvedValue(Object.fromEntries(files.map((path) => [path, false])));
+      }
+      const inputs = await resolveSkillInputs(
+        createMockOptions({
+          framework,
+          configDir: '/project/.storybook',
+          presets: { stories: () => stories },
+        })
+      );
+      return inputs.svelteCsf;
+    };
+
+    it.each([
+      [
+        '.svelte story files',
+        ['../src/**/*.stories.@(ts|svelte)'],
+        ['/project/src/A.stories.svelte', '/project/src/B.stories.ts'],
+        true,
+      ],
+      [
+        'only .ts story files',
+        ['../src/**/*.stories.@(ts|svelte)'],
+        ['/project/src/B.stories.ts'],
+        false,
+      ],
+      ['no stories yet, entries that load .svelte', ['../src/**/*.stories.svelte'], [], true],
+      [
+        'only docs pages, entries that load .svelte',
+        ['../src/**/*.mdx', '../src/**/*.stories.svelte'],
+        ['/project/src/Configure.mdx'],
+        true,
+      ],
+      ['no stories yet, entries that load only .ts', ['../src/**/*.stories.ts'], [], false],
+      [
+        'an unreadable folder, entries that load .svelte',
+        ['../src/**/*.stories.svelte'],
+        new Error('EACCES'),
+        true,
+      ],
+      ['no stories entries', [], [], false],
+    ])('a Svelte project with %s: %s', async (_, stories, files, expected) => {
+      expect(await svelteCsf('@storybook/sveltekit', stories, files)).toBe(expected);
+    });
+
+    it('is false for a framework that does not render Svelte', async () => {
+      expect(
+        await svelteCsf(
+          '@storybook/react-vite',
+          ['../src/**/*.stories.svelte'],
+          ['/project/src/A.stories.svelte']
+        )
+      ).toBe(false);
+    });
+  });
+  it('marks a project that composes other Storybooks', async () => {
+    const composed = await resolveSkillInputs(
+      createMockOptions({
+        presets: { refs: () => ({ design: { url: 'https://design.example' } }) },
+      })
+    );
+    expect(composed.composed).toBe(true);
+
+    const single = await resolveSkillInputs(createMockOptions());
+    expect(single.composed).toBe(false);
   });
 });

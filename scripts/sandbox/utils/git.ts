@@ -79,7 +79,7 @@ export async function commitAllToGit({ cwd, branch }: { cwd: string; branch: str
 
       const diffLink = `https://github.com/storybookjs/storybook/compare/${previousCommitHash}...${currentCommitHash}`;
 
-      const commitTitle = `${storybookVersion} - ${new Date().toDateString()} - ${previousCommitHash}`;
+      const commitTitle = `${storybookVersion} - ${new Date().toDateString()} - ${currentCommitHash}`;
       const commitBody = [
         `\nCheck the diff here: ${diffLink}`,
         '\nList of included PRs since previous version:',

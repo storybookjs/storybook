@@ -1,5 +1,7 @@
-import { loadTypeScriptCompilerApi } from 'storybook/internal/common';
+import type { TypeScriptSpecifierForDocgen } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
+
+import { loadDocgenTypeScript } from '@storybook/component-meta-typescript';
 
 import { ComponentMetaManager } from './componentMeta/ComponentMetaManager.ts';
 
@@ -15,15 +17,16 @@ let componentMetaManagerPromise: Promise<ComponentMetaManager | undefined> | und
  * worker thread ({@link ../docgen/docgen-worker.ts}) with its own manager so the synchronous program
  * build stays off the main event loop. Worker threads have separate V8 heaps but share process RSS,
  * so enabling both the manifest generator and the docgen server keeps two full program sets resident
- * at once — acceptable today, but the reason this singleton is scoped to the manifest path only.
+ * at once — acceptable today, but the reason this singleton is scoped to the manifest path and to
+ * `internal_getArgTypesData` (ghost stories), which only run in their own processes.
  */
-export function getSharedComponentMetaManager(): Promise<ComponentMetaManager | undefined> {
+export function getSharedComponentMetaManager(
+  typeScriptSpecifier?: TypeScriptSpecifierForDocgen
+): Promise<ComponentMetaManager | undefined> {
   if (!componentMetaManagerPromise) {
     componentMetaManagerPromise = (async () => {
       try {
-        return new ComponentMetaManager(
-          await loadTypeScriptCompilerApi(() => import('typescript'))
-        );
+        return new ComponentMetaManager(await loadDocgenTypeScript(typeScriptSpecifier));
       } catch (err) {
         logger.debug(`[reactComponentMeta] Skipping component metadata extraction: ${err}`);
         return undefined;

@@ -238,6 +238,50 @@ describe('BUN Proxy', () => {
     });
   });
 
+  describe('findInstallations', () => {
+    it('finds a package that only another package depends on', async () => {
+      mockedExecuteCommand.mockResolvedValue({
+        stdout: JSON.stringify({
+          dependencies: {
+            'qa-wrapper': {
+              version: '1.0.0',
+              dependencies: { '@storybook/test-runner': { version: '0.24.0' } },
+            },
+          },
+        }),
+      } as any);
+
+      const installations = await bunProxy.findInstallations(['@storybook/test-runner']);
+
+      expect(installations?.dependencies).toEqual({
+        '@storybook/test-runner': [{ version: '0.24.0', location: '' }],
+      });
+    });
+
+    it('lists the version the project depends on before the versions its dependencies bring in', async () => {
+      mockedExecuteCommand.mockResolvedValue({
+        stdout: JSON.stringify({
+          dependencies: {
+            chalk: {
+              version: '4.1.2',
+              dependencies: { 'supports-color': { version: '7.2.0' } },
+            },
+            'supports-color': { version: '9.4.0' },
+          },
+        }),
+      } as any);
+
+      const installations = await bunProxy.findInstallations(['supports-color']);
+
+      expect(installations?.dependencies).toEqual({
+        'supports-color': [
+          { version: '9.4.0', location: '' },
+          { version: '7.2.0', location: '' },
+        ],
+      });
+    });
+  });
+
   describe('getPublishedPeerDependencies', () => {
     const readPeers = () =>
       bunProxy.getPublishedPeerDependencies('@storybook/react-native', '11.0.0-next.0');

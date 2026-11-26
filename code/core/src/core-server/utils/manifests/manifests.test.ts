@@ -10,7 +10,11 @@ import { vol } from 'memfs';
 import type { Polka } from 'polka';
 
 import { defineService } from '../../../shared/open-service/index.ts';
-import { clearRegistry, registerService } from '../../../shared/open-service/server.ts';
+import {
+  clearRegistry,
+  registerService,
+  writeOpenServiceStaticFiles,
+} from '../../../shared/open-service/server.ts';
 import { registerDocgenService } from '../../../shared/open-service/services/docgen/server.ts';
 import { registerStoryDocsService } from '../../../shared/open-service/services/story-docs/server.ts';
 import type { DocgenProvider } from '../../../shared/open-service/services/docgen/types.ts';
@@ -531,6 +535,63 @@ describe('manifests', () => {
       // id, same as components.json's `name: payload?.name ?? id`.
       expect(files['/output/manifests/components.html']).toContain('id="billboard"');
       expect(files['/output/manifests/components.html']).toContain('Default');
+    });
+
+    it('lists a component titled Constructor in components.json and components.html', async () => {
+      mockPresets = setupMockPresets({ componentsManifest: true, docgenServer: true });
+      mockGetIndex.mockResolvedValue({
+        v: 5,
+        entries: {
+          'constructor--default': {
+            type: 'story',
+            subtype: 'story',
+            id: 'constructor--default',
+            name: 'Default',
+            title: 'Constructor',
+            importPath: './constructor.stories.tsx',
+            tags: [Tag.MANIFEST],
+          },
+        },
+      } as StoryIndex);
+      mockManifests = {
+        components: {
+          v: 0,
+          components: {},
+          meta: { docgen: 'react-component-meta', durationMs: 0 },
+        },
+      };
+      registerDocgenService({
+        getIndex: () => mockGenerator.getIndex(),
+        docgenProvider: async () => ({
+          id: 'constructor',
+          name: 'Constructor',
+          path: './constructor.tsx',
+          jsDocTags: {},
+        }),
+      });
+      registerStoryDocsService({
+        getIndex: () => mockGenerator.getIndex(),
+        storyDocsProvider: async () => ({
+          id: 'constructor',
+          name: 'Constructor',
+          path: './constructor.stories.tsx',
+          stories: { 'constructor--default': { id: 'constructor--default', name: 'Default' } },
+        }),
+      });
+      await writeOpenServiceStaticFiles('/output');
+
+      await writeManifests('/output', mockPresets);
+
+      const files = vol.toJSON();
+      const componentsJson = JSON.parse(files['/output/manifests/components.json'] as string);
+      expect(componentsJson.components.constructor).toMatchObject({
+        id: 'constructor',
+        name: 'Constructor',
+        docgen: { $ref: expect.stringContaining('constructor') },
+        stories: { $ref: expect.stringContaining('constructor') },
+      });
+      expect(files['/output/manifests/components.html']).toContain('id="constructor"');
+      expect(files['/output/manifests/components.html']).toContain('./constructor.tsx');
     });
 
     it('writes shallow MDX refs and renders HTML from MDX service snapshots', async () => {

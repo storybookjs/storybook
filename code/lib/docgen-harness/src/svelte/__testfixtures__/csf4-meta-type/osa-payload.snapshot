@@ -1,0 +1,9 @@
+{
+  "description": "Avatar with a name, an optional image and a size.",
+  "id": "sveltefixtures-csf4avatar",
+  "jsDocTags": {},
+  "name": "Avatar",
+  "path": "./input.stories.svelte",
+  "renderer": "svelte",
+  "summary": undefined,
+}

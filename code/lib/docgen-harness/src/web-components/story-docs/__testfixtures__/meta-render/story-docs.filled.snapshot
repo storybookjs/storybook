@@ -1,0 +1,6 @@
+{
+  "Csf2Function": "html`<meta-render label=${'csf2 & <changed>'}></meta-render>`",
+  "DomOverride": "document.createElement('meta-render')",
+  "FromMeta": "html`<meta-render label=${'from-meta & <changed>'}></meta-render>`",
+  "Override": "html`<meta-render label=${'override & <changed>'} class="override"></meta-render>`",
+}

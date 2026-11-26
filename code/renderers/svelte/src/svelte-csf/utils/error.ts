@@ -1,204 +1,93 @@
 import url from 'node:url';
 
-import rendererPkg from '@storybook/svelte/package.json' with { type: 'json' };
-import { SVELTE_CSF_FRAMEWORK_IMPORT_SOURCES } from '../constants.ts';
-
 import { unwrapExpression } from 'storybook/internal/csf-tools';
+import { StorybookError } from 'storybook/internal/server-errors';
 
+import { SVELTE_CSF_FRAMEWORK_IMPORT_SOURCES } from '../constants.ts';
 import type { SvelteAST } from '../parser/ast.ts';
 
 const [SVELTE_VITE_IMPORT_SOURCE, SVELTEKIT_IMPORT_SOURCE] = SVELTE_CSF_FRAMEWORK_IMPORT_SOURCES;
 
-/**
- * Adopted from: {@link https://github.com/storybookjs/storybook/blob/next/code/lib/core-events/src/errors/storybook-error.ts}
- * Copied because is not exposed in the `storybook/internal/core-events` package,
- * and modified for this addon needs.
- */
-export abstract class StorybookSvelteCSFError extends Error {
-  public static isStorybookCSFSvelteError = true;
+const CATEGORY = {
+  parserExtractSvelte: 'SVELTE_CSF_PARSER_EXTRACT_SVELTE',
+  parserExtractCompiled: 'SVELTE_CSF_PARSER_EXTRACT_COMPILED',
+  parserAnalyseDefineMeta: 'SVELTE_CSF_PARSER_ANALYSE_DEFINE_META',
+  parserAnalyseStory: 'SVELTE_CSF_PARSER_ANALYSE_STORY',
+} as const;
+
+const WRITING_STORIES = 'https://storybook.js.org/docs/writing-stories';
+
+export const DOCS = {
+  meta: `${WRITING_STORIES}?renderer=svelte#meta`,
+  definingStories: `${WRITING_STORIES}?renderer=svelte#defining-stories`,
+  customRendering: `${WRITING_STORIES}?renderer=svelte#custom-rendering`,
+  renameStories: `${WRITING_STORIES}?renderer=svelte#rename-stories`,
+  tags: `${WRITING_STORIES}/tags?renderer=svelte`,
+  previewMeta: `${WRITING_STORIES}/csf/api?renderer=svelte#previewmeta`,
+  storyExtend: `${WRITING_STORIES}/csf/api?renderer=svelte#storyextend`,
+};
+
+export abstract class StorybookSvelteCSFError extends StorybookError {
   // Users import `defineMeta` from their framework. The messages name both frameworks.
   public static importSource = SVELTE_VITE_IMPORT_SOURCE;
   public static sveltekitImportSource = SVELTEKIT_IMPORT_SOURCE;
   public static importSourcesText = SVELTE_CSF_FRAMEWORK_IMPORT_SOURCES.map(
     (source) => `"${source}"`
   ).join(' or ');
-  public static packageVersion = rendererPkg.version;
 
-  public static readonly CATEGORY = {
-    parserExtractSvelte: 'PARSER_EXTRACT_SVELTE',
-    parserExtractCompiled: 'PARSER_EXTRACT_COMPILED',
-    parserAnalyseDefineMeta: 'PARSER_ANALYSE_DEFINE_META',
-    parserAnalyseStory: 'PARSER_ANALYSE_STORY',
-    compiler: 'COMPILER',
-  } as const;
+  public static readonly CATEGORY = CATEGORY;
 
-  /**
-   * Category of the error. Used to classify the type of error, e.g., 'PREVIEW_API'.
-   */
-  abstract readonly category: (typeof StorybookSvelteCSFError)['CATEGORY'][keyof (typeof StorybookSvelteCSFError)['CATEGORY']];
-
-  /**
-   * Code representing the error. Used to uniquely identify the error, e.g., 1.
-   */
-  abstract readonly code: number;
-
-  /**
-   * A properly written error message template for this error.
-   * @see https://github.com/storybookjs/storybook/blob/next/code/lib/core-events/src/errors/README.md#how-to-write-a-proper-error-message
-   */
-  abstract template(): string;
-
-  /**
-   * Data associated with the error. Used to provide additional information in the error message or to be passed to telemetry.
-   */
-  public readonly data = {};
-
-  /**
-   * Specifies the documentation for the error.
-   * - If `true`, links to a documentation page on the Storybook website (make sure it exists before enabling).
-   * - If a string, uses the provided URL for documentation (external or FAQ links).
-   * - If `false` (default), no documentation link is added.
-   */
-  public documentation: boolean | string | string[] = false;
-
-  /**
-   * Flag used to easily determine if the error originates from Storybook.
-   */
-  readonly fromStorybook: true = true as const;
-
-  /**
-   * Any custom message to override the default error message.
-   * Vite overrides the `Error.message` property, so we support that.
-   */
-  private customMessage?: string;
-
-  get fullErrorCode() {
-    const paddedCode = String(this.code).padStart(4, '0');
-    return `SB_SVELTE_CSF_${this.category}_${paddedCode}` as `SB_SVELTE_CSF_${this['category']}_${string}`;
-  }
-
-  /**
-   * Overrides the default `Error.name` property in the format: SB_<CATEGORY>_<CODE>.
-   */
-  get name() {
-    const errorName = this.constructor.name;
-
-    return `${this.fullErrorCode} (${errorName})`;
-  }
-
-  /**
-   * Generates the error message along with additional documentation link (if applicable).
-   */
-  get message() {
-    if (this.customMessage) {
-      return this.customMessage;
-    }
-
-    let page: string | undefined;
-
-    if (this.documentation === true) {
-      // GitHub slugifies headings to lowercase anchors, so the fragment has to be lowercase
-      // to land on the ERRORS.md section.
-      page = `https://github.com/storybookjs/storybook/blob/v${StorybookSvelteCSFError.packageVersion}/code/renderers/svelte/src/svelte-csf/ERRORS.md#${this.fullErrorCode.toLowerCase()}`;
-    } else if (typeof this.documentation === 'string') {
-      page = this.documentation;
-    } else if (Array.isArray(this.documentation)) {
-      page = `\n${this.documentation.map((doc) => `\t- ${doc}`).join('\n')}`;
-    }
-
-    return `${this.template()}${page != null ? `\n\nMore info: ${page}\n` : ''}`;
-  }
-
-  /**
-   * Allows anyone to set Error.message after creation, mimicking the native Error behavior.
-   * Vite does this sometimes.
-   */
-  set message(message: string) {
-    this.customMessage = message;
-  }
-
-  /**
-   * `*.stories.svelte` file path where the error has occurred.
-   */
-  readonly filename?: string;
-
-  /**
-   * Name of the `<Story name=">...<" />` component which caused the error.
-   */
-  readonly component?: SvelteAST.Component;
+  declare readonly category: (typeof CATEGORY)[keyof typeof CATEGORY];
 
   constructor(
-    {
-      filename,
-      component: component,
-    }: {
-      filename?: StorybookSvelteCSFError['filename'];
-      component?: StorybookSvelteCSFError['component'];
-    },
-    options?: ConstructorParameters<typeof Error>[1]
+    props: ConstructorParameters<typeof StorybookError>[0] & {
+      category: (typeof CATEGORY)[keyof typeof CATEGORY];
+    }
   ) {
-    super();
-    this.cause = options?.cause;
-    this.filename = filename;
-    this.component = component;
-  }
-
-  // WARN: I had to duplicate logic. We already have functions for it.
-  // But we can't import it, because it would create a cyclic-dependency.
-  protected get storyNameFromAttribute() {
-    if (!this.component) {
-      return '<UnnamedComponent>';
-    }
-
-    const attributes = ['name', 'exportName'].flatMap((name) =>
-      this.component!.attributes.filter(
-        (attribute): attribute is SvelteAST.Attribute =>
-          attribute.type === 'Attribute' && attribute.name === name
-      )
-    );
-
-    for (const attribute of attributes) {
-      if (attribute.value === true) {
-        // NOTE: Nothing to do with this case - invalid tbh
-        continue;
-      }
-
-      // value is SvelteAST.ExpressionTag
-      if (!Array.isArray(attribute.value)) {
-        const expression = unwrapExpression(attribute.value.expression);
-
-        return 'value' in expression ? expression.value : undefined;
-      }
-
-      if (attribute.value[0].type === 'Text') {
-        return attribute.value[0].data;
-      }
-
-      const expression = unwrapExpression(attribute.value[0].expression);
-
-      if (expression.type === 'Literal' && typeof expression.value === 'string') {
-        return expression.value;
-      }
-    }
-  }
-
-  public get filepathURL() {
-    if (this.filename) {
-      return url.pathToFileURL(this.filename);
-    } else {
-      return '<path not specified>';
-    }
-  }
-
-  public get quickStoryRawCodeIdentifier() {
-    return `<Story name="${this.storyNameFromAttribute}" />`;
+    super(props);
   }
 }
 
-// WARN: We can't use `instanceof StorybookSvelteCSFError`, because is an _abstract_ class
-export function isStorybookSvelteCSFError(error: unknown): error is StorybookSvelteCSFError {
-  return Boolean(
-    (Object.getPrototypeOf(error)?.constructor as typeof StorybookSvelteCSFError)
-      ?.isStorybookCSFSvelteError
+export function filepathURL(filename: string | undefined) {
+  return filename ? url.pathToFileURL(filename) : '<path not specified>';
+}
+
+// Unlike `getLiteralValueFromAttribute`, this doesn't throw, because it only builds a message
+export function storyNameFromAttribute(component: SvelteAST.Component | undefined) {
+  if (!component) {
+    return '<UnnamedComponent>';
+  }
+
+  const attributes = ['name', 'exportName'].flatMap((name) =>
+    component.attributes.filter(
+      (attribute): attribute is SvelteAST.Attribute =>
+        attribute.type === 'Attribute' && attribute.name === name
+    )
   );
+
+  for (const attribute of attributes) {
+    if (attribute.value === true) {
+      continue;
+    }
+
+    if (!Array.isArray(attribute.value)) {
+      const expression = unwrapExpression(attribute.value.expression);
+
+      return 'value' in expression ? expression.value : undefined;
+    }
+
+    if (attribute.value[0].type === 'Text') {
+      return attribute.value[0].data;
+    }
+
+    const expression = unwrapExpression(attribute.value[0].expression);
+
+    if (expression.type === 'Literal' && typeof expression.value === 'string') {
+      return expression.value;
+    }
+  }
+}
+
+export function quickStoryRawCodeIdentifier(component: SvelteAST.Component | undefined) {
+  return `<Story name="${storyNameFromAttribute(component)}" />`;
 }

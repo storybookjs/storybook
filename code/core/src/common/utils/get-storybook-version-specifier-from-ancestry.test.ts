@@ -76,6 +76,14 @@ describe('getStorybookVersionSpecifierFromAncestry', () => {
     ).toBe('https://pkg.pr.new/storybookjs/storybook/storybook@deadbeef');
   });
 
+  it('extracts an owner-scoped pkg.pr.new storybook URL used with init', () => {
+    expect(
+      getStorybookVersionSpecifierFromAncestry([
+        { command: 'npx -y https://pkg.pr.new/storybookjs/storybook@afb5131 init' },
+      ])
+    ).toBe('https://pkg.pr.new/storybookjs/storybook@afb5131');
+  });
+
   it('extracts a direct pkg.pr.new create-storybook URL', () => {
     expect(
       getStorybookVersionSpecifierFromAncestry([

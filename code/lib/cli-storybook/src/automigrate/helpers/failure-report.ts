@@ -4,6 +4,7 @@ import { join, relative } from 'node:path';
 import { getProjectRoot } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
+import { normalize } from 'pathe';
 import picocolors from 'picocolors';
 // eslint-disable-next-line depend/ban-dependencies
 import slash from 'slash';
@@ -71,7 +72,7 @@ export const reportFileFailures = async (failures: FixFileFailure[], ran: Iterab
   const count = failures.length;
   logger.warn(
     count > 0
-      ? `${pluralFiles(count)} could not be migrated automatically. See ${picocolors.cyan(relative(process.cwd(), reportPath))} for which ones and why.`
-      : `${picocolors.cyan(relative(process.cwd(), reportPath))} still lists files that earlier runs could not migrate.`
+      ? `${pluralFiles(count)} could not be migrated automatically. See ${picocolors.cyan(normalize(relative(process.cwd(), reportPath)))} for which ones and why.`
+      : `${picocolors.cyan(normalize(relative(process.cwd(), reportPath)))} still lists files that earlier runs could not migrate.`
   );
 };

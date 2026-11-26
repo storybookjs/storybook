@@ -3,11 +3,9 @@ import {
   JsPackageManagerFactory,
   PackageManagerName,
   getPrettyPackageManagerName,
-  resolveStorybookVersionSpecifier,
   isCI,
   invalidateProjectRootCache,
   warnOnYarn1,
-  getProcessAncestry,
 } from 'storybook/internal/common';
 import { CLI_COLORS, logger } from 'storybook/internal/node-logger';
 import { MinimumReleaseAgeHandledError } from 'storybook/internal/server-errors';
@@ -39,14 +37,6 @@ export class PreflightCheckCommand {
     private readonly telemetryService = new TelemetryService()
   ) {}
   async execute(options: CommandOptions): Promise<PreflightCheckResult> {
-    if (options.storybookVersionSpecifier === undefined) {
-      try {
-        options.storybookVersionSpecifier = resolveStorybookVersionSpecifier(getProcessAncestry());
-      } catch {
-        // Ignore ancestry lookup failures and fall back to the embedded release versions.
-      }
-    }
-
     const isEmptyDirProject = options.force !== true && currentDirectoryIsEmpty();
     let packageManagerType = JsPackageManagerFactory.getPackageManagerType();
 

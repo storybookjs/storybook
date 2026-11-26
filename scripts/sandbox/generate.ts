@@ -134,7 +134,8 @@ const addStorybook = async ({
     }
 
     // This install is the only step that runs package code, so it keeps the
-    // 7-day gate inherited from before-storybook. The locally published
+    // age gate inherited from before-storybook (`BEFORE_SANDBOX_MIN_AGE_GATE`).
+    // The locally published
     // Storybook packages are seconds old and can never satisfy it, so they are
     // allowlisted by name rather than the gate being switched off.
     await preapproveLocallyPublishedPackages(tmpDir);
@@ -341,7 +342,8 @@ const runGenerators = async (
 
           await localizeYarnConfigFiles(createBaseDir, createBeforeDir);
 
-          // Refresh the lockfile to a Yarn 4 one with a 7-day npmMinimalAgeGate
+          // Refresh the lockfile to a Yarn 4 one with the
+          // `BEFORE_SANDBOX_MIN_AGE_GATE` npmMinimalAgeGate
           // so consumers who clone the published sandbox install a reproducible,
           // non-freshly-quarantined dependency tree.
           //
@@ -442,9 +444,9 @@ const runGenerators = async (
     if (hasGenerationErrors) {
       console.log('failed:');
       console.log(
-        generationResults
-          .filter((result) => result.status === 'rejected')
-          .map((_, index) => generators[index].name)
+        generationResults.flatMap((result, index) =>
+          result.status === 'rejected' ? [generators[index].name] : []
+        )
       );
       throw new Error(`Some sandboxes failed to generate`, {
         cause: generationResults

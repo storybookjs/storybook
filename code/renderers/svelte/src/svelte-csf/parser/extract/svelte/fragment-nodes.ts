@@ -6,18 +6,11 @@ import type { SvelteAST } from '../../ast.ts';
 
 interface Result {
   storyComponents: Array<{
-    /** Leading HTML comment as AST nodes which can be used as description for the story. */
+    // The HTML comment right before the story, used as its description
     comment?: SvelteAST.Comment;
-    /** '<Story>' component AST node. */
     component: SvelteAST.Component;
   }>;
-  /**
-   * "First level" _(at the root of fragment)_ snippet blocks AST nodes, which can be used for further transformation.
-   *
-   * For example:
-   * Determining the source code of the `<Story />`.
-   * Based on the `template` as prop from the outer Svelte snippet block definition - e.g. `Story template={template1} />`.
-   */
+  // Snippet blocks at the root of the fragment, which `<Story template={...}>` can reference
   snippetBlocks: SvelteAST.SnippetBlock[];
 }
 
@@ -27,18 +20,11 @@ interface Params {
   moduleNodes: Awaited<ReturnType<typeof extractModuleNodes>>;
 }
 
-/**
- * Extract Svelte AST nodes via `svelte.compile`,
- * and from the fragment aka HTML code.
- * They are needed for further code analysis/transformation.
- */
 export async function extractFragmentNodes(params: Params): Promise<Result> {
   const { walk } = await import('zimmerframe');
 
   const { fragment, moduleNodes } = params;
   const { storyNames } = moduleNodes;
-
-  let latestComment: SvelteAST.Comment | undefined;
 
   const state: Result = {
     storyComponents: [],
@@ -46,18 +32,12 @@ export async function extractFragmentNodes(params: Params): Promise<Result> {
   };
 
   const visitors: Visitors<SvelteAST.SvelteNode, typeof state> = {
-    Comment(node, { next }) {
-      latestComment = node;
-      next();
-    },
-
-    Component(node, { state }) {
+    Component(node, { state, path }) {
       if (storyNames.includes(node.name)) {
         state.storyComponents.push({
-          comment: latestComment,
+          comment: commentBefore(node, path.at(-1)),
           component: node,
         });
-        latestComment = undefined;
       }
     },
 
@@ -69,4 +49,26 @@ export async function extractFragmentNodes(params: Params): Promise<Result> {
   walk(fragment, state, visitors);
 
   return state;
+}
+
+/**
+ * Returns the HTML comment that documents a story: the comment right before the `<Story>`, with only
+ * whitespace between them. Returns `undefined` when anything else comes between them, such as an
+ * element, a snippet block, or a `<script>` or `<style>` tag.
+ */
+function commentBefore(
+  node: SvelteAST.Component,
+  parent: SvelteAST.SvelteNode | undefined
+): SvelteAST.Comment | undefined {
+  if (parent?.type !== 'Fragment') return undefined;
+  const index = parent.nodes.indexOf(node);
+  const previous = parent.nodes[index - 1];
+  const whitespace = previous?.type === 'Text' && !previous.data.trim() ? previous : undefined;
+  const comment = whitespace ? parent.nodes[index - 2] : previous;
+  if (comment?.type !== 'Comment') return undefined;
+  // Whitespace is a `Text` node of its own, so the nodes of a fragment cover the source with no gaps.
+  // The parser leaves `<script>` and `<style>` out of the fragment, so a gap means one of them is
+  // between the comment and the story.
+  const whitespaceLength = whitespace ? whitespace.end - whitespace.start : 0;
+  return node.start - comment.end === whitespaceLength ? comment : undefined;
 }

@@ -100,6 +100,7 @@ beforeEach(() => {
 
   vi.mocked(analyzeEcosystemPackages).mockImplementation(async () => ({
     testPackages: { jest: 'x.x.x' },
+    vrtPackages: { '@percy/cli': '1.0.0' },
     stylingPackages: { tailwindcss: '3.0.0' },
     routerPackages: { 'react-router-dom': '^6.0.0' },
     stateManagementPackages: { redux: '4.0.0' },
@@ -850,6 +851,7 @@ describe('storybook-metadata', () => {
           ...packageJsonMock,
           dependencies: {
             jest: '29.0.0',
+            '@percy/cli': '^1.0.0',
             'react-router-dom': '^6.0.0',
             tailwindcss: '3.0.0',
             redux: '4.0.0',
@@ -888,6 +890,9 @@ describe('storybook-metadata', () => {
           },
           "uiLibraryPackages": {
             "@mui/material": "5.0.0",
+          },
+          "vrtPackages": {
+            "@percy/cli": "1.0.0",
           },
         }
       `);

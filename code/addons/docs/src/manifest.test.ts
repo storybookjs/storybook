@@ -250,6 +250,7 @@ describe('experimental_manifests', () => {
     expect(result.docs?.docs['standalone--docs']).toEqual({
       id: 'standalone--docs',
       name: 'docs',
+      title: 'Standalone',
       mdx: {
         $ref: '../services/addon-docs/mdx/standalone--docs.json#/components/standalone--docs/docs/standalone--docs',
       },
@@ -293,6 +294,7 @@ describe('experimental_manifests', () => {
     expect(result.docs?.docs['missing--docs']).toEqual({
       id: 'missing--docs',
       name: 'docs',
+      title: 'Missing',
       mdx: {
         $ref: '../services/addon-docs/mdx/missing--docs.json#/components/missing--docs/docs/missing--docs',
       },

@@ -27,6 +27,25 @@ const status = { state: 'available', version: '1.2.3' };
   </div>
 </template>",
       "summary": undefined,
+      "template": "<script lang="ts" setup>
+import TemplateArgsExpression from './TemplateArgsExpression.vue';
+
+const release = ⟦value release in="script"⟫{ tag: 'v1.2.3', name: 'Release 1.2.3' }⟧;
+
+const status = ⟦value status in="script"⟫{ state: 'available', version: '1.2.3' }⟧;
+</script>
+
+<template>
+  <div
+    :style="{
+      '--sidebar-width-collapsed': '52px',
+      width: ⟦value isCollapsed in="attribute" quote="\""⟫true⟧ ? '52px' : '176px',
+      overflow: 'hidden'
+    }"
+  >
+    <TemplateArgsExpression⟦attr isCollapsed ~" "⟫ isCollapsed⟧ :release="release" :status="status"⟦attr updateProgressInfo ~" "⟫ :updateProgressInfo="null"⟧⟦props * except=["status","release","updateProgressInfo","isCollapsed"] ~" "⟫⟧ />
+  </div>
+</template>",
     },
     "forms-template-args-expression--primary": {
       "description": undefined,
@@ -52,6 +71,25 @@ const status = { state: 'available', version: '1.2.3' };
   </div>
 </template>",
       "summary": undefined,
+      "template": "<script lang="ts" setup>
+import TemplateArgsExpression from './TemplateArgsExpression.vue';
+
+const release = ⟦value release in="script"⟫{ tag: 'v1.2.3', name: 'Release 1.2.3' }⟧;
+
+const status = ⟦value status in="script"⟫{ state: 'available', version: '1.2.3' }⟧;
+</script>
+
+<template>
+  <div
+    :style="{
+      '--sidebar-width-collapsed': '52px',
+      width: ⟦value isCollapsed in="attribute" quote="\""⟫false⟧ ? '52px' : '176px',
+      overflow: 'hidden'
+    }"
+  >
+    <TemplateArgsExpression⟦attr isCollapsed ~" "⟫ :isCollapsed="false"⟧ :release="release" :status="status"⟦attr updateProgressInfo ~" "⟫ :updateProgressInfo="null"⟧⟦props * except=["status","release","updateProgressInfo","isCollapsed"] ~" "⟫⟧ />
+  </div>
+</template>",
     },
   },
 }

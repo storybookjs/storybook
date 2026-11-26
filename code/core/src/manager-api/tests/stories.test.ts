@@ -1,16 +1,18 @@
 import type { Mocked } from 'vitest';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   CONFIG_ERROR,
   CURRENT_STORY_WAS_SET,
   DOCS_PREPARED,
+  PRELOAD_ENTRIES,
   RESET_STORY_ARGS,
   SELECT_STORY,
   SET_CONFIG,
   SET_FILTER,
   SET_INDEX,
   STORY_ARGS_UPDATED,
+  STORY_FINISHED,
   STORY_INDEX_INVALIDATED,
   STORY_MISSING,
   STORY_PREPARED,
@@ -24,8 +26,6 @@ import {
   type StoryIndex,
 } from 'storybook/internal/types';
 
-import { global } from '@storybook/global';
-
 import { EventEmitter } from 'events';
 
 import { getEventMetadata as getEventMetadataOriginal } from '../lib/events.ts';
@@ -34,6 +34,7 @@ import { init as initStories } from '../modules/stories.ts';
 import { parseStatusesParam, serializeStatusesParam } from '../modules/statuses.ts';
 import type { API, State } from '../root.tsx';
 import type Store from '../store.ts';
+import { createCommitLaggingStore } from '../test-utils/store.ts';
 import { fullStatusStore } from '../stores/status.ts';
 import {
   docsEntries,
@@ -43,7 +44,12 @@ import {
 } from './mockStoriesEntries.ts';
 
 const mockGetEntries = vi.fn();
-const fetch = vi.mocked(global.fetch);
+const fetch = vi.fn(() => ({
+  json: () => ({ v: 5, entries: mockGetEntries() }),
+})) as unknown as ReturnType<typeof vi.fn<typeof globalThis.fetch>>;
+const requestIdleCallback = vi.fn() as unknown as ReturnType<
+  typeof vi.fn<typeof globalThis.requestIdleCallback>
+>;
 const getEventMetadata = vi.mocked(getEventMetadataOriginal);
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -53,13 +59,12 @@ vi.mock('../stores/status.ts');
 vi.mock('../lib/events.ts', () => ({
   getEventMetadata: vi.fn(() => ({ sourceType: 'local' })),
 }));
-vi.mock('@storybook/global', () => ({
-  global: {
-    ...globalThis,
-    fetch: vi.fn(() => ({ json: () => ({ v: 5, entries: mockGetEntries() }) })),
-    CONFIG_TYPE: 'DEVELOPMENT',
-  },
-}));
+
+beforeEach(() => {
+  vi.stubGlobal('fetch', fetch);
+  vi.stubGlobal('CONFIG_TYPE', 'DEVELOPMENT');
+  vi.stubGlobal('requestIdleCallback', requestIdleCallback);
+});
 
 function createMockStore(initialState: Partial<State> = {}) {
   let state = initialState;
@@ -74,6 +79,9 @@ function createMockStore(initialState: Partial<State> = {}) {
       return Promise.resolve(state);
     }),
   } as any as Store;
+}
+function createLaggingStoriesStore() {
+  return createCommitLaggingStore({ filters: {}, status: {} } as Partial<State>);
 }
 function createMockProvider() {
   return {
@@ -641,6 +649,31 @@ describe('stories API', () => {
       const { indexError } = store.getState();
       expect(indexError).toBeDefined();
     });
+    it('still reports a throwing filter as an index error with a commit-lagging store', async () => {
+      fetch.mockReturnValue(
+        Promise.resolve({ status: 200, json: () => ({ v: 5, entries: mockEntries }) } as any)
+      );
+      const moduleArgs = { ...createMockModuleArgs({}), store: createLaggingStoriesStore() };
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+      const { store } = moduleArgs;
+      await api.fetchIndex();
+      const previousIndex = store.getState().index;
+
+      await store.setState({
+        filters: {
+          broken: () => {
+            throw new Error('filter failed');
+          },
+        },
+      });
+      await api.fetchIndex();
+
+      expect(store.getState().indexError).toEqual(new Error('filter failed'));
+      expect(store.getState().index).toBe(previousIndex);
+
+      // Status updates in later tests would otherwise re-run the throwing filter
+      await store.setState({ filters: {} });
+    });
     it('watches for the INVALIDATE event and re-fetches -- and resets the hash', async () => {
       fetch.mockReturnValue(
         Promise.resolve({
@@ -670,7 +703,7 @@ describe('stories API', () => {
 
       expect(fetch).toHaveBeenCalledTimes(1);
       provider.channel.emit(STORY_INDEX_INVALIDATED);
-      expect(global.fetch).toHaveBeenCalledTimes(2);
+      expect(globalThis.fetch).toHaveBeenCalledTimes(2);
 
       // this side-effect is in an un-awaited promise.
       await wait(16);
@@ -715,7 +748,7 @@ describe('stories API', () => {
       );
 
       provider.channel.emit(STORY_INDEX_INVALIDATED);
-      expect(global.fetch).toHaveBeenCalledTimes(2);
+      expect(globalThis.fetch).toHaveBeenCalledTimes(2);
 
       // this side-effect is in an un-awaited promise.
       await wait(16);
@@ -1021,6 +1054,46 @@ describe('stories API', () => {
       const result = api.findSiblingStoryId('a--1', store.getState().index!, 1, true);
       expect(result).toBe('b-c--1');
     });
+    describe('toSiblingGroup with subcomponents', () => {
+      const story = (id: string, title: string) => ({
+        ...navigationEntries['a--1'],
+        id,
+        title,
+      });
+      const entries: StoryIndex['entries'] = {
+        'components-button-icon--primary': story(
+          'components-button-icon--primary',
+          'Components/Button/Icon'
+        ),
+        'components-button--primary': story('components-button--primary', 'Components/Button'),
+        'components-button--secondary': story('components-button--secondary', 'Components/Button'),
+        'components-button-guide--docs': {
+          type: 'docs',
+          id: 'components-button-guide--docs',
+          title: 'Components/Button/Guide',
+          name: 'Docs',
+          importPath: './guide.mdx',
+          storiesImports: [],
+        },
+        'components-card--primary': story('components-card--primary', 'Components/Card'),
+      };
+
+      it.each<[string, -1 | 1, string]>([
+        ['components-button-icon--primary', 1, 'components-button--primary'],
+        ['components-button--secondary', 1, 'components-button-guide--docs'],
+        ['components-button-guide--docs', 1, 'components-card--primary'],
+        ['components-card--primary', -1, 'components-button-guide--docs'],
+        ['components-button--primary', -1, 'components-button-icon--primary'],
+      ])('jumps from %s in direction %i to %s, in sidebar order', (from, direction, to) => {
+        const moduleArgs = createMockModuleArgs({});
+        const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+        api.setIndex({ v: 5, entries });
+
+        expect(
+          api.findSiblingStoryId(from, moduleArgs.store.getState().index!, direction, true)
+        ).toBe(to);
+      });
+    });
   });
   describe('findAllLeafStoryIds', () => {
     it('work for a leaf story', () => {
@@ -1122,7 +1195,150 @@ describe('stories API', () => {
       expect(navigate).not.toHaveBeenCalled();
     });
   });
+  const nestedEntries: StoryIndex['entries'] = {
+    'components-button-icon--primary': {
+      ...navigationEntries['a--1'],
+      id: 'components-button-icon--primary',
+      title: 'Components/Button/Icon',
+    },
+    'components-button--docs': {
+      type: 'docs',
+      id: 'components-button--docs',
+      title: 'Components/Button',
+      name: 'Docs',
+      importPath: './button.stories.ts',
+      storiesImports: [],
+    },
+    'components-button--primary': {
+      ...navigationEntries['a--1'],
+      id: 'components-button--primary',
+      title: 'Components/Button',
+    },
+  };
+
+  describe('resolveLeafEntry', () => {
+    const hideDocs = (entry: API_PreparedIndexEntry) => entry.type !== 'docs';
+
+    it.each([
+      {
+        name: 'a story to itself',
+        id: 'components-button--primary',
+        filter: () => true,
+        expected: 'components-button--primary',
+      },
+      {
+        name: 'a filtered-out docs page to itself',
+        id: 'components-button--docs',
+        filter: hideDocs,
+        expected: 'components-button--docs',
+      },
+      {
+        name: 'a component to its own docs before a subcomponent',
+        id: 'components-button',
+        filter: () => true,
+        expected: 'components-button--docs',
+      },
+      {
+        name: 'a component to its own story when its docs are filtered out',
+        id: 'components-button',
+        filter: hideDocs,
+        expected: 'components-button--primary',
+      },
+    ])('resolves $name', ({ id, filter, expected }) => {
+      const moduleArgs = createMockModuleArgs({ initialState: { filters: { visible: filter } } });
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+      api.setIndex({ v: 5, entries: nestedEntries });
+
+      expect(api.resolveLeafEntry(id)?.id).toBe(expected);
+    });
+
+    it('resolves in the index of a ref', () => {
+      const moduleArgs = createMockModuleArgs({});
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+      api.setIndex({ v: 5, entries: nestedEntries });
+      const { index, filteredIndex } = moduleArgs.store.getState();
+      api.setIndex({ v: 5, entries: navigationEntries });
+      moduleArgs.store.setState({ refs: { ref: { id: 'ref', index, filteredIndex } } } as any);
+
+      expect(api.resolveLeafEntry('components-button')).toBeUndefined();
+      expect(api.resolveLeafEntry('components-button', 'ref')?.id).toBe('components-button--docs');
+    });
+  });
+
   describe('selectStory', () => {
+    it.each([
+      {
+        name: 'its docs before a nested component',
+        filter: () => true,
+        path: '/docs/components-button--docs',
+      },
+      {
+        name: 'its story when its docs are filtered out',
+        filter: (entry: API_PreparedIndexEntry) => entry.type !== 'docs',
+        path: '/story/components-button--primary',
+      },
+      {
+        name: 'a nested component when its own pages are filtered out',
+        filter: (entry: API_PreparedIndexEntry) => entry.title === 'Components/Button/Icon',
+        path: '/story/components-button-icon--primary',
+      },
+    ])('selects $name', ({ filter, path }) => {
+      const moduleArgs = createMockModuleArgs({
+        initialState: { filters: { visible: filter } },
+      });
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+
+      api.setIndex({ v: 5, entries: nestedEntries });
+      api.selectStory('components-button');
+
+      expect(moduleArgs.navigate).toHaveBeenCalledWith(path, undefined);
+    });
+
+    it('keeps group selection in child order when the group has direct docs', () => {
+      const moduleArgs = createMockModuleArgs({});
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+      const entries = Object.fromEntries(
+        Object.entries(nestedEntries).filter(([id]) => id !== 'components-button--primary')
+      );
+
+      api.setIndex({ v: 5, entries });
+      api.selectStory('components-button');
+
+      expect(moduleArgs.navigate).toHaveBeenCalledWith(
+        '/story/components-button-icon--primary',
+        undefined
+      );
+    });
+
+    it('prefers its own page over hoisted nested docs with custom IDs', () => {
+      const title = 'Components/Button';
+      const moduleArgs = createMockModuleArgs({});
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+
+      api.setIndex({
+        v: 5,
+        entries: {
+          'custom-guide--docs': {
+            type: 'docs',
+            id: 'custom-guide--docs',
+            title: `${title}/Guide`,
+            name: 'Docs',
+            importPath: './guide.mdx',
+            storiesImports: [],
+          },
+          ...Object.fromEntries(
+            Object.values(nestedEntries).map((entry) => {
+              const id = entry.id.replace('components-button--', 'custom-button--');
+              return [id, { ...entry, id, title: entry.title.replace('Components/Button', title) }];
+            })
+          ),
+        },
+      });
+      api.selectStory('components-button');
+
+      expect(moduleArgs.navigate).toHaveBeenCalledWith('/docs/custom-button--docs', undefined);
+    });
+
     it('navigates', () => {
       const initialState = { path: '/story/a--1', storyId: 'a--1', viewMode: 'story' };
       const moduleArgs = createMockModuleArgs({ initialState });
@@ -1338,7 +1554,135 @@ describe('stories API', () => {
       });
     });
   });
+  describe('STORY_FINISHED', () => {
+    it('preloads the first story of the neighbouring components once the browser is idle', async () => {
+      const initialState = { storyId: 'component-a--story-1', viewMode: 'story' };
+      const moduleArgs = createMockModuleArgs({ initialState, fullAPI: { setOptions: vi.fn() } });
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+      const { provider } = moduleArgs;
+      await api.setIndex({ v: 5, entries: mockEntries });
+      const preloads: unknown[] = [];
+      provider.channel.on(PRELOAD_ENTRIES, (payload) => preloads.push(payload));
+      requestIdleCallback.mockClear();
+
+      provider.channel.emit(STORY_FINISHED, {
+        storyId: 'component-a--story-1',
+        status: 'success',
+        reporters: [],
+      });
+      expect(preloads).toEqual([]);
+
+      requestIdleCallback.mock.calls[0][0]({ didTimeout: false, timeRemaining: () => 50 });
+      expect(preloads).toEqual([
+        { ids: ['component-b--story-3'], source: 'sibling', options: { target: undefined } },
+      ]);
+    });
+
+    it('preloads the component that a jump lands on when a filter hides the neighbour', async () => {
+      const initialState: Partial<State> = {
+        storyId: 'component-a--story-1',
+        viewMode: 'story',
+        filters: { visible: (entry) => entry.title !== 'Component B' },
+      };
+      const moduleArgs = createMockModuleArgs({ initialState, fullAPI: { setOptions: vi.fn() } });
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+      const { provider, navigate } = moduleArgs;
+      await api.setIndex({
+        v: 5,
+        entries: {
+          ...mockEntries,
+          'component-c--story-4': {
+            ...mockEntries['component-b--story-3'],
+            id: 'component-c--story-4',
+            title: 'Component C',
+          },
+        },
+      });
+      const preloads: unknown[] = [];
+      provider.channel.on(PRELOAD_ENTRIES, (payload) => preloads.push(payload));
+      requestIdleCallback.mockClear();
+
+      provider.channel.emit(STORY_FINISHED, {
+        storyId: 'component-a--story-1',
+        status: 'success',
+        reporters: [],
+      });
+      requestIdleCallback.mock.calls[0][0]({ didTimeout: false, timeRemaining: () => 50 });
+      api.jumpToSubtree(1);
+
+      expect(navigate).toHaveBeenCalledWith('/story/component-c--story-4', undefined);
+      expect(preloads).toEqual([
+        { ids: ['component-c--story-4'], source: 'sibling', options: { target: undefined } },
+      ]);
+    });
+
+    it('skips the preload when another story was selected before the browser went idle', async () => {
+      const initialState = { storyId: 'component-b--story-3', viewMode: 'story' };
+      const moduleArgs = createMockModuleArgs({ initialState, fullAPI: { setOptions: vi.fn() } });
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+      const { provider } = moduleArgs;
+      await api.setIndex({ v: 5, entries: mockEntries });
+      const preloads: unknown[] = [];
+      provider.channel.on(PRELOAD_ENTRIES, (payload) => preloads.push(payload));
+      requestIdleCallback.mockClear();
+
+      provider.channel.emit(STORY_FINISHED, {
+        storyId: 'component-a--story-1',
+        status: 'success',
+        reporters: [],
+      });
+      requestIdleCallback.mock.calls[0][0]({ didTimeout: false, timeRemaining: () => 50 });
+
+      expect(preloads).toEqual([]);
+    });
+
+    it('falls back to setTimeout to preload siblings when requestIdleCallback is unavailable', async () => {
+      vi.stubGlobal('requestIdleCallback', undefined);
+      try {
+        const initialState = { storyId: 'component-a--story-1', viewMode: 'story' };
+        const moduleArgs = createMockModuleArgs({
+          initialState,
+          fullAPI: { setOptions: vi.fn() },
+        });
+        const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+        const { provider } = moduleArgs;
+        await api.setIndex({ v: 5, entries: mockEntries });
+        const preloads: unknown[] = [];
+        provider.channel.on(PRELOAD_ENTRIES, (payload) => preloads.push(payload));
+
+        vi.useFakeTimers();
+        provider.channel.emit(STORY_FINISHED, {
+          storyId: 'component-a--story-1',
+          status: 'success',
+          reporters: [],
+        });
+        expect(preloads).toEqual([]);
+
+        await vi.advanceTimersByTimeAsync(1);
+        expect(preloads).toEqual([
+          { ids: ['component-b--story-3'], source: 'sibling', options: { target: undefined } },
+        ]);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+  });
+
   describe('STORY_PREPARED', () => {
+    it('leaves preloading the neighbouring components to the story finishing', async () => {
+      const initialState = { storyId: 'component-a--story-1', viewMode: 'story' };
+      const moduleArgs = createMockModuleArgs({ initialState, fullAPI: { setOptions: vi.fn() } });
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+      const { provider } = moduleArgs;
+      await api.setIndex({ v: 5, entries: mockEntries });
+      const preloads: unknown[] = [];
+      provider.channel.on(PRELOAD_ENTRIES, (payload) => preloads.push(payload));
+
+      provider.channel.emit(STORY_PREPARED, { id: 'component-a--story-1', parameters: {} });
+      await wait(0);
+
+      expect(preloads).toEqual([]);
+    });
     it('prepares the story', async () => {
       const fullAPI = { setOptions: vi.fn() };
       const initialState = { path: '/story/a--1', storyId: 'a--1', viewMode: 'story' };
@@ -1365,6 +1709,83 @@ describe('stories API', () => {
         parameters: { a: 'b' },
         args: { c: 'd' },
       });
+    });
+    it('still makes the update readable synchronously, as `useParameter` needs', async () => {
+      // `useParameter` reads the current story's parameters synchronously on STORY_PREPARED
+      const moduleArgs = {
+        ...createMockModuleArgs({ fullAPI: { setOptions: vi.fn() } }),
+        store: createLaggingStoriesStore(),
+      };
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+      const { provider, store } = moduleArgs;
+      await api.setIndex({ v: 5, entries: mockEntries });
+
+      provider.channel.emit(STORY_PREPARED, {
+        id: 'component-a--story-1',
+        parameters: { backgrounds: { disable: false } },
+      });
+
+      expect(store.getState().index!['component-a--story-1']).toMatchObject({
+        prepared: true,
+        parameters: { backgrounds: { disable: false } },
+      });
+    });
+    it('still keeps the index and entry references stable on an update', async () => {
+      // The sidebar memoizes on `index`; `useParameter` holds the entry it read synchronously
+      const moduleArgs = {
+        ...createMockModuleArgs({ fullAPI: { setOptions: vi.fn() } }),
+        store: createLaggingStoriesStore(),
+      };
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+      const { provider, store } = moduleArgs;
+      await api.setIndex({ v: 5, entries: mockEntries });
+      const index = store.getState().index;
+
+      provider.channel.emit(STORY_PREPARED, { id: 'component-a--story-1', parameters: {} });
+      const entry = store.getState().index!['component-a--story-1'];
+      await wait(0);
+
+      expect(store.getState().index).toBe(index);
+      expect(store.getState().index!['component-a--story-1']).toBe(entry);
+    });
+    it('keeps preparing a story that only a not-yet-committed index has', async () => {
+      const moduleArgs = {
+        ...createMockModuleArgs({ fullAPI: { setOptions: vi.fn() } }),
+        store: createLaggingStoriesStore(),
+      };
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+      const { provider, store } = moduleArgs;
+      const { 'component-b--story-3': newStory, ...oldEntries } = mockEntries;
+      await api.setIndex({ v: 5, entries: oldEntries });
+
+      const firstSet = api.setIndex({ v: 5, entries: mockEntries });
+      provider.channel.emit(STORY_PREPARED, { id: 'component-b--story-3', parameters: {} });
+      const secondSet = api.setIndex({ v: 5, entries: mockEntries });
+      await Promise.all([firstSet, secondSet]);
+
+      expect(store.getState().index!['component-b--story-3']).toMatchObject({ prepared: true });
+    });
+    it('keeps stories added by a not-yet-committed setIndex', async () => {
+      const moduleArgs = {
+        ...createMockModuleArgs({ fullAPI: { setOptions: vi.fn() } }),
+        store: createLaggingStoriesStore(),
+      };
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+      const { provider, store } = moduleArgs;
+
+      const { 'component-b--story-3': newStory, ...oldEntries } = mockEntries;
+      await api.setIndex({ v: 5, entries: oldEntries });
+
+      // A file write invalidates the index (adding story-3) and HMR re-prepares story-1
+      // before React has committed the new index.
+      const indexSet = api.setIndex({ v: 5, entries: mockEntries });
+      provider.channel.emit(STORY_PREPARED, { id: 'component-a--story-1', parameters: {} });
+      await indexSet;
+      await wait(0);
+
+      expect(store.getState().index).toHaveProperty('component-b--story-3');
+      expect(store.getState().filteredIndex).toHaveProperty('component-b--story-3');
+      expect(store.getState().index!['component-a--story-1']).toMatchObject({ prepared: true });
     });
     it('sets options the first time it is called', async () => {
       const fullAPI = { setOptions: vi.fn() };
@@ -2207,6 +2628,31 @@ describe('stories API', () => {
       } finally {
         vi.useRealTimers();
       }
+    });
+
+    it('keeps a not-yet-committed index when a status change rebuilds it', async () => {
+      fullStatusStore.unset();
+      const moduleArgs = { ...createMockModuleArgs({}), store: createLaggingStoriesStore() };
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+      const { store } = moduleArgs;
+      const { 'component-b--story-3': newStory, ...oldEntries } = mockEntries;
+      await api.setIndex({ v: 5, entries: oldEntries });
+
+      const indexSet = api.setIndex({ v: 5, entries: mockEntries });
+      fullStatusStore.set([
+        {
+          typeId: 'addon-id',
+          storyId: 'component-a--story-1',
+          value: 'status-value:error',
+          title: 'title',
+          description: 'desc',
+        },
+      ]);
+      await indexSet;
+      await wait(600);
+
+      expect(store.getState().index).toHaveProperty('component-b--story-3');
+      expect(store.getState().internal_index!.entries).toHaveProperty('component-b--story-3');
     });
 
     it('applies the last status update after a burst (trailing edge of the throttle)', async () => {

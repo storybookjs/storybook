@@ -1,0 +1,611 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { formatExistingFile } from 'storybook/internal/common';
+
+import prettier from 'prettier';
+import ansiRegex from 'ansi-regex';
+import { dedent } from 'ts-dedent';
+
+import _transform from '../csf-2-to-3.ts';
+
+vi.mock('storybook/internal/common', { spy: true });
+
+// What a project with a Prettier config gets.
+beforeEach(() => {
+  vi.mocked(formatExistingFile).mockImplementation((path, content) =>
+    prettier.format(content, { filepath: path })
+  );
+});
+
+expect.addSnapshotSerializer({
+  serialize: (val: any) => (typeof val === 'string' ? val : val.toString()),
+  test: () => true,
+});
+
+const jsTransform = async (source: string) =>
+  (await _transform({ source, path: 'Component.stories.jsx' })).trim();
+const tsTransform = async (source: string) =>
+  (await _transform({ source, path: 'Component.stories.tsx' })).trim();
+
+describe('csf-2-to-3', () => {
+  it('lifts a story whose play function calls a later binding', async () => {
+    const output = await jsTransform(dedent`
+      export default { component: Button };
+      export const Primary = (args) => <Button {...args} />;
+      Primary.play = async () => {
+        await helper();
+      };
+      const helper = async () => {};
+    `);
+
+    expect(output).toBe(dedent`
+      export default { component: Button };
+      export const Primary = {
+        play: async () => {
+          await helper();
+        },
+      };
+      const helper = async () => {};
+    `);
+  });
+
+  it('keeps a story whose args call a function that reads a later binding', async () => {
+    const source = dedent`
+      export default { component: Button };
+      export const Primary = (args) => <Button {...args} />;
+      Primary.args = (() => ({ label }))();
+      const label = 'Button';
+    `;
+
+    expect(await jsTransform(source)).not.toContain('export const Primary = {');
+  });
+
+  it('lifts a story whose keys only share a name with a later binding', async () => {
+    const output = await jsTransform(dedent`
+      export default { component: Button };
+      export const Empty = (args) => <Button {...args} />;
+      Empty.args = { items: [] };
+      const items = ['a'];
+      export const WithItems = (args) => <Button {...args} />;
+      WithItems.args = { items };
+    `);
+
+    expect(output).toBe(dedent`
+      export default { component: Button };
+      export const Empty = {
+        args: { items: [] },
+      };
+      const items = ["a"];
+      export const WithItems = {
+        args: { items },
+      };
+    `);
+  });
+
+  it('leaves Svelte CSF files unchanged', async () => {
+    const source = dedent`
+      <script module>
+        import { defineMeta } from '@storybook/svelte';
+        const { Story } = defineMeta({});
+      </script>
+
+      <Story name="Primary" args={{ primary: true }} />
+    `;
+    await expect(_transform({ source, path: 'Button.stories.svelte' })).resolves.toBe(source);
+  });
+
+  describe('javascript', () => {
+    it('keeps the annotations of a story whose export it cannot rewrite', async () => {
+      const output = await jsTransform(dedent`
+        export default { title: 'Cat' };
+        const Template = (args) => <Cat {...args} />;
+        export const A = Template.bind({}), B = Template.bind({});
+        A.args = { name: 'Fluffy' };
+      `);
+      expect(output).toContain(`A.args = { name: "Fluffy" };`);
+    });
+
+    it('should replace non-simple function exports with objects', async () => {
+      await expect(
+        jsTransform(dedent`
+          export default { title: 'Cat' };
+          export const A = () => <Cat />;
+          export const B = (args) => <Button {...args} />;
+        `)
+      ).resolves.toMatchInlineSnapshot(`
+        export default { title: "Cat" };
+        export const A = () => <Cat />;
+        export const B = {
+          render: (args) => <Button {...args} />,
+        };
+      `);
+    });
+
+    it('should move annotations into story objects', async () => {
+      await expect(
+        jsTransform(dedent`
+          export default { title: 'Cat' };
+
+          export const A = () => <Cat />;
+          A.storyName = 'foo';
+          A.parameters = { bar: 2 };
+          A.play = () => {};
+        `)
+      ).resolves.toMatchInlineSnapshot(`
+        export default { title: "Cat" };
+
+        export const A = {
+          render: () => <Cat />,
+          name: "foo",
+          parameters: { bar: 2 },
+          play: () => {},
+        };
+      `);
+    });
+
+    it('keeps the parentheses of a comma expression annotation', async () => {
+      await expect(
+        jsTransform(dedent`
+          export default { title: 'Cat' };
+
+          export const A = (args) => <Cat {...args} />;
+          A.args = (track(), { name: 'Fluffy' });
+        `)
+      ).resolves.toMatchInlineSnapshot(`
+        export default { title: "Cat" };
+
+        export const A = {
+          render: (args) => <Cat {...args} />,
+          args: (track(), { name: "Fluffy" }),
+        };
+      `);
+    });
+
+    it('should ignore non-story exports, statements', async () => {
+      await expect(
+        jsTransform(dedent`
+          export default { title: 'components/Fruit', includeStories: ['A'] };
+
+          export const A = (args) => <Apple {...args} />;
+
+          export const B = (args) => <Banana {...args} />;
+
+          const C = (args) => <Cherry {...args} />;
+        `)
+      ).resolves.toMatchInlineSnapshot(`
+        export default { title: "components/Fruit", includeStories: ["A"] };
+
+        export const A = {
+          render: (args) => <Apple {...args} />,
+        };
+
+        export const B = (args) => <Banana {...args} />;
+
+        const C = (args) => <Cherry {...args} />;
+      `);
+    });
+
+    it('should do nothing when there is no meta', async () => {
+      await expect(
+        jsTransform(dedent`
+          export const A = () => <Apple />;
+
+          export const B = (args) => <Banana {...args} />;
+        `)
+      ).resolves.toMatchInlineSnapshot(`
+        export const A = () => <Apple />;
+
+        export const B = (args) => <Banana {...args} />;
+      `);
+    });
+
+    it('should remove implicit global render function (react)', async () => {
+      await expect(
+        jsTransform(dedent`
+          export default { title: 'Cat', component: Cat };
+          export const A = (args) => <Cat {...args} />;
+          export const B = (args) => <Banana {...args} />;
+        `)
+      ).resolves.toMatchInlineSnapshot(`
+        export default { title: "Cat", component: Cat };
+        export const A = {};
+        export const B = {
+          render: (args) => <Banana {...args} />,
+        };
+      `);
+    });
+
+    it('should ignore object exports', async () => {
+      await expect(
+        jsTransform(dedent`
+          export default { title: 'Cat', component: Cat };
+
+          export const A = {
+            render: (args) => <Cat {...args} />
+          };
+        `)
+      ).resolves.toMatchInlineSnapshot(`
+        export default { title: "Cat", component: Cat };
+
+        export const A = {
+          render: (args) => <Cat {...args} />,
+        };
+      `);
+    });
+
+    it('should hoist template.bind (if there is only one)', async () => {
+      await expect(
+        jsTransform(dedent`
+          export default { title: 'Cat' };
+          const Template = (args) => <Cat {...args} />;
+          export const A = Template.bind({});
+          A.args = { isPrimary: false };
+        `)
+      ).resolves.toMatchInlineSnapshot(`
+        export default { title: "Cat" };
+        const Template = (args) => <Cat {...args} />;
+        export const A = {
+          render: Template,
+          args: { isPrimary: false },
+        };
+      `);
+    });
+
+    it('should reuse the template when there are multiple Template.bind references but no component defined', async () => {
+      await expect(
+        jsTransform(dedent`
+          export default { title: 'Cat' };
+          const Template = (args) => <Cat {...args} />;
+
+          export const A = Template.bind({});
+          A.args = { isPrimary: false };
+          
+          export const B = Template.bind({});
+          B.args = { isPrimary: true };
+          
+                    
+          export const C = Template.bind({});
+          C.args = { bla: true };
+          
+          export const D = Template.bind({});
+          D.args = { bla: false };
+        `)
+      ).resolves.toMatchInlineSnapshot(`
+        export default { title: "Cat" };
+        const Template = (args) => <Cat {...args} />;
+
+        export const A = {
+          render: Template,
+          args: { isPrimary: false },
+        };
+
+        export const B = {
+          render: Template,
+          args: { isPrimary: true },
+        };
+
+        export const C = {
+          render: Template,
+          args: { bla: true },
+        };
+
+        export const D = {
+          render: Template,
+          args: { bla: false },
+        };
+      `);
+    });
+
+    it('should remove implicit global render for template.bind', async () => {
+      await expect(
+        jsTransform(dedent`
+          export default { title: 'Cat', component: Cat };
+
+          const Template = (args) => <Cat {...args} />;
+
+          export const A = Template.bind({});
+          A.args = { isPrimary: false };
+
+          const Template2 = (args) => <Banana {...args} />;
+
+          export const B = Template2.bind({});
+          B.args = { isPrimary: true };
+        `)
+      ).resolves.toMatchInlineSnapshot(`
+        export default { title: "Cat", component: Cat };
+
+        export const A = {
+          args: { isPrimary: false },
+        };
+
+        const Template2 = (args) => <Banana {...args} />;
+
+        export const B = {
+          render: Template2,
+          args: { isPrimary: true },
+        };
+      `);
+    });
+
+    it('drops the comments that led a removed template or annotation', async () => {
+      await expect(
+        jsTransform(dedent`
+          export default { title: 'Button', component: Button };
+
+          /** Shared template */
+          const Template = (args) => <Button {...args} />;
+
+          export const Primary = Template.bind({});
+          // @ts-expect-error
+          Primary.args = { label: 'A' };
+
+          export const Next = () => <Cat />;
+        `)
+      ).resolves.toMatchInlineSnapshot(`
+        export default { title: "Button", component: Button };
+
+        export const Primary = {
+          args: { label: "A" },
+        };
+
+        export const Next = () => <Cat />;
+      `);
+    });
+
+    it('keeps a template that is still rendered as a JSX element', async () => {
+      await expect(
+        jsTransform(dedent`
+          export default { title: 'Cat', component: Cat };
+
+          const Template = (args) => <Cat {...args} />;
+
+          export const A = Template.bind({});
+          A.args = { isPrimary: false };
+
+          export const B = () => <Template isPrimary />;
+        `)
+      ).resolves.toMatchInlineSnapshot(`
+        export default { title: "Cat", component: Cat };
+
+        const Template = (args) => <Cat {...args} />;
+
+        export const A = {
+          args: { isPrimary: false },
+        };
+
+        export const B = () => <Template isPrimary />;
+      `);
+    });
+
+    it('should ignore no-arg stories without annotations', async () => {
+      await expect(
+        jsTransform(dedent`
+          export default { title: 'Cat', component: Cat };
+
+          export const A = (args) => <Cat {...args} />;
+          export const B = () => <Cat name="frisky" />;
+          export const C = () => <Cat name="fluffy" />;
+          C.parameters = { foo: 2 };
+        `)
+      ).resolves.toMatchInlineSnapshot(`
+        export default { title: "Cat", component: Cat };
+
+        export const A = {};
+        export const B = () => <Cat name="frisky" />;
+        export const C = {
+          render: () => <Cat name="fluffy" />,
+          parameters: { foo: 2 },
+        };
+      `);
+    });
+
+    it('should work for v1-style annotations', async () => {
+      await expect(
+        jsTransform(dedent`
+          export default { title: 'Cat' };
+          export const A = (args) => <Cat {...args} />;
+          A.story = {
+            parameters: { foo: 2 }
+          };
+        `)
+      ).resolves.toMatchInlineSnapshot(`
+        export default { title: "Cat" };
+        export const A = {
+          render: (args) => <Cat {...args} />,
+          parameters: { foo: 2 },
+        };
+      `);
+    });
+  });
+
+  describe('typescript', () => {
+    it('adds a type import only when it rewrites the annotation', async () => {
+      await expect(
+        tsTransform(dedent`
+          import type { StoryObj } from '@storybook/react';
+          export default { title: 'Cat' };
+          export const A: StoryObj = () => <Cat />, B: StoryObj = () => <Cat />;
+        `)
+      ).resolves.toMatchInlineSnapshot(`
+        import type { StoryObj } from "@storybook/react";
+        export default { title: "Cat" };
+        export const A: StoryObj = () => <Cat />,
+          B: StoryObj = () => <Cat />;
+      `);
+    });
+
+    it('should error with namespace imports', async () => {
+      await expect.addSnapshotSerializer({
+        serialize: (value) => {
+          const stringVal = typeof value === 'string' ? value : value.toString();
+          return stringVal.replace(ansiRegex(), '');
+        },
+        test: () => true,
+      });
+      await expect(() =>
+        tsTransform(dedent`
+          import * as SB from '@storybook/react';
+          import { CatProps } from './Cat';
+
+          const meta = { title: 'Cat', component: Cat } as Meta<CatProps>
+          export default meta;
+
+          export const A: SB.StoryFn<CatProps> = () => <Cat />;
+        `)
+      ).rejects.toThrowErrorMatchingInlineSnapshot(dedent`
+        Error: This codemod does not support namespace imports for a @storybook/react package.
+        Replace the namespace import with named imports and try again.
+      `);
+    });
+    it('should keep local names', async () => {
+      await expect(
+        tsTransform(dedent`
+          import { Meta, StoryObj as CSF3, StoryFn as CSF2 } from '@storybook/react';
+          import { CatProps } from './Cat';
+
+          const meta = { title: 'Cat', component: Cat } satisfies Meta<CatProps>
+          export default meta;
+
+          export const A: CSF2<CatProps> = () => <Cat />;
+          
+          export const B: CSF3<CatProps> = {
+            args: { name: "already csf3" }
+          };
+
+          export const C: CSF2<CatProps> = (args) => <Cat {...args} />;
+          C.args = { 
+            name: "Fluffy"
+          };
+        `)
+      ).resolves.toMatchInlineSnapshot(`
+        import { Meta, StoryObj as CSF3, StoryFn as CSF2 } from "@storybook/react";
+        import { CatProps } from "./Cat";
+
+        const meta = { title: "Cat", component: Cat } satisfies Meta<CatProps>;
+        export default meta;
+
+        export const A: CSF2<CatProps> = () => <Cat />;
+
+        export const B: CSF3<CatProps> = {
+          args: { name: "already csf3" },
+        };
+
+        export const C: CSF3<CatProps> = {
+          args: {
+            name: "Fluffy",
+          },
+        };
+      `);
+    });
+
+    it('should replace function exports with objects and update type', async () => {
+      await expect(
+        tsTransform(dedent`
+          import { Story, StoryFn, ComponentStory, ComponentStoryObj } from '@storybook/react';
+
+          // some extra whitespace to test
+
+          export default { 
+            title: 'Cat', 
+            component: Cat,
+          } as Meta<CatProps>;
+
+          export const A: Story<CatProps> = (args) => <Cat {...args} />;
+          A.args = { name: "Fluffy" };
+
+          export const B: any = (args) => <Button {...args} />;
+
+          export const C: Story<CatProps> = () => <Cat />;
+
+          export const D: StoryFn<CatProps> = (args) => <Cat {...args} />;
+          D.args = { 
+            name: "Fluffy"
+          };
+          
+          export const E: ComponentStory<Cat> = (args) => <Cat {...args} />;
+          E.args = { name: "Fluffy" };
+          
+          export const F: Story = (args) => <Cat {...args} />;
+          F.args = { 
+            name: "Fluffy"
+          };
+          
+          export const G: ComponentStoryObj<typeof Cat> = {
+            args: {
+              name: 'Fluffy',
+            },
+          };
+        `)
+      ).resolves.toMatchInlineSnapshot(`
+        import { StoryObj, StoryFn } from "@storybook/react";
+
+        // some extra whitespace to test
+
+        export default {
+          title: "Cat",
+          component: Cat,
+        } as Meta<CatProps>;
+
+        export const A: StoryObj<CatProps> = {
+          args: { name: "Fluffy" },
+        };
+
+        export const B: any = {
+          render: (args) => <Button {...args} />,
+        };
+
+        export const C: StoryFn<CatProps> = () => <Cat />;
+
+        export const D: StoryObj<CatProps> = {
+          args: {
+            name: "Fluffy",
+          },
+        };
+
+        export const E: StoryObj<Cat> = {
+          args: { name: "Fluffy" },
+        };
+
+        export const F: StoryObj = {
+          args: {
+            name: "Fluffy",
+          },
+        };
+
+        export const G: StoryObj<typeof Cat> = {
+          args: {
+            name: "Fluffy",
+          },
+        };
+      `);
+    });
+
+    it('migrate Story type to StoryFn when used in an not exported Template function', async () => {
+      await expect(
+        tsTransform(dedent`
+          import { Story, Meta } from '@storybook/react'
+          
+          export default {
+            component: Cat,
+          } satisfies Meta
+          
+          const Template: Story = () => <div>Hello World</div>;
+          
+          export const Default = Template.bind({})
+        `)
+      ).resolves.toMatchInlineSnapshot(`
+        import { StoryFn, Meta } from "@storybook/react";
+
+        export default {
+          component: Cat,
+        } satisfies Meta;
+
+        const Template: StoryFn = () => <div>Hello World</div>;
+
+        export const Default = {
+          render: Template,
+        };
+      `);
+    });
+  });
+});

@@ -1,20 +1,20 @@
 import { existsSync } from 'node:fs';
 import { describe, expect, test } from 'vitest';
 import {
-  expectDisplayReviewForVisualChange,
-  expectDevServerLeftRunning,
-  expectReviewOpenedInBrowser,
-  expectSkillInvoked,
-  getEvalContext,
-  expectStoryDiscoveryBeforeReview,
-  expectStoryIdsInDisplayReview,
+  expectAnyWorkflowSkillInvoked,
+  expectNoDisplayReview,
+  expectReviewHint,
   expectStoryTestsRanAndPassed,
   expectWorkflowCalls,
-  modelRunsTestsOnlyWhenAsked,
+  getEvalContext,
 } from '#test-utils';
 
+// The skills of the workflow in AGENTS.md that this task cannot do without. The tests are a
+// command of the workflow, not a skill, and a review only comes when the user asks for one.
+const WORKFLOW_SKILLS = ['write-stories'];
+
 describe('creating a Callout in a monorepo UI package', () => {
-  // Workflow asserts are enabled. The ui-workflow skills direct the dev server and
+  // Workflow asserts are enabled. The skills direct the dev server and
   // every Storybook CLI command to the package where Storybook is installed,
   // which avoids the degraded help output at the monorepo root (historical
   // context: storybookjs/storybook#35359).
@@ -28,41 +28,25 @@ describe('creating a Callout in a monorepo UI package', () => {
 
   test('runs story tests after the change and finishes with them passing', async () => {
     await expectStoryTestsRanAndPassed({
-      requireAgentRun: !modelRunsTestsOnlyWhenAsked(),
       covering: ['callout'],
       cwd: 'packages/ui',
     });
   });
 
-  test('uses Storybook story instructions and publishes a display review', () => {
-    expectWorkflowCalls(['get-storybook-story-instructions', 'review-create']);
-    expectDisplayReviewForVisualChange();
+  test('runs the skills of the workflow, and creates no review unasked', () => {
+    expectWorkflowCalls(WORKFLOW_SKILLS);
+    expectNoDisplayReview();
   });
 
-  test('opens the review in the in-app browser', () => {
-    expectReviewOpenedInBrowser();
-  });
-
-  test('the review covers the new Callout stories', () => {
-    expectStoryIdsInDisplayReview(['callout']);
-  });
-
-  test('discovers stories through the workflow tools before publishing the review', () => {
-    expectStoryDiscoveryBeforeReview();
+  test('tells the user about the /ui-review skill', () => {
+    expectReviewHint();
   });
 
   describe('depending on the current agent and integration', () => {
     const { integration } = getEvalContext();
 
-    test.skipIf(integration === 'mcp')('invokes the ui-workflow skill', () => {
-      expectSkillInvoked('ui-workflow');
+    test.skipIf(integration === 'mcp')('finds the workflow through the plugin skills', () => {
+      expectAnyWorkflowSkillInvoked();
     });
-
-    test.skipIf(integration !== 'plugin')(
-      'leaves the dev server running when using the plugin',
-      () => {
-        expectDevServerLeftRunning();
-      }
-    );
   });
 });

@@ -1,5 +1,5 @@
 /// <reference types="node" />
-import { type ChildProcess, spawn } from 'node:child_process';
+import { spawn } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import * as os from 'node:os';
 import { join } from 'node:path';
@@ -16,8 +16,6 @@ import { detectAgent } from './detect-agent.ts';
 import { set as saveToCache } from './event-cache.ts';
 import { getSessionId } from './session-id.ts';
 import type { Options, TelemetryData, TelemetryEvent } from './types.ts';
-
-let sender: ChildProcess | undefined;
 
 export const addToGlobalContext = (key: string, value: any) => {
   globalContext[key] = value;
@@ -87,14 +85,22 @@ export async function sendTelemetry(data: TelemetryData, options: Partial<Option
       payload,
       context,
     };
-    if (!sender?.connected) {
-      sender = startSender();
-    }
-    // On Windows the write is asynchronous, so an exit right after this call would lose the event.
-    const written = new Promise<void>((resolve) => sender?.send(body, () => resolve()));
-
-    await Promise.all([written, saveToCache(eventType, body)]);
+    await Promise.all([handOver(body), saveToCache(eventType, body)]);
   } catch (err) {
+    //
+  }
+}
+
+// Resolves when the event is written. On Windows that is asynchronous, so an exit right after
+// the call would lose the event.
+async function handOver(event: TelemetryEvent) {
+  try {
+    // On globalThis, because this module can load more than once in one process.
+    const sender = globalThis.SB_TELEMETRY_SENDER?.connected
+      ? globalThis.SB_TELEMETRY_SENDER
+      : (globalThis.SB_TELEMETRY_SENDER = startSender());
+    await new Promise<void>((resolve) => sender.send(event, () => resolve()));
+  } catch {
     //
   }
 }

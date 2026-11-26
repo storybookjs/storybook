@@ -15,6 +15,7 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.useRealTimers();
+  vi.restoreAllMocks();
 });
 
 const post = async () => {
@@ -78,5 +79,4 @@ it('gives up on an endpoint that does not respond within 30 seconds', async () =
   await expect(posted).rejects.toThrow();
   expect(timeout).toHaveBeenCalledWith(30_000);
   expect(fetchMock).toHaveBeenCalledTimes(1);
-  timeout.mockRestore();
 });

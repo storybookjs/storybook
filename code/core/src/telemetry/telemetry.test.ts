@@ -136,6 +136,7 @@ it('still resolves when the process cannot be started', async () => {
   });
 
   await expect(sendTelemetry({ eventType: 'dev', payload: {} })).resolves.toBeUndefined();
+  expect(saveToCache).toHaveBeenCalledWith('dev', expect.objectContaining({ eventType: 'dev' }));
 });
 
 it('does not crash when the process fails after it was started', async () => {

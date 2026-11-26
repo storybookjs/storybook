@@ -161,7 +161,7 @@ In the future, we plan to share relevant data with the community through public 
 
 ## How is the data sent?
 
-The command you run never contacts the telemetry endpoint itself, so a slow or unreachable endpoint cannot slow it down or keep it from exiting. Storybook starts one background process and passes each event to it, and that process sends the event to `https://storybook.js.org/event-log`. The background process stops by itself once the command has ended and its requests are done, which takes about 30 seconds at most. When telemetry is turned off, no background process is started. The one exception is a crash, when you turned on [crash reports](#crash-reports-disabled-by-default).
+The command you run never contacts the telemetry endpoint itself, so a slow or unreachable endpoint cannot slow it down or keep it from exiting. Storybook starts one background process and passes each event to it, and that process sends the event to `https://storybook.js.org/event-log`. The background process stops by itself once the command has ended and its requests are done, which takes about 30 seconds at most. When telemetry is turned off, no background process is started. The one exception: if you turned on [crash reports](#crash-reports-disabled-by-default), a crash is still reported, which starts the background process.
 
 ## How to opt-out
 

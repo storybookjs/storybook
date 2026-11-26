@@ -45,6 +45,11 @@ beforeEach(async () => {
 });
 
 afterEach(async () => {
+  for (const { value: sender } of vi.mocked(spawn).mock.results) {
+    if (sender?.connected) {
+      sender.disconnect();
+    }
+  }
   vi.unstubAllEnvs();
   endpoint.closeAllConnections();
   await new Promise((resolve) => endpoint.close(resolve));

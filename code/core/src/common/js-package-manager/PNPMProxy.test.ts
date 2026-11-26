@@ -99,7 +99,7 @@ describe('PNPM Proxy', () => {
   });
 
   afterEach(() => {
-    vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
   });
 
   it('type should be pnpm', () => {
@@ -216,23 +216,36 @@ describe('PNPM Proxy', () => {
 
       expect(prompt.executeTask).toHaveBeenCalledOnce();
       expect(mockedExecuteCommand).toHaveBeenCalledWith(
-        expect.objectContaining({ command: 'pnpm', args: ['install'], stdio: 'inherit' })
+        expect.objectContaining({
+          command: 'pnpm',
+          args: ['install', '--no-frozen-lockfile'],
+          stdio: 'inherit',
+        })
       );
     });
 
-    it('should run `pnpm install`', async () => {
-      // sort of un-mock part of the function so executeCommand (also mocked) is called
-      vi.mocked(prompt.executeTaskWithSpinner).mockImplementationOnce(async (fn: any) => {
-        await Promise.resolve(fn());
-      });
-      const executeCommandSpy = mockedExecuteCommand.mockResolvedValue({ stdout: '7.1.0' } as any);
+    it.each([
+      ['set', 'true'],
+      ['unset', undefined],
+    ])(
+      'runs `pnpm install --no-frozen-lockfile` when CI is %s, so the lockfile can change',
+      async (_, ci) => {
+        vi.stubEnv('CI', ci);
+        // sort of un-mock part of the function so executeCommand (also mocked) is called
+        vi.mocked(prompt.executeTaskWithSpinner).mockImplementationOnce(async (fn: any) => {
+          await Promise.resolve(fn());
+        });
+        const executeCommandSpy = mockedExecuteCommand.mockResolvedValue({
+          stdout: '7.1.0',
+        } as any);
 
-      await pnpmProxy.installDependencies();
+        await pnpmProxy.installDependencies();
 
-      expect(executeCommandSpy).toHaveBeenCalledWith(
-        expect.objectContaining({ command: 'pnpm', args: ['install'] })
-      );
-    });
+        expect(executeCommandSpy).toHaveBeenCalledWith(
+          expect.objectContaining({ command: 'pnpm', args: ['install', '--no-frozen-lockfile'] })
+        );
+      }
+    );
 
     it('installs every workspace project from the workspace root', async () => {
       vi.mocked(prompt.executeTaskWithSpinner).mockImplementationOnce(async (fn: any) => {
@@ -244,7 +257,7 @@ describe('PNPM Proxy', () => {
       await pnpmProxy.installDependencies();
 
       expect(executeCommandSpy).toHaveBeenCalledWith(
-        expect.objectContaining({ command: 'pnpm', args: ['install'] })
+        expect.objectContaining({ command: 'pnpm', args: ['install', '--no-frozen-lockfile'] })
       );
     });
 
@@ -289,7 +302,7 @@ describe('PNPM Proxy', () => {
         'Approved build scripts for esbuild in /project/pnpm-workspace.yaml'
       );
       expect(mockedExecuteCommand).toHaveBeenCalledWith(
-        expect.objectContaining({ command: 'pnpm', args: ['install'] })
+        expect.objectContaining({ command: 'pnpm', args: ['install', '--no-frozen-lockfile'] })
       );
     });
 
@@ -515,7 +528,7 @@ describe('PNPM Proxy', () => {
         expect.stringContaining('Could not allow build scripts of esbuild')
       );
       expect(mockedExecuteCommand).toHaveBeenCalledWith(
-        expect.objectContaining({ command: 'pnpm', args: ['install'] })
+        expect.objectContaining({ command: 'pnpm', args: ['install', '--no-frozen-lockfile'] })
       );
     });
 

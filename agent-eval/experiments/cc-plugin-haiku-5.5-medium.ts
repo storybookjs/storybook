@@ -13,7 +13,7 @@ export default {
   ...DEFAULT_EXPERIMENT_CONFIG,
   agent: 'claude-code', // direct Anthropic API, requires ANTHROPIC_API_KEY
   model,
-  agentOptions: { effort: 'low' },
+  agentOptions: { effort: 'medium' },
   // Skipped under EVAL_STORYBOOK_LATEST=1; see PLUGIN_STORYBOOK_EVALS.
   evals: PLUGIN_STORYBOOK_EVALS,
   setup: async (sandbox) => {

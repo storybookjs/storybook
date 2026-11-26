@@ -1,5 +1,5 @@
 import type { Mocked } from 'vitest';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   CONFIG_ERROR,
@@ -26,8 +26,6 @@ import {
   type StoryIndex,
 } from 'storybook/internal/types';
 
-import { global } from '@storybook/global';
-
 import { EventEmitter } from 'events';
 
 import { getEventMetadata as getEventMetadataOriginal } from '../lib/events.ts';
@@ -46,8 +44,12 @@ import {
 } from './mockStoriesEntries.ts';
 
 const mockGetEntries = vi.fn();
-const fetch = vi.mocked(global.fetch);
-const requestIdleCallback = vi.mocked(global.requestIdleCallback);
+const fetch = vi.fn(() => ({
+  json: () => ({ v: 5, entries: mockGetEntries() }),
+})) as unknown as ReturnType<typeof vi.fn<typeof globalThis.fetch>>;
+const requestIdleCallback = vi.fn() as unknown as ReturnType<
+  typeof vi.fn<typeof globalThis.requestIdleCallback>
+>;
 const getEventMetadata = vi.mocked(getEventMetadataOriginal);
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -57,14 +59,12 @@ vi.mock('../stores/status.ts');
 vi.mock('../lib/events.ts', () => ({
   getEventMetadata: vi.fn(() => ({ sourceType: 'local' })),
 }));
-vi.mock('@storybook/global', () => ({
-  global: {
-    ...globalThis,
-    fetch: vi.fn(() => ({ json: () => ({ v: 5, entries: mockGetEntries() }) })),
-    CONFIG_TYPE: 'DEVELOPMENT',
-    requestIdleCallback: vi.fn(),
-  },
-}));
+
+beforeEach(() => {
+  vi.stubGlobal('fetch', fetch);
+  vi.stubGlobal('CONFIG_TYPE', 'DEVELOPMENT');
+  vi.stubGlobal('requestIdleCallback', requestIdleCallback);
+});
 
 function createMockStore(initialState: Partial<State> = {}) {
   let state = initialState;
@@ -703,7 +703,7 @@ describe('stories API', () => {
 
       expect(fetch).toHaveBeenCalledTimes(1);
       provider.channel.emit(STORY_INDEX_INVALIDATED);
-      expect(global.fetch).toHaveBeenCalledTimes(2);
+      expect(globalThis.fetch).toHaveBeenCalledTimes(2);
 
       // this side-effect is in an un-awaited promise.
       await wait(16);
@@ -748,7 +748,7 @@ describe('stories API', () => {
       );
 
       provider.channel.emit(STORY_INDEX_INVALIDATED);
-      expect(global.fetch).toHaveBeenCalledTimes(2);
+      expect(globalThis.fetch).toHaveBeenCalledTimes(2);
 
       // this side-effect is in an un-awaited promise.
       await wait(16);
@@ -1578,6 +1578,44 @@ describe('stories API', () => {
       ]);
     });
 
+    it('preloads the component that a jump lands on when a filter hides the neighbour', async () => {
+      const initialState: Partial<State> = {
+        storyId: 'component-a--story-1',
+        viewMode: 'story',
+        filters: { visible: (entry) => entry.title !== 'Component B' },
+      };
+      const moduleArgs = createMockModuleArgs({ initialState, fullAPI: { setOptions: vi.fn() } });
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+      const { provider, navigate } = moduleArgs;
+      await api.setIndex({
+        v: 5,
+        entries: {
+          ...mockEntries,
+          'component-c--story-4': {
+            ...mockEntries['component-b--story-3'],
+            id: 'component-c--story-4',
+            title: 'Component C',
+          },
+        },
+      });
+      const preloads: unknown[] = [];
+      provider.channel.on(PRELOAD_ENTRIES, (payload) => preloads.push(payload));
+      requestIdleCallback.mockClear();
+
+      provider.channel.emit(STORY_FINISHED, {
+        storyId: 'component-a--story-1',
+        status: 'success',
+        reporters: [],
+      });
+      requestIdleCallback.mock.calls[0][0]({ didTimeout: false, timeRemaining: () => 50 });
+      api.jumpToSubtree(1);
+
+      expect(navigate).toHaveBeenCalledWith('/story/component-c--story-4', undefined);
+      expect(preloads).toEqual([
+        { ids: ['component-c--story-4'], source: 'sibling', options: { target: undefined } },
+      ]);
+    });
+
     it('skips the preload when another story was selected before the browser went idle', async () => {
       const initialState = { storyId: 'component-b--story-3', viewMode: 'story' };
       const moduleArgs = createMockModuleArgs({ initialState, fullAPI: { setOptions: vi.fn() } });
@@ -1596,6 +1634,37 @@ describe('stories API', () => {
       requestIdleCallback.mock.calls[0][0]({ didTimeout: false, timeRemaining: () => 50 });
 
       expect(preloads).toEqual([]);
+    });
+
+    it('falls back to setTimeout to preload siblings when requestIdleCallback is unavailable', async () => {
+      vi.stubGlobal('requestIdleCallback', undefined);
+      try {
+        const initialState = { storyId: 'component-a--story-1', viewMode: 'story' };
+        const moduleArgs = createMockModuleArgs({
+          initialState,
+          fullAPI: { setOptions: vi.fn() },
+        });
+        const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+        const { provider } = moduleArgs;
+        await api.setIndex({ v: 5, entries: mockEntries });
+        const preloads: unknown[] = [];
+        provider.channel.on(PRELOAD_ENTRIES, (payload) => preloads.push(payload));
+
+        vi.useFakeTimers();
+        provider.channel.emit(STORY_FINISHED, {
+          storyId: 'component-a--story-1',
+          status: 'success',
+          reporters: [],
+        });
+        expect(preloads).toEqual([]);
+
+        await vi.advanceTimersByTimeAsync(1);
+        expect(preloads).toEqual([
+          { ids: ['component-b--story-3'], source: 'sibling', options: { target: undefined } },
+        ]);
+      } finally {
+        vi.useRealTimers();
+      }
     });
   });
 

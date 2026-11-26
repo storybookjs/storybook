@@ -205,7 +205,7 @@ describe('add (extra)', () => {
     });
 
     expect(logger.log).toHaveBeenCalledWith(
-      `Adding '@storybook/addon-docs' to the "addons" field in ${join('packages', 'ui', '.storybook', 'main.ts')}`
+      `Adding '@storybook/addon-docs' to the "addons" field in packages/ui/.storybook/main.ts`
     );
   });
 });

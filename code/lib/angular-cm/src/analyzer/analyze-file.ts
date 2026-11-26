@@ -5,11 +5,17 @@ import type { DocgenTypeChecker, DocgenTypeScript } from '@storybook/component-m
 
 import type { Class, Directive, Injectable, Pipe, Property } from '../types.ts';
 import type { AngularFileMeta } from '../types.ts';
-import { resolvedSymbol, type AnalyzerContext } from './context.ts';
+import type { AnalyzerContext } from './context.ts';
 import type { DocumentedClassKind } from './members.ts';
 import { collectClassMembers } from './class-members.ts';
 import { type ComponentMetadata, readComponentDeclaration } from './component-declaration.ts';
-import { decoratorObjectArg, getDecorators, objectProperty, stringOption } from './decorators.ts';
+import {
+  decoratorObjectArg,
+  getDecorators,
+  objectProperty,
+  resolveReference,
+  stringOption,
+} from './decorators.ts';
 import { getJsDocDescription, getJsDocTagsField, hasJsDocTag } from './jsdoc.ts';
 import { TypeIndex } from './type-index.ts';
 
@@ -164,7 +170,7 @@ const decoratorSelector = (
   metadata: tsModule.ObjectLiteralExpression
 ): string | undefined => {
   const selector = objectProperty(ctx, metadata, 'selector');
-  const value = selector && resolveInitializer(ctx, selector);
+  const value = selector && resolveReference(ctx, selector);
   return value && ctx.ts.isStringLiteralLike(value) ? value.text : undefined;
 };
 
@@ -197,7 +203,7 @@ const decoratorStandalone = (
       continue;
     }
 
-    const value = resolveInitializer(ctx, property.initializer);
+    const value = resolveReference(ctx, property.initializer);
     standalone =
       value?.kind === ctx.ts.SyntaxKind.TrueKeyword
         ? true
@@ -207,21 +213,6 @@ const decoratorStandalone = (
   }
 
   return standalone;
-};
-
-// A reference to a variable resolves to its initializer, a slice of what ngtsc's own partial
-// evaluator accepts in decorator metadata.
-const resolveInitializer = (
-  ctx: AnalyzerContext,
-  expression: tsModule.Expression
-): tsModule.Expression | undefined => {
-  const { ts } = ctx;
-  if (!ts.isIdentifier(expression)) {
-    return expression;
-  }
-  const target = resolvedSymbol(ctx, expression);
-  const declaration = target?.valueDeclaration;
-  return declaration && ts.isVariableDeclaration(declaration) ? declaration.initializer : undefined;
 };
 
 const pipeName = (ctx: AnalyzerContext, node: tsModule.ClassDeclaration): string | undefined => {

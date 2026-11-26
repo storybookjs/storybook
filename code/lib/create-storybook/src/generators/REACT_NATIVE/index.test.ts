@@ -85,8 +85,7 @@ describe('REACT_NATIVE generator module', () => {
         ...REACT_NATIVE_ON_DEVICE_PACKAGES.map((packageName) =>
           onDevicePackageSpecifier(packageName, versions.storybook)
         ),
-      ]),
-      { storybookVersionSpecifier: undefined }
+      ])
     );
     expect(assertReactNativeOnDevicePeers).toHaveBeenCalledWith(packageManager, versions.storybook);
     expect(packageManager.addScripts).toHaveBeenCalledWith({
@@ -194,8 +193,7 @@ describe('REACT_NATIVE generator module', () => {
 
     expect(packageManager.addScripts).toHaveBeenCalledWith({});
     expect(packageManager.getVersionedPackages).toHaveBeenCalledWith(
-      expect.not.arrayContaining(['cross-env']),
-      { storybookVersionSpecifier: undefined }
+      expect.not.arrayContaining(['cross-env'])
     );
 
     const logged = String(vi.mocked(logger.log).mock.calls.at(-1)?.[0] ?? '');
@@ -224,8 +222,7 @@ describe('REACT_NATIVE generator module', () => {
     });
 
     expect(packageManager.getVersionedPackages).toHaveBeenCalledWith(
-      expect.not.arrayContaining(['cross-env']),
-      { storybookVersionSpecifier: undefined }
+      expect.not.arrayContaining(['cross-env'])
     );
   });
 });

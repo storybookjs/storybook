@@ -1,5 +1,3 @@
-import { global as globalThis } from '@storybook/global';
-
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore This alias is set in the sandbox. Using ts-ignore instead of ts-expect-error to avoid build errors in the sandbox.
 import { foo } from '#utils';

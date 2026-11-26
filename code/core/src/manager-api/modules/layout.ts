@@ -7,8 +7,6 @@ import type {
   API_ViewMode,
 } from 'storybook/internal/types';
 
-import { global } from '@storybook/global';
-
 import { pick, toMerged } from 'es-toolkit/object';
 import { isEqual as deepEqual } from 'es-toolkit/predicate';
 import { create } from 'storybook/theming/create';
@@ -18,8 +16,6 @@ import { isReviewManagerRoute } from '../../shared/review/routes.ts';
 import merge from '../lib/merge.ts';
 import type { ModuleFn } from '../lib/types.tsx';
 import type { State } from '../root.tsx';
-
-const { document } = global;
 
 const isFunction = (val: unknown): val is CallableFunction => typeof val === 'function';
 
@@ -264,7 +260,8 @@ const applyUiOptions = (uiState: API_UI, options: Partial<API_UI> | undefined) =
  * Whether the viewport is at or above the manager's desktop breakpoint (600px). Below it the
  * sidebar is rendered as a drawer owned by the manager UI rather than the desktop nav.
  */
-export const isDesktopViewport = () => global.matchMedia?.('(min-width: 600px)')?.matches ?? true;
+export const isDesktopViewport = () =>
+  globalThis.matchMedia?.('(min-width: 600px)')?.matches ?? true;
 
 export const init: ModuleFn<SubAPI, SubState> = ({ store, provider, singleStory }) => {
   const api = {
@@ -478,6 +475,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({ store, provider, singleStory 
       }
 
       const attemptFocus = () => {
+        const { document } = globalThis;
         const element = document.getElementById(elementId);
         if (!element) {
           return false;

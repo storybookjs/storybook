@@ -10,7 +10,6 @@ import {
   Spaced,
 } from 'storybook/internal/components';
 
-import { global } from '@storybook/global';
 import { ChevronDownIcon, LockIcon, SweepIcon, SyncIcon } from '@storybook/icons';
 
 import { useStorybookApi } from 'storybook/manager-api';
@@ -19,8 +18,6 @@ import { styled } from 'storybook/theming/emotion';
 import { useLayout } from '../layout/LayoutProvider.tsx';
 import { Contained, Loader } from './Loader.tsx';
 import { NoResults } from './NoResults.tsx';
-
-const { window: globalWindow } = global;
 
 const TextStyle = styled.div(({ theme }) => ({
   fontSize: theme.typography.size.s2,
@@ -53,12 +50,12 @@ export const AuthBlock: FC<{ loginUrl: string; id: string }> = ({ loginUrl, id }
   const [isAuthAttempted, setAuthAttempted] = useState(false);
 
   const refresh = useCallback(() => {
-    globalWindow.document.location.reload();
+    document.location.reload();
   }, []);
 
   const open = useCallback<React.MouseEventHandler>((e) => {
     e.preventDefault();
-    const childWindow = globalWindow.open(loginUrl, `storybook_auth_${id}`, 'resizable,scrollbars');
+    const childWindow = window.open(loginUrl, `storybook_auth_${id}`, 'resizable,scrollbars');
 
     // poll for window to close
     const timer = setInterval(() => {

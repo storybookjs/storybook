@@ -1,4 +1,4 @@
-import { realpathSync } from 'node:fs';
+import { readlinkSync, realpathSync } from 'node:fs';
 import { inspect } from 'node:util';
 
 import { vol } from 'memfs';
@@ -86,7 +86,8 @@ async function rejectedAttachUnavailable(
 }
 
 beforeEach(async () => {
-  vi.unstubAllGlobals();
+  // This process runs in process namespace `pid:[2]`.
+  vi.mocked(readlinkSync).mockReturnValue('pid:[2]');
   vol.reset();
   vol.fromNestedJSON({
     [`${STORYBOOK_PATH}/package.json`]: '{"name":"storybook"}',
@@ -144,7 +145,7 @@ describe('bootstrapAttachedRuntime', () => {
 
     await expect(failure).rejects.toThrow(AttachUnavailableError);
     await expect(failure).rejects.toMatchObject({ data: { reason: 'no-instance' } });
-    await expect(failure).rejects.toThrow('npm run storybook');
+    await expect(failure).rejects.toThrow('with the Storybook script');
     await expect(failure).rejects.toThrow('configDir `/apps/web/.storybook`');
     const error = await rejectedAttachUnavailable(failure);
     expect(error.data.instances.every((instance) => !('token' in instance))).toBe(true);
@@ -376,10 +377,42 @@ describe('bootstrapAttachedRuntime', () => {
 
     await expect(failure).rejects.toMatchObject({ data: { reason: 'connection-failed' } });
     await expect(failure).rejects.toThrow(RECORD.url);
-    await expect(failure).rejects.toThrow('npm run storybook');
+    await expect(failure).rejects.toThrow('with the Storybook script');
     const error = await rejectedAttachUnavailable(failure);
     expect(error.data.instances.every((instance) => !('token' in instance))).toBe(true);
     expect(inspect(error)).not.toContain('secret');
+  });
+
+  it('says that the system refused the connection when the socket error says so', async () => {
+    const socketError = Object.assign(new Error('connect EPERM 127.0.0.1:6006'), {
+      code: 'EPERM',
+      syscall: 'connect',
+    });
+    const { deps } = makeRuntimeDeps([RECORD], {
+      createNodeChannel: vi.fn(async () => {
+        throw new Error('Storybook dev server disconnected.', { cause: socketError });
+      }),
+    });
+
+    const failure = bootstrapAttachedRuntime({ cwd: '/repo' }, deps);
+
+    await expect(failure).rejects.toMatchObject({ data: { reason: 'connection-failed' } });
+    await expect(failure).rejects.toThrow('the system did not permit opening a connection');
+    await expect(failure).rejects.not.toThrow('may be stale');
+  });
+
+  it('says that the Storybook runs in another process namespace when the connection fails', async () => {
+    const { deps } = makeRuntimeDeps([{ ...RECORD, pidNamespace: 'pid:[1]' }], {
+      createNodeChannel: vi.fn(async () => {
+        throw new Error('connect ECONNREFUSED 127.0.0.1:6006');
+      }),
+    });
+
+    const failure = bootstrapAttachedRuntime({ cwd: '/repo' }, deps);
+
+    await expect(failure).rejects.toMatchObject({ data: { reason: 'connection-failed' } });
+    await expect(failure).rejects.toThrow('its process is in another process namespace');
+    await expect(failure).rejects.not.toThrow('may be stale');
   });
 
   it('rejects when the handshake never completes', async () => {

@@ -7,6 +7,7 @@ import { dedent } from 'ts-dedent';
 
 import { getStorybookData } from '../automigrate/helpers/mainConfigFile.ts';
 import { shortenPath } from '../util.ts';
+import { getAppliedDeprecations, getDeprecatedPackagesMessage } from './deprecatedPackages.ts';
 import { getDuplicatedDepsWarnings } from './getDuplicatedDepsWarnings.ts';
 import {
   getIncompatiblePackagesSummary,
@@ -183,6 +184,7 @@ export async function runMultiProjectDoctor(
     storybookVersion: project.storybookVersion,
     mainConfig: project.mainConfig,
     configurationError: project.configurationError,
+    warnedFixIds: project.warnedFixIds,
   }));
 
   // Always return the project-based results structure
@@ -193,6 +195,7 @@ export async function runMultiProjectDoctor(
 export const doctor = async ({
   configDir: userSpecifiedConfigDir,
   packageManager: packageManagerName,
+  warnedFixIds,
 }: DoctorOptions) => {
   logger.step('Checking the health of your Storybook..');
 
@@ -229,6 +232,7 @@ export const doctor = async ({
       storybookVersion: versionInstalled,
       mainConfig,
       configurationError,
+      warnedFixIds,
     },
   ]);
 
@@ -246,6 +250,7 @@ export async function getDoctorDiagnostics({
   storybookVersion,
   mainConfig,
   configurationError,
+  warnedFixIds,
 }: ProjectDoctorData): Promise<DoctorCheckResult[]> {
   const results: DoctorCheckResult[] = [];
 
@@ -295,6 +300,27 @@ export async function getDoctorDiagnostics({
         The "storybook" package was not found in your package.json.
         Installing "storybook" as a direct dev dependency in your package.json is required.
       `,
+      project: { configDir },
+    });
+  }
+
+  // Deprecations come from the one table in ./deprecatedPackages.ts, applied to the version and the
+  // project's dependencies. A fix whose skip warning was printed this run already told the user,
+  // so its packages stay silent here and the deprecation shows exactly once per run. A fix that
+  // cancelled itself from `run` printed no warning and is not in the list, so it still gets the
+  // doctor's deprecation.
+  const appliedDeprecations = getAppliedDeprecations({
+    storybookVersion,
+    installedDependencies: packageManager.getAllDependencies(),
+  }).filter(
+    ({ entry }) => !(entry.automigrateFixId && warnedFixIds?.includes(entry.automigrateFixId))
+  );
+
+  if (appliedDeprecations.length > 0) {
+    results.push({
+      type: DiagType.DEPRECATED_PACKAGES,
+      title: 'Deprecated packages',
+      message: getDeprecatedPackagesMessage(appliedDeprecations),
       project: { configDir },
     });
   }

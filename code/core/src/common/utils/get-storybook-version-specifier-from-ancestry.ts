@@ -3,7 +3,7 @@ const PKG_PR_NEW_CLI_SPECIFIER_IN_TEXT_RE =
 
 const PACKAGE_AT_SPECIFIER_RE = /\s(?:create-storybook|storybook)@([^\s'"]+)/;
 
-export type ProcessAncestryEntry = {
+type ProcessAncestryEntry = {
   command?: string | null;
 };
 

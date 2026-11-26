@@ -1,6 +1,6 @@
 {
   "name": "ecosystem-qa",
-  "version": "11.0.0-beta.3",
+  "version": "11.0.0-rc.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -23,7 +23,7 @@
     "@types/node": "^22.19.1",
     "memfs": "^4.11.1",
     "typescript": "^6.0.3",
-    "vite": "^7.0.4",
+    "vite": "^7.3.8",
     "vitest": "5.0.5"
   },
   "installConfig": {

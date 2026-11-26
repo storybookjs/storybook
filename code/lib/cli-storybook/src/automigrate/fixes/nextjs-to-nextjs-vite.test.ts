@@ -3,17 +3,45 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { JsPackageManager } from 'storybook/internal/common';
+import { logger, prompt } from 'storybook/internal/node-logger';
 
 import { fs, vol } from 'memfs';
 
 import { checkFix, runFix } from '../helpers/fix-test-utils.ts';
+import { runFixes } from '../index.ts';
+import { applyFixes } from '../pipeline.ts';
 import type { CheckOptions, RunOptions } from '../types.ts';
-import { VITE_DEFAULT_VERSION, nextjsToNextjsVite } from './nextjs-to-nextjs-vite.ts';
+import {
+  VITE_DEFAULT_VERSION,
+  type NextjsToNextjsViteOptions,
+  nextjsToNextjsVite,
+} from './nextjs-to-nextjs-vite.ts';
 
 vi.mock('node:fs/promises', { spy: true });
 
 vi.mock('globby', () => ({
   globby: vi.fn().mockResolvedValue(['/project/.storybook/preview.ts']),
+}));
+
+vi.mock('storybook/internal/node-logger', () => ({
+  logger: {
+    logBox: vi.fn(),
+    log: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    info: vi.fn(),
+    debug: vi.fn(),
+    step: vi.fn(),
+    SYMBOLS: { success: '✔', error: '✕' },
+  },
+  prompt: {
+    confirm: vi.fn(),
+    taskLog: vi.fn(() => ({
+      message: vi.fn(),
+      success: vi.fn(),
+      error: vi.fn(),
+    })),
+  },
 }));
 
 describe('nextjs-to-nextjs-vite', () => {
@@ -23,16 +51,19 @@ describe('nextjs-to-nextjs-vite', () => {
     removeDependencies: vi.fn().mockResolvedValue(undefined),
     addDependencies: vi.fn().mockResolvedValue(undefined),
     getDependencyVersion: vi.fn(),
+    // A non-npx runner proves the fix composes its commands through the package manager instead
+    // of hard-coding `npx`.
+    getRemoteRunCommand: vi.fn(() => 'yarn dlx storybook automigrate nextjs-to-nextjs-vite'),
   } as unknown as JsPackageManager;
 
   const runOptions = {
-    result: {},
+    result: { hasWebpackFinal: false },
     packageManager: mockPackageManager,
     mainConfigPath: '/project/.storybook/main.ts',
     storiesPaths: ['/project/src/Button.stories.tsx'],
     configDir: '/project/.storybook',
     storybookVersion: '9.0.0',
-  } as unknown as Omit<RunOptions<object>, 'files'>;
+  } as unknown as Omit<RunOptions<NextjsToNextjsViteOptions>, 'files'>;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -69,8 +100,31 @@ describe('nextjs-to-nextjs-vite', () => {
         packageManager: mockPackageManager,
       } as unknown as CheckOptions);
 
-      expect(result).toEqual({});
+      expect(result).toEqual({ hasWebpackFinal: false });
       expect(vol.toJSON()['/project/.storybook/main.ts']).toContain("'@storybook/nextjs'");
+    });
+
+    it('reports a webpackFinal hook in the parsed main config', async () => {
+      mockPackageManager.getAllDependencies = vi.fn().mockReturnValue({
+        '@storybook/nextjs': '^9.0.0',
+      });
+      vol.fromJSON({
+        '/project/.storybook/main.ts': "export default { framework: '@storybook/nextjs' };",
+        '/project/.storybook/preview.ts': 'export default {};',
+        '/project/src/Button.stories.tsx': 'export default {};',
+      });
+
+      const result = await checkFix(nextjsToNextjsVite, {
+        ...runOptions,
+        packageManager: mockPackageManager,
+        mainConfig: {
+          framework: '@storybook/nextjs',
+          stories: [],
+          webpackFinal: (config: unknown) => config,
+        },
+      } as unknown as CheckOptions);
+
+      expect(result).toEqual({ hasWebpackFinal: true });
     });
   });
 
@@ -80,6 +134,113 @@ describe('nextjs-to-nextjs-vite', () => {
 
       expect(prompt).toContain('@storybook/nextjs');
       expect(prompt).toContain('@storybook/nextjs-vite');
+    });
+  });
+
+  describe('webpackFinal preflight', () => {
+    const webpackFinalRunOptions = {
+      ...runOptions,
+      result: { hasWebpackFinal: true },
+      mainConfig: { stories: [] },
+      configDir: '/project/.storybook',
+    } as unknown as Omit<RunOptions<NextjsToNextjsViteOptions>, 'files'>;
+
+    beforeEach(() => {
+      // The runner tries the fix's main hooks before `run`, so the main config must exist.
+      vol.fromJSON({
+        '/project/.storybook/main.ts': `export default { framework: '@storybook/nextjs' };`,
+        '/project/.storybook/preview.ts': `import type { Preview } from '@storybook/nextjs';`,
+        '/project/src/Button.stories.tsx': `import type { Meta } from '@storybook/nextjs';`,
+      });
+    });
+
+    // Drives the fix through the real runner so the test sees what a user's `--yes` run reports,
+    // and asserts the skipped outcome: a `run` that silently resolved without cancelling would
+    // report the migration as succeeded instead.
+    const runThroughRunner = async (yes: boolean) =>
+      applyFixes(
+        {
+          ...webpackFinalRunOptions,
+          yes,
+        } as unknown as Parameters<typeof applyFixes>[0],
+        [{ fix: nextjsToNextjsVite, result: { hasWebpackFinal: true } }]
+      );
+
+    it('skips under --yes without prompting, naming the command to run later', async () => {
+      const outcomes = await runThroughRunner(true);
+
+      expect(outcomes.get(nextjsToNextjsVite.id)).toEqual({ status: 'skipped' });
+      expect(prompt.confirm).not.toHaveBeenCalled();
+      expect(logger.logBox).toHaveBeenCalledWith(expect.stringContaining('webpackFinal'));
+      expect(logger.log).toHaveBeenCalledWith(
+        expect.stringContaining('Port your webpackFinal hook to viteFinal first')
+      );
+      expect(logger.log).toHaveBeenCalledWith(
+        expect.stringContaining('yarn dlx storybook automigrate nextjs-to-nextjs-vite')
+      );
+      expect(mockPackageManager.removeDependencies).not.toHaveBeenCalled();
+      expect(mockPackageManager.addDependencies).not.toHaveBeenCalled();
+    });
+
+    it('migrates when the user confirms interactively', async () => {
+      vi.mocked(prompt.confirm).mockResolvedValue(true);
+
+      const outcomes = await runThroughRunner(false);
+
+      expect(outcomes.get(nextjsToNextjsVite.id)?.status).toBe('succeeded');
+      expect(prompt.confirm).toHaveBeenCalledWith(
+        expect.objectContaining({ message: expect.stringContaining('Continue anyway?') })
+      );
+      expect(mockPackageManager.removeDependencies).toHaveBeenCalledWith(['@storybook/nextjs']);
+      expect(mockPackageManager.addDependencies).toHaveBeenCalled();
+    });
+
+    it('cancels when the user declines interactively, without migrating', async () => {
+      vi.mocked(prompt.confirm).mockResolvedValue(false);
+
+      const outcomes = await runThroughRunner(false);
+
+      expect(outcomes.get(nextjsToNextjsVite.id)).toEqual({ status: 'skipped' });
+      expect(prompt.confirm).toHaveBeenCalledOnce();
+      expect(logger.log).toHaveBeenCalledWith(expect.stringContaining('Migration cancelled'));
+      expect(mockPackageManager.removeDependencies).not.toHaveBeenCalled();
+      expect(mockPackageManager.addDependencies).not.toHaveBeenCalled();
+    });
+
+    it('a cancelled preflight under --yes hands the doctor no warned ids, so its deprecation still shows', async () => {
+      vol.fromJSON({
+        '/project/.storybook/main.ts':
+          "export default { framework: '@storybook/nextjs', webpackFinal: (config) => config };",
+        '/project/.storybook/preview.ts': `import type { Preview } from '@storybook/nextjs';`,
+        '/project/src/Button.stories.tsx': `import type { Meta } from '@storybook/nextjs';`,
+      });
+      mockPackageManager.getAllDependencies = vi.fn().mockReturnValue({
+        '@storybook/nextjs': '^9.0.0',
+      });
+
+      const { fixResults, warnedFixIds } = await runFixes({
+        fixes: [nextjsToNextjsVite],
+        yes: true,
+        skipInstall: true,
+        configDir: '/project/.storybook',
+        packageManager: mockPackageManager,
+        mainConfig: {
+          stories: [],
+          webpackFinal: (config: unknown) => config,
+        },
+        mainConfigPath: '/project/.storybook/main.ts',
+        storybookVersion: '9.0.0',
+        storiesPaths: ['/project/src/Button.stories.tsx'],
+      } as Parameters<typeof runFixes>[0]);
+
+      // The preflight cancelled the migration under --yes without printing the fix's skip
+      // warning, so the doctor must not treat the fix as warned and still reports the
+      // @storybook/nextjs deprecation (issue #37770).
+      expect(fixResults).toEqual({ 'nextjs-to-nextjs-vite': 'skipped' });
+      expect(vi.mocked(logger.warn)).not.toHaveBeenCalledWith(
+        expect.stringContaining('deprecated')
+      );
+      expect(warnedFixIds).toEqual([]);
     });
   });
 

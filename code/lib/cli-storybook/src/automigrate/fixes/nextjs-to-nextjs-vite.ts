@@ -1,19 +1,47 @@
-import { transformImports } from 'storybook/internal/common';
+import { type JsPackageManager, transformImports } from 'storybook/internal/common';
+import { dedent } from 'ts-dedent';
 
 import { assertMainConfigNamesFramework } from '../helpers/main-config-framework.ts';
+import {
+  confirmWebpackFinalCarryover,
+  hasActiveWebpackFinal,
+} from '../helpers/webpack-final-preflight.ts';
 import type { Fix } from '../types.ts';
 
 export const VITE_DEFAULT_VERSION = '^7.0.0';
 
+export const nextjsDeprecationWarning = (packageManager: JsPackageManager): string =>
+  dedent`
+  @storybook/nextjs is deprecated and will be removed in Storybook 12.
+  Migrate to @storybook/nextjs-vite by running \`${packageManager.getRemoteRunCommand([
+    'storybook',
+    'automigrate',
+    'nextjs-to-nextjs-vite',
+  ])}\`.
+`;
+
 const NEXTJS_FRAMEWORK = /@storybook\/nextjs(?!-vite)/g;
 
-export const nextjsToNextjsVite: Fix = {
+export interface NextjsToNextjsViteOptions {
+  /** The main config has a `webpackFinal` hook, which does not carry over to Vite. */
+  hasWebpackFinal: boolean;
+}
+
+export const nextjsToNextjsVite: Fix<NextjsToNextjsViteOptions> = {
   id: 'nextjs-to-nextjs-vite',
   link: 'https://storybook.js.org/docs/get-started/frameworks/nextjs-vite',
-  defaultSelected: false,
+  // No `defaultSelected`: a missing value already means selected in both runners, so this migration
+  // runs under --yes and is preselected in the prompt.
+  skipWarning: nextjsDeprecationWarning,
 
-  async check({ packageManager }) {
-    return packageManager.getAllDependencies()['@storybook/nextjs'] ? {} : null;
+  async check({ packageManager, mainConfig }) {
+    if (!packageManager.getAllDependencies()['@storybook/nextjs']) {
+      return null;
+    }
+
+    return {
+      hasWebpackFinal: hasActiveWebpackFinal(mainConfig),
+    };
   },
 
   prompt() {
@@ -31,7 +59,21 @@ export const nextjsToNextjsVite: Fix = {
     },
   ],
 
-  async run({ files, mainConfigPath, packageManager, storybookVersion }) {
+  async run({ result, files, mainConfigPath, packageManager, storybookVersion, yes }) {
+    if (
+      !(await confirmWebpackFinalCarryover({
+        hasWebpackFinal: result.hasWebpackFinal,
+        yes: !!yes,
+        retryInstruction: `\`${packageManager.getRemoteRunCommand([
+          'storybook',
+          'automigrate',
+          'nextjs-to-nextjs-vite',
+        ])}\``,
+      }))
+    ) {
+      return false;
+    }
+
     await assertMainConfigNamesFramework(files, mainConfigPath, '@storybook/nextjs', {
       from: '@storybook/nextjs',
       to: '@storybook/nextjs-vite',

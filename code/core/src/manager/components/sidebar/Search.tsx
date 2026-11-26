@@ -3,7 +3,6 @@ import React, { type ReactNode, useCallback, useRef, useState } from 'react';
 import { Button } from 'storybook/internal/components';
 import { REVIEW_STATUS_TYPE_ID } from 'storybook/internal/types';
 
-import { global } from '@storybook/global';
 import { CloseIcon, SearchIcon } from '@storybook/icons';
 
 import type { DownshiftState, StateChangeOptions } from 'downshift';
@@ -29,7 +28,7 @@ import type {
 } from './types.ts';
 import { isExpandType, isSearchResult } from './types.ts';
 
-const { document } = global;
+import { resolveHighlightRanges } from './SearchResults.utils.ts';
 
 const DEFAULT_MAX_SEARCH_RESULTS = 50;
 
@@ -214,7 +213,7 @@ export const Search = React.memo<SearchProps>(function Search({
           ? getMostCriticalStatusValue(ownStatusValues)
           : null;
 
-        const status = mostCriticalStatusValue ?? groupStatus[datasetValue.id] ?? null;
+        const status = mostCriticalStatusValue ?? groupStatus.get(datasetValue.id);
 
         if (datasetValue.type !== 'docs' || !globalThis?.FEATURES?.experimentalSearchDocsHeadings) {
           list.push({
@@ -278,7 +277,12 @@ export const Search = React.memo<SearchProps>(function Search({
       });
 
       if (distinctResults.length) {
-        results = distinctResults.slice(0, allComponents ? 1000 : DEFAULT_MAX_SEARCH_RESULTS);
+        results = distinctResults
+          .slice(0, allComponents ? 1000 : DEFAULT_MAX_SEARCH_RESULTS)
+          .map((result) => ({
+            ...result,
+            matches: resolveHighlightRanges(result.matches, input),
+          }));
         if (distinctResults.length > DEFAULT_MAX_SEARCH_RESULTS && !allComponents) {
           results.push({
             showAll: () => showAllComponents(true),

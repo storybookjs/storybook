@@ -9921,7 +9921,6 @@ __metadata:
   resolution: "@storybook/addon-a11y@workspace:code/addons/a11y"
   dependencies:
     "@radix-ui/react-tabs": "npm:1.0.4"
-    "@storybook/global": "npm:^5.0.0"
     "@storybook/icons": "npm:^2.0.2"
     "@testing-library/react": "npm:^14.0.0"
     axe-core: "npm:^4.2.0"
@@ -9984,7 +9983,7 @@ __metadata:
     ts-dedent: "npm:^2.2.0"
     typescript: "npm:^6.0.3"
     unplugin: "npm:^2.3.5"
-    vite: "npm:^7.0.4"
+    vite: "npm:^7.3.8"
   peerDependencies:
     "@types/react": ^18.0.0 || ^19.0.0
     storybook: "workspace:^"
@@ -9998,7 +9997,6 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@storybook/addon-links@workspace:code/addons/links"
   dependencies:
-    "@storybook/global": "npm:^5.0.0"
     typescript: "npm:^6.0.3"
   peerDependencies:
     "@types/react": ^18.0.0 || ^19.0.0
@@ -10068,7 +10066,6 @@ __metadata:
   dependencies:
     "@storybook/addon-a11y": "workspace:*"
     "@storybook/builder-vite": "workspace:*"
-    "@storybook/global": "npm:^5.0.0"
     "@storybook/icons": "npm:^2.0.2"
     "@types/istanbul-lib-report": "npm:^3.0.3"
     "@types/micromatch": "npm:^4.0.0"
@@ -10125,7 +10122,6 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@storybook/angular-compodoc@workspace:code/lib/angular-compodoc"
   dependencies:
-    "@storybook/global": "npm:^5.0.0"
     entities: "npm:^4.5.0"
   peerDependencies:
     storybook: "workspace:^"
@@ -10151,7 +10147,6 @@ __metadata:
     "@storybook/angular-compodoc": "workspace:*"
     "@storybook/builder-vite": "workspace:*"
     "@storybook/component-meta-typescript": "workspace:*"
-    "@storybook/global": "npm:^5.0.0"
     "@types/node": "npm:^22.19.1"
     empathic: "npm:^2.0.0"
     memfs: "npm:^4.11.1"
@@ -10213,7 +10208,6 @@ __metadata:
     "@storybook/angular-compodoc": "workspace:*"
     "@storybook/builder-webpack5": "workspace:*"
     "@storybook/core-webpack": "workspace:*"
-    "@storybook/global": "npm:^5.0.0"
     "@types/node": "npm:^22.19.1"
     empathic: "npm:^2.0.0"
     rimraf: "npm:^6.0.1"
@@ -10261,7 +10255,7 @@ __metadata:
     magic-string: "npm:^1.1.0"
     pathe: "npm:^1.1.2"
     ts-dedent: "npm:^2.2.0"
-    vite: "npm:^7.0.4"
+    vite: "npm:^7.3.8"
   peerDependencies:
     storybook: "workspace:^"
     vite: ^6.3.0 || ^7.0.0 || ^8.0.0
@@ -10364,7 +10358,6 @@ __metadata:
     "@storybook/builder-webpack5": "workspace:*"
     "@storybook/core-webpack": "workspace:*"
     "@storybook/ember": "workspace:*"
-    "@storybook/global": "npm:^5.0.0"
     "@storybook/html": "workspace:*"
     "@storybook/html-vite": "workspace:*"
     "@storybook/nextjs": "workspace:*"
@@ -10421,7 +10414,7 @@ __metadata:
     typescript: "npm:^6.0.3"
     typescript-native: "npm:typescript@7.1.0-beta"
     uuid: "npm:^11.1.0"
-    vite: "npm:^7.0.4"
+    vite: "npm:^7.3.8"
     vite-plugin-inspect: "npm:^11.0.0"
     vitest: "npm:5.0.5"
     wait-on: "npm:^8.0.3"
@@ -10526,7 +10519,6 @@ __metadata:
   resolution: "@storybook/ember@workspace:code/frameworks/ember"
   dependencies:
     "@storybook/builder-webpack5": "workspace:*"
-    "@storybook/global": "npm:^5.0.0"
     babel-loader: "npm:9.1.3"
     ember-source: "npm:~3.28.1"
     empathic: "npm:2.0.0"
@@ -10567,7 +10559,6 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@storybook/html@workspace:code/renderers/html"
   dependencies:
-    "@storybook/global": "npm:^5.0.0"
     ts-dedent: "npm:^2.2.0"
     typescript: "npm:^6.0.3"
   peerDependencies:
@@ -10734,7 +10725,7 @@ __metadata:
     "@storybook/preact": "workspace:*"
     "@types/node": "npm:^22.19.1"
     typescript: "npm:^6.0.3"
-    vite: "npm:^7.0.4"
+    vite: "npm:^7.3.8"
   peerDependencies:
     preact: ^10.9.0 || >= 11.0.0-0
     storybook: "workspace:^"
@@ -10746,7 +10737,6 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@storybook/preact@workspace:code/renderers/preact"
   dependencies:
-    "@storybook/global": "npm:^5.0.0"
     preact: "npm:^11.0.0"
     ts-dedent: "npm:^2.2.0"
     typescript: "npm:^6.0.3"
@@ -10869,7 +10859,7 @@ __metadata:
     resolve: "npm:^1.22.8"
     tsconfig-paths: "npm:^4.2.0"
     typescript: "npm:^6.0.3"
-    vite: "npm:^7.0.4"
+    vite: "npm:^7.3.8"
   peerDependencies:
     "@joshwooding/vite-plugin-react-docgen-typescript": ^0.7.0
     react: ^18.0.0 || ^19.0.0
@@ -10920,7 +10910,6 @@ __metadata:
   resolution: "@storybook/react@workspace:code/renderers/react"
   dependencies:
     "@storybook/component-meta-typescript": "workspace:*"
-    "@storybook/global": "npm:^5.0.0"
     "@types/babel-plugin-react-docgen": "npm:^4.2.3"
     "@types/escodegen": "npm:^0.0.6"
     "@types/estree": "npm:^1.0.6"
@@ -10982,7 +10971,7 @@ __metadata:
     nx: "npm:^22.6.1"
     oxfmt: "npm:0.70.0"
     std-env: "npm:^4.0.0"
-    vite: "npm:^7.0.4"
+    vite: "npm:^7.3.8"
     vitest: "npm:5.0.5"
   languageName: unknown
   linkType: soft
@@ -11133,7 +11122,6 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@storybook/server@workspace:code/renderers/server"
   dependencies:
-    "@storybook/global": "npm:^5.0.0"
     ts-dedent: "npm:^2.2.0"
     typescript: "npm:^6.0.3"
     yaml: "npm:^2.8.1"
@@ -11155,7 +11143,7 @@ __metadata:
     magic-string: "npm:^1.1.0"
     svelte: "npm:^5.39.5"
     sveltedoc-parser: "npm:^4.2.1"
-    vite: "npm:^7.0.4"
+    vite: "npm:^7.3.8"
   peerDependencies:
     "@sveltejs/vite-plugin-svelte": ^2.0.0 || ^3.0.0 || ^4.0.0 || ^5.0.0 || ^6.0.0 || ^7.0.0
     storybook: "workspace:^"
@@ -11184,7 +11172,7 @@ __metadata:
     ts-dedent: "npm:^2.2.0"
     type-fest: "npm:^5.6.0"
     typescript: "npm:^6.0.3"
-    vite: "npm:^7.0.4"
+    vite: "npm:^7.3.8"
     zimmerframe: "npm:^1.1.2"
   peerDependencies:
     storybook: "workspace:^"
@@ -11203,7 +11191,7 @@ __metadata:
     "@types/node": "npm:^22.19.1"
     memfs: "npm:^4.11.1"
     typescript: "npm:^6.0.3"
-    vite: "npm:^7.0.4"
+    vite: "npm:^7.3.8"
   peerDependencies:
     "@sveltejs/kit": ^3.0.0
     storybook: "workspace:^"
@@ -11226,7 +11214,7 @@ __metadata:
     "@tanstack/start-client-core": "npm:^1.167.9"
     "@types/node": "npm:^22.19.1"
     typescript: "npm:^6.0.3"
-    vite: "npm:^7.0.4"
+    vite: "npm:^7.3.8"
   peerDependencies:
     "@joshwooding/vite-plugin-react-docgen-typescript": ^0.7.0
     "@tanstack/react-router": ^1.168.10
@@ -11263,7 +11251,7 @@ __metadata:
     "@types/node": "npm:^22.19.1"
     magic-string: "npm:^1.1.0"
     typescript: "npm:^6.0.3"
-    vite: "npm:^7.0.4"
+    vite: "npm:^7.3.8"
     vue-component-meta: "npm:^3.3.9"
     vue-docgen-api: "npm:^4.75.1"
   peerDependencies:
@@ -11277,7 +11265,6 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@storybook/vue3@workspace:code/renderers/vue3"
   dependencies:
-    "@storybook/global": "npm:^5.0.0"
     "@testing-library/vue": "npm:^8.0.0"
     "@types/pug": "npm:2.0.10"
     "@vitejs/plugin-vue": "npm:^4.6.2"
@@ -11316,7 +11303,6 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@storybook/web-components@workspace:code/renderers/web-components"
   dependencies:
-    "@storybook/global": "npm:^5.0.0"
     "@types/cross-spawn": "npm:^6.0.6"
     "@types/node": "npm:^22.19.1"
     "@types/tmp": "npm:^0.2.6"
@@ -19281,7 +19267,7 @@ __metadata:
     playwright: "npm:1.58.2"
     pngjs: "npm:^7.0.0"
     typescript: "npm:^6.0.3"
-    vite: "npm:^7.0.4"
+    vite: "npm:^7.3.8"
     vitest: "npm:5.0.5"
     zod: "npm:^4.4.3"
   languageName: unknown
@@ -36363,7 +36349,7 @@ __metadata:
     semver: "npm:^7.7.3"
     ts-dedent: "npm:^2.2.0"
     typescript: "npm:^6.0.3"
-    vite: "npm:^7.0.4"
+    vite: "npm:^7.3.8"
     vite-tsconfig-paths: "npm:^6.1.1"
   peerDependencies:
     next: ^15.0.0 || ^16.0.0
@@ -36386,9 +36372,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"vite@npm:7.3.6, vite@npm:^7.0.4":
-  version: 7.3.6
-  resolution: "vite@npm:7.3.6"
+"vite@npm:7.3.8, vite@npm:^7.3.8":
+  version: 7.3.8
+  resolution: "vite@npm:7.3.8"
   dependencies:
     esbuild: "npm:^0.27.0 || ^0.28.0"
     fdir: "npm:^6.5.0"
@@ -36437,7 +36423,7 @@ __metadata:
       optional: true
   bin:
     vite: bin/vite.js
-  checksum: 10c0/c6d359f84ad362f5c97ff7988b77c90add04162c60cdf6059375a7d9e3217848c53a8cb6b6c48517bef84b6bba4c9bc85319a889b5236acb7d5a2bc8cb7b9a8d
+  checksum: 10c0/e08583f065ca3bfd5620120d04829dcc1dd11af0807ddce64fa3fb3fec553179bed95903c64895d164537f97ca91604eecb287221ff5aeaf26438f807880e7a8
   languageName: node
   linkType: hard
 

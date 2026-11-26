@@ -4,8 +4,8 @@ import { basename } from 'pathe';
 import { dedent } from 'ts-dedent';
 
 import { RN_FRAMEWORK_PACKAGE, RN_STORYBOOK_DIR } from '../../shared/constants/config-folder.ts';
-import { frameworkPackages } from './get-storybook-info.ts';
-import { normalizePath } from './normalize-path.ts';
+import { frameworkPackages } from './framework.ts';
+import { matchPackageName } from './match-package-name.ts';
 
 /** Framework can be a string or an object. This utility always returns the string name. */
 export async function getFrameworkName(options: Options) {
@@ -33,19 +33,8 @@ export async function getFrameworkName(options: Options) {
  * extractFrameworkPackageName('@third-party/framework'); // => '@third-party/framework'
  * ```
  */
-export const extractFrameworkPackageName = (framework: string) => {
-  const normalizedPath = normalizePath(framework);
-  const frameworkName = Object.keys(frameworkPackages).find(
-    (pkg) =>
-      normalizedPath.endsWith(pkg) ||
-      // pnpm virtual-store dirs encode the scope slash as '+' and append '@<version>',
-      // e.g. .../node_modules/.pnpm/@storybook+react-vite@9.0.0 — the trailing '@' keeps
-      // '@storybook/react' from matching '@storybook+react-vite@...'.
-      normalizedPath.includes(`/.pnpm/${pkg.replace('/', '+')}@`)
-  );
-
-  return frameworkName ?? framework;
-};
+export const extractFrameworkPackageName = (framework: string) =>
+  matchPackageName(framework, Object.keys(frameworkPackages)) ?? framework;
 
 /**
  * Returns the framework package of a main config, or null when it has none.

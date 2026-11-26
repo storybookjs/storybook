@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { syncStorybookAddons } from 'storybook/internal/common';
 import type { JsPackageManager } from 'storybook/internal/common';
+import { logger, prompt } from 'storybook/internal/node-logger';
 
 import { dedent } from 'ts-dedent';
 
@@ -14,6 +15,7 @@ import { SANDBOX_STORIES_GLOB, csfFactories, storyToCsf4 } from './csf-factories
 vi.mock('node:fs', { spy: true });
 vi.mock('../automigrate/codemod.ts', { spy: true });
 vi.mock('storybook/internal/common', { spy: true });
+vi.mock('storybook/internal/node-logger', { spy: true });
 
 const options = { previewConfigPath: '#.storybook/preview', useSubPathImports: true };
 const path = 'Button.stories.tsx';
@@ -360,4 +362,36 @@ describe('a .storybook config without a framework next to a .rnstorybook folder'
       /import { definePreview } from ['"]@storybook\/your-framework-here['"]/
     );
   });
+});
+
+it('logs Windows preview and package.json paths with forward slashes', async () => {
+  vi.stubEnv('IN_STORYBOOK_SANDBOX', '');
+  vi.mocked(prompt.select).mockResolvedValue(true);
+  vi.mocked(runCodemod).mockResolvedValue({ files: [], errorCount: 0 });
+  vi.mocked(syncStorybookAddons).mockResolvedValue(undefined);
+  const logBox = vi.mocked(logger.logBox).mockImplementation(() => {});
+  const step = vi.mocked(logger.step).mockImplementation(() => {});
+
+  await csfFactories.run({
+    dryRun: true,
+    yes: false,
+    glob: '**/*.stories.tsx',
+    mainConfig: {} as any,
+    mainConfigPath: '.storybook\\main.ts',
+    previewConfigPath: '.storybook\\preview.tsx',
+    configDir: '.storybook',
+    packageManager: {
+      primaryPackageJson: {
+        packageJson: {},
+        operationDir: 'C:\\project',
+        packageJsonPath: 'C:\\project\\package.json',
+      },
+      writePackageJson: vi.fn(),
+    } as any,
+  } as any);
+
+  expect(logBox.mock.calls[0][0]).toContain('.storybook/preview.tsx');
+  expect(step.mock.calls.map(([message]) => message)).toContainEqual(
+    expect.stringContaining('C:/project/package.json')
+  );
 });

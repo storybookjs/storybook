@@ -14,6 +14,7 @@ import {
   defineAffectedCheck,
   defineAffectedLintAndFormat,
   defineAffectedUnitTests,
+  fmt,
   internalStorybookBuildE2e,
   internalStorybookE2e,
   storybookChromatic,
@@ -210,6 +211,7 @@ export const PATH_TRIGGERED_JOBS: readonly {
   { job: internalStorybookE2e, paths: INTERNAL_STORYBOOK_PATHS },
   { job: internalStorybookBuildE2e, paths: INTERNAL_STORYBOOK_PATHS },
   { job: testsStories_linux, paths: INTERNAL_STORYBOOK_PATHS },
+  { job: fmt, paths: ['docs/', 'scripts/docs/'] },
 ];
 
 export const selectPathTriggeredJobs = (changedFiles: readonly string[]): JobOrNoOpJob[] =>

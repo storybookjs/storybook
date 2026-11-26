@@ -288,7 +288,7 @@ describe('selectPathTriggeredJobs', () => {
   });
 
   it('adds nothing for a change outside every trigger path', () => {
-    expect(triggeredIds('code/core/src/core-server/build-dev.ts', 'docs/index.mdx')).toEqual([]);
+    expect(triggeredIds('code/core/src/core-server/build-dev.ts')).toEqual([]);
   });
 
   it('adds every path-triggered job when a global input changed', () => {
@@ -334,6 +334,16 @@ describe('selectPathTriggeredJobs', () => {
       'internal-storybook-build-e2e',
       'tests-stories--linux',
     ]);
+  });
+
+  it('adds the format and docs check for a docs page, a snippet, or a docs check script change', () => {
+    for (const file of [
+      'docs/index.mdx',
+      'docs/_snippets/story-description-and-summary.md',
+      'scripts/docs/utils.ts',
+    ]) {
+      expect(triggeredIds(file)).toEqual(['format-check']);
+    }
   });
 });
 
@@ -402,7 +412,6 @@ describe('defineAffectedLintAndFormat', () => {
 /** `ci:normal` jobs that no focused run selects, and why. The nightly `ci:daily` run covers them. */
 const NIGHTLY_ONLY_JOBS: Record<string, string> = {
   eslint: 'replaced by lint-and-format--affected',
-  'format-check': 'replaced by lint-and-format--affected',
   'typescript-validation': 'replaced by typescript-validation--affected',
   'knip-validation': 'runs with --no-exit-code, so it cannot fail a run',
   'benchmark-packages': 'measures bundle sizes, not correctness',

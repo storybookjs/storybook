@@ -710,15 +710,13 @@ describe('buildStoryDocsPayload', () => {
       );
     });
 
-    // `export { X }` is registered by a different branch of the CSF parser, which keeps the export
-    // name verbatim rather than deriving a display name from it.
     it.each([
       [
-        'ReExported',
+        'Re Exported',
         `<sb-button [label]="'reexported'" [count]="9" (clicked)="clicked($event)" />`,
       ],
-      ['RenamedStory', `<sb-button [label]="'meta'" [count]="10" (clicked)="clicked($event)" />`],
-      ['ReExportedTemplate', '<sb-button reexported></sb-button>'],
+      ['Renamed Story', `<sb-button [label]="'meta'" [count]="10" (clicked)="clicked($event)" />`],
+      ['Re Exported Template', '<sb-button reexported></sb-button>'],
     ])('reads the re-exported %s story from its own config', async (storyName, expected) => {
       expect((await templatesOf(STORY_SHAPES_FILE)).get(storyName)).toBe(expected);
     });

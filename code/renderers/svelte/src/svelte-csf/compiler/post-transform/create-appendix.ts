@@ -40,10 +40,12 @@ export async function createAppendix(params: Params) {
     filename,
   });
   const exportNames = stories.map(({ exportName }) => exportName);
+  const names = new Map(stories.map(({ exportName, name }) => [exportName, name]));
   // A story that extends another one reads it, so the parent is declared first
   const storiesVariableDeclarations = orderByParents(exportNames, parents).map((exportName) =>
     createRuntimeStoryVariableDeclaration({
       exportName,
+      name: names.get(exportName),
       parentExportName: parents.get(exportName),
       filename,
       nodes: {

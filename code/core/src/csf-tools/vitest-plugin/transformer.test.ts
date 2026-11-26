@@ -324,7 +324,7 @@ describe('transformer', () => {
                   
           const _isRunningFromThisFile = convertToFilePath(import.meta.url).includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
           if (_isRunningFromThisFile) {
-            _test("PrimaryStory", _testStory({ exportName: "PrimaryStory", story: Primary, meta: _meta, skipTags: [], storyId: "automatic-calculated-title--primary-story" }));
+            _test("Primary Story", _testStory({ exportName: "PrimaryStory", story: Primary, meta: _meta, skipTags: [], storyId: "automatic-calculated-title--primary-story" }));
           }
         `);
       });
@@ -769,7 +769,7 @@ describe('transformer', () => {
                 
           const _isRunningFromThisFile = convertToFilePath(import.meta.url).includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
           if (_isRunningFromThisFile) {
-            _test("PrimaryStory", _testStory({ exportName: "PrimaryStory", story: Primary, meta: meta, skipTags: [], storyId: "automatic-calculated-title--primary-story" }));
+            _test("Primary Story", _testStory({ exportName: "PrimaryStory", story: Primary, meta: meta, skipTags: [], storyId: "automatic-calculated-title--primary-story" }));
           }
         `);
       });

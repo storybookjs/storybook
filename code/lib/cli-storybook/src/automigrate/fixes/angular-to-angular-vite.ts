@@ -19,7 +19,6 @@ import { type StorybookConfigRaw, SupportedFramework } from 'storybook/internal/
 import * as find from 'empathic/find';
 import { dirname, relative, resolve } from 'pathe';
 import semver from 'semver';
-import { dedent } from 'ts-dedent';
 
 import { add } from '../../add.ts';
 import type { FixFiles } from '../fix-files.ts';
@@ -27,6 +26,10 @@ import { automigrationLogger } from '../helpers/automigration-logger.ts';
 import { getFrameworkPackageName } from '../helpers/mainConfigFile.ts';
 import type { FixTransform } from '../pipeline.ts';
 import { assertMainConfigNamesFramework } from '../helpers/main-config-framework.ts';
+import {
+  confirmWebpackFinalCarryover,
+  hasActiveWebpackFinal,
+} from '../helpers/webpack-final-preflight.ts';
 import { readJsonFile } from '../helpers/workspace-files.ts';
 import type { Fix } from '../types.ts';
 import { findWorkspaceJsonFiles, getTargetGroups } from './angular-workspace.ts';
@@ -49,7 +52,6 @@ const MIGRATABLE_FRAMEWORKS = [ANGULAR_PACKAGE, ANALOG_PACKAGE] as const;
 type MigratableFramework = (typeof MIGRATABLE_FRAMEWORKS)[number];
 
 const FRAMEWORK_DOC_URL = 'https://storybook.js.org/docs/get-started/frameworks/angular-vite';
-const VITE_CONFIG_DOC_URL = 'https://storybook.js.org/docs/builders/vite#configure';
 
 const ANGULAR_MIN_MAJOR = 21;
 
@@ -320,8 +322,7 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
 
     return {
       framework,
-      hasWebpackFinal:
-        !!mainConfigPath && (await files.read(mainConfigPath)).includes('webpackFinal'),
+      hasWebpackFinal: await hasActiveWebpackFinal(files, mainConfigPath),
       angularVersion: angularMajor === null ? null : angularSpecifier,
       zoneJs: resolveZoneJs(workspaceJson, packageManager.isDependencyInstalled('zone.js')),
     };
@@ -361,30 +362,14 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
     yes,
     addonsToPostinstall,
   }) {
-    if (result.hasWebpackFinal) {
-      logger.logBox(
-        dedent`
-          We detected a \`webpackFinal\` hook in your Storybook main config.
-
-          \`webpackFinal\` is a Webpack-specific API and will not carry over to Vite.
-          You will need to port it to \`viteFinal\` after the migration.
-          See ${VITE_CONFIG_DOC_URL} for porting guidance.
-        `
-      );
-
-      const shouldContinue =
-        !yes &&
-        (await prompt.confirm({
-          message: 'I detected a webpackFinal hook. It will not carry over. Continue anyway?',
-          initialValue: false,
-        }));
-
-      if (!shouldContinue) {
-        logger.log(
-          'Migration cancelled. Port your webpackFinal hook to viteFinal first, then run the automigration again.'
-        );
-        return false;
-      }
+    if (
+      !(await confirmWebpackFinalCarryover({
+        hasWebpackFinal: result.hasWebpackFinal,
+        yes: !!yes,
+        retryInstruction: 'the automigration',
+      }))
+    ) {
+      return false;
     }
 
     logger.debug(`Migrating from ${result.framework} to ${ANGULAR_VITE_PACKAGE}...`);

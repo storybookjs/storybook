@@ -363,6 +363,32 @@ describe('angular-to-angular-vite', () => {
       expect(result?.hasWebpackFinal).toBe(false);
     });
 
+    it.each([
+      [
+        'a line comment',
+        `// webpackFinal: async (c) => c,\nexport default { framework: '${ANGULAR_PACKAGE}' };`,
+      ],
+      [
+        'a block comment',
+        `export default { framework: '${ANGULAR_PACKAGE}' }; /* webpackFinal: async (c) => c */`,
+      ],
+    ])('ignores a webpackFinal hook that only appears in %s', async (_label, mainConfig) => {
+      vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({
+        [ANGULAR_PACKAGE]: '^9.0.0',
+      });
+      mockAngularCore({ declared: '^21.0.0', resolved: '21.0.4' });
+
+      vol.fromJSON({ [MAIN]: mainConfig });
+
+      const result = await checkFix(angularToAngularVite, {
+        packageManager: mockPackageManager,
+        mainConfig: { framework: ANGULAR_PACKAGE },
+        mainConfigPath: MAIN,
+      } as CheckOptions);
+
+      expect(result?.hasWebpackFinal).toBe(false);
+    });
+
     it('accepts an @analogjs/storybook-angular project and records it as the source framework', async () => {
       vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({
         [ANGULAR_PACKAGE]: '^9.0.0',
@@ -480,6 +506,28 @@ describe('angular-to-angular-vite', () => {
 
       expect(mockPromptConfirm).toHaveBeenCalledOnce();
       expect(mockPackageManager.removeDependencies).not.toHaveBeenCalled();
+    });
+
+    it('migrates without a webpackFinal prompt when the hook appears only in comments', async () => {
+      // A commented-out hook is not active: no spurious confirm (the mock declines every prompt,
+      // so a webpackFinal confirm would cancel) and no skip, driving check -> run as the runner does.
+      vol.fromJSON({
+        [MAIN]: `// webpackFinal: async (c) => c,\nexport default { framework: '${ANGULAR_PACKAGE}' };`,
+        [PACKAGE_JSON]: '{}',
+      });
+      vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({
+        [ANGULAR_PACKAGE]: '^9.0.0',
+      });
+      mockAngularCore({ declared: '^21.0.0', resolved: '21.0.4' });
+
+      const result = await checkThenRun();
+
+      expect(result?.hasWebpackFinal).toBe(false);
+      expect(logger.logBox).not.toHaveBeenCalled();
+      expect(mockPromptConfirm).not.toHaveBeenCalledWith(
+        expect.objectContaining({ message: expect.stringContaining('Continue anyway?') })
+      );
+      expect(mockPackageManager.removeDependencies).toHaveBeenCalledWith([ANGULAR_PACKAGE]);
     });
 
     it('continues when user accepts to proceed after webpackFinal warning', async () => {

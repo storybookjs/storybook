@@ -118,6 +118,52 @@ describe('nextjs-to-nextjs-vite', () => {
 
       expect(result).toEqual({ hasWebpackFinal: true });
     });
+
+    it.each([
+      [
+        'a line comment',
+        "// webpackFinal: (config) => config,\nexport default { framework: '@storybook/nextjs' };",
+      ],
+      [
+        'a block comment',
+        "export default { framework: '@storybook/nextjs' }; /* webpackFinal: (config) => config */",
+      ],
+    ])('ignores a webpackFinal hook that only appears in %s', async (_label, mainConfig) => {
+      mockPackageManager.getAllDependencies = vi.fn().mockReturnValue({
+        '@storybook/nextjs': '^9.0.0',
+      });
+      vol.fromJSON({
+        '/project/.storybook/main.ts': mainConfig,
+        '/project/.storybook/preview.ts': 'export default {};',
+        '/project/src/Button.stories.tsx': 'export default {};',
+      });
+
+      const result = await checkFix(nextjsToNextjsVite, {
+        ...runOptions,
+        packageManager: mockPackageManager,
+      } as unknown as CheckOptions);
+
+      expect(result).toEqual({ hasWebpackFinal: false });
+    });
+
+    it('still detects a hook when a string literal contains a comment-like sequence', async () => {
+      mockPackageManager.getAllDependencies = vi.fn().mockReturnValue({
+        '@storybook/nextjs': '^9.0.0',
+      });
+      vol.fromJSON({
+        '/project/.storybook/main.ts':
+          "export default { framework: '@storybook/nextjs', docs: { url: 'https://example.com' }, webpackFinal: (config) => config };",
+        '/project/.storybook/preview.ts': 'export default {};',
+        '/project/src/Button.stories.tsx': 'export default {};',
+      });
+
+      const result = await checkFix(nextjsToNextjsVite, {
+        ...runOptions,
+        packageManager: mockPackageManager,
+      } as unknown as CheckOptions);
+
+      expect(result).toEqual({ hasWebpackFinal: true });
+    });
   });
 
   describe('prompt function', () => {
@@ -178,6 +224,33 @@ describe('nextjs-to-nextjs-vite', () => {
       expect(logger.log).toHaveBeenCalledWith(expect.stringContaining('Migration cancelled'));
       expect(mockPackageManager.removeDependencies).not.toHaveBeenCalled();
       expect(mockPackageManager.addDependencies).not.toHaveBeenCalled();
+    });
+
+    it('migrates without prompting when the hook appears only in comments', async () => {
+      // A commented-out hook is not active: detection must not confirm interactively, nor skip
+      // under --yes, so drive check -> run the way the runner does.
+      vol.fromJSON({
+        '/project/.storybook/main.ts':
+          "// webpackFinal: (config) => config,\nexport default { framework: '@storybook/nextjs' };",
+        '/project/.storybook/preview.ts': `import type { Preview } from '@storybook/nextjs';`,
+        '/project/src/Button.stories.tsx': `import type { Meta } from '@storybook/nextjs';`,
+      });
+      mockPackageManager.getAllDependencies = vi.fn().mockReturnValue({
+        '@storybook/nextjs': '^9.0.0',
+      });
+      const result = await checkFix(nextjsToNextjsVite, {
+        ...webpackFinalRunOptions,
+        packageManager: mockPackageManager,
+      } as unknown as CheckOptions);
+      expect(result).toEqual({ hasWebpackFinal: false });
+
+      await runFix(nextjsToNextjsVite, { ...webpackFinalRunOptions, result: result!, yes: false });
+
+      expect(logger.logBox).not.toHaveBeenCalled();
+      expect(prompt.confirm).not.toHaveBeenCalled();
+      expect(logger.log).not.toHaveBeenCalledWith(expect.stringContaining('Migration cancelled'));
+      expect(mockPackageManager.removeDependencies).toHaveBeenCalledWith(['@storybook/nextjs']);
+      expect(mockPackageManager.addDependencies).toHaveBeenCalled();
     });
   });
 

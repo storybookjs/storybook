@@ -687,6 +687,104 @@ it('documents only the stories of a Svelte CSF file whose module script exports 
   expect(payload?.stories['example--default']?.snippet).toContain('<Button label="Save" />');
 });
 
+describe('the HTML comment above a Svelte CSF story', () => {
+  const svelteEntry = { ...entry, importPath: resolve('input.stories.svelte') };
+  const storyFile = (comment: string) => `<script module>
+    import { defineMeta } from '@storybook/svelte';
+    import Tag from './Tag.svelte';
+    const { Story } = defineMeta({ title: 'Example', component: Tag });
+  </script>
+  ${comment}
+  <Story name="Default" args={{ label: 'Design' }} />`;
+
+  it('gives the story the summary of its @summary tag, like the JSDoc of a CSF story', async () => {
+    vol.fromJSON({
+      [svelteEntry.importPath]: storyFile(`<!--
+    The default tag, in a list of posts.
+    @summary the default tag
+  -->`),
+    });
+    const story = (await buildStoryDocsPayload({ entry: svelteEntry }))?.stories[
+      'example--default'
+    ];
+    expect(story).toMatchObject({
+      description: 'The default tag, in a list of posts.',
+      summary: 'the default tag',
+    });
+  });
+
+  it('takes the description of a @describe tag over the text of the comment', async () => {
+    vol.fromJSON({
+      [svelteEntry.importPath]: storyFile(`<!--
+    The default tag, in a list of posts.
+    @describe A tag that names a topic.
+  -->`),
+    });
+    const story = (await buildStoryDocsPayload({ entry: svelteEntry }))?.stories[
+      'example--default'
+    ];
+    expect(story?.description).toBe('A tag that names a topic.');
+    expect(story?.summary).toBeUndefined();
+  });
+
+  it('keeps an @ inside a line as text, like the JSDoc of a CSF story', async () => {
+    vol.fromJSON({
+      [svelteEntry.importPath]: storyFile('<!-- Ask @design before you add a tag. -->'),
+    });
+    const story = (await buildStoryDocsPayload({ entry: svelteEntry }))?.stories[
+      'example--default'
+    ];
+    expect(story?.description).toBe('Ask @design before you add a tag.');
+    expect(story?.summary).toBeUndefined();
+  });
+
+  it.each([
+    [
+      'above a snippet block',
+      '<!--\n  The template of every story.\n  @summary template\n-->\n  {#snippet template(args)}<Tag {...args} />{/snippet}',
+    ],
+    ['above an element', '<!-- svelte-ignore a11y_missing_attribute -->\n  <h1>Tags</h1>'],
+    [
+      'inside an element',
+      '<div>\n    <!-- svelte-ignore a11y_no_static_element_interactions -->\n    <span>Tags</span>\n  </div>',
+    ],
+  ])('leaves the description and summary unset when the comment is %s', async (_, markup) => {
+    vol.fromJSON({ [svelteEntry.importPath]: storyFile(markup) });
+    const story = (await buildStoryDocsPayload({ entry: svelteEntry }))?.stories[
+      'example--default'
+    ];
+    expect(story?.description).toBeUndefined();
+    expect(story?.summary).toBeUndefined();
+  });
+
+  it('keeps the lines after a line that ends in */', async () => {
+    vol.fromJSON({
+      [svelteEntry.importPath]: storyFile(`<!--
+    Reset the styles with /* reset */
+    before you add a tag.
+    @summary reset first
+  -->`),
+    });
+    const story = (await buildStoryDocsPayload({ entry: svelteEntry }))?.stories[
+      'example--default'
+    ];
+    // The indentation of the second line is #37476.
+    expect(story?.description).toMatch(
+      /^Reset the styles with \/\* reset \*\/\n\s*before you add a tag\.$/
+    );
+    expect(story?.summary).toBe('reset first');
+  });
+
+  it('leaves the description and summary unset for a story without a comment', async () => {
+    vol.fromJSON({ [svelteEntry.importPath]: storyFile('') });
+    const story = (await buildStoryDocsPayload({ entry: svelteEntry }))?.stories[
+      'example--default'
+    ];
+    expect(story?.description).toBeUndefined();
+    expect(story?.summary).toBeUndefined();
+  });
+});
+
 it('names a plain CSF story without a name after its export, like the index does', async () => {
   vol.fromJSON({
     [entry.importPath]: `import Button from './Button.svelte';

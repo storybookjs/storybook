@@ -9,10 +9,7 @@ import { BEFORE_SANDBOX_NPM_MIN_VERSION, ROOT_DIRECTORY } from '../../utils/cons
 export { BEFORE_SANDBOX_NPM_MIN_VERSION };
 import { runCommand } from '../generate.ts';
 
-export {
-  LOCALLY_PUBLISHED_PACKAGE_PATTERNS,
-  preapproveLocallyPublishedPackages,
-} from '../../utils/preapprove-local-packages.ts';
+export { preapproveLocallyPublishedPackages } from '../../utils/preapprove-local-packages.ts';
 
 interface SetupYarnOptions {
   cwd: string;

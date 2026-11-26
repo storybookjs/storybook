@@ -13,6 +13,7 @@ import { executeCommand, executeCommandSync } from '../utils/command.ts';
 import { getProjectRoot } from '../utils/paths.ts';
 import { JsPackageManager } from './JsPackageManager.ts';
 import { PNPMProxy } from './PNPMProxy.ts';
+import { STORYBOOK_PACKAGE_PATTERNS } from './util.ts';
 
 vi.mock('storybook/internal/node-logger', () => ({
   prompt: {
@@ -47,11 +48,7 @@ const mockPnpmVersion = (version: string) => {
 const expectedMinimumReleaseAgeExcludePackages = [
   'react',
   'webpack',
-  'storybook',
-  '@storybook/*',
-  'eslint-plugin-storybook',
-  '@chromatic-com/storybook',
-  'chromatic',
+  ...STORYBOOK_PACKAGE_PATTERNS,
 ];
 
 describe('PNPM Proxy', () => {
@@ -1251,13 +1248,7 @@ describe('PNPM Proxy', () => {
       mockedExecuteCommand
         .mockResolvedValueOnce({ stdout: '1440\n' } as any)
         .mockResolvedValueOnce({
-          stdout: JSON.stringify([
-            'storybook',
-            '@storybook/*',
-            'eslint-plugin-storybook',
-            '@chromatic-com/storybook',
-            'chromatic',
-          ]),
+          stdout: JSON.stringify(STORYBOOK_PACKAGE_PATTERNS),
         } as any);
 
       await expect(

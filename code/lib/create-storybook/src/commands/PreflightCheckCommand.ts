@@ -3,12 +3,11 @@ import {
   JsPackageManagerFactory,
   PackageManagerName,
   getPrettyPackageManagerName,
-  isCI,
   invalidateProjectRootCache,
+  runStorybookInstallPrecheck,
   warnOnYarn1,
 } from 'storybook/internal/common';
 import { CLI_COLORS, logger } from 'storybook/internal/node-logger';
-import { MinimumReleaseAgeHandledError } from 'storybook/internal/server-errors';
 
 import { dedent } from 'ts-dedent';
 
@@ -80,19 +79,11 @@ export class PreflightCheckCommand {
     this.checkPackageNameConflict(packageManager);
 
     await this.displayVersionInfo(packageManager);
-    try {
-      await packageManager.precheckStorybookPackageInstall({
-        storybookVersion: this.versionService.getCurrentVersion(),
-        nonInteractive: !!options.yes || !process.stdout.isTTY || !!isCI(),
-        installContext: 'create',
-      });
-    } catch (error) {
-      if (error instanceof MinimumReleaseAgeHandledError) {
-        throw error;
-      }
-
-      logger.debug(`Skipping minimum-release-age precheck after an unexpected failure: ${error}`);
-    }
+    await runStorybookInstallPrecheck(packageManager, {
+      storybookVersion: this.versionService.getCurrentVersion(),
+      installContext: 'create',
+      yes: !!options.yes,
+    });
 
     return { packageManager, isEmptyProject: isEmptyDirProject };
   }

@@ -5,10 +5,13 @@ import {
   skipsSkillsInCI,
   supportsSkills,
 } from 'storybook/internal/cli';
-import { frameworkPackages, frameworkToRenderer } from 'storybook/internal/common';
+import {
+  frameworkPackages,
+  frameworkToRenderer,
+  getFrameworkPackageName,
+} from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
-import { getFrameworkPackageName } from '../helpers/mainConfigFile.ts';
 import { crossesVersionBoundary } from '../helpers/versionBoundary.ts';
 import type { Fix } from '../types.ts';
 import { ANGULAR_VITE_PACKAGE, offersAngularViteMigration } from './angular-to-angular-vite.ts';

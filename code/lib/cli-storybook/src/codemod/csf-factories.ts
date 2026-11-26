@@ -1,7 +1,11 @@
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { optionalEnvToBoolean, syncStorybookAddons } from 'storybook/internal/common';
+import {
+  getFrameworkPackageName,
+  optionalEnvToBoolean,
+  syncStorybookAddons,
+} from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
 
 import { normalize } from 'pathe';
@@ -16,7 +20,6 @@ import {
   previewImportTarget,
 } from '../../../../core/src/shared/constants/config-folder.ts';
 import { type FileInfo, runCodemod } from '../automigrate/codemod.ts';
-import { getFrameworkPackageName } from '../automigrate/helpers/mainConfigFile.ts';
 import type { CommandFix } from '../automigrate/types.ts';
 import { configToCsfFactory } from './helpers/config-to-csf-factory.ts';
 import { storyToCsfFactory } from './helpers/story-to-csf-factory.ts';
@@ -44,40 +47,41 @@ export async function storyToCsf4(
 export const SANDBOX_STORIES_GLOB =
   '{stories,src/stories}/{Button,Header,Page,button,header,page}.stories.*';
 
-async function runStoriesCodemod(options: {
+async function runStoriesCodemod({
+  dryRun,
+  glob,
+  storiesPaths,
+  ...codemodOptions
+}: {
   dryRun: boolean | undefined;
   useSubPathImports: boolean;
   previewConfigPath: string;
-  yes: boolean | undefined;
   glob: string | undefined;
+  storiesPaths: string[];
 }) {
-  const { dryRun, yes, glob, ...codemodOptions } = options;
+  const transform = (info: FileInfo) => storyToCsf4(info, codemodOptions);
   const inSandbox = optionalEnvToBoolean(process.env.IN_STORYBOOK_SANDBOX) ?? false;
-  const promptsForGlob = !glob && !inSandbox && !yes;
-  try {
-    let globString = glob ?? '**/*.{stories,story}.{js,jsx,ts,tsx,mjs,mjsx,mts,mtsx,svelte}';
+  const storiesGlob = glob ?? (inSandbox ? SANDBOX_STORIES_GLOB : undefined);
 
-    if (!glob && inSandbox) {
-      globString = SANDBOX_STORIES_GLOB;
-    } else if (promptsForGlob) {
-      logger.log('Please enter the glob for your stories to migrate');
-      globString = await prompt.text({
-        message: 'glob',
-        initialValue: globString,
-      });
-    }
-
+  if (storiesGlob !== undefined) {
     logger.step('Applying codemod on your stories, this might take some time...');
-
-    await runCodemod(globString, (info) => storyToCsf4(info, codemodOptions), { dryRun });
-  } catch (err: any) {
-    // Ask for another glob. Without a prompt, the same glob would match nothing again.
-    if (err.message === 'No files matched' && promptsForGlob) {
-      await runStoriesCodemod(options);
-    } else {
-      throw err;
-    }
+    await runCodemod(storiesGlob, transform, { dryRun });
+    return;
   }
+
+  const storyFiles = [...new Set(storiesPaths)].filter(
+    (file) => !file.endsWith('.mdx') && !normalize(file).includes('/node_modules/')
+  );
+
+  if (storyFiles.length === 0) {
+    logger.warn(
+      'The stories field of your main config matches no story files, so no stories were migrated.'
+    );
+    return;
+  }
+
+  logger.step('Applying codemod on your stories, this might take some time...');
+  await runCodemod(storyFiles, transform, { dryRun });
 }
 
 export const csfFactories: CommandFix = {
@@ -90,6 +94,7 @@ export const csfFactories: CommandFix = {
     previewConfigPath,
     packageManager,
     configDir,
+    storiesPaths,
     yes,
     glob,
   }) {
@@ -151,13 +156,13 @@ export const csfFactories: CommandFix = {
       dryRun,
       useSubPathImports,
       previewConfigPath: previewConfigPath!,
-      yes,
       glob,
+      storiesPaths,
     });
 
     logger.step('Applying codemod on your main config...');
     const frameworkPackage =
-      getFrameworkPackageName(mainConfig) || '@storybook/your-framework-here';
+      getFrameworkPackageName(mainConfig, configDir) ?? '@storybook/your-framework-here';
     await runCodemod([mainConfigPath!], (fileInfo) =>
       configToCsfFactory(fileInfo, { configType: 'main', frameworkPackage }, { dryRun })
     );

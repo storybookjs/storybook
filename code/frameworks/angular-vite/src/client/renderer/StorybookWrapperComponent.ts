@@ -23,7 +23,7 @@ const getNonInputsOutputsProps = (
   const inputs = ngComponentInputsOutputs.inputs
     .filter((i) => i.templateName in props)
     .map((i) => i.templateName);
-  const { argKeys: outputArgKeys } = resolveOutputArgs(ngComponentInputsOutputs.outputs, props);
+  const { argKeys: outputArgKeys } = resolveOutputArgs(ngComponentInputsOutputs, props);
   return Object.keys(props).filter((k) => !inputs.includes(k) && !outputArgKeys.has(k));
 };
 

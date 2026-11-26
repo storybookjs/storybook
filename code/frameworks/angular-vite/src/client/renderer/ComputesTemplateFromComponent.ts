@@ -21,7 +21,7 @@ const separateInputsOutputsAttributes = (
   inputs: ngComponentInputsOutputs.inputs
     .filter((i) => i.templateName in props)
     .map((i) => i.templateName),
-  outputs: resolveOutputArgs(ngComponentInputsOutputs.outputs, props).bindings,
+  outputs: resolveOutputArgs(ngComponentInputsOutputs, props).bindings,
 });
 
 /** Converts a component into a template with inputs/outputs present in initial props. */
@@ -51,7 +51,7 @@ export const computesTemplateFromComponent = (
     inputs: inputs.map((name) => ({ name, expression: formatPropInTemplate(name) })),
     outputs: outputs.map(({ bindingName, propKey }) => ({
       name: bindingName,
-      expression: formatPropInTemplate(propKey),
+      handlerKey: propKey,
     })),
     innerTemplate,
   });
@@ -82,7 +82,7 @@ export const computesTemplateSourceFromComponent = (
     inputs: inputs.map((name) => ({ name, expression: formatInputValue(initialProps?.[name]) })),
     outputs: outputs.map(({ bindingName, propKey }) => ({
       name: bindingName,
-      expression: formatPropInTemplate(propKey),
+      handlerKey: propKey,
     })),
   });
 };

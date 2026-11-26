@@ -1,8 +1,16 @@
 // @vitest-environment happy-dom
 
 import type { NgModule, Type } from '@angular/core';
-import { Component, Directive, EventEmitter, Input, Output, inject } from '@angular/core';
-import { describe, expect, it } from 'vitest';
+import {
+  Component,
+  Directive,
+  ErrorHandler,
+  EventEmitter,
+  Input,
+  Output,
+  inject,
+} from '@angular/core';
+import { describe, expect, it, vi } from 'vitest';
 
 import { TestBed } from '@angular/core/testing';
 import { BehaviorSubject } from 'rxjs';
@@ -437,13 +445,25 @@ describe('StorybookModule', () => {
         @Output('my-click') myClick = new EventEmitter<string>();
       }
 
-      const render = async (props: ICollection) => {
+      @Component({
+        selector: 'overlapping-input-alias',
+        template: `<button (click)="onToggle.emit()">{{ enabled }}</button>`,
+      })
+      class OverlappingInputAliasComponent {
+        @Input('onToggle') enabled = false;
+        @Output('toggle') onToggle = new EventEmitter<void>();
+      }
+
+      const render = async (
+        props: ICollection,
+        component: Type<unknown> = AliasedOutputComponent
+      ) => {
         const storyProps$ = new BehaviorSubject<ICollection | undefined>(props);
-        const analyzedMetadata = new PropertyExtractor({}, AliasedOutputComponent);
+        const analyzedMetadata = new PropertyExtractor({}, component);
         await analyzedMetadata.init();
         const application = getApplication({
           storyFnAngular: { props },
-          component: AliasedOutputComponent,
+          component,
           targetSelector: 'my-selector',
           analyzedMetadata,
         });
@@ -454,6 +474,17 @@ describe('StorybookModule', () => {
         fixture.detectChanges();
         return { fixture, storyProps$ };
       };
+
+      it('keeps an input alias from becoming an output handler', async () => {
+        const { fixture } = await render({ onToggle: true }, OverlappingInputAliasComponent);
+        const button = fixture.nativeElement.querySelector('button');
+
+        const handleError = vi.spyOn(TestBed.inject(ErrorHandler), 'handleError');
+
+        expect(button.textContent).toBe('true');
+        button.click();
+        expect(handleError).not.toHaveBeenCalled();
+      });
 
       it('binds an arg keyed by the class property name without replacing the emitter', async () => {
         const firstCalls: string[] = [];

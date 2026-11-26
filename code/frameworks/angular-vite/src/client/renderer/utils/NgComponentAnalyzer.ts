@@ -24,12 +24,12 @@ export type ComponentInputsOutputs = {
   }[];
 };
 
-// Alias wins when both are set; a property name that is another output's alias stays with that output.
+// Explicit binding names take priority over output property-name fallbacks.
 export const resolveOutputArgs = (
-  outputs: ComponentInputsOutputs['outputs'],
+  { inputs, outputs }: ComponentInputsOutputs,
   props: ICollection = {}
 ) => {
-  const templateNames = new Set(outputs.map((output) => output.templateName));
+  const templateNames = new Set([...inputs, ...outputs].map(({ templateName }) => templateName));
   const bindings: { bindingName: string; propKey: string }[] = [];
   const argKeys = new Set<string>();
 

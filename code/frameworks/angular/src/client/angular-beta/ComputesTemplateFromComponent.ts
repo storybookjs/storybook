@@ -31,7 +31,7 @@ const separateInputsOutputsAttributes = (
     .filter((i) => i.templateName in props)
     .map((i) => i.templateName);
   const { bindings: outputs, argKeys: outputArgKeys } = resolveOutputArgs(
-    ngComponentInputsOutputs.outputs,
+    ngComponentInputsOutputs,
     props
   );
 

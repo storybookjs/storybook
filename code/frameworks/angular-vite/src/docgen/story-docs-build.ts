@@ -382,7 +382,11 @@ const renderStorySnippet = async (
   const { bindings, fields } = componentBindings(snippetMeta, shape, printer);
   return withWarnings(
     host(
-      buildTemplate(snippetMeta.selector, { ...bindings, selfClosing: true }, printer.unmarked),
+      buildTemplate(
+        snippetMeta.selector,
+        { ...bindings, outputs: bindings.outputs.map((name) => ({ name })), selfClosing: true },
+        printer.unmarked
+      ),
       false,
       snippetMeta.outputs,
       fields

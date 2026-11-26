@@ -53,7 +53,7 @@ describe('buildTemplate', () => {
   const short: BuildTemplateInput = { inputs: [{ name: 'label', expression: "'x'" }], outputs: [] };
   const long: BuildTemplateInput = {
     inputs: [{ name: 'label', expression: "'a label long enough to push the tag past the limit'" }],
-    outputs: ['clicked'],
+    outputs: [{ name: 'clicked' }],
   };
 
   it('keeps the closing tag when the caller does not opt in', () => {
@@ -118,11 +118,11 @@ describe('buildTemplate', () => {
       `<sb-button [label]="'x'">hi</sb-button>`
     );
   });
-  it('renders output bindings with a separate handler expression', () => {
+  it('renders output bindings with a separate handler key', () => {
     expect(
       buildTemplate('sb-button', {
         inputs: [],
-        outputs: [{ name: 'my-click', expression: 'myClick' }],
+        outputs: [{ name: 'my-click', handlerKey: 'myClick' }],
       })
     ).toBe(`<sb-button (my-click)="myClick($event)"></sb-button>`);
     expect(

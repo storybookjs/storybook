@@ -90,14 +90,12 @@ export interface TemplateInputBinding {
 
 export interface TemplateOutputBinding {
   name: string;
-  // The handler expression before `($event)`, e.g. from `formatPropInTemplate`.
-  expression?: string;
+  handlerKey?: string;
 }
 
 export interface BuildTemplateInput {
   inputs: TemplateInputBinding[];
-  // Output bindings; a bare string renders as `(name)="formatPropInTemplate(name)($event)"`.
-  outputs: (string | TemplateOutputBinding)[];
+  outputs: TemplateOutputBinding[];
   innerTemplate?: string;
   // On, a dashed element drops its closing tag, and any tag that ends itself puts `/>` on its own
   // line once it breaks -- void elements included. Off reproduces the legacy runtime generator's
@@ -134,13 +132,9 @@ export const buildTemplate = (
 ) => {
   const bindings = [
     ...inputs.map(({ name, expression, attribute }) => attribute ?? inputBinding(name, expression)),
-    ...outputs.map((output) => {
-      if (typeof output === 'string') {
-        return `(${output})="${formatPropInTemplate(output)}($event)"`;
-      }
-      const expression = output.expression ?? formatPropInTemplate(output.name);
-      return `(${output.name})="${expression}($event)"`;
-    }),
+    ...outputs.map(
+      ({ name, handlerKey = name }) => `(${name})="${formatPropInTemplate(handlerKey)}($event)"`
+    ),
   ];
 
   const firstSelector = selector.split(',')[0];

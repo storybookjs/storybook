@@ -240,10 +240,10 @@ function formatPropsSection(
       if ((description?.includes('\n') ?? false) || hasExamples) {
         parts.push('  /**');
         if (description !== undefined) {
-          parts.push(`    ${description}`);
+          parts.push(...description.split('\n').map((line) => `   * ${line}`));
         }
         for (const example of examples) {
-          parts.push(`@example ${example}`);
+          parts.push(...`@example ${example}`.split('\n').map((line) => `   * ${line}`));
         }
         parts.push('  */');
       } else if (description !== undefined) {

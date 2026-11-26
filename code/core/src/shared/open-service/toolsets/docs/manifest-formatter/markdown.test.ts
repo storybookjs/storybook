@@ -1293,6 +1293,40 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
       `);
     });
 
+    it('keeps fenced prop examples inside the Props block', () => {
+      const manifest: ComponentManifest = {
+        id: 'button',
+        name: 'Button',
+        path: 'Button.tsx',
+        reactComponentMeta: {
+          props: {
+            label: {
+              name: 'label',
+              required: true,
+              type: { name: 'string' },
+              description: 'First line.\nSecond line.',
+              defaultValue: null,
+              jsDocTags: { example: ['```tsx\n<Button label="Hello" />\n```\nMore text.'] },
+            },
+            disabled: {
+              name: 'disabled',
+              required: false,
+              type: { name: 'boolean' },
+              defaultValue: null,
+            },
+          },
+        },
+      };
+      const result = formatComponentManifest(manifest);
+      expect(result.split('\n').filter((line) => line === '```')).toHaveLength(2);
+      expect(result).toContain(
+        '   * @example ```tsx\n   * <Button label="Hello" />\n   * ```\n   * More text.'
+      );
+      expect(result).toContain('   * First line.\n   * Second line.');
+      expect(result).toContain('  disabled?: boolean;');
+      expect(result.indexOf('  disabled?: boolean;')).toBeLessThan(result.lastIndexOf('```'));
+    });
+
     it('prints prop @example tags from reactComponentMeta (#37540)', () => {
       const manifest: ComponentManifest = {
         id: 'stack',
@@ -1339,14 +1373,14 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
         \`\`\`
         export type Props = {
           /**
-            Space between children, from the spacing scale.
-        @example "4"
-        @example { initial: "2", md: "4" }
+           * Space between children, from the spacing scale.
+           * @example "4"
+           * @example { initial: "2", md: "4" }
           */
           gap?: string | Record<string, string> = 0;
           /**
-            Main axis.
-        @example "column"
+           * Main axis.
+           * @example "column"
           */
           direction?: "row" | "column" = row;
         }

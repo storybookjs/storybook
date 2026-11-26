@@ -7,6 +7,7 @@ import { dedent } from 'ts-dedent';
 
 import { getStorybookData } from '../automigrate/helpers/mainConfigFile.ts';
 import { shortenPath } from '../util.ts';
+import { getDeprecatedPackagesWarning } from './getDeprecatedPackagesWarning.ts';
 import { getDuplicatedDepsWarnings } from './getDuplicatedDepsWarnings.ts';
 import {
   getIncompatiblePackagesSummary,
@@ -337,6 +338,21 @@ export async function getDoctorDiagnostics({
     '@storybook/*',
     'storybook',
   ]);
+
+  const deprecatedPackagesWarning = getDeprecatedPackagesWarning(
+    installationMetadata,
+    storybookVersion,
+    packageManager.getAllDependencies()
+  );
+
+  if (deprecatedPackagesWarning) {
+    results.push({
+      type: DiagType.DEPRECATED_PACKAGES,
+      title: 'Deprecated packages found',
+      message: deprecatedPackagesWarning,
+      project: { configDir },
+    });
+  }
 
   // If we found incompatible packages, we let the users fix that first
   // If they run doctor again and there are still issues, we show the other warnings

@@ -41,6 +41,7 @@ import {
   runAutomigrations,
 } from './automigrate/multi-project.ts';
 import { FixStatus } from './automigrate/types.ts';
+import { deprecatedPackages } from './doctor/getDeprecatedPackagesWarning.ts';
 import { displayDoctorResults, runMultiProjectDoctor } from './doctor/index.ts';
 import { configureDeferredAddons } from './postinstallAddon.ts';
 import type { ProjectDoctorData, ProjectDoctorResults } from './doctor/types.ts';
@@ -71,25 +72,6 @@ export const getStorybookVersion = (line: string) => {
     version: match[2],
   };
 };
-
-const deprecatedPackages = [
-  {
-    minVersion: '6.0.0-alpha.0',
-    url: 'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#60-deprecations',
-    deprecations: [
-      '@storybook/addon-notes',
-      '@storybook/addon-info',
-      '@storybook/addon-contexts',
-      '@storybook/addon-options',
-      '@storybook/addon-centered',
-    ],
-  },
-  {
-    minVersion: '11.0.0',
-    url: 'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#nextjs-storybooknextjs-is-deprecated',
-    deprecations: ['@storybook/nextjs'],
-  },
-];
 
 const formatPackage = (pkg: Package) => `${pkg.package}@${pkg.version}`;
 

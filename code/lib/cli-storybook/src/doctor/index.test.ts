@@ -46,6 +46,35 @@ describe('getDoctorDiagnostics', () => {
   });
 });
 
+describe('getDoctorDiagnostics deprecated packages check', () => {
+  it('reports @storybook/nextjs as deprecated on Storybook 11', async () => {
+    const packageManager = {
+      packageJsonPaths: [],
+      getAllDependencies: () => ({ '@storybook/nextjs': '^11.0.0', storybook: '^11.0.0' }),
+      getOverrideSources: () => [],
+      findInstallations: async () => ({
+        dependencies: {
+          '@storybook/nextjs': [{ version: '11.0.0', location: '' }],
+          storybook: [{ version: '11.0.0', location: '' }],
+        },
+        duplicatedDependencies: {},
+        infoCommand: '',
+        dedupeCommand: '',
+      }),
+    } as unknown as JsPackageManager;
+
+    const results = await getDoctorDiagnostics({
+      ...projectData,
+      packageManager,
+      storybookVersion: '11.0.0',
+    });
+
+    const deprecated = results.filter(({ type }) => type === DiagnosticType.DEPRECATED_PACKAGES);
+    expect(deprecated).toHaveLength(1);
+    expect(deprecated[0].message).toContain('@storybook/nextjs@11.0.0');
+  });
+});
+
 describe('getDoctorDiagnostics overrides check', () => {
   const hasStorybookDependency = vi.spyOn(JsPackageManager, 'hasStorybookDependency');
 

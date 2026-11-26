@@ -25,6 +25,7 @@ export enum DiagnosticType {
   STORYBOOK_OVERRIDES = 'storybook_overrides',
   MISMATCHING_VERSIONS = 'mismatching_versions',
   DUPLICATED_DEPENDENCIES = 'duplicated_dependencies',
+  DEPRECATED_PACKAGES = 'deprecated_packages',
   CONFIGURATION_ERROR = 'configuration_error',
 }
 

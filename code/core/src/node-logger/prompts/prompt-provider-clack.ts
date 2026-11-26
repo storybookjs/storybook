@@ -54,6 +54,11 @@ const formatTaskLogMessage = (message: string) => {
     .join('\n');
 };
 
+// Clack wraps option lines this many columns short of the terminal, as it counts the color codes of
+// its guide bar. Fitting a hint link to that width, minus the hint's closing parenthesis, keeps a
+// link that starts its own hint line on that line.
+const CLACK_OPTION_LINE_INSET = 13;
+
 // One reason→message mapping, shared by the terminal cancel message and PromptAbortedError, so
 // the two cannot drift apart.
 const CANCEL_MESSAGES: Record<PromptCancelReason, string> = {
@@ -174,10 +179,7 @@ export class ClackPromptProvider extends PromptProvider {
     options: MultiSelectPromptOptions<T>,
     promptOptions?: PromptOptions
   ): Promise<T[]> {
-    // Clack wraps option lines 13 columns short of the terminal, as it counts the color codes of its
-    // guide bar, and the hint ends in a parenthesis. Shortening links to that width keeps a link on
-    // its "More info:" line.
-    const maxLineWidth = Math.max(getTerminalWidth() - 14, 40);
+    const maxLineWidth = getTerminalWidth() - CLACK_OPTION_LINE_INSET - 1;
     const { signal, isStdinEnded, dispose } = stdinEndAbort();
     try {
       const result = await clack.multiselect<T>({

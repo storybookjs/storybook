@@ -35,7 +35,7 @@
 ```
 
 ```svelte filename="LogoutButton.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 3"
-<!-- ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4 -->
+<!-- ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/11/writing-stories/csf/upgrade -->
 <script module>
   // 👇 $app/navigation is a native SvelteKit module. Storybook mocks it, so stories can spy on it.
   import { goto } from '$app/navigation';
@@ -108,7 +108,7 @@
 ```
 
 ```svelte filename="LogoutButton.stories.svelte" renderer="svelte" language="ts" tabTitle="CSF 3"
-<!-- ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4 -->
+<!-- ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/11/writing-stories/csf/upgrade -->
 <script module lang="ts">
   // 👇 $app/navigation is a native SvelteKit module. Storybook mocks it, so stories can spy on it.
   import { goto } from '$app/navigation';

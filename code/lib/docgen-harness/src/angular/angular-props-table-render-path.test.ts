@@ -6,15 +6,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { afterAll, describe, expect, it, vi } from 'vitest';
-
-// config.ts reads FEATURES through @storybook/global at call time, but the compodoc adapter in its
-// import graph destructures FEATURES at first import, so the stub must exist before that.
-const flags = vi.hoisted(() => {
-  const features = { angularFilterNonInputControls: false, docgenServer: false };
-  vi.stubGlobal('FEATURES', features);
-  return features;
-});
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { StrictArgTypes } from '../../../../core/src/csf/story.ts';
 import { mergeServiceArgTypes } from '../../../../core/src/docs-tools/argTypes/docgenServiceArgTypes.ts';
@@ -48,8 +40,12 @@ const mergedWith = (customArgTypes: StrictArgTypes) =>
     customArgTypes,
   });
 
-afterAll(() => {
-  vi.unstubAllGlobals();
+const flags = { angularFilterNonInputControls: false, docgenServer: false };
+
+beforeEach(() => {
+  flags.angularFilterNonInputControls = false;
+  flags.docgenServer = false;
+  vi.stubGlobal('FEATURES', flags);
 });
 
 describe('parameters.docs.extractArgTypes under the docgen server', () => {

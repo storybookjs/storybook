@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { createServer } from 'vite';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { devPublicEnv } from './dev-public-env.ts';
 
@@ -38,10 +38,6 @@ describe('devPublicEnv', () => {
   // The module under test sets the global itself, so stub it to restore it after each test
   beforeEach(() => {
     vi.stubGlobal('__sveltekit_dev', undefined);
-  });
-
-  afterEach(() => {
-    vi.unstubAllGlobals();
   });
 
   it('evaluates `$app/env/public` before anything sets the SvelteKit global', async () => {

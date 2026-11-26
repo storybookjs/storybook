@@ -5,7 +5,6 @@ import { QRCodeSVG } from 'qrcode.react';
 import { SHARE_ISOLATE_MODE } from 'storybook/internal/core-events';
 import type { Addon_BaseType } from 'storybook/internal/types';
 
-import { global } from '@storybook/global';
 import { PopOutIcon } from '@storybook/icons';
 
 import { Consumer, types } from 'storybook/manager-api';

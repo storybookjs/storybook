@@ -52,7 +52,6 @@ describe('PostMessageTransport origin validation', () => {
   });
 
   afterEach(() => {
-    vi.unstubAllGlobals();
     vi.clearAllMocks();
     vi.restoreAllMocks();
   });
@@ -439,10 +438,6 @@ describe('PostMessageTransport origin validation', () => {
 });
 
 describe('PostMessageTransport configuration', () => {
-  afterEach(() => {
-    vi.unstubAllGlobals();
-  });
-
   it('throws InvalidChannelPageError for a page other than manager or preview', () => {
     vi.stubGlobal('addEventListener', vi.fn());
 

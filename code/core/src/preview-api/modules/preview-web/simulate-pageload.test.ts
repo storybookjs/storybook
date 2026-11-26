@@ -1,11 +1,7 @@
 // @vitest-environment happy-dom
 import { describe, expect, it } from 'vitest';
 
-import { global } from '@storybook/global';
-
 import { simulatePageLoad } from './simulate-pageload.ts';
-
-const { document } = global;
 
 describe('simulatePageLoad', () => {
   it('should add script with type module to scripts root', () => {

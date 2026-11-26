@@ -21,10 +21,12 @@ import { getProjectRelativePath } from './paths.ts';
  * is a dry run. A command turns a dry run on once, with {@link setDryRun}. Then writes are staged in
  * memory, reads return the staged content, and steps are recorded instead of run, so a dry run takes
  * the same path as a run and {@link logDryRunChanges} lists what the run would change.
+ *
+ * Only the reads of this module see staged content. Code that reads the disk another way, such as a
+ * glob or a module import, sees the files as they were before the command.
  */
 
 type JournalEntry =
-  | { kind: 'file'; path: string }
   | { kind: 'step'; description: string }
   | { kind: 'command'; command: string; purpose?: string };
 
@@ -32,7 +34,7 @@ interface EffectsState {
   dryRun: boolean;
   /** The content of each staged file by absolute path, `null` for a removed one. */
   staged: Map<string, string | null>;
-  /** The files and steps of a dry run, in the order it met them. */
+  /** The steps and commands of a dry run, in the order it met them. */
   journal: JournalEntry[];
 }
 
@@ -61,11 +63,7 @@ const notFound = (path: string) =>
   });
 
 const stage = (path: string, content: string | null) => {
-  const key = keyOf(path);
-  if (!staged.has(key)) {
-    journal.push({ kind: 'file', path: key });
-  }
-  staged.set(key, content);
+  staged.set(keyOf(path), content);
 };
 
 /** Read a project file as text, with the content a dry run staged for it. */
@@ -234,25 +232,21 @@ const readDisk = (path: string) =>
   diskExistsSync(path) ? diskReadFileSync(path, 'utf8') : undefined;
 
 /**
- * What a run would change, as lines that follow "An actual run would:": one for each file it would create,
- * update or delete, by path, then one for each step it would run, in the order the dry run met them. A JSON or YAML file
- * also lists the keys it would change. Files a run would write with their current content are left
- * out.
+ * What a run would change, as lines that follow "An actual run would:": one for each file it would
+ * create, update or delete, sorted by path, then one for each step and command it would run, in the
+ * order the dry run met them. A JSON or YAML file also lists the keys it would change. Files a run
+ * would write with their current content are left out.
  */
 export const describeDryRunChanges = (): string[] => {
-  const files = journal
-    .flatMap((entry) => (entry.kind === 'file' ? [entry.path] : []))
+  const files = [...staged.keys()]
     .map((path) => ({ path, shown: getProjectRelativePath(path) }))
     .sort((a, b) => a.shown.localeCompare(b.shown));
-  const steps = journal.flatMap((entry) => {
+  const steps = journal.map((entry) => {
     if (entry.kind === 'step') {
-      return [entry.description];
+      return entry.description;
     }
-    if (entry.kind === 'command') {
-      const purpose = entry.purpose ? ` ${entry.purpose}` : '';
-      return [`run ${CLI_COLORS.dryRunChange(entry.command)}${purpose}`];
-    }
-    return [];
+    const purpose = entry.purpose ? ` ${entry.purpose}` : '';
+    return `run ${CLI_COLORS.dryRunChange(entry.command)}${purpose}`;
   });
   return [...files.flatMap(describeFileChange), ...steps];
 };
@@ -273,14 +267,19 @@ const describeFileChange = (entry: { path: string; shown: string }): string[] =>
 };
 
 /**
- * In a dry run, log what a run would change, if anything, under "Dry run finished. An actual run
- * would:", or "Dry run finished with errors. …" for a command that fails.
+ * In a dry run, log what a run would change under "Dry run finished. An actual run would:", or that
+ * it would not change anything. A command that fails says "Dry run finished with errors." instead.
  */
 export const logDryRunChanges = ({ failed = false }: { failed?: boolean } = {}) => {
-  const changes = state.dryRun ? describeDryRunChanges() : [];
-  if (changes.length > 0) {
-    const finished = failed ? 'Dry run finished with errors.' : 'Dry run finished.';
-    logger.step(CLI_COLORS.dryRun(`${finished} An actual run would:`));
-    logger.log(changes.join('\n'));
+  if (!state.dryRun) {
+    return;
   }
+  const finished = failed ? 'Dry run finished with errors.' : 'Dry run finished.';
+  const changes = describeDryRunChanges();
+  if (changes.length === 0) {
+    logger.step(CLI_COLORS.dryRun(`${finished} An actual run would not change anything.`));
+    return;
+  }
+  logger.step(CLI_COLORS.dryRun(`${finished} An actual run would:`));
+  logger.log(changes.join('\n'));
 };

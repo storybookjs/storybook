@@ -47,6 +47,15 @@ describe('outside a dry run', () => {
     expect(await effects.runCommand('pnpm install', run)).toBe('ran');
     expect(effects.describeDryRunChanges()).toEqual([]);
   });
+
+  it('logs no list of changes', async () => {
+    await effects.writeFile(join(root, 'main.js'), 'export default {};');
+
+    effects.logDryRunChanges();
+
+    expect(logger.step).not.toHaveBeenCalled();
+    expect(logger.log).not.toHaveBeenCalled();
+  });
 });
 
 describe('in a dry run', () => {
@@ -161,10 +170,13 @@ describe('in a dry run', () => {
     );
   });
 
-  it('logs nothing when a run would change nothing', () => {
+  it('says that a run would not change anything when it would not', () => {
     effects.logDryRunChanges();
 
-    expect(logger.step).not.toHaveBeenCalled();
+    const [[heading]] = vi.mocked(logger.step).mock.calls;
+    expect(stripVTControlCharacters(String(heading))).toBe(
+      'Dry run finished. An actual run would not change anything.'
+    );
     expect(logger.log).not.toHaveBeenCalled();
   });
 

@@ -1,5 +1,9 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { MinimumReleaseAgeHandledError } from 'storybook/internal/server-errors';
+
+import { logger } from '../../node-logger/index.ts';
+import { isCI } from '../utils/envs.ts';
 import versions from '../versions.ts';
 import { PackageManagerName } from './JsPackageManager.ts';
 import { NPMProxy } from './NPMProxy.ts';
@@ -22,9 +26,13 @@ import {
   parseReleaseTime,
   parseYarnMinimalAgeGateMinutes,
   readPackageVersions,
+  runStorybookInstallPrecheck,
   STORYBOOK_PACKAGE_NAMES,
   STORYBOOK_PACKAGE_PATTERNS,
 } from './util.ts';
+
+vi.mock('../../node-logger/index.ts', { spy: true });
+vi.mock('../utils/envs.ts', { spy: true });
 
 describe('js package manager util', () => {
   it('parses package data', () => {
@@ -178,6 +186,66 @@ describe('js package manager util', () => {
       '@chromatic-com/storybook',
       'chromatic',
     ]);
+  });
+
+  describe('runStorybookInstallPrecheck', () => {
+    const originalIsTTY = process.stdout.isTTY;
+    const setIsTTY = (value: boolean) =>
+      Object.defineProperty(process.stdout, 'isTTY', { value, configurable: true, writable: true });
+    const packageManager = { precheckStorybookPackageInstall: vi.fn<() => Promise<void>>() };
+    const options = { storybookVersion: '11.0.0', installContext: 'upgrade' } as const;
+
+    beforeEach(() => {
+      packageManager.precheckStorybookPackageInstall.mockResolvedValue(undefined);
+      vi.mocked(isCI).mockReturnValue(false);
+      setIsTTY(true);
+    });
+
+    afterEach(() => {
+      setIsTTY(originalIsTTY);
+    });
+
+    it('asks the user in a terminal', async () => {
+      await runStorybookInstallPrecheck(packageManager, { ...options, yes: false });
+
+      expect(packageManager.precheckStorybookPackageInstall).toHaveBeenCalledWith({
+        ...options,
+        nonInteractive: false,
+      });
+    });
+
+    it.each([
+      { name: 'the user passed --yes', yes: true, isTTY: true, ci: false },
+      { name: 'there is no terminal to ask in', yes: false, isTTY: false, ci: false },
+      { name: 'it runs in CI', yes: false, isTTY: true, ci: true },
+    ])('does not ask when $name', async ({ yes, isTTY, ci }) => {
+      setIsTTY(isTTY);
+      vi.mocked(isCI).mockReturnValue(ci);
+
+      await runStorybookInstallPrecheck(packageManager, { ...options, yes });
+
+      expect(packageManager.precheckStorybookPackageInstall).toHaveBeenCalledWith({
+        ...options,
+        nonInteractive: true,
+      });
+    });
+
+    it('stops the command when the age gate blocks this Storybook version', async () => {
+      const blocked = new MinimumReleaseAgeHandledError({ message: 'blocked by the age gate' });
+      packageManager.precheckStorybookPackageInstall.mockRejectedValue(blocked);
+
+      await expect(
+        runStorybookInstallPrecheck(packageManager, { ...options, yes: false })
+      ).rejects.toBe(blocked);
+    });
+
+    it('lets the command go on when the precheck itself fails', async () => {
+      packageManager.precheckStorybookPackageInstall.mockRejectedValue(new Error('yarn not found'));
+
+      await runStorybookInstallPrecheck(packageManager, { ...options, yes: false });
+
+      expect(logger.debug).toHaveBeenCalledWith(expect.stringContaining('yarn not found'));
+    });
   });
 
   it('builds rerun guidance', () => {

@@ -1,5 +1,9 @@
+import { MinimumReleaseAgeHandledError } from 'storybook/internal/server-errors';
+
 import { compare, gt, prerelease, valid } from 'semver';
 
+import { logger } from '../../node-logger/index.ts';
+import { isCI } from '../utils/envs.ts';
 import versions from '../versions.ts';
 import type { JsPackageManager } from './JsPackageManager.ts';
 import { PackageManagerName } from './JsPackageManager.ts';
@@ -36,6 +40,31 @@ export const hasStorybookMinimumAgeExclusions = (configuredPatterns: readonly st
 /** For a package manager that matches exclusions against exact package names, such as Bun. */
 export const hasStorybookMinimumAgeExclusionNames = (configuredNames: readonly string[]) =>
   STORYBOOK_PACKAGE_NAMES.every((name) => configuredNames.includes(name));
+
+/**
+ * Checks whether the package manager's age gate would block this Storybook version, before a
+ * command installs it. Throws `MinimumReleaseAgeHandledError` once the user has been told how to
+ * go on. A precheck that fails for another reason does not stop the command.
+ */
+export const runStorybookInstallPrecheck = async (
+  packageManager: Pick<JsPackageManager, 'precheckStorybookPackageInstall'>,
+  {
+    yes,
+    ...options
+  }: { storybookVersion: string; installContext: StorybookInstallContext; yes: boolean }
+) => {
+  try {
+    await packageManager.precheckStorybookPackageInstall({
+      ...options,
+      nonInteractive: yes || !process.stdout.isTTY || !!isCI(),
+    });
+  } catch (error) {
+    if (error instanceof MinimumReleaseAgeHandledError) {
+      throw error;
+    }
+    logger.debug(`Skipping minimum-release-age precheck after an unexpected failure: ${error}`);
+  }
+};
 
 type DependencyTree = Record<string, { version: string; dependencies?: DependencyTree }>;
 

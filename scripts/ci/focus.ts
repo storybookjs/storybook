@@ -167,7 +167,8 @@ export const PATH_TRIGGERED_JOBS: readonly { job: JobOrNoOpJob; paths: readonly 
   portableStoryTest('nextjs', ['code/frameworks/nextjs/']),
   {
     job: defineMcpTestStorybook(),
-    paths: ['code/addons/mcp/', 'code/lib/mcp/', 'test-storybooks/mcp/'],
+    // Its e2e tests also cover the test-run tool of addon-vitest, with a real Vitest.
+    paths: ['code/addons/mcp/', 'code/lib/mcp/', 'code/addons/vitest/', 'test-storybooks/mcp/'],
   },
   { job: internalStorybookE2e, paths: INTERNAL_STORYBOOK_PATHS },
   { job: internalStorybookBuildE2e, paths: INTERNAL_STORYBOOK_PATHS },

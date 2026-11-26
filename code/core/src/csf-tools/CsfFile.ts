@@ -1029,12 +1029,13 @@ export class CsfFile {
           }
           this._storyAnnotations[exportName] = annotations;
           this._storyStatements[exportName] = decl as Node;
+          // A story of another file has its name there, and the preview takes an empty name as none
+          const ownName =
+            !node.source && isStringLiteral(annotations.name) && annotations.name.value;
           this._stories[exportName] = {
             exportName,
             id: 'FIXME',
-            name: isStringLiteral(annotations.name)
-              ? annotations.name.value
-              : storyNameFromExport(exportName),
+            name: ownName || storyNameFromExport(exportName),
             localName,
             parameters: {},
             factory: storyIsFactory,

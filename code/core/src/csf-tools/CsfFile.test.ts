@@ -1138,6 +1138,21 @@ describe('CsfFile', () => {
       `);
     });
 
+    it('names an export specifier story after its export when it has no name of its own', () => {
+      const { stories } = loadCsf(
+        dedent`
+          export default { title: 'foo/bar' };
+          const Primary = { name: 'Local' };
+          const emptyName = { name: '' };
+          export { Primary as Local, emptyName as EmptyName };
+          export { Primary as RemoteStory } from './other.stories';
+        `,
+        { makeTitle }
+      ).parse();
+
+      expect(stories.map(({ name }) => name)).toEqual(['Local', 'Empty Name', 'Remote Story']);
+    });
+
     it('named exports order', () => {
       expect(
         parse(

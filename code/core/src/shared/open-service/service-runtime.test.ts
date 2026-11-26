@@ -629,7 +629,6 @@ describe('service runtime', () => {
   describe('a load that its own write re-runs', () => {
     afterEach(() => {
       once.clear();
-      vi.unstubAllGlobals();
       vi.restoreAllMocks();
     });
 

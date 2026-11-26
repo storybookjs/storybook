@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { writeFileSync } from 'node:fs';
+import { existsSync, writeFileSync } from 'node:fs';
 import { parseArgs } from 'node:util';
 
 import { chromium } from 'playwright';
@@ -15,7 +15,11 @@ if (!url || !out) {
   process.exit(2);
 }
 
-const browser = await chromium.launch();
+// Prefer Playwright's pinned Chromium, which the Docker image ships, and fall back to the
+// system Google Chrome, which GitHub-hosted runners ship.
+const browser = await chromium.launch(
+  existsSync(chromium.executablePath()) ? {} : { channel: 'chrome' }
+);
 const errors = [];
 try {
   const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });

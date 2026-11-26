@@ -1,4 +1,3 @@
-import { global as globalThis } from '@storybook/global';
 import { setup } from '@storybook/vue3';
 
 const somePlugin = {

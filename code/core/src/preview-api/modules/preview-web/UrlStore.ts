@@ -1,13 +1,9 @@
 import type { ViewMode } from 'storybook/internal/types';
 
-import { global } from '@storybook/global';
-
 import { parse, stringify } from 'picoquery';
 
 import type { Selection, SelectionSpecifier, SelectionStore } from './SelectionStore.ts';
 import { parseArgsParam } from './parseArgsParam.ts';
-
-const { history, document } = global;
 
 /**
  * TODO: Remove in SB11
@@ -39,7 +35,7 @@ const getQueryString = ({
   selection?: Selection;
   extraParams?: Record<PropertyKey, unknown>;
 }) => {
-  const search = document?.location.search.slice(1);
+  const search = globalThis.location?.search.slice(1);
   const { path, selectedKind, selectedStory, ...rest } = parse(search);
   const queryStr = stringify({
     ...rest,
@@ -54,9 +50,9 @@ export const setPath = (selection?: Selection) => {
     return;
   }
   const query = getQueryString({ selection });
-  const { hash = '' } = document.location;
-  document.title = selection.storyId;
-  history.replaceState({}, '', `${document.location.pathname}${query}${hash}`);
+  const { hash = '' } = globalThis.location;
+  globalThis.document.title = selection.storyId;
+  globalThis.history.replaceState({}, '', `${globalThis.location.pathname}${query}${hash}`);
 };
 
 type ValueOf<T> = T[keyof T];
@@ -82,8 +78,8 @@ const getFirstString = (v: ValueOf<Record<PropertyKey, unknown>>): string | void
 };
 
 export const getSelectionSpecifierFromPath: () => SelectionSpecifier | null = () => {
-  if (typeof document !== 'undefined') {
-    const queryStr = document.location.search.slice(1);
+  if (typeof globalThis.location !== 'undefined') {
+    const queryStr = globalThis.location.search.slice(1);
     const query = parse(queryStr);
     const args = typeof query.args === 'string' ? parseArgsParam(query.args) : undefined;
     const globals = typeof query.globals === 'string' ? parseArgsParam(query.globals) : undefined;
@@ -123,7 +119,7 @@ export class UrlStore implements SelectionStore {
 
   setQueryParams(queryParams: Record<PropertyKey, unknown>) {
     const query = getQueryString({ extraParams: queryParams });
-    const { hash = '' } = document.location;
-    history.replaceState({}, '', `${document.location.pathname}${query}${hash}`);
+    const { hash = '' } = globalThis.location;
+    globalThis.history.replaceState({}, '', `${globalThis.location.pathname}${query}${hash}`);
   }
 }

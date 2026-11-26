@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 
-import type { Args, StoryContext } from 'storybook/internal/csf';
 import { logger } from 'storybook/internal/client-logger';
+import type { Args, StoryContext } from 'storybook/internal/csf';
 import { hideArgTypes } from 'storybook/internal/docs-tools';
 
 import type { SourceItem } from './SourceContainer.tsx';
@@ -23,9 +23,16 @@ export function useTransformCode(
   const [completedSource, setCompletedSource] = useState<TransformedSource>({
     code: 'Transforming...',
   });
-  const transformed = transform
-    ? transform(source.code, hideArgTypes(storyContext as StoryContext))
-    : source.code;
+
+  let transformed: string | Promise<string> = source.code;
+  let transformError: unknown;
+  if (transform) {
+    try {
+      transformed = transform(source.code, hideArgTypes(storyContext as StoryContext));
+    } catch (error) {
+      transformError = error;
+    }
+  }
 
   useEffect(() => {
     let active = true;
@@ -39,12 +46,17 @@ export function useTransformCode(
       }
     };
 
+    if (transformError !== undefined) {
+      logger.error(transformError);
+    }
+
     if (typeof transformed === 'string') {
       complete(transformed);
     } else {
       transformed.then(complete, (error) => {
         if (active) {
           logger.error(error);
+          complete(source.code);
         }
       });
     }

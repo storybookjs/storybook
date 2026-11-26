@@ -121,15 +121,26 @@ describe('ComponentMetaManager heap-pressure recycle', () => {
       this.recycleProjectsIfHeapPressured(batchProjects);
   }
 
-  const tsconfig = '/project/tsconfig.json';
-  const file = '/project/src/Button.ts';
+  const file = '/project/app/Button.ts';
+  const otherFile = '/project/lib/Card.ts';
+  const filesByTsconfig: Record<string, string> = {
+    '/project/app/tsconfig.json': file,
+    '/project/lib/tsconfig.json': otherFile,
+  };
 
   const setup = ({ sharesParsedFiles }: { sharesParsedFiles: boolean }) => {
-    const createConfiguredProject = vi.fn(() => createProject(file));
+    const createConfiguredProject = vi.fn((_commandLine: unknown, tsconfig: string) =>
+      createProject(filesByTsconfig[tsconfig])
+    );
     const manager = new RecyclingManager(
-      { sys: { fileExists: (path) => normalize(path) === tsconfig, directoryExists: () => true } },
       {
-        parseCommandLine: () => ({ fileNames: [file] }),
+        sys: {
+          fileExists: (path) => normalize(path) in filesByTsconfig,
+          directoryExists: () => true,
+        },
+      },
+      {
+        parseCommandLine: (tsconfig) => ({ fileNames: [filesByTsconfig[tsconfig]] }),
         createConfiguredProject,
         createInferredProject: () => createProject(file),
         sharesParsedFiles,
@@ -168,6 +179,19 @@ describe('ComponentMetaManager heap-pressure recycle', () => {
     expect(replacement).not.toBe(project);
     expect(replacement.getSourceFilePaths.mock.invocationCallOrder[0]).toBeLessThan(
       project.dispose.mock.invocationCallOrder[0]
+    );
+  });
+
+  it('disposes the other projects before it builds a replacement', () => {
+    const { manager, project } = setup({ sharesParsedFiles: true });
+    const otherProject = manager.getProjectForFile(otherFile);
+    setHeapUsed(Number.POSITIVE_INFINITY);
+
+    manager.recycleIfHeapPressured([project]);
+
+    const replacement = manager.getProjectForFile(file);
+    expect(otherProject.dispose.mock.invocationCallOrder[0]).toBeLessThan(
+      replacement.getSourceFilePaths.mock.invocationCallOrder[0]
     );
   });
 

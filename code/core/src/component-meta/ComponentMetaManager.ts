@@ -34,8 +34,8 @@ import type {
 const rootTsConfigNames = ['tsconfig.json', 'jsconfig.json'];
 
 /**
- * Recycle (dispose + rebuild) the shared TS program(s) once heap usage crosses this fraction of the
- * V8 heap limit.
+ * Recycle (dispose + lazily rebuild) the shared TS program(s) once heap usage crosses this fraction
+ * of the V8 heap limit.
  */
 const RECYCLE_HEAP_PRESSURE_RATIO = 0.7;
 
@@ -157,20 +157,24 @@ export class ComponentMetaManager<
     const projectsToRebuild = new Set(this.factory.sharesParsedFiles ? batchProjects : []);
     this.configProjects.clear();
     this.referencedTsConfigs.clear();
+    this.inferredProject?.dispose();
+    this.inferredProject = undefined;
+    for (const [, project] of recycledProjects) {
+      if (!projectsToRebuild.has(project)) {
+        project.dispose();
+      }
+    }
     for (const [tsconfig, project] of recycledProjects) {
       if (projectsToRebuild.has(project)) {
         try {
-          // The parsed files stay only while a program holds them, so the new program has to exist
-          // before the old one goes. Listing its source files builds it.
+          // Listing the source files builds the program, which takes over the parsed files.
           this.getOrCreateConfiguredProject(tsconfig)?.getSourceFilePaths();
         } catch (err) {
           logger.debug(`[component-meta] Failed to rebuild the project of ${tsconfig}: ${err}`);
         }
+        project.dispose();
       }
-      project.dispose();
     }
-    this.inferredProject?.dispose();
-    this.inferredProject = undefined;
     this.factory.recycle?.();
     return true;
   }

@@ -71,6 +71,15 @@ const isTransientStatus = (status: number) =>
 const fetchRef = (url: string, init: RequestInit = {}) =>
   fetch(url, { ...init, signal: AbortSignal.timeout(REF_MANIFEST_FETCH_TIMEOUT_MS) });
 
+/** Fetches for a ref check, throwing on a transient status so the ref is checked again. */
+const probeRef = async (url: string, init?: RequestInit) => {
+  const response = await fetchRef(url, init);
+  if (isTransientStatus(response.status)) {
+    throw new Error(`${url} responded with ${response.status}`);
+  }
+  return response;
+};
+
 export type ManifestProvider = (
   request: Request | undefined,
   path: string,
@@ -380,12 +389,7 @@ export class CompositionAuth {
    */
   async #checkRef(refUrl: string): Promise<RefCheckResult> {
     const manifestUrl = `${refUrl}/manifests/components.json`;
-    const response = await fetchRef(manifestUrl, {
-      headers: { Accept: 'application/json' },
-    });
-    if (isTransientStatus(response.status)) {
-      throw new Error(`${manifestUrl} responded with ${response.status}`);
-    }
+    const response = await probeRef(manifestUrl, { headers: { Accept: 'application/json' } });
 
     // 401 with WWW-Authenticate = auth needed
     const authReq = await this.#parseAuthFromResponse(response);
@@ -414,15 +418,11 @@ export class CompositionAuth {
 
   /** Check /mcp endpoint for 401 auth requirement. */
   async #checkMcpAuth(refUrl: string): Promise<AuthRequirement | null> {
-    const mcpUrl = `${refUrl}/mcp`;
-    const response = await fetchRef(mcpUrl, {
+    const response = await probeRef(`${refUrl}/mcp`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/list' }),
     });
-    if (isTransientStatus(response.status)) {
-      throw new Error(`${mcpUrl} responded with ${response.status}`);
-    }
     return this.#parseAuthFromResponse(response);
   }
 
@@ -450,10 +450,7 @@ export class CompositionAuth {
     if (!match?.[1]) return null;
 
     const resourceMetadataUrl = match[1];
-    const resourceResponse = await fetchRef(resourceMetadataUrl);
-    if (isTransientStatus(resourceResponse.status)) {
-      throw new Error(`${resourceMetadataUrl} responded with ${resourceResponse.status}`);
-    }
+    const resourceResponse = await probeRef(resourceMetadataUrl);
     if (!resourceResponse.ok) {
       logger.warn(
         `[addon-mcp] Failed to fetch OAuth resource metadata from ${resourceMetadataUrl}: ${resourceResponse.status}`
@@ -470,10 +467,7 @@ export class CompositionAuth {
 
     const authServer = resourceResult.output.authorization_servers[0];
     const serverMetadataUrl = `${authServer}/.well-known/oauth-authorization-server`;
-    const serverResponse = await fetchRef(serverMetadataUrl);
-    if (isTransientStatus(serverResponse.status)) {
-      throw new Error(`${serverMetadataUrl} responded with ${serverResponse.status}`);
-    }
+    const serverResponse = await probeRef(serverMetadataUrl);
     if (!serverResponse.ok) {
       logger.warn(
         `[addon-mcp] Failed to fetch OAuth server metadata from ${serverMetadataUrl}: ${serverResponse.status}`

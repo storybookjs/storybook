@@ -154,6 +154,53 @@ describe('multi-project management', () => {
     expect(fromButton).toBe(fromCard);
   });
 
+  it(
+    'reads a shared file that changed after another project parsed it',
+    { timeout: 30_000 },
+    () => {
+      tempDir = createTempDir();
+      const component = (name: string) => dedent`
+      import React from 'react';
+      import type { Props } from '../shared.ts';
+      export const ${name} = (_props: Props) => <div />;
+    `;
+      const files = writeFiles(tempDir, {
+        'shared.ts': `export interface Props { label: string }`,
+        'app/tsconfig.json': tsconfigJSON(),
+        'app/Button.tsx': component('Button'),
+        'app/Button.stories.tsx': `import { Button } from './Button';\nexport default {};`,
+        'lib/tsconfig.json': tsconfigJSON(),
+        'lib/Card.tsx': component('Card'),
+        'lib/Card.stories.tsx': `import { Card } from './Card';\nexport default {};`,
+      });
+      const toRef = (dir: string, name: string): StoryRef => ({
+        storyPath: files[`${dir}/${name}.stories.tsx`],
+        component: {
+          componentName: name,
+          importId: `./${name}`,
+          importName: name,
+          path: files[`${dir}/${name}.tsx`],
+          isPackage: false,
+        },
+      });
+      manager = new ComponentMetaManager(typescript);
+      manager.batchExtract([toRef('app', 'Button')]);
+      fs.writeFileSync(
+        files['shared.ts'],
+        `export interface Props { label: string; size: number }`
+      );
+      const later = new Date(Date.now() + 10_000);
+      fs.utimesSync(files['shared.ts'], later, later);
+
+      const card = toRef('lib', 'Card');
+      manager.batchExtract([card]);
+
+      expect(Object.keys(card.component?.reactComponentMeta?.props ?? {})).toEqual(
+        expect.arrayContaining(['label', 'size'])
+      );
+    }
+  );
+
   it('falls back to inferred project when no tsconfig found', { timeout: 30_000 }, () => {
     tempDir = createTempDir();
 

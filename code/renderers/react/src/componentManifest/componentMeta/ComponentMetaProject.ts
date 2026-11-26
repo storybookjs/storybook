@@ -109,10 +109,19 @@ export class ComponentMetaProject
       (s) => s, // asScriptId - identity for React (no URI mapping needed)
       projectHost
     );
-    // Like tsserver, read a referenced project's sources instead of its .d.ts output, so its
-    // components stay in the program. The flag is internal on LanguageServiceHost's typings.
+    const getHostScriptVersion = languageServiceHost.getScriptVersion;
     this.service = typescript.createLanguageService(
-      Object.assign(languageServiceHost, { useSourceOfProjectReferenceRedirect: () => true }),
+      Object.assign(languageServiceHost, {
+        // Like tsserver, read a referenced project's sources instead of its .d.ts output, so its
+        // components stay in the program. The flag is internal on LanguageServiceHost's typings.
+        useSourceOfProjectReferenceRedirect: () => true,
+        // The registry hands a file parsed by one project to another project that asks for the same
+        // version. The host counts versions from 0 for each project, so the mtime tells them apart.
+        getScriptVersion: (fileName: string) => {
+          const hostVersion = getHostScriptVersion(fileName);
+          return `${hostVersion}:${this.files.getScriptVersion(fileName)}`;
+        },
+      }),
       this.documentRegistry
     );
   }

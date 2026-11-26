@@ -1,9 +1,9 @@
 import os from 'node:os';
 
-import { HandledError, formatFileContent } from 'storybook/internal/common';
+import { HandledError, effects, formatFileContent } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
-import { promises as fs } from 'fs';
+import { realpath } from 'node:fs/promises';
 import picocolors from 'picocolors';
 // eslint-disable-next-line depend/ban-dependencies
 import slash from 'slash';
@@ -35,7 +35,7 @@ export async function runCodemod(
   // A list of files is used as is, so a path with `(` or `[` in it is not read as a glob.
   globPattern: string | string[] = '**/*.{stories,story}.{js,jsx,ts,tsx,mjs,mjsx,mts,mtsx}',
   transform: (source: FileInfo, ...rest: any) => string | Promise<string>,
-  { dryRun = false, skipFormatting = false }: { dryRun?: boolean; skipFormatting?: boolean } = {}
+  { skipFormatting = false }: { skipFormatting?: boolean } = {}
 ) {
   let modifiedCount = 0;
   let unmodifiedCount = 0;
@@ -73,22 +73,20 @@ export async function runCodemod(
           try {
             let filePath = file;
             try {
-              filePath = await fs.realpath(file);
+              filePath = await realpath(file);
             } catch (err) {
               // if anything goes wrong when resolving the file, fallback to original path as is set above
             }
 
-            const source = await fs.readFile(filePath, 'utf-8');
+            const source = await effects.readFile(filePath);
             const fileInfo: FileInfo = { path: filePath, source };
             const transformedSource = await transform(fileInfo);
 
             if (transformedSource !== source) {
-              if (!dryRun) {
-                const fileContent = skipFormatting
-                  ? transformedSource
-                  : await formatFileContent(file, transformedSource);
-                await fs.writeFile(file, fileContent, 'utf-8');
-              }
+              const fileContent = skipFormatting
+                ? transformedSource
+                : await formatFileContent(file, transformedSource);
+              await effects.writeFile(file, fileContent);
               modifiedCount++;
             } else {
               unmodifiedCount++;
@@ -108,14 +106,6 @@ export async function runCodemod(
   logger.log(
     `Summary: ${picocolors.green(`${modifiedCount} transformed`)}, ${picocolors.yellow(`${unmodifiedCount} unmodified`)}, ${picocolors.red(`${errorCount} errors`)}`
   );
-
-  if (dryRun) {
-    logger.log(
-      picocolors.bold(
-        `This was a dry run. Run without --dry-run to apply the transformation to ${modifiedCount} files.`
-      )
-    );
-  }
 
   return { files, errorCount };
 }

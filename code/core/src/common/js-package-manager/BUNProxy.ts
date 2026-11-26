@@ -1,4 +1,3 @@
-import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { logger, prompt } from 'storybook/internal/node-logger';
@@ -13,6 +12,7 @@ import { dedent } from 'ts-dedent';
 
 import type { ExecuteCommandOptions } from '../utils/command.ts';
 import { executeCommand } from '../utils/command.ts';
+import * as effects from '../utils/effects.ts';
 import { JsPackageManager, PackageManagerName } from './JsPackageManager.ts';
 import type { PackageJson } from './PackageJson.ts';
 import type { InstallationMetadata } from './types.ts';
@@ -84,6 +84,7 @@ export class BUNProxy extends JsPackageManager {
   installArgs: string[] | undefined;
 
   async initPackageJson() {
+    // eslint-disable-next-line local-rules/project-writes-through-effects -- creates the package.json of a new project, which has no dry run
     return executeCommand({ command: 'bun', args: ['init'] });
   }
 
@@ -202,6 +203,7 @@ export class BUNProxy extends JsPackageManager {
   }
 
   protected runInstall(options?: { force?: boolean }) {
+    // eslint-disable-next-line local-rules/project-writes-through-effects -- installDependencies runs this through effects, which records it in a dry run
     return executeCommand({
       command: 'bun',
       args: ['install', ...this.getInstallArgs(), ...(options?.force ? ['--force'] : [])],
@@ -359,6 +361,7 @@ export class BUNProxy extends JsPackageManager {
       args = ['-D', ...args];
     }
 
+    // eslint-disable-next-line local-rules/project-writes-through-effects -- addDependencies runs this through effects, which records it in a dry run
     return executeCommand({
       command: 'bun',
       args: ['add', ...args, ...this.getInstallArgs()],
@@ -505,7 +508,7 @@ export class BUNProxy extends JsPackageManager {
         ].join('')
       : this.updateMinimumReleaseAgeExcludesInContent(currentContent, replacement, lineEnding);
 
-    writeFileSync(bunfigPath, nextContent);
+    effects.writeFileSync(bunfigPath, nextContent);
   }
 
   private updateMinimumReleaseAgeExcludesInContent(
@@ -559,7 +562,7 @@ export class BUNProxy extends JsPackageManager {
 
   private readBunfig(): string | null {
     try {
-      return readFileSync(join(this.cwd, 'bunfig.toml'), 'utf-8');
+      return effects.readFileSync(join(this.cwd, 'bunfig.toml'));
     } catch {
       return null;
     }

@@ -1,11 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { JsPackageManager, PackageJson } from 'storybook/internal/common';
+import { type JsPackageManager, type PackageJson, effects } from 'storybook/internal/common';
 import { prompt } from 'storybook/internal/node-logger';
 
 import * as mainConfigFile from './helpers/mainConfigFile.ts';
 import { doAutomigrate, runFixes } from './index.ts';
-import type { Fix } from './types.ts';
+import { type Fix, FixStatus } from './types.ts';
 
 const check1 = vi.fn();
 const run1 = vi.fn();
@@ -39,6 +39,7 @@ vi.mock('storybook/internal/node-logger', () => ({
     enableLogWriting: vi.fn(),
   },
   CLI_COLORS: {
+    dryRunChange: vi.fn((text: string) => text),
     success: vi.fn((text: string) => text),
     error: vi.fn((text: string) => text),
     warning: vi.fn((text: string) => text),
@@ -87,11 +88,14 @@ class PackageManager implements Partial<JsPackageManager> {
   ): Promise<PackageJson | null> {
     return getModulePackageJSON(packageName, basePath);
   }
+
+  getPackageCommand(args: string[]) {
+    return `pnpm exec ${args.join(' ')}`;
+  }
 }
 
 const packageManager = new PackageManager() as unknown as JsPackageManager;
 
-const dryRun = false;
 const yes = true;
 const skipInstall = false;
 const configDir = '/path/to/config';
@@ -101,7 +105,6 @@ const isUpgrade = true;
 
 const common = {
   fixes,
-  dryRun,
   yes,
   mainConfig: { stories: [] },
   skipInstall,
@@ -206,5 +209,58 @@ describe('runFixes', () => {
       'An error occurred while running the automigrate command.'
     );
     expect(run1).not.toHaveBeenCalled();
+  });
+});
+
+describe('a dry run', () => {
+  beforeEach(() => {
+    effects.setDryRun(true);
+    check1.mockResolvedValue({ some: 'result' });
+    vi.mocked(prompt.confirm).mockResolvedValue(true);
+  });
+
+  afterEach(() => {
+    effects.setDryRun(false);
+    vi.clearAllMocks();
+  });
+
+  it('lists a manual migration without asking for its changes', async () => {
+    const manual: Fix = {
+      id: 'by-hand',
+      promptType: 'manual',
+      check: async () => ({}),
+      prompt: () => 'Change this by hand',
+    };
+
+    const { fixResults, fixSummary } = await runFixes({
+      ...common,
+      fixes: [manual],
+      yes: false,
+      storybookVersion: '7.0.0',
+    });
+
+    expect(prompt.confirm).not.toHaveBeenCalled();
+    expect(fixResults).toEqual({ 'by-hand': FixStatus.MANUAL_SUCCEEDED });
+    expect(fixSummary.manual).toEqual(['by-hand']);
+  });
+
+  it('fails when a fix fails, and lists the doctor with the package manager of the project', async () => {
+    run1.mockImplementationOnce(() => {
+      throw new Error('cannot migrate');
+    });
+    getStorybookData.mockResolvedValue({
+      ...common,
+      beforeVersion,
+      versionInstalled: '7.0.0',
+      isLatest: true,
+    });
+
+    await expect(doAutomigrate({ configDir, fixes })).rejects.toThrow(
+      'An error occurred while running the automigrate command.'
+    );
+
+    expect(effects.describeDryRunChanges()).toContain(
+      'run pnpm exec storybook doctor to verify the automigrations went well'
+    );
   });
 });

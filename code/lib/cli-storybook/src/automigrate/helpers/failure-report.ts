@@ -1,7 +1,6 @@
-import { readFile, rm, writeFile } from 'node:fs/promises';
 import { join, relative } from 'node:path';
 
-import { getProjectRoot } from 'storybook/internal/common';
+import { effects, getProjectRoot } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
 import { normalize } from 'pathe';
@@ -43,7 +42,7 @@ const renderSections = (failures: FixFileFailure[], root: string) =>
   );
 
 const readSections = async (reportPath: string) => {
-  const report = (await readFile(reportPath, 'utf-8').catch(() => '')).replaceAll('\r\n', '\n');
+  const report = (await effects.readFile(reportPath).catch(() => '')).replaceAll('\r\n', '\n');
   return report
     .split(/\n(?=## )/)
     .filter((section) => section.startsWith('## '))
@@ -65,10 +64,10 @@ export const reportFileFailures = async (failures: FixFileFailure[], ran: Iterab
   const kept = (await readSections(reportPath)).filter(({ fixId }) => !ranIds.has(fixId));
   const sections = [...kept.map(({ text }) => text), ...renderSections(failures, root)];
   if (sections.length === 0) {
-    await rm(reportPath, { force: true });
+    await effects.removeFile(reportPath);
     return;
   }
-  await writeFile(reportPath, [HEADER, ...sections].join('\n\n') + '\n');
+  await effects.writeFile(reportPath, [HEADER, ...sections].join('\n\n') + '\n');
   const count = failures.length;
   logger.warn(
     count > 0

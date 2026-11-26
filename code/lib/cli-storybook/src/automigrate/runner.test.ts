@@ -1,8 +1,8 @@
 import { readFile, writeFile } from 'node:fs/promises';
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { JsPackageManager } from 'storybook/internal/common';
+import { type JsPackageManager, effects } from 'storybook/internal/common';
 import { prompt } from 'storybook/internal/node-logger';
 
 import { fs, vol } from 'memfs';
@@ -341,5 +341,56 @@ describe('a fix whose check read a file that an earlier fix changed', () => {
 
     expect(statuses).toEqual({ first: 'succeeded', second: 'succeeded' });
     expect(vol.toJSON()[setupFile]).toBe('setup+first');
+  });
+});
+
+describe('a dry run', () => {
+  const files = {
+    [project.mainConfigPath]: "import 'swap-old'; import 'healthy-old';",
+    [project.storiesPaths[0]]: "import 'swap-old'; import 'healthy-old';",
+  };
+
+  beforeEach(() => {
+    vol.reset();
+    vi.mocked(readFile).mockImplementation(fs.promises.readFile as typeof readFile);
+    vi.mocked(writeFile).mockImplementation(fs.promises.writeFile as typeof writeFile);
+    vol.fromJSON(files);
+    effects.setDryRun(true);
+  });
+
+  afterEach(() => {
+    effects.setDryRun(false);
+  });
+
+  it('reports the result of each fix in a project, and stages its edits', async () => {
+    const { fixResults } = await runFixes({ ...project, fixes: [failingSwap, healthy], yes: true });
+
+    expect(fixResults).toEqual({ swap: 'failed', healthy: 'succeeded' });
+    expect(vol.toJSON()).toEqual(files);
+    expect(await effects.readFile(project.mainConfigPath)).toBe(
+      "import 'swap-old'; import 'healthy-new';"
+    );
+  });
+
+  it('reports the result of each fix across projects, and stages its edits', async () => {
+    const detected = await collectAutomigrationsAcrossProjects({
+      fixes: [failingSwap, healthy],
+      projects: [{ ...project, beforeVersion: '10.0.0' }],
+      taskLog: { message: () => {}, error: () => {}, success: () => {} } as never,
+    });
+
+    const results = await runAutomigrationsForProjects(detected, {
+      automigrations: detected,
+      yes: true,
+    } as never);
+
+    expect(results[project.configDir].automigrationStatuses).toEqual({
+      swap: 'failed',
+      healthy: 'succeeded',
+    });
+    expect(vol.toJSON()).toEqual(files);
+    expect(await effects.readFile(project.storiesPaths[0])).toBe(
+      "import 'swap-old'; import 'healthy-new';"
+    );
   });
 });

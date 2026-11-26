@@ -2,6 +2,7 @@ import { join, relative, resolve, sep } from 'node:path';
 
 import * as find from 'empathic/find';
 import * as walk from 'empathic/walk';
+import * as pathe from 'pathe';
 import { globSync } from 'tinyglobby';
 
 import { LOCK_FILES } from '../js-package-manager/constants.ts';
@@ -54,6 +55,20 @@ export const getProjectRoot = () => {
 
   projectRoot = process.cwd();
   return projectRoot;
+};
+
+/**
+ * A path to show the user: relative to the project root when it is inside it, absolute otherwise,
+ * with forward slashes on every platform.
+ */
+export const getProjectRelativePath = (path: string) => {
+  const relativePath = pathe.relative(getProjectRoot(), path);
+  if (relativePath === '') {
+    return '.';
+  }
+  return relativePath === '..' || relativePath.startsWith('../') || pathe.isAbsolute(relativePath)
+    ? pathe.normalize(path)
+    : relativePath;
 };
 
 export const invalidateProjectRootCache = () => {

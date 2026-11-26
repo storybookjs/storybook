@@ -1,6 +1,4 @@
-import { readFile, writeFile } from 'node:fs/promises';
-
-import { type JsPackageManager, getProjectRoot } from 'storybook/internal/common';
+import { type JsPackageManager, effects, getProjectRoot } from 'storybook/internal/common';
 import {
   type CsfValue,
   type ESTree as E,
@@ -398,7 +396,7 @@ export async function configureEslintPlugin({
   if (eslintConfigFile) {
     if (eslintConfigFile.endsWith('json')) {
       logger.debug(`Detected JSON config at ${eslintConfigFile}`);
-      const eslintFileContents = await readFile(eslintConfigFile, { encoding: 'utf8' });
+      const eslintFileContents = await effects.readFile(eslintConfigFile);
       const eslintConfig = commentJson.parse(eslintFileContents) as {
         extends?: string[];
       };
@@ -414,16 +412,16 @@ export async function configureEslintPlugin({
       eslintConfig.extends.push('plugin:storybook/recommended');
 
       const spaces = detectIndent(eslintFileContents).amount || 2;
-      await writeFile(eslintConfigFile, commentJson.stringify(eslintConfig, null, spaces));
+      await effects.writeFile(eslintConfigFile, commentJson.stringify(eslintConfig, null, spaces));
     } else {
       if (isFlatConfig) {
         logger.debug(`Detected flat config at ${eslintConfigFile}`);
-        const code = await readFile(eslintConfigFile, { encoding: 'utf8' });
+        const code = await effects.readFile(eslintConfigFile);
         const output = await configureFlatConfig(code, eslintConfigFile);
         if (output === code) {
           return;
         }
-        await writeFile(eslintConfigFile, output);
+        await effects.writeFile(eslintConfigFile, output);
       } else {
         const eslint = await readConfig(eslintConfigFile);
         const extendsValue = eslint.getValue(['extends']);

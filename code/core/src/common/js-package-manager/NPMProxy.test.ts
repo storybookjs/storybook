@@ -1,12 +1,14 @@
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import { join } from 'pathe';
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { prompt } from 'storybook/internal/node-logger';
 import { MinimumReleaseAgeHandledError } from 'storybook/internal/server-errors';
 
 import { executeCommand } from '../utils/command.ts';
+import * as effects from '../utils/effects.ts';
 import { JsPackageManager } from './JsPackageManager.ts';
 import { NPMProxy } from './NPMProxy.ts';
 
@@ -20,6 +22,7 @@ vi.mock('storybook/internal/node-logger', () => ({
     warn: vi.fn(),
     error: vi.fn(),
   },
+  CLI_COLORS: { dryRunChange: (text: string) => text },
 }));
 
 vi.mock(import('../utils/command.ts'), { spy: true });
@@ -276,6 +279,53 @@ describe('NPM Proxy', () => {
           })
         );
       });
+    });
+  });
+
+  describe('in a dry run', () => {
+    let dir: string;
+
+    beforeEach(async () => {
+      effects.setDryRun(true);
+      dir = await mkdtemp(join(tmpdir(), 'sb-npm-dry-run-'));
+    });
+
+    afterEach(async () => {
+      effects.setDryRun(false);
+      await rm(dir, { recursive: true, force: true });
+    });
+
+    it('records an install instead of running it', async () => {
+      await npmProxy.addDependencies({ type: 'devDependencies' }, ['storybook']);
+      await npmProxy.installDependencies();
+
+      expect(mockedExecuteCommand).not.toHaveBeenCalled();
+      expect(effects.describeDryRunChanges()).toEqual([
+        'run npm install -D storybook',
+        'run npm install',
+      ]);
+    });
+
+    it('stages a package.json change, and lists the versions it sets', async () => {
+      vi.mocked(npmProxy.writePackageJson).mockRestore();
+      const packageJsonPath = join(dir, 'package.json');
+      const content = `${JSON.stringify({ devDependencies: { storybook: '10.0.0' } }, null, 2)}\n`;
+      await writeFile(packageJsonPath, content);
+
+      await npmProxy.addDependencies(
+        {
+          type: 'devDependencies',
+          skipInstall: true,
+          packageJsonInfo: JsPackageManager.getPackageJsonInfo(packageJsonPath),
+        },
+        ['storybook@^11.0.0']
+      );
+
+      expect(await readFile(packageJsonPath, 'utf8')).toBe(content);
+      expect(effects.describeDryRunChanges()).toEqual([
+        expect.stringMatching(/^update .*package\.json$/),
+        '↳ devDependencies.storybook: 10.0.0 → ^11.0.0',
+      ]);
     });
   });
 

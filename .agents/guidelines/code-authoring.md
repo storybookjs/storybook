@@ -14,6 +14,12 @@ Apply them when writing or reviewing code, not just when asked.
 - **Bias toward broader coverage for security and migrations.** For security-sensitive code paths and legacy data migration logic, prefer handling more edge cases and documenting evidence for the chosen safeguards. Migration compatibility code should be explicitly version-scoped so it can be removed once the support window ends.
 - **Prefer deletion and simplicity over speculative generality.** No abstraction, fallback, or "flexibility" for a consumer or scenario that does not exist in this codebase today. If a change adds many lines, check whether the right change removes them. Implement small logic inline when a shared helper is not clearly reused.
 - **Keep e2e and long interaction tests as a readable continuous flow.** Do not force DRY with loops or heavy helpers when repetition is clearer.
+- **Change project files through the effects module.** CLI code writes and removes project files with `effects.writeFile` and `effects.removeFile` from `storybook/internal/common`, and reads them with `effects.readFile`, so a dry run stages each change, later reads see it, and the command lists it at the end.
+  A step that a file write cannot stage, such as an install or the `skills` CLI, goes through `effects.runCommand` or `effects.runStep`; the package manager's install, add and dedupe methods already do.
+  Do not check `effects.isDryRun()` to skip a write, or to reword or hide a message: a dry run prints what a run prints, and only the command's intro and outro say it is a dry run.
+  The list at the end says what a run would change.
+  In `lib/cli-storybook`, `core/src/cli`, `core/src/common` and `core/src/csf-tools`, the `local-rules/project-writes-through-effects` lint rule rejects `node:fs` writes, and package manager commands that change the project outside `effects.runCommand`.
+  A write that is not a project change, such as a cache, a lock or a temporary file, disables the rule with a reason, for example `// eslint-disable-next-line local-rules/project-writes-through-effects -- cache files, not project files`.
 - **Put a story's human-facing description in JSDoc above the `meta` const**, not in a `description` parameter.
 - **Keep historical telemetry string names stable** when renaming tools or APIs that emit telemetry, unless the field is brand-new and has no existing data.
 - **Use git worktrees for parallel or experimental work.** Keep the primary workspace clean and base feature branches on `origin/next`, not a dirty local `next`.

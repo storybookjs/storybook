@@ -1,5 +1,7 @@
 import type { WriteStream } from 'node:fs';
+// eslint-disable-next-line local-rules/project-writes-through-effects -- temporary files and the debug log, which a dry run writes too
 import { createWriteStream, mkdirSync } from 'node:fs';
+// eslint-disable-next-line local-rules/project-writes-through-effects -- temporary files and the debug log, which a dry run writes too
 import { copyFile, readFile, realpath, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import { join } from 'node:path';

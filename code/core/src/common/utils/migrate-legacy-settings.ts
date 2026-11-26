@@ -1,3 +1,4 @@
+// eslint-disable-next-line local-rules/project-writes-through-effects -- user settings, not project files
 import { access, cp } from 'node:fs/promises';
 import { join } from 'node:path';
 

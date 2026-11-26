@@ -12,6 +12,7 @@ import picocolors from 'picocolors';
 
 import { getAddonAnnotations } from './get-addon-annotations.ts';
 import { getAddonNames } from './get-addon-names.ts';
+import { getProjectRelativePath } from './paths.ts';
 
 export async function syncStorybookAddons(
   mainConfig: StorybookConfig,
@@ -94,7 +95,7 @@ export async function syncPreviewAddonsWithMainConfig(
 
   if (syncedAddons.length > 0) {
     logger.log(
-      `Synchronizing addons from main config in ${picocolors.cyan(previewConfig.fileName)}:\n${syncedAddons.map(picocolors.magenta).join(', ')}`
+      `Synchronizing addons from main config in ${picocolors.cyan(getProjectRelativePath(String(previewConfig.fileName)))}:\n${syncedAddons.map(picocolors.magenta).join(', ')}`
     );
   }
 

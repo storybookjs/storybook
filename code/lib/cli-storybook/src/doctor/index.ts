@@ -1,4 +1,4 @@
-import { JsPackageManager } from 'storybook/internal/common';
+import { JsPackageManager, getProjectRelativePath } from 'storybook/internal/common';
 import { CLI_COLORS, logTracker, logger } from 'storybook/internal/node-logger';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
@@ -6,7 +6,6 @@ import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
 import { getStorybookData } from '../automigrate/helpers/mainConfigFile.ts';
-import { shortenPath } from '../util.ts';
 import { getDuplicatedDepsWarnings } from './getDuplicatedDepsWarnings.ts';
 import {
   getIncompatiblePackagesSummary,
@@ -87,7 +86,7 @@ export function displayDoctorResults(
   // For single project, display per-project results
   if (projectCount === 1) {
     const [configDir, result] = Object.entries(projectResults)[0];
-    const projectName = shortenPath(configDir) || '.';
+    const projectName = getProjectRelativePath(configDir);
 
     if (result.status === 'healthy') {
       logger.log(`✅ ${projectName}: No issues found`);
@@ -144,11 +143,11 @@ export function displayDoctorResults(
 
       if (diagnostic.projects.length > 1) {
         const projectNames = diagnostic.projects
-          .map((p) => shortenPath(p.configDir) || '.')
+          .map((p) => getProjectRelativePath(p.configDir))
           .join(', ');
         messageWithProjects += `\n\nAffected projects: ${projectNames}`;
       } else {
-        const projectName = shortenPath(diagnostic.projects[0].configDir) || '.';
+        const projectName = getProjectRelativePath(diagnostic.projects[0].configDir);
         messageWithProjects += `\n\nAffected project: ${projectName}`;
       }
 

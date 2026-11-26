@@ -12,10 +12,6 @@ vi.mock('storybook/internal/node-logger', () => ({
   },
 }));
 
-vi.mock('../util.ts', () => ({
-  shortenPath: (path: string) => path,
-}));
-
 type GateVersions = Record<string, string | null | (() => Promise<string | null>)>;
 
 const createPackageManager = (

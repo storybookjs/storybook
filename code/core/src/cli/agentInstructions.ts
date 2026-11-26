@@ -1,4 +1,4 @@
-import { readFile, writeFile } from 'node:fs/promises';
+import { effects } from 'storybook/internal/common';
 
 import { escapeRegExp } from 'es-toolkit/string';
 import { join } from 'pathe';
@@ -153,7 +153,7 @@ export type AgentInstructionsChange = { file: string; change: 'added' | 'updated
 
 const readOptional = async (path: string): Promise<string | undefined> => {
   try {
-    return await readFile(path, 'utf8');
+    return await effects.readFile(path);
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
       return undefined;
@@ -196,7 +196,7 @@ export async function addStorybookAgentInstructions(
   );
   const changes: AgentInstructionsChange[] = [];
   for (const [file, content] of Object.entries(files)) {
-    await writeFile(join(root, file), content);
+    await effects.writeFile(join(root, file), content);
     changes.push({
       file,
       change: findSection(existing.get(file)) !== undefined ? 'updated' : 'added',

@@ -1,7 +1,11 @@
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { optionalEnvToBoolean, syncStorybookAddons } from 'storybook/internal/common';
+import {
+  getProjectRelativePath,
+  optionalEnvToBoolean,
+  syncStorybookAddons,
+} from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
 
 import { normalize } from 'pathe';
@@ -45,13 +49,12 @@ export const SANDBOX_STORIES_GLOB =
   '{stories,src/stories}/{Button,Header,Page,button,header,page}.stories.*';
 
 async function runStoriesCodemod(options: {
-  dryRun: boolean | undefined;
   useSubPathImports: boolean;
   previewConfigPath: string;
   yes: boolean | undefined;
   glob: string | undefined;
 }) {
-  const { dryRun, yes, glob, ...codemodOptions } = options;
+  const { yes, glob, ...codemodOptions } = options;
   const inSandbox = optionalEnvToBoolean(process.env.IN_STORYBOOK_SANDBOX) ?? false;
   const promptsForGlob = !glob && !inSandbox && !yes;
   try {
@@ -69,7 +72,7 @@ async function runStoriesCodemod(options: {
 
     logger.step('Applying codemod on your stories, this might take some time...');
 
-    await runCodemod(globString, (info) => storyToCsf4(info, codemodOptions), { dryRun });
+    await runCodemod(globString, (info) => storyToCsf4(info, codemodOptions));
   } catch (err: any) {
     // Ask for another glob. Without a prompt, the same glob would match nothing again.
     if (err.message === 'No files matched' && promptsForGlob) {
@@ -84,7 +87,6 @@ export const csfFactories: CommandFix = {
   id: 'csf-factories',
   promptType: 'command',
   async run({
-    dryRun,
     mainConfig,
     mainConfigPath,
     previewConfigPath,
@@ -123,7 +125,7 @@ export const csfFactories: CommandFix = {
       });
     }
 
-    const { packageJson, operationDir } = packageManager.primaryPackageJson;
+    const { packageJson, operationDir, packageJsonPath } = packageManager.primaryPackageJson;
 
     if (isReactNativePreview) {
       const nativePreviewFile = previewConfigPath ?? join(configDir, 'preview.tsx');
@@ -132,13 +134,13 @@ export const csfFactories: CommandFix = {
         useSubPathImports = false;
       } else if (applyPreviewImportsMap(packageJson, previewFile, operationDir)) {
         logger.step(
-          `Adding imports map in ${picocolors.cyan(normalize(packageManager.primaryPackageJson.packageJsonPath))}`
+          `Adding imports map in ${picocolors.cyan(getProjectRelativePath(packageJsonPath))}`
         );
         packageManager.writePackageJson(packageJson, operationDir);
       }
     } else if (useSubPathImports && !packageJson.imports?.['#*']) {
       logger.step(
-        `Adding imports map in ${picocolors.cyan(normalize(packageManager.primaryPackageJson.packageJsonPath))}`
+        `Adding imports map in ${picocolors.cyan(getProjectRelativePath(packageJsonPath))}`
       );
       packageJson.imports = {
         ...packageJson.imports,
@@ -148,7 +150,6 @@ export const csfFactories: CommandFix = {
     }
 
     await runStoriesCodemod({
-      dryRun,
       useSubPathImports,
       previewConfigPath: previewConfigPath!,
       yes,
@@ -159,12 +160,12 @@ export const csfFactories: CommandFix = {
     const frameworkPackage =
       getFrameworkPackageName(mainConfig) || '@storybook/your-framework-here';
     await runCodemod([mainConfigPath!], (fileInfo) =>
-      configToCsfFactory(fileInfo, { configType: 'main', frameworkPackage }, { dryRun })
+      configToCsfFactory(fileInfo, { configType: 'main', frameworkPackage })
     );
 
     logger.step('Applying codemod on your preview config...');
     await runCodemod([previewConfigPath!], (fileInfo) =>
-      configToCsfFactory(fileInfo, { configType: 'preview', frameworkPackage }, { dryRun })
+      configToCsfFactory(fileInfo, { configType: 'preview', frameworkPackage })
     );
 
     await syncStorybookAddons(mainConfig, previewConfigPath!, configDir);

@@ -21,7 +21,8 @@ check ──▶ detection pass ──▶ prompt ──▶ run + commit `files` �
   A fix whose `run` throws keeps none of its `files` edits and its hooks skip the apply pass, but dependency changes and `add()` already happened, so do everything that can fail before them.
   `run` can also resolve `false` to decline, for example when the user cancels a prompt; the fix keeps no edits and is reported as skipped.
 - The apply pass then streams the files once more through the hooks of the fixes that ran, and writes each changed file before reading the next one, so it sees what `run` and `add()` wrote.
-  A dry run stops before `run` and writes nothing, not even the summary.
+  A dry run takes the same path: `run`, `files` and the apply pass write through `effects`, which stages each change in memory, and installs are recorded instead of run.
+  The command then lists the files and packages an actual run would have changed.
 
 ## `transform`
 

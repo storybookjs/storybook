@@ -34,6 +34,7 @@ export * from './utils/log-config.ts';
 export * from './utils/module-resolver.ts';
 export * from './utils/normalize-stories.ts';
 export * from './utils/paths.ts';
+export * as effects from './utils/effects.ts';
 export * from './utils/read-dependency-manifest.ts';
 export * from './utils/readTemplate.ts';
 export {

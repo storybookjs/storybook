@@ -1,4 +1,4 @@
-import { type JsPackageManager } from 'storybook/internal/common';
+import { type JsPackageManager, effects } from 'storybook/internal/common';
 import { versions } from 'storybook/internal/common';
 import { logTracker, logger, prompt } from 'storybook/internal/node-logger';
 import { AutomigrateError } from 'storybook/internal/server-errors';
@@ -87,17 +87,27 @@ export const doAutomigrate = async (options: AutofixOptionsFromCLI) => {
     // Configure addons whose postinstall a fix deferred until after install (mirrors CLI init's
     // install-then-configure ordering). Their postinstall hooks can only be resolved now that the
     // packages are on disk; running them earlier (during the fix) silently no-ops.
-    await configureDeferredAddons(outcome?.addonsToPostinstall ?? [], {
-      packageManager: packageManager.type,
-      configDir,
-      yes: options.yes,
-      logger,
-      prompt,
-    });
+    const addons = outcome?.addonsToPostinstall ?? [];
+    if (addons.length > 0) {
+      await effects.runStep(`configure ${addons.join(', ')}`, () =>
+        configureDeferredAddons(addons, {
+          packageManager: packageManager.type,
+          configDir,
+          yes: options.yes,
+          logger,
+          prompt,
+        })
+      );
+    }
   }
 
+  // The doctor checks the installed dependencies, so a dry run, which installs nothing, names it.
   if (outcome && !options.skipDoctor) {
-    await doctor({ configDir, packageManager: options.packageManager });
+    await effects.runCommand(
+      packageManager.getPackageCommand(['storybook', 'doctor']),
+      () => doctor({ configDir, packageManager: options.packageManager }),
+      { purpose: 'to verify the automigrations went well' }
+    );
   }
 
   const failedMigrations = Object.entries(outcome?.fixResults ?? {})
@@ -117,7 +127,6 @@ export const doAutomigrate = async (options: AutofixOptionsFromCLI) => {
 export const automigrate = async ({
   fixId,
   fixes: inputFixes,
-  dryRun,
   yes,
   packageManager,
   list,
@@ -154,7 +163,6 @@ export const automigrate = async ({
       previewConfigPath,
       packageManager,
       configDir,
-      dryRun,
       mainConfig,
       result: null,
       storybookVersion,
@@ -202,18 +210,15 @@ export const automigrate = async ({
       mainConfigPath,
       storybookVersion,
       isUpgrade: !!isUpgrade,
-      dryRun,
       yes,
       storiesPaths,
     });
 
-  if (!dryRun) {
-    await reportFileFailures(fileFailures, [
-      ...fixSummary.succeeded,
-      ...fileFailures.map(({ fixId }) => fixId),
-      ...verified,
-    ]);
-  }
+  await reportFileFailures(fileFailures, [
+    ...fixSummary.succeeded,
+    ...fileFailures.map(({ fixId }) => fixId),
+    ...verified,
+  ]);
 
   // if migration failed, display a log file in the users cwd
   if (hasFailures(fixResults)) {
@@ -226,7 +231,6 @@ export const automigrate = async ({
       fixSummary,
       skippedFiles: fileFailures.filter(({ fixId }) => fixResults[fixId] === FixStatus.SUCCEEDED)
         .length,
-      dryRun,
     });
   }
 
@@ -239,7 +243,6 @@ type RunFixesOptions = {
   fixId?: FixId;
   yes?: boolean;
   storiesPaths: string[];
-  dryRun?: boolean;
   skipInstall?: boolean;
   configDir: string;
   packageManager: JsPackageManager;
@@ -253,7 +256,6 @@ type RunFixesOptions = {
 export async function runFixes({
   fixes,
   fixId,
-  dryRun,
   yes,
   skipInstall,
   configDir,
@@ -358,8 +360,11 @@ export async function runFixes({
     let runAnswer: { fix: boolean } | undefined;
 
     try {
-      if (dryRun) {
-        runAnswer = { fix: false };
+      if (effects.isDryRun() && promptType === 'manual') {
+        // A manual migration asks the user to make its changes before continuing, which a dry run
+        // cannot use, so it lists the migration without asking.
+        fixResults[f.id] = FixStatus.MANUAL_SUCCEEDED;
+        fixSummary.manual.push(f.id);
       } else if (yes) {
         // Like `upgrade --yes`, run an opt-in fix only when the user named it.
         runAnswer = {

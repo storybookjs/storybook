@@ -158,7 +158,7 @@ describe('multi-project automigrations', () => {
         },
       ];
 
-      await promptForAutomigrations(automigrations, { dryRun: false, yes: false });
+      await promptForAutomigrations(automigrations, { yes: false });
 
       expect(multiselectMock).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -190,7 +190,6 @@ describe('multi-project automigrations', () => {
       ];
 
       const result = await promptForAutomigrations(automigrations, {
-        dryRun: false,
         yes: false,
       });
 
@@ -228,7 +227,7 @@ describe('multi-project automigrations', () => {
         },
       ];
 
-      const result = await promptForAutomigrations(automigrations, { dryRun: false, yes: true });
+      const result = await promptForAutomigrations(automigrations, { yes: true });
 
       expect(result).toEqual(automigrations);
       expect(logSpy).toHaveBeenCalledWith('Running all detected automigrations:');
@@ -253,7 +252,7 @@ describe('multi-project automigrations', () => {
         asAutomigration(optInFix, project1),
       ];
 
-      const result = await promptForAutomigrations(automigrations, { dryRun: false, yes: true });
+      const result = await promptForAutomigrations(automigrations, { yes: true });
 
       expect(result.map(({ fix }) => fix.id)).toEqual(['default-fix']);
       expect(logSpy).toHaveBeenCalledWith('Running these detected automigrations:');
@@ -276,7 +275,7 @@ describe('multi-project automigrations', () => {
 
       const automigrations = [asAutomigration(autoOptInFix, project1)];
 
-      const result = await promptForAutomigrations(automigrations, { dryRun: false, yes: true });
+      const result = await promptForAutomigrations(automigrations, { yes: true });
 
       expect(result.map(({ fix }) => fix.id)).toEqual(['auto-opt-in-fix']);
     });
@@ -308,7 +307,6 @@ describe('multi-project automigrations', () => {
       ];
 
       const result = await promptForAutomigrations(automigrations, {
-        dryRun: false,
         yes: true,
         preselectedIds: ['requested-fix'],
       });
@@ -346,7 +344,6 @@ describe('multi-project automigrations', () => {
       vi.mocked(prompt.multiselect).mockResolvedValue(['default-fix', 'requested-fix']);
 
       const result = await promptForAutomigrations(automigrations, {
-        dryRun: false,
         yes: false,
         preselectedIds: ['requested-fix'],
       });
@@ -359,34 +356,6 @@ describe('multi-project automigrations', () => {
       ]);
       expect(initialValues).toEqual(['default-fix', 'requested-fix']);
       expect(result.map(({ fix }) => fix.id)).toEqual(['default-fix', 'requested-fix']);
-    });
-
-    it('should return empty array when dryRun is true', async () => {
-      const { logger } = await import('storybook/internal/node-logger');
-      const logSpy = vi.spyOn(logger, 'log');
-
-      const fix1 = createMockFix('fix1', { needsFix: true });
-      const project1 = createMockProject('/project1/.storybook');
-
-      const automigrations = [
-        {
-          fix: fix1,
-          reports: [
-            {
-              result: { needsFix: true },
-              status: 'check_succeeded' as const,
-              project: project1,
-            },
-          ],
-        },
-      ];
-
-      const result = await promptForAutomigrations(automigrations, { dryRun: true, yes: false });
-
-      expect(result).toEqual([]);
-      expect(logSpy).toHaveBeenCalledWith(
-        'Detected automigrations (dry run - no changes will be made):'
-      );
     });
   });
 
@@ -458,29 +427,6 @@ describe('multi-project automigrations', () => {
       ]);
 
       expect(logger.logBox).not.toHaveBeenCalled();
-    });
-
-    it('shows the details in a dry run', async () => {
-      const { logger } = await import('storybook/internal/node-logger');
-      const fix = detailedFix();
-
-      await promptForAutomigrations(
-        [
-          {
-            fix,
-            reports: [
-              {
-                result: { files: ['a.ts'] },
-                status: 'check_succeeded' as const,
-                project: createMockProject('/repo/.storybook'),
-              },
-            ],
-          },
-        ],
-        { dryRun: true }
-      );
-
-      expect(logger.logBox).toHaveBeenCalledWith('Migrate\n\nFiles:\na.ts', expect.anything());
     });
   });
 });

@@ -141,6 +141,7 @@ export class Yarn1Proxy extends JsPackageManager {
   }
 
   protected runInstall(options?: { force?: boolean }) {
+    // eslint-disable-next-line local-rules/project-writes-through-effects -- installDependencies runs this through effects, which records it in a dry run
     return executeCommand({
       command: 'yarn',
       args: ['install', ...this.getInstallArgs(), ...(options?.force ? ['--force'] : [])],
@@ -156,6 +157,7 @@ export class Yarn1Proxy extends JsPackageManager {
       args = ['-D', ...args];
     }
 
+    // eslint-disable-next-line local-rules/project-writes-through-effects -- addDependencies runs this through effects, which records it in a dry run
     return executeCommand({
       command: 'yarn',
       args: ['add', ...this.getInstallArgs(), ...args],

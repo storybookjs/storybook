@@ -1,3 +1,4 @@
+import { effects } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
 import { notify } from './notify.ts';
@@ -151,6 +152,11 @@ async function _processAndSend(
   payloadInput: PayloadInput,
   options: Partial<Options> = {}
 ) {
+  // A dry run sends no telemetry, including the events queued before it started.
+  if (effects.isDryRun()) {
+    return;
+  }
+
   let payload: Payload;
 
   try {

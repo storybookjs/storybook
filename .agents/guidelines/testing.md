@@ -39,6 +39,15 @@ When writing unit tests (utilities, hooks, non-React modules):
 - Mock external dependencies like file system access and loggers
 - Use Node's path.resolve to wrap expected FS paths when writing path-related tests, so they work on Windows
 
+## Specify the current behaviour, not its history
+
+> [!IMPORTANT]
+> Write each test as if the behaviour it covers had always existed. Its name says what the code does, and its assertions check that outcome. A test framed against an earlier behaviour describes history: it reads as noise once nobody remembers the old code, and an assertion that an old symptom is absent passes for code that does nothing.
+
+- Name the behaviour, not the change. Not "refreshes on a dry run too", "no longer prompts", or "lists a notification instead of saying that no migration applies".
+- Assert the outcome the code produces, not the absence of an old symptom. For example, assert that a dry run lists a manual migration in `fixResults` and `fixSummary.manual`, not that it does not log "No migrations were applicable".
+- A negative assertion is fine when it is part of the contract, such as a dry run not running an install, and so is a contrast between modes, such as "records the install instead of running it".
+
 ## Filesystem tests with `memfs`
 
 For unit tests that touch `node:fs` / `node:fs/promises`, use [`memfs`](https://github.com/streamich/memfs) instead of real temp directories or wholesale `node:fs` mocks:

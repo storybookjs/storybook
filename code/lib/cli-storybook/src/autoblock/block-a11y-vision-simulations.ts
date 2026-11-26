@@ -1,11 +1,10 @@
 import { readFile } from 'node:fs/promises';
 
-import { getAddonNames } from 'storybook/internal/common';
+import { getAddonNames, getProjectRelativePath } from 'storybook/internal/common';
 import { loadConfig, loadCsf } from 'storybook/internal/csf-tools';
 
 import { dedent } from 'ts-dedent';
 
-import { shortenPath } from '../util.ts';
 import { createBlocker } from './types.ts';
 
 const removedSimulations = ['protanomaly', 'deuteranomaly', 'tritanomaly'];
@@ -57,7 +56,9 @@ export const blocker = createBlocker({
     return files.length > 0 && { files };
   },
   log({ files }) {
-    const listed = files.slice(0, maxListedFiles).map((file) => `- ${shortenPath(file)}`);
+    const listed = files
+      .slice(0, maxListedFiles)
+      .map((file) => `- ${getProjectRelativePath(file)}`);
     if (files.length > maxListedFiles) {
       listed.push(`- and ${files.length - maxListedFiles} more`);
     }

@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 import type { JsPackageManager } from 'storybook/internal/common';
-import { getProjectRoot, isCI, versions } from 'storybook/internal/common';
+import { effects, getProjectRoot, isCI, versions } from 'storybook/internal/common';
 import { CLI_COLORS, logger } from 'storybook/internal/node-logger';
 import { detectAgent, isTelemetryModuleEnabled } from 'storybook/internal/telemetry';
 import { SupportedBuilder, SupportedFramework, SupportedRenderer } from 'storybook/internal/types';
@@ -142,16 +142,19 @@ export async function installSkills({
     '--copy',
   ];
 
-  logger.log(CLI_COLORS.cta(packageManager.getRemoteRunCommand(args)));
+  const command = packageManager.getRemoteRunCommand(args);
+  logger.log(CLI_COLORS.cta(command));
   try {
-    await packageManager.runPackageCommand({
-      args,
-      useRemotePkg: true,
-      cwd: getProjectRoot(),
-      stdio,
-      env: isTelemetryModuleEnabled() ? {} : { DISABLE_TELEMETRY: '1' },
-      timeout: 120_000,
-    });
+    await effects.runCommand(command, () =>
+      packageManager.runPackageCommand({
+        args,
+        useRemotePkg: true,
+        cwd: getProjectRoot(),
+        stdio,
+        env: isTelemetryModuleEnabled() ? {} : { DISABLE_TELEMETRY: '1' },
+        timeout: 120_000,
+      })
+    );
   } catch (error) {
     logger.warn(
       `Could not install the Storybook skills, continuing without them. Install them later with: ${packageManager.getRemoteRunCommand(['skills@latest', 'add', skillsRef])}`
@@ -189,14 +192,16 @@ async function removeSkills(
 ): Promise<void> {
   const args = ['skills@latest', 'remove', ...names, '--yes'];
   try {
-    await packageManager.runPackageCommand({
-      args,
-      useRemotePkg: true,
-      cwd: getProjectRoot(),
-      stdio,
-      env: isTelemetryModuleEnabled() ? {} : { DISABLE_TELEMETRY: '1' },
-      timeout: 120_000,
-    });
+    await effects.runCommand(packageManager.getRemoteRunCommand(args), () =>
+      packageManager.runPackageCommand({
+        args,
+        useRemotePkg: true,
+        cwd: getProjectRoot(),
+        stdio,
+        env: isTelemetryModuleEnabled() ? {} : { DISABLE_TELEMETRY: '1' },
+        timeout: 120_000,
+      })
+    );
   } catch (error) {
     logger.warn(
       `Could not remove the replaced Storybook skills ${names.join(', ')}. Remove them with: ${packageManager.getRemoteRunCommand(args)}`

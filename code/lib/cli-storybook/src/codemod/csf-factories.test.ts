@@ -1,10 +1,14 @@
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { posix } from 'node:path';
+import { stripVTControlCharacters } from 'node:util';
 
-import { expect, it, vi } from 'vitest';
+import { expect, it, onTestFinished, vi } from 'vitest';
 
-import { syncStorybookAddons } from 'storybook/internal/common';
+import { type JsPackageManager, effects, syncStorybookAddons } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
 
+import { dirname, join } from 'pathe';
 import { dedent } from 'ts-dedent';
 
 import { runCodemod } from '../automigrate/codemod.ts';
@@ -179,6 +183,69 @@ it.each([
   expect(posix.matchesGlob(file, SANDBOX_STORIES_GLOB)).toBe(false);
 });
 
+it('changes no file in a dry run, and stages each file a run would write', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'storybook-csf-factories-'));
+  onTestFinished(() => rmSync(root, { recursive: true, force: true }));
+  const mainConfig = {
+    stories: ['../src/**/*.stories.js'],
+    addons: ['my-addon'],
+    framework: '@storybook/react-vite',
+  };
+  const files = {
+    'package.json': JSON.stringify({ name: 'app' }),
+    '.storybook/main.js': `export default ${JSON.stringify(mainConfig)};`,
+    '.storybook/preview.js': 'export default {};',
+    'src/Button.stories.js': dedent`
+      export default { component: Button };
+      export const Primary = { args: { label: 'Button' } };
+    `,
+    'node_modules/my-addon/package.json': JSON.stringify({
+      name: 'my-addon',
+      exports: { './preview': './preview.js' },
+    }),
+    'node_modules/my-addon/preview.js': 'export default {};',
+  };
+  for (const [file, content] of Object.entries(files)) {
+    mkdirSync(dirname(join(root, file)), { recursive: true });
+    writeFileSync(join(root, file), content);
+  }
+  effects.setDryRun(true);
+  onTestFinished(() => effects.setDryRun(false));
+  vi.mocked(prompt.select).mockResolvedValue(true);
+
+  await csfFactories.run({
+    glob: join(root, 'src/**/*.stories.js'),
+    mainConfig,
+    mainConfigPath: join(root, '.storybook/main.js'),
+    previewConfigPath: join(root, '.storybook/preview.js'),
+    configDir: join(root, '.storybook'),
+    packageManager: {
+      primaryPackageJson: {
+        packageJson: { name: 'app' },
+        operationDir: root,
+        packageJsonPath: join(root, 'package.json'),
+      },
+      writePackageJson: vi.fn(),
+    } as unknown as JsPackageManager,
+    result: null,
+    storybookVersion: '11.0.0',
+    storiesPaths: [join(root, 'src/Button.stories.js')],
+  });
+
+  for (const [file, content] of Object.entries(files)) {
+    expect(readFileSync(join(root, file), 'utf-8')).toBe(content);
+  }
+  expect(effects.describeDryRunChanges().map((line) => stripVTControlCharacters(line))).toEqual([
+    expect.stringMatching(/^update .*\/\.storybook\/main\.js$/),
+    expect.stringMatching(/^update .*\/\.storybook\/preview\.js$/),
+    expect.stringMatching(/^update .*\/src\/Button\.stories\.js$/),
+  ]);
+  // The addon sync reads the preview that the codemod staged, so it sees the factory.
+  expect(await effects.readFile(join(root, '.storybook/preview.js'))).toMatch(
+    /import \* as myAddon from ['"]my-addon\/preview['"]/
+  );
+});
+
 it('logs Windows preview and package.json paths with forward slashes', async () => {
   vi.stubEnv('IN_STORYBOOK_SANDBOX', '');
   vi.mocked(prompt.select).mockResolvedValue(true);
@@ -188,7 +255,6 @@ it('logs Windows preview and package.json paths with forward slashes', async () 
   const step = vi.mocked(logger.step).mockImplementation(() => {});
 
   await csfFactories.run({
-    dryRun: true,
     yes: false,
     glob: '**/*.stories.tsx',
     mainConfig: {} as any,

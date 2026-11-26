@@ -1,9 +1,11 @@
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { JsPackageManager } from 'storybook/internal/common';
+import { JsPackageManager, getProjectRoot } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 import { MainFileMissingError } from 'storybook/internal/server-errors';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
+
+import { join } from 'pathe';
 
 import * as mainConfigFile from '../automigrate/helpers/mainConfigFile.ts';
 import { doctor, getDoctorDiagnostics } from './index.ts';
@@ -56,12 +58,12 @@ describe('getDoctorDiagnostics overrides check', () => {
   it('reports overrides pinning Storybook packages outside the installed version', async () => {
     hasStorybookDependency.mockReturnValue(true);
     const packageManager = {
-      packageJsonPaths: ['package.json'],
+      packageJsonPaths: [join(getProjectRoot(), 'package.json')],
       getAllDependencies: () => ({ storybook: '^11.0.0' }),
       findInstallations: async () => undefined,
       getOverrideSources: () => [
         {
-          path: 'package.json',
+          path: join(getProjectRoot(), 'package.json'),
           field: 'overrides',
           overrides: { '@storybook/addon-mcp': { storybook: '~10.5.3' } },
         },

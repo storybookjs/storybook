@@ -1,10 +1,11 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import { stripVTControlCharacters } from 'node:util';
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 
 import type { JsPackageManager } from 'storybook/internal/common';
-import { getProjectRoot, isCI } from 'storybook/internal/common';
+import { effects, getProjectRoot, isCI } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 import {
   ExecaCommandFailedError,
@@ -163,6 +164,23 @@ describe('installSkills', () => {
     vi.mocked(logger.log).mockImplementation(() => {});
     vi.mocked(logger.warn).mockImplementation(() => {});
     vi.mocked(logger.debug).mockImplementation(() => {});
+  });
+
+  it('records the skills CLI instead of running it, in a dry run', async () => {
+    effects.setDryRun(true);
+    onTestFinished(() => effects.setDryRun(false));
+
+    await installSkills({
+      packageManager,
+      source: 'refresh',
+      testSupported: false,
+      sawEveryStorybook: true,
+    });
+
+    expect(packageManager.runPackageCommand).not.toHaveBeenCalled();
+    expect(effects.describeDryRunChanges().map((line) => stripVTControlCharacters(line))).toEqual([
+      'run npx skills@latest add storybookjs/skills#v10.6.0 --yes --agent claude-code universal --copy',
+    ]);
   });
 
   it('installs from the tag of the running Storybook version', async () => {

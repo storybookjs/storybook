@@ -38,7 +38,7 @@ describe('storybookOverrides blocker', () => {
     expect(result && blocker.log(result).message).toMatchInlineSnapshot(`
       "These overrides force Storybook packages to versions that exclude 11.0.0:
 
-      - /package.json: overrides › @storybook/addon-mcp › storybook = ~10.5.3
+      - package.json: overrides › @storybook/addon-mcp › storybook = ~10.5.3
 
       Update these entries to 11.0.0 or remove them."
     `);

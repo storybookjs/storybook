@@ -1,7 +1,12 @@
-import { readFile, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
-import { findConfigFile, formatExistingFile, HandledError } from 'storybook/internal/common';
+import {
+  HandledError,
+  effects,
+  findConfigFile,
+  formatExistingFile,
+  getProjectRelativePath,
+} from 'storybook/internal/common';
 import {
   type ConfigFile,
   type CsfFile,
@@ -216,7 +221,7 @@ export const runTransforms = async (
 
     let raw: string;
     try {
-      raw = await readFile(context.id, 'utf-8');
+      raw = await effects.readFile(context.id);
     } catch (error) {
       new Set(active.map(({ fixId }) => fixId)).forEach((fixId) => fail(fixId, error));
       continue;
@@ -260,7 +265,7 @@ export const runTransforms = async (
       try {
         const restored = restoreLineEndings(code, raw);
         const output = printed ? await formatExistingFile(context.id, restored) : restored;
-        await writeFile(context.id, output);
+        await effects.writeFile(context.id, output);
       } catch (error) {
         for (const [fixId, outcome] of outcomes) {
           if (outcome.changed.includes(context.id)) {
@@ -348,7 +353,9 @@ type ProjectRunOptions = Omit<RunOptions<unknown>, 'result' | 'files'>;
 const failed = (fileFailures: FileFailure[]): FixOutcome => ({
   status: 'failed',
   error: new HandledError(
-    fileFailures.map(({ file, message }) => `${file}: ${message}`).join('\n')
+    fileFailures
+      .map(({ file, message }) => `${getProjectRelativePath(file)}: ${message}`)
+      .join('\n')
   ),
   fileFailures,
 });

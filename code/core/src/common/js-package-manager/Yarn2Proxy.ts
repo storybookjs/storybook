@@ -11,6 +11,7 @@ import { dedent } from 'ts-dedent';
 import { logger } from '../../node-logger/index.ts';
 import type { ExecuteCommandOptions } from '../utils/command.ts';
 import { executeCommand } from '../utils/command.ts';
+import * as effects from '../utils/effects.ts';
 import { JsPackageManager, PackageManagerName } from './JsPackageManager.ts';
 import type { PackageJson } from './PackageJson.ts';
 import type { InstallationMetadata, PackageMetadata } from './types.ts';
@@ -185,6 +186,7 @@ export class Yarn2Proxy extends JsPackageManager {
   }
 
   protected runInstall() {
+    // eslint-disable-next-line local-rules/project-writes-through-effects -- installDependencies runs this through effects, which records it in a dry run
     return executeCommand({
       command: 'yarn',
       // Yarn 3 and 4 freeze the lockfile when CI is set.
@@ -337,6 +339,7 @@ export class Yarn2Proxy extends JsPackageManager {
       args = ['-D', ...args];
     }
 
+    // eslint-disable-next-line local-rules/project-writes-through-effects -- addDependencies runs this through effects, which records it in a dry run
     return executeCommand({
       command: 'yarn',
       args: ['add', ...this.getInstallArgs(), ...args],
@@ -525,20 +528,25 @@ export class Yarn2Proxy extends JsPackageManager {
       new Set([...currentPreapprovedPackages, ...STORYBOOK_PACKAGE_PATTERNS])
     );
 
-    await prompt.executeTaskWithSpinner(
+    const value = JSON.stringify(nextPreapprovedPackages);
+    await effects.runCommand(
+      `${this.getCommandName()} config set npmPreapprovedPackages --json '${value}'`,
       () =>
-        this.runInternalCommand(
-          'config',
-          ['set', 'npmPreapprovedPackages', '--json', JSON.stringify(nextPreapprovedPackages)],
-          undefined,
-          'pipe'
-        ),
-      {
-        id: 'update-yarn-npm-preapproved-packages',
-        intro: 'Updating yarn npmPreapprovedPackages...',
-        error: 'Failed to update yarn npmPreapprovedPackages.',
-        success: 'Updated yarn npmPreapprovedPackages',
-      }
+        prompt.executeTaskWithSpinner(
+          () =>
+            this.runInternalCommand(
+              'config',
+              ['set', 'npmPreapprovedPackages', '--json', value],
+              undefined,
+              'pipe'
+            ),
+          {
+            id: 'update-yarn-npm-preapproved-packages',
+            intro: 'Updating yarn npmPreapprovedPackages...',
+            error: 'Failed to update yarn npmPreapprovedPackages.',
+            success: 'Updated yarn npmPreapprovedPackages',
+          }
+        )
     );
   }
 

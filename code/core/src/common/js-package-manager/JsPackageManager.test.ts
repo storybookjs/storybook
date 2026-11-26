@@ -29,6 +29,7 @@ describe('JsPackageManager', () => {
   beforeEach(() => {
     // @ts-expect-error Ignore abstract class error
     jsPackageManager = new JsPackageManager();
+    jsPackageManager.getCommandName = () => 'npm';
     mockLatestVersion = vi.spyOn(jsPackageManager, 'latestVersion');
 
     vi.clearAllMocks();

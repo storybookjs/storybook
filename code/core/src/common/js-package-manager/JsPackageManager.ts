@@ -1,4 +1,3 @@
-import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, isAbsolute, join, normalize, resolve } from 'node:path';
 
 import { logger, prompt } from 'storybook/internal/node-logger';
@@ -16,6 +15,7 @@ import invariant from 'tiny-invariant';
 import { HandledError } from '../utils/HandledError.ts';
 import type { ExecuteCommandOptions } from '../utils/command.ts';
 import { getPkgPrNewPackageSpecifier } from '../utils/get-pkg-pr-new-package-specifier.ts';
+import * as effects from '../utils/effects.ts';
 import { findFilesUp, getProjectRoot } from '../utils/paths.ts';
 import { resolveStorybookVersionSpecifier } from '../utils/resolve-storybook-version-specifier.ts';
 import storybookPackagesVersions from '../versions.ts';
@@ -176,7 +176,7 @@ export abstract class JsPackageManager {
       return null;
     }
 
-    return JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
+    return JSON.parse(effects.readFileSync(packageJsonPath));
   }
 
   isStorybookInMonorepo() {
@@ -194,7 +194,7 @@ export abstract class JsPackageManager {
     }
 
     for (const packageJsonPath of packageJsonPaths) {
-      const packageJsonFile = readFileSync(packageJsonPath, 'utf8');
+      const packageJsonFile = effects.readFileSync(packageJsonPath);
       const packageJson = JSON.parse(packageJsonFile) as PackageJsonWithDepsAndDevDeps;
 
       if (packageJson.workspaces) {
@@ -205,7 +205,20 @@ export abstract class JsPackageManager {
     return false;
   }
 
+  /**
+   * Prepare the files an install reads, such as the build scripts pnpm may run. A dry run stages
+   * these changes, and only records the install itself.
+   */
+  protected prepareInstall(): void {}
+
   async installDependencies(options?: { force?: boolean; legacyPeerDeps?: boolean }) {
+    this.prepareInstall();
+    await effects.runCommand(`${this.getCommandName()} install`, () =>
+      this.#installDependencies(options)
+    );
+  }
+
+  async #installDependencies(options?: { force?: boolean; legacyPeerDeps?: boolean }) {
     try {
       const executeTask = this.installUsesTerminal
         ? prompt.executeTask
@@ -239,8 +252,15 @@ export abstract class JsPackageManager {
   }): Promise<void> {}
 
   async dedupeDependencies(options?: { force?: boolean; legacyPeerDeps?: boolean }) {
+    await effects.runCommand(`${this.getCommandName()} dedupe`, () =>
+      this.#dedupeDependencies(options)
+    );
+  }
+
+  async #dedupeDependencies(options?: { force?: boolean; legacyPeerDeps?: boolean }) {
     await prompt.executeTask(
       (_signal) =>
+        // eslint-disable-next-line local-rules/project-writes-through-effects -- dedupeDependencies runs this through effects, which records it in a dry run
         this.runInternalCommand(
           'dedupe',
           [
@@ -276,7 +296,7 @@ export abstract class JsPackageManager {
     }
 
     // Read from disk if not in cache
-    const jsonContent = readFileSync(absolutePath, 'utf8');
+    const jsonContent = effects.readFileSync(absolutePath);
     const packageJSON = JSON.parse(jsonContent);
     // Symbol key keeps this metadata non-enumerable so JSON.stringify omits it
     packageJSON[indentSymbol] = detectIndent(jsonContent).indent ?? 2;
@@ -317,7 +337,7 @@ export abstract class JsPackageManager {
     const indent = this.#getIndent(filePath);
     const packageJsonPath = normalize(resolve(directory, 'package.json'));
     const content = `${JSON.stringify(packageJsonToWrite, null, indent)}\n`;
-    writeFileSync(packageJsonPath, content, 'utf8');
+    effects.writeFileSync(packageJsonPath, content);
 
     // Update cache with the written content
     // Ensure dependencies and devDependencies exist (even if empty) to match PackageJsonWithDepsAndDevDeps type
@@ -458,25 +478,33 @@ export abstract class JsPackageManager {
       Object.assign(targetDeps, dependenciesMap);
       this.writePackageJson(packageJson, operationDir);
     } else {
-      try {
-        const result = this.runAddDeps(
-          dependencies,
-          Boolean(options.type === 'devDependencies'),
-          writeOutputToFile
-        );
+      const dev = options.type === 'devDependencies';
+      this.prepareInstall();
+      return effects.runCommand(this.getInstallCommand(dependencies, dev), () =>
+        this.#runAddDependencies(dependencies, dev, writeOutputToFile)
+      );
+    }
+  }
 
-        // Clear installed version cache after adding dependencies
-        this.clearInstalledVersionCache();
+  #runAddDependencies(
+    dependencies: string[],
+    installAsDevDependencies: boolean,
+    writeOutputToFile: boolean
+  ) {
+    try {
+      const result = this.runAddDeps(dependencies, installAsDevDependencies, writeOutputToFile);
 
-        return result;
-      } catch (e: any) {
-        logger.error('\nAn error occurred while adding dependencies to your package.json:');
-        logger.log(String(e));
-        if (e?.fromStorybook) {
-          throw e;
-        }
-        throw new HandledError(e);
+      // Clear installed version cache after adding dependencies
+      this.clearInstalledVersionCache();
+
+      return result;
+    } catch (e: any) {
+      logger.error('\nAn error occurred while adding dependencies to your package.json:');
+      logger.log(String(e));
+      if (e?.fromStorybook) {
+        throw e;
       }
+      throw new HandledError(e);
     }
   }
 
@@ -1009,7 +1037,7 @@ export abstract class JsPackageManager {
   // Helper to read and check a package.json for storybook dependency
   static hasStorybookDependency(packageJsonPath: string): boolean {
     try {
-      const content = readFileSync(packageJsonPath, 'utf-8');
+      const content = effects.readFileSync(packageJsonPath);
       const packageJson = JSON.parse(content) as PackageJsonWithDepsAndDevDeps;
       return !!(
         (packageJson.dependencies && packageJson.dependencies.storybook) ||
@@ -1023,7 +1051,7 @@ export abstract class JsPackageManager {
   // Helper to read and check a package.json for storybook dependency
   static hasAnyStorybookDependency(packageJsonPath: string): boolean {
     try {
-      const content = readFileSync(packageJsonPath, 'utf-8');
+      const content = effects.readFileSync(packageJsonPath);
       const packageJson = JSON.parse(content) as PackageJsonWithDepsAndDevDeps;
       const allDeps = {
         ...packageJson.dependencies,

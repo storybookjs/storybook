@@ -1,10 +1,11 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 
 import { prompt } from 'storybook/internal/node-logger';
 import { MinimumReleaseAgeHandledError } from 'storybook/internal/server-errors';
 
 import { logger } from '../../node-logger/index.ts';
 import { executeCommand } from '../utils/command.ts';
+import * as effects from '../utils/effects.ts';
 import { JsPackageManager } from './JsPackageManager.ts';
 import { Yarn2Proxy } from './Yarn2Proxy.ts';
 
@@ -20,6 +21,7 @@ vi.mock('storybook/internal/node-logger', () => ({
     warn: vi.fn(),
     error: vi.fn(),
   },
+  CLI_COLORS: { dryRunChange: (text: string) => text },
 }));
 
 vi.mock('../utils/command', { spy: true });
@@ -391,6 +393,45 @@ describe('Yarn 2 Proxy', () => {
           'Storybook updated npmPreapprovedPackages for this project automatically'
         )
       );
+    });
+
+    it('records the npmPreapprovedPackages update instead of running it, in a dry run', async () => {
+      effects.setDryRun(true);
+      onTestFinished(() => effects.setDryRun(false));
+      mockedExecuteCommand
+        .mockResolvedValueOnce({ stdout: '1440\n' } as any)
+        .mockResolvedValueOnce({ stdout: '[]\n' } as any)
+        .mockResolvedValueOnce({
+          stdout: JSON.stringify({
+            name: 'storybook',
+            time: {
+              created: '2025-01-01T00:00:00.000Z',
+              modified: '2026-05-11T12:00:00.000Z',
+              '10.4.0-alpha.17': '2026-05-11T11:59:00.000Z',
+              '10.3.2': '2026-05-01T00:00:00.000Z',
+            },
+          }),
+        } as any)
+        .mockResolvedValueOnce({ stdout: '[]\n' } as any);
+
+      await yarn2Proxy.precheckStorybookPackageInstall({
+        storybookVersion: '10.4.0-alpha.17',
+        nonInteractive: true,
+        installContext: 'create',
+      });
+
+      expect(mockedExecuteCommand).not.toHaveBeenCalledWith(
+        expect.objectContaining({ args: expect.arrayContaining(['set']) })
+      );
+      expect(effects.describeDryRunChanges()).toEqual([
+        `run yarn config set npmPreapprovedPackages --json '${JSON.stringify([
+          'storybook',
+          '@storybook/*',
+          'eslint-plugin-storybook',
+          '@chromatic-com/storybook',
+          'chromatic',
+        ])}'`,
+      ]);
     });
 
     it('should let the user update npmPreapprovedPackages interactively', async () => {

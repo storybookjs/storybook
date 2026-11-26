@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync } from 'node:fs';
 import { dirname, join } from 'pathe';
 
 import { logger, prompt } from 'storybook/internal/node-logger';
@@ -16,7 +16,8 @@ import { Document, isMap, parseDocument } from 'yaml';
 
 import type { ExecuteCommandOptions } from '../utils/command.ts';
 import { executeCommand, executeCommandSync } from '../utils/command.ts';
-import { getProjectRoot } from '../utils/paths.ts';
+import * as effects from '../utils/effects.ts';
+import { getProjectRelativePath, getProjectRoot } from '../utils/paths.ts';
 import { JsPackageManager, PackageManagerName } from './JsPackageManager.ts';
 import type { PackageJson } from './PackageJson.ts';
 import { type OverrideSource, toOverrides } from './overrides.ts';
@@ -316,6 +317,10 @@ export class PNPMProxy extends JsPackageManager {
 
   // From pnpm 11, an unreviewed build script fails a non-interactive install outright, and
   // `pnpm install` has no flag to approve one, so record the approval like `pnpm approve-builds`.
+  protected override prepareInstall(): void {
+    this.allowStorybookBuildScripts();
+  }
+
   protected allowStorybookBuildScripts(): void {
     if (!this.#pnpmGte(PNPM_ALLOW_BUILDS_MIN)) {
       return;
@@ -361,7 +366,9 @@ export class PNPMProxy extends JsPackageManager {
         doc.setIn(['allowBuilds', pkg], true);
       }
       this.#writeWorkspaceYaml({ path, doc });
-      logger.info(`Approved build scripts for ${pending.join(', ')} in ${path}`);
+      logger.info(
+        `Approved build scripts for ${pending.join(', ')} in ${getProjectRelativePath(path)}`
+      );
     } catch (e) {
       logger.warn(
         `Could not allow build scripts of ${STORYBOOK_BUILD_SCRIPT_PACKAGES.join(', ')} in ${path}: ${String(e)}`
@@ -371,7 +378,7 @@ export class PNPMProxy extends JsPackageManager {
 
   #writeWorkspaceYaml({ path, doc }: { path: string; doc: Document }): void {
     logger.debug(`Writing pnpm workspace file ${path}`);
-    writeFileSync(path, doc.toString(), 'utf8');
+    effects.writeFileSync(path, doc.toString());
   }
 
   // pnpm reads the nearest file above the package, even past the VCS and Storybook project roots.
@@ -386,7 +393,7 @@ export class PNPMProxy extends JsPackageManager {
       return null;
     }
     try {
-      const doc = parseDocument(readFileSync(path, 'utf8'));
+      const doc = parseDocument(effects.readFileSync(path));
       if (doc.errors.length > 0) {
         throw doc.errors[0];
       }
@@ -465,7 +472,7 @@ export class PNPMProxy extends JsPackageManager {
   }
 
   protected runInstall(options?: { force?: boolean }) {
-    this.allowStorybookBuildScripts();
+    // eslint-disable-next-line local-rules/project-writes-through-effects -- installDependencies runs this through effects, which records it in a dry run
     return executeCommand({
       command: 'pnpm',
       args: [
@@ -611,7 +618,6 @@ export class PNPMProxy extends JsPackageManager {
 
     const commandArgs = ['add', ...args, ...this.getInstallArgs('add')];
 
-    this.allowStorybookBuildScripts();
     return executeCommand({
       command: 'pnpm',
       args: commandArgs,
@@ -776,26 +782,25 @@ export class PNPMProxy extends JsPackageManager {
       new Set([...currentMinimumReleaseAgeExclude, ...STORYBOOK_PACKAGE_PATTERNS])
     );
 
-    await prompt.executeTaskWithSpinner(
+    const value = JSON.stringify(nextMinimumReleaseAgeExclude);
+    await effects.runCommand(
+      `${this.getCommandName()} config set --location=project --json minimumReleaseAgeExclude '${value}'`,
       () =>
-        this.runInternalCommand(
-          'config',
-          [
-            'set',
-            '--location=project',
-            '--json',
-            'minimumReleaseAgeExclude',
-            JSON.stringify(nextMinimumReleaseAgeExclude),
-          ],
-          undefined,
-          'pipe'
-        ),
-      {
-        id: 'update-pnpm-minimum-release-age-exclude',
-        intro: 'Updating pnpm minimumReleaseAgeExclude...',
-        error: 'Failed to update pnpm minimumReleaseAgeExclude.',
-        success: 'Updated pnpm minimumReleaseAgeExclude',
-      }
+        prompt.executeTaskWithSpinner(
+          () =>
+            this.runInternalCommand(
+              'config',
+              ['set', '--location=project', '--json', 'minimumReleaseAgeExclude', value],
+              undefined,
+              'pipe'
+            ),
+          {
+            id: 'update-pnpm-minimum-release-age-exclude',
+            intro: 'Updating pnpm minimumReleaseAgeExclude...',
+            error: 'Failed to update pnpm minimumReleaseAgeExclude.',
+            success: 'Updated pnpm minimumReleaseAgeExclude',
+          }
+        )
     );
   }
 

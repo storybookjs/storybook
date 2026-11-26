@@ -3,6 +3,8 @@ import {
   HandledError,
   JsPackageManagerFactory,
   PackageManagerName,
+  effects,
+  getProjectRelativePath,
   optionalEnvToBoolean,
   removeAddon as remove,
   versions,
@@ -28,6 +30,10 @@ import { type UpgradeOptions, upgrade } from '../upgrade.ts';
 
 addToGlobalContext('cliVersion', versions.storybook);
 
+/** Log a command's intro, which says a dry run is one. */
+const logIntro = (message: string) =>
+  logger.intro(effects.isDryRun() ? CLI_COLORS.dryRun(message) : message);
+
 // Return a failed exit code but write the logs to a file first
 const handleCommandFailure =
   (logFilePath: string | boolean | undefined) =>
@@ -35,12 +41,14 @@ const handleCommandFailure =
     if (!(error instanceof HandledError)) {
       logger.error(String(error));
     }
+    // A run that fails can still change files before it does.
+    effects.logDryRunChanges({ failed: true });
 
     try {
       const logFile = await logTracker.writeToFile(logFilePath);
-      logger.log(`Debug logs are written to: ${logFile}`);
+      logger.log(`Debug logs are written to: ${getProjectRelativePath(logFile)}`);
     } catch {}
-    logger.outro('');
+    logger.outro(effects.isDryRun() ? picocolors.bold(CLI_COLORS.error('Dry run failed')) : '');
     process.exit(1);
   };
 
@@ -61,6 +69,8 @@ const command = (name: string) =>
     .option('--loglevel <trace | debug | info | warn | error | silent>', 'Define log level', 'info')
     .hook('preAction', async (self) => {
       const options = self.opts();
+      // Code that changes the project, and telemetry, read the mode from the effects module.
+      effects.setDryRun(Boolean(options.dryRun));
       if (options.debug) {
         logger.setLogLevel('debug');
       }
@@ -83,7 +93,7 @@ const command = (name: string) =>
       if (logTracker.shouldWriteLogsToFile) {
         try {
           const logFile = await logTracker.writeToFile(command.getOptionValue('logfile'));
-          logger.log(`Debug logs are written to: ${logFile}`);
+          logger.log(`Debug logs are written to: ${getProjectRelativePath(logFile)}`);
         } catch {}
         logger.outro(CLI_COLORS.success('Done!'));
       }
@@ -200,9 +210,12 @@ command('upgrade')
       'upgrade',
       { cliOptions: { ...options, configDir: options.configDir?.[0] } },
       async () => {
-        logger.intro(`Storybook upgrade - v${versions.storybook}`);
+        logIntro(
+          `Storybook upgrade${effects.isDryRun() ? ' (dry run)' : ''} - v${versions.storybook}`
+        );
         await upgrade(options);
-        logger.outro('Storybook upgrade completed!');
+        effects.logDryRunChanges();
+        logger.outro(effects.isDryRun() ? 'Done' : 'Storybook upgrade completed!');
       }
     ).catch(handleCommandFailure(options.logfile));
   });
@@ -227,9 +240,10 @@ command('migrate [migration]')
   )
   .action((migration, options) => {
     withTelemetry('migrate', { cliOptions: options }, async () => {
-      logger.intro(`Running ${migration} migration`);
+      logIntro(`${effects.isDryRun() ? 'Dry-running' : 'Running'} ${migration} migration`);
       await migrate(migration, options);
-      logger.outro('Migration completed');
+      effects.logDryRunChanges();
+      logger.outro(effects.isDryRun() ? 'Done' : 'Migration completed');
     }).catch(handleCommandFailure(options.logfile));
   });
 
@@ -271,8 +285,10 @@ command('automigrate [fixId]')
   .option('--glob <pattern>', 'Glob pattern for story files (for csf-factories codemod)')
   .action(async (fixId, options) => {
     withTelemetry('automigrate', { cliOptions: options }, async () => {
-      logger.intro(fixId ? `Running ${fixId} automigration` : 'Running automigrations');
+      const running = effects.isDryRun() ? 'Dry-running' : 'Running';
+      logIntro(fixId ? `${running} ${fixId} automigration` : `${running} automigrations`);
       await doAutomigrate({ fixId, ...options });
+      effects.logDryRunChanges();
       logger.outro('Done');
     }).catch(handleCommandFailure(options.logfile));
   });

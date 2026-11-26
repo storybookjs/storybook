@@ -117,7 +117,6 @@ export type Fix<ResultType = any> =
     } & BaseFix<ResultType>);
 
 export type CommandFixRunOptions = Omit<RunOptions<null>, 'files' | 'addonsToPostinstall'> & {
-  dryRun?: boolean;
   /** Glob pattern for story files (for csf-factories codemod) */
   glob?: string;
 };
@@ -152,7 +151,6 @@ export interface AutofixOptionsFromCLI {
   fixes?: Fix[];
   yes?: boolean;
   packageManager?: PackageManagerName;
-  dryRun?: boolean;
   configDir: string;
   skipInstall?: boolean;
   hideMigrationSummary?: boolean;

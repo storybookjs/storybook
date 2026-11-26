@@ -1,3 +1,4 @@
+// eslint-disable-next-line local-rules/project-writes-through-effects -- Node imports a temporary copy of the main config, so it must exist on disk
 import { readFile, rm, writeFile } from 'node:fs/promises';
 import { join, parse, relative, resolve } from 'node:path';
 

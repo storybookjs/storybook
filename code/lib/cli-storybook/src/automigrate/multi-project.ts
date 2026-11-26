@@ -1,10 +1,9 @@
-import type { JsPackageManager } from 'storybook/internal/common';
+import { type JsPackageManager, getProjectRelativePath } from 'storybook/internal/common';
 import { CLI_COLORS, type TaskLogInstance, logger, prompt } from 'storybook/internal/node-logger';
 import { ErrorCollector, sanitizeError } from 'storybook/internal/telemetry';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import type { UpgradeOptions } from '../upgrade.ts';
-import { shortenPath } from '../util.ts';
 import type { CollectProjectsSuccessResult } from '../util.ts';
 import { resolveRequestedFeatures } from './fixes/experimental-features.ts';
 import { allFixes } from './fixes/index.ts';
@@ -41,7 +40,6 @@ export interface AutomigrationCheckResult<T = any> {
 export interface MultiProjectAutomigrationOptions {
   fixes: Fix[];
   projects: ProjectAutomigrationData[];
-  dryRun?: boolean;
   yes?: boolean;
   skipInstall?: boolean;
   taskLog: TaskLogInstance;
@@ -51,7 +49,6 @@ export interface MultiProjectAutomigrationOptions {
 
 export interface MultiProjectRunAutomigrationOptions {
   automigrations: AutomigrationCheckResult[];
-  dryRun?: boolean;
   yes?: boolean;
   skipInstall?: boolean;
 }
@@ -87,7 +84,7 @@ export async function collectAutomigrationsAcrossProjects(
 
   // Run check for each fix on each project
   for (const project of projects) {
-    const projectName = shortenPath(project.configDir);
+    const projectName = getProjectRelativePath(project.configDir);
 
     taskLog.message(`Checking automigrations for ${projectName}...`);
     logger.debug(`Processing project: ${projectName}`);
@@ -115,7 +112,7 @@ export async function collectAutomigrationsAcrossProjects(
         checks.push({ fix, result: null, failed: true });
 
         logger.debug(
-          `Failed to check fix ${fix.id} for project ${shortenPath(project.configDir)}.`
+          `Failed to check fix ${fix.id} for project ${getProjectRelativePath(project.configDir)}.`
         );
         logger.debug(`${error instanceof Error ? error.stack : String(error)}`);
         ErrorCollector.addError(error);
@@ -201,7 +198,7 @@ const formatProjectDirs = (list: AutomigrationCheckResult['reports']) => {
   const amountOfProjectsShown = 1;
   const relativeDirs = list
     .filter((p) => p.status === 'check_succeeded')
-    .map((p) => shortenPath(p.project.configDir) || '.');
+    .map((p) => getProjectRelativePath(p.project.configDir));
   if (relativeDirs.length <= amountOfProjectsShown) {
     return relativeDirs.join(', ');
   }
@@ -218,7 +215,9 @@ export const logAutomigrationDetails = (automigrations: AutomigrationCheckResult
       const details = status === 'check_succeeded' ? fix.prompt(result) : hint;
       if (details !== hint) {
         const message = fix.link ? `${details}\n\nMore info: ${fix.link}` : details;
-        logger.logBox(message, { title: `${fix.id} (${shortenPath(project.configDir) || '.'})` });
+        logger.logBox(message, {
+          title: `${fix.id} (${getProjectRelativePath(project.configDir)})`,
+        });
       }
     }
   }
@@ -227,7 +226,7 @@ export const logAutomigrationDetails = (automigrations: AutomigrationCheckResult
 /** Prompts user to select which automigrations to run */
 export async function promptForAutomigrations(
   automigrations: AutomigrationCheckResult[],
-  options: { dryRun?: boolean; yes?: boolean; preselectedIds?: string[] }
+  options: { yes?: boolean; preselectedIds?: string[] }
 ): Promise<AutomigrationCheckResult[]> {
   if (automigrations.length === 0) {
     return [];
@@ -241,12 +240,6 @@ export async function promptForAutomigrations(
   };
 
   const preselectedIds = new Set(options.preselectedIds ?? []);
-
-  if (options.dryRun) {
-    logSelection('Detected automigrations (dry run - no changes will be made):', automigrations);
-    logAutomigrationDetails(automigrations);
-    return [];
-  }
 
   if (options.yes) {
     const selected = automigrations.filter(
@@ -365,7 +358,7 @@ export async function runAutomigrationsForProjects(
 
     const { project } = projectAutomigration[0];
 
-    const projectName = shortenPath(project.configDir);
+    const projectName = getProjectRelativePath(project.configDir);
 
     // If there isn't any applicable automigrations, we don't need to use the task log
     const taskLog =
@@ -509,7 +502,6 @@ export async function runAutomigrations(
   const detectedAutomigrations = await collectAutomigrationsAcrossProjects({
     fixes: allFixes,
     projects: projectAutomigrationData,
-    dryRun: options.dryRun,
     yes: options.yes,
     skipInstall: options.skipInstall,
     taskLog: detectingAutomigrationTask,
@@ -536,33 +528,29 @@ export async function runAutomigrations(
 
   // Prompt user to select which automigrations to run
   const selectedAutomigrations = await promptForAutomigrations(successfulAutomigrations, {
-    dryRun: options.dryRun,
     yes: options.yes,
     preselectedIds: requestedFixIds,
   });
   // Run selected automigrations for each project
   const automigrationResults = await runAutomigrationsForProjects(selectedAutomigrations, {
     automigrations: detectedAutomigrations,
-    dryRun: options.dryRun,
     yes: options.yes,
     skipInstall: options.skipInstall,
   });
 
-  if (!options.dryRun) {
-    const results = Object.values(automigrationResults);
-    const fileFailures = results.flatMap((result) => result.fileFailures);
-    await reportFileFailures(fileFailures, [
-      ...results.flatMap(({ automigrationStatuses }) =>
-        Object.keys(automigrationStatuses).filter(
-          (fixId) => automigrationStatuses[fixId] === FixStatus.SUCCEEDED
-        )
-      ),
-      ...fileFailures.map(({ fixId }) => fixId),
-      ...detectedAutomigrations
-        .filter(({ reports }) => reports.some(({ verified }) => verified))
-        .map(({ fix }) => fix.id),
-    ]);
-  }
+  const results = Object.values(automigrationResults);
+  const fileFailures = results.flatMap((result) => result.fileFailures);
+  await reportFileFailures(fileFailures, [
+    ...results.flatMap(({ automigrationStatuses }) =>
+      Object.keys(automigrationStatuses).filter(
+        (fixId) => automigrationStatuses[fixId] === FixStatus.SUCCEEDED
+      )
+    ),
+    ...fileFailures.map(({ fixId }) => fixId),
+    ...detectedAutomigrations
+      .filter(({ reports }) => reports.some(({ verified }) => verified))
+      .map(({ fix }) => fix.id),
+  ]);
 
   return {
     detectedAutomigrations,

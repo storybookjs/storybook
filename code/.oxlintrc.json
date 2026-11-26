@@ -106,6 +106,28 @@
       }
     },
     {
+      "files": [
+        "lib/cli-storybook/src/**",
+        "core/src/cli/**",
+        "core/src/common/**",
+        "core/src/csf-tools/**"
+      ],
+      "rules": {
+        "local-rules/project-writes-through-effects": "error"
+      }
+    },
+    {
+      "files": [
+        "**/*.test.ts",
+        "**/*.test.tsx",
+        "core/src/csf-tools/__corpus__/**",
+        "core/src/common/utils/effects.ts"
+      ],
+      "rules": {
+        "local-rules/project-writes-through-effects": "off"
+      }
+    },
+    {
       "files": ["core/src/cli/skills/content/**"],
       "rules": {
         "no-restricted-imports": [

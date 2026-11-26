@@ -32,6 +32,7 @@ vi.mock(import('storybook/internal/common'), async (importOriginal) => {
         type: 'npm',
         installDependencies: async () => {},
         isStorybookInMonorepo: () => false,
+        getPackageCommand: (args: string[]) => `npx ${args.join(' ')}`,
       }),
     }),
   };
@@ -55,13 +56,13 @@ const project = (
       precheckStorybookPackageInstall: async () => {},
       installDependencies: async () => {},
       isStorybookInMonorepo: () => false,
+      getPackageCommand: (args: string[]) => `npx ${args.join(' ')}`,
     } as Partial<JsPackageManager> as JsPackageManager,
     ...overrides,
   }) as unknown as CollectProjectsSuccessResult;
 
 const baseOptions: UpgradeOptions = {
   skipCheck: true,
-  dryRun: false,
   yes: false,
   force: false,
   disableTelemetry: false,
@@ -266,36 +267,24 @@ describe('upgrade: refreshing the skills', () => {
 
     expect(installSkills).not.toHaveBeenCalled();
   });
-
-  it('does not refresh on a dry run', async () => {
-    await upgrade({ ...baseOptions, dryRun: true });
-
-    expect(installSkills).not.toHaveBeenCalled();
-  });
 });
 
-describe('upgrade: --dry-run', () => {
-  it.each([
-    { dryRun: true, calls: 0 },
-    { dryRun: false, calls: 1 },
-  ])(
-    'installs and dedupes $calls time(s) in a monorepo when dryRun is $dryRun',
-    async ({ dryRun, calls }) => {
-      const installDependencies = vi.fn(async () => {});
-      const dedupeDependencies = vi.fn(async () => {});
-      const monorepo = project('/repo/a/.storybook');
-      Object.assign(monorepo.packageManager, {
-        type: 'pnpm',
-        installDependencies,
-        dedupeDependencies,
-        isStorybookInMonorepo: () => true,
-      });
-      useProjects(monorepo);
+describe('upgrade: a monorepo', () => {
+  it('installs and dedupes the dependencies', async () => {
+    const installDependencies = vi.fn(async () => {});
+    const dedupeDependencies = vi.fn(async () => {});
+    const monorepo = project('/repo/a/.storybook');
+    Object.assign(monorepo.packageManager, {
+      type: 'pnpm',
+      installDependencies,
+      dedupeDependencies,
+      isStorybookInMonorepo: () => true,
+    });
+    useProjects(monorepo);
 
-      await upgrade({ ...baseOptions, dryRun, yes: true });
+    await upgrade({ ...baseOptions, yes: true });
 
-      expect(installDependencies).toHaveBeenCalledTimes(calls);
-      expect(dedupeDependencies).toHaveBeenCalledTimes(calls);
-    }
-  );
+    expect(installDependencies).toHaveBeenCalledTimes(1);
+    expect(dedupeDependencies).toHaveBeenCalledTimes(1);
+  });
 });

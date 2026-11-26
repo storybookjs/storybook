@@ -5,6 +5,7 @@ import {
   HandledError,
   JsPackageManager,
   getPkgPrNewPackageSpecifier,
+  getProjectRelativePath,
   getProjectRoot,
   isPkgPrNewVersionSpecifier,
   isSatelliteAddon,
@@ -23,7 +24,6 @@ import {
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import * as walk from 'empathic/walk';
-import { normalize } from 'pathe';
 // eslint-disable-next-line depend/ban-dependencies
 import { globby, globbySync } from 'globby';
 import picocolors from 'picocolors';
@@ -297,7 +297,7 @@ const processProject = async ({
 }): Promise<CollectProjectsResult> => {
   try {
     onScanStart();
-    const name = configDir.replace(getProjectRoot(), '');
+    const name = getProjectRelativePath(configDir);
 
     logger.debug(`Getting Storybook data...`);
     const {
@@ -599,18 +599,8 @@ const formatProjectDirectories = (
 
   return projectData
     .map((project) => project.configDir)
-    .map((dir) => `${modifier} ${picocolors.cyan(shortenPath(dir))}`)
+    .map((dir) => `${modifier} ${picocolors.cyan(getProjectRelativePath(dir))}`)
     .join('\n');
-};
-
-/**
- * Shortens a path to the relative path from the project root
- *
- * @param path - The path to shorten
- * @returns The shortened path
- */
-export const shortenPath = (path: string) => {
-  return normalize(path).replace(normalize(getProjectRoot()), '');
 };
 
 /**
@@ -661,7 +651,7 @@ const handleMultipleProjects = async (
       message: 'Select which projects to upgrade',
       // Only the projects it can upgrade; the others were named above.
       options: validProjects.map(({ configDir }) => ({
-        label: shortenPath(configDir),
+        label: getProjectRelativePath(configDir),
         value: configDir,
       })),
     });
@@ -691,7 +681,7 @@ export const formatUnreadableProjects = (projects: readonly CollectProjectsError
     'Not upgrading these Storybook projects, because Storybook could not read them:',
     ...projects.map(
       (project) =>
-        `${logger.SYMBOLS.error} ${shortenPath(project.configDir)}: ${unreadableReason(project)}`
+        `${logger.SYMBOLS.error} ${getProjectRelativePath(project.configDir)}: ${unreadableReason(project)}`
     ),
   ].join('\n');
 
@@ -778,7 +768,7 @@ export const getProjects = async (
     if (validProjects.length === 0 && errorProjects.length > 0) {
       const errorMessage = errorProjects
         .map((project) => {
-          const relativePath = shortenPath(project.configDir);
+          const relativePath = getProjectRelativePath(project.configDir);
           return `${relativePath}:\n${project.error.stack || project.error.message}`;
         })
         .join('\n');

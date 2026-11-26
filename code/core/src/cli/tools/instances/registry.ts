@@ -71,6 +71,7 @@ async function readRegistryDir(registryDir: string): Promise<StorybookInstanceRe
             !isProcessAlive(parsed.output.pid) &&
             !isAnotherPidNamespace(parsed.output.pidNamespace)
           ) {
+            // eslint-disable-next-line local-rules/project-writes-through-effects -- the instance registry is not a project file
             await fs.rm(join(registryDir, name), { force: true }).catch(() => {});
             return null;
           }

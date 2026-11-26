@@ -9,6 +9,8 @@ import {
   HandledError,
   type JsPackageManager,
   JsPackageManagerFactory,
+  effects,
+  getProjectRelativePath,
   isCI,
   isCorePackage,
   isNpmPeerResolutionError,
@@ -47,7 +49,6 @@ import type { ProjectDoctorData, ProjectDoctorResults } from './doctor/types.ts'
 import {
   type CollectProjectsSuccessResult,
   getProjects,
-  shortenPath,
   upgradeStorybookDependencies,
 } from './util.ts';
 
@@ -139,7 +140,6 @@ export type UpgradeOptions = {
   skipCheck: boolean;
   skipAutomigrations?: boolean;
   packageManager?: PackageManagerName;
-  dryRun: boolean;
   yes: boolean;
   features?: string;
   force: boolean;
@@ -245,7 +245,7 @@ function logUpgradeResults(
     // Display appropriate messages based on results
     if (successfulProjects.length > 0) {
       const successfulProjectsList = successfulProjects
-        .map((dir) => `  • ${shortenPath(dir)}`)
+        .map((dir) => `  • ${getProjectRelativePath(dir)}`)
         .join('\n');
       logger.log(`${CLI_COLORS.success('Successfully upgraded:')}\n${successfulProjectsList}`);
     }
@@ -253,7 +253,7 @@ function logUpgradeResults(
     const failedProjectsList = failedProjects
       .map(
         ({ configDir, failedFixIds }) =>
-          `  • ${shortenPath(configDir)} (${failedFixIds.join(', ')})`
+          `  • ${getProjectRelativePath(configDir)} (${failedFixIds.join(', ')})`
       )
       .join('\n');
     logger.log(
@@ -261,7 +261,9 @@ function logUpgradeResults(
     );
 
     if (projectsWithNoFixes.length > 0) {
-      const projectList = projectsWithNoFixes.map((dir) => `  • ${shortenPath(dir)}`).join('\n');
+      const projectList = projectsWithNoFixes
+        .map((dir) => `  • ${getProjectRelativePath(dir)}`)
+        .join('\n');
       logger.log(`${CLI_COLORS.info('No applicable migrations:')}\n${projectList}`);
     }
   } else {
@@ -370,7 +372,7 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
 
   if (storybookProjects.length > 1) {
     logger.info(`Upgrading the following projects:
-          ${storybookProjects.map((p) => `${picocolors.cyan(shortenPath(p.configDir))}: ${picocolors.bold(p.beforeVersion)} -> ${picocolors.bold(p.currentCLIVersion)}`).join('\n')}`);
+          ${storybookProjects.map((p) => `${picocolors.cyan(getProjectRelativePath(p.configDir))}: ${picocolors.bold(p.beforeVersion)} -> ${picocolors.bold(p.currentCLIVersion)}`).join('\n')}`);
   } else {
     logger.info(
       `Upgrading from ${picocolors.bold(storybookProjects[0].beforeVersion)} to ${picocolors.bold(storybookProjects[0].currentCLIVersion)}`
@@ -423,54 +425,52 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
     });
 
     // Update dependencies in package.jsons for all projects
-    if (!options.dryRun) {
-      for (const project of storybookProjects) {
-        try {
-          await project.packageManager.precheckStorybookPackageInstall({
-            storybookVersion: project.currentCLIVersion,
-            nonInteractive: !!options.yes || !process.stdout.isTTY || !!isCI(),
-            installContext: 'upgrade',
-          });
-        } catch (error) {
-          if (error instanceof MinimumReleaseAgeHandledError) {
-            throw error;
-          }
-
-          logger.debug(
-            `Skipping minimum-release-age precheck for ${project.configDir} after an unexpected failure: ${error}`
-          );
-        }
-      }
-
-      const task = prompt.taskLog({
-        id: 'upgrade-dependencies',
-        title: `Fetching versions to update package.json files..`,
-      });
+    for (const project of storybookProjects) {
       try {
-        const loggedPaths: string[] = [];
-        for (const project of storybookProjects) {
-          logger.debug(`Updating dependencies in ${shortenPath(project.configDir)}...`);
-          const packageJsonPaths = project.packageManager.packageJsonPaths.map(shortenPath);
-          const newPaths = packageJsonPaths.filter((path) => !loggedPaths.includes(path));
-          if (newPaths.length > 0) {
-            task.message(newPaths.join('\n'));
-            loggedPaths.push(...newPaths);
-          }
-          await upgradeStorybookDependencies({
-            packageManager: project.packageManager,
-            isCanary: project.isCanary,
-            isCLIOutdated: project.isCLIOutdated,
-            isCLIPrerelease: project.isCLIPrerelease,
-            isCLIExactLatest: project.isCLIExactLatest,
-            isCLIExactPrerelease: project.isCLIExactPrerelease,
-            storybookVersionSpecifier:
-              storybookVersionSpecifier ?? project.storybookVersionSpecifier,
-          });
+        await project.packageManager.precheckStorybookPackageInstall({
+          storybookVersion: project.currentCLIVersion,
+          nonInteractive: !!options.yes || !process.stdout.isTTY || !!isCI(),
+          installContext: 'upgrade',
+        });
+      } catch (error) {
+        if (error instanceof MinimumReleaseAgeHandledError) {
+          throw error;
         }
-        task.success(`Updated package versions in package.json files`);
-      } catch (err) {
-        task.error(`Failed to upgrade dependencies: ${String(err)}`);
+
+        logger.debug(
+          `Skipping minimum-release-age precheck for ${project.configDir} after an unexpected failure: ${error}`
+        );
       }
+    }
+
+    const task = prompt.taskLog({
+      id: 'upgrade-dependencies',
+      title: `Fetching versions to update package.json files..`,
+    });
+    try {
+      const loggedPaths: string[] = [];
+      for (const project of storybookProjects) {
+        logger.debug(`Updating dependencies in ${getProjectRelativePath(project.configDir)}...`);
+        const packageJsonPaths =
+          project.packageManager.packageJsonPaths.map(getProjectRelativePath);
+        const newPaths = packageJsonPaths.filter((path) => !loggedPaths.includes(path));
+        if (newPaths.length > 0) {
+          task.message(newPaths.join('\n'));
+          loggedPaths.push(...newPaths);
+        }
+        await upgradeStorybookDependencies({
+          packageManager: project.packageManager,
+          isCanary: project.isCanary,
+          isCLIOutdated: project.isCLIOutdated,
+          isCLIPrerelease: project.isCLIPrerelease,
+          isCLIExactLatest: project.isCLIExactLatest,
+          isCLIExactPrerelease: project.isCLIExactPrerelease,
+          storybookVersionSpecifier: storybookVersionSpecifier ?? project.storybookVersionSpecifier,
+        });
+      }
+      task.success(`Updated package versions in package.json files`);
+    } catch (err) {
+      task.error(`Failed to upgrade dependencies: ${String(err)}`);
     }
 
     // Read before the automigrations, so skills that the skills automigration installs are not
@@ -495,53 +495,53 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
         ? JsPackageManagerFactory.getPackageManager({ force: options.packageManager })
         : storybookProjects[0].packageManager;
 
-    if (!options.dryRun) {
-      await withNpmForceFallback(rootPackageManager, (installOptions) =>
-        rootPackageManager.installDependencies(installOptions)
+    await withNpmForceFallback(rootPackageManager, (installOptions) =>
+      rootPackageManager.installDependencies(installOptions)
+    );
+
+    if (
+      rootPackageManager.type !== PackageManagerName.YARN1 &&
+      rootPackageManager.isStorybookInMonorepo()
+    ) {
+      logger.warn(
+        `Since you are in a monorepo, we advise you to deduplicate your dependencies. We can do this for you but it might take some time.`
       );
 
-      if (
-        rootPackageManager.type !== PackageManagerName.YARN1 &&
-        rootPackageManager.isStorybookInMonorepo()
-      ) {
-        logger.warn(
-          `Since you are in a monorepo, we advise you to deduplicate your dependencies. We can do this for you but it might take some time.`
+      const dedupe =
+        options.yes ||
+        (await prompt.confirm({
+          message: `Execute ${rootPackageManager.getRunCommand('dedupe')}?`,
+          initialValue: true,
+        }));
+
+      if (dedupe) {
+        await withNpmForceFallback(rootPackageManager, (dedupeOptions) =>
+          rootPackageManager.dedupeDependencies(dedupeOptions)
         );
-
-        const dedupe =
-          options.yes ||
-          (await prompt.confirm({
-            message: `Execute ${rootPackageManager.getRunCommand('dedupe')}?`,
-            initialValue: true,
-          }));
-
-        if (dedupe) {
-          await withNpmForceFallback(rootPackageManager, (dedupeOptions) =>
-            rootPackageManager.dedupeDependencies(dedupeOptions)
-          );
-        } else {
-          logger.log(
-            `If you find any issues running Storybook, you can run ${rootPackageManager.getRunCommand('dedupe')} manually to deduplicate your dependencies and try again.`
-          );
-        }
+      } else {
+        logger.log(
+          `If you find any issues running Storybook, you can run ${rootPackageManager.getRunCommand('dedupe')} manually to deduplicate your dependencies and try again.`
+        );
       }
     }
 
     // Configure addons that automigrations added but deferred (e.g. addon-vitest from the
     // angular-to-angular-vite migration). Their postinstall hooks can only be resolved now that
     // dependencies have been installed above, mirroring CLI init's install-then-configure ordering.
-    if (!options.dryRun && !options.skipInstall) {
+    if (!options.skipInstall) {
       for (const project of storybookProjects) {
         const addonsToPostinstall = automigrationResults[project.configDir]?.addonsToPostinstall;
         if (addonsToPostinstall?.length) {
-          logger.step(`Configuring addons: ${addonsToPostinstall.join(', ')}..`);
           try {
-            await configureDeferredAddons(addonsToPostinstall, {
-              packageManager: project.packageManager.type,
-              configDir: project.configDir,
-              yes: options.yes,
-              logger,
-              prompt,
+            await effects.runStep(`configure ${addonsToPostinstall.join(', ')}`, async () => {
+              logger.step(`Configuring addons: ${addonsToPostinstall.join(', ')}..`);
+              await configureDeferredAddons(addonsToPostinstall, {
+                packageManager: project.packageManager.type,
+                configDir: project.configDir,
+                yes: options.yes,
+                logger,
+                prompt,
+              });
             });
           } catch (error) {
             logger.warn(
@@ -567,17 +567,16 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
         ),
       sawEveryStorybook: !options.configDir?.length && unreadProjects === 0,
     };
-    const skills =
-      !options.dryRun && hadSkills
-        ? await installSkills({
-            packageManager: rootPackageManager,
-            source: 'refresh',
-            ...agentInstructions,
-          })
-        : undefined;
+    const skills = hadSkills
+      ? await installSkills({
+          packageManager: rootPackageManager,
+          source: 'refresh',
+          ...agentInstructions,
+        })
+      : undefined;
     // The skills of a plugin, or installed by hand, come with an AGENTS.md section that promises
     // the same updates.
-    if (!options.dryRun && !hadSkills) {
+    if (!hadSkills) {
       await refreshAgentInstructions(agentInstructions);
     }
 
@@ -589,12 +588,19 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
       mainConfig: project.mainConfig,
     }));
 
-    logger.step('Checking the health of your project(s)..');
-    doctorResults = await runMultiProjectDoctor(doctorProjects);
-    const hasIssues = displayDoctorResults(doctorResults);
-    if (hasIssues) {
-      logTracker.enableLogWriting();
-    }
+    // The doctor checks the installed dependencies, so a dry run, which installs nothing, names it.
+    await effects.runCommand(
+      rootPackageManager.getPackageCommand(['storybook', 'doctor']),
+      async () => {
+        logger.step('Checking the health of your project(s)..');
+        doctorResults = await runMultiProjectDoctor(doctorProjects);
+        const hasIssues = displayDoctorResults(doctorResults);
+        if (hasIssues) {
+          logTracker.enableLogWriting();
+        }
+      },
+      { purpose: 'to verify the upgrade went well' }
+    );
 
     // Display upgrade results summary
     logUpgradeResults(automigrationResults, detectedAutomigrations, doctorResults);

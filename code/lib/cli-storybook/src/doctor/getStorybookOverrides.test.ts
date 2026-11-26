@@ -137,8 +137,8 @@ describe('getStorybookOverridesSummary', () => {
     expect(getStorybookOverridesSummary(overrides, '11.0.0')).toMatchInlineSnapshot(`
       "These overrides force Storybook packages to versions that exclude 11.0.0:
 
-      - /package.json: overrides › @storybook/addon-mcp › storybook = ~10.5.3
-      - /pnpm-workspace.yaml: overrides › storybook = 10
+      - package.json: overrides › @storybook/addon-mcp › storybook = ~10.5.3
+      - pnpm-workspace.yaml: overrides › storybook = 10
 
       Update these entries to 11.0.0 or remove them."
     `);
@@ -147,12 +147,12 @@ describe('getStorybookOverridesSummary', () => {
   it('ends with the next step when given', () => {
     expect(getStorybookOverridesSummary(overrides, '11.0.0', 'reinstall your dependencies'))
       .toMatchInlineSnapshot(`
-      "These overrides force Storybook packages to versions that exclude 11.0.0:
+        "These overrides force Storybook packages to versions that exclude 11.0.0:
 
-      - /package.json: overrides › @storybook/addon-mcp › storybook = ~10.5.3
-      - /pnpm-workspace.yaml: overrides › storybook = 10
+        - package.json: overrides › @storybook/addon-mcp › storybook = ~10.5.3
+        - pnpm-workspace.yaml: overrides › storybook = 10
 
-      Update these entries to 11.0.0 or remove them, then reinstall your dependencies."
-    `);
+        Update these entries to 11.0.0 or remove them, then reinstall your dependencies."
+      `);
   });
 });

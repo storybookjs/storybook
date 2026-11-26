@@ -26,7 +26,6 @@
     - [Svelte: the source snippet leaves out action args by value](#svelte-the-source-snippet-leaves-out-action-args-by-value)
     - [Vue: slots come from the component's props](#vue-slots-come-from-the-components-props)
   - [Deprecated CSF and manager type aliases removed](#deprecated-csf-and-manager-type-aliases-removed)
-  - [Stories exported with `export { … }` are named like `export const` stories](#stories-exported-with-export----are-named-like-export-const-stories)
   - [`docgenServer` is stable and enabled by default](#docgenserver-is-stable-and-enabled-by-default)
     - [Temporary regressions on source snippet generation](#temporary-regressions-on-source-snippet-generation)
   - [Builder docgen is deprecated](#builder-docgen-is-deprecated)
@@ -1269,16 +1268,6 @@ The deprecated `kind` and `story` fields are also gone from `Addon_AddStoryArgs`
 Story context objects passed to loaders and play functions no longer carry the deprecated `kind` and `story` keys; read `title` and `name` instead. The same applies to the context passed to decorators and `render` functions: custom helpers that read `context.kind` or `context.story` must switch to `context.title` and `context.name`. The `extract()` output — the serialized stories that external tools such as the Chromatic CLI read — still includes the deprecated `kind` and `story` fields for compatibility, so tools reading the serialized output keep working.
 
 The manager resolves `SELECT_STORY` payloads from `storyId` or `title`/`name`, and still accepts the deprecated `kind`/`story` payload that composed Storybooks built with Storybook 10.x or earlier send, so cross-story links inside those refs keep navigating. A payload without any of those keys is ignored with a warning. Composed refs must publish a story index (`stories.json`); the v2 format is no longer accepted and the legacy `setStories` event is no longer read.
-
-### Stories exported with `export { … }` are named like `export const` stories
-
-A story exported with `export { X }` or `export { a as X }` was named by its export name as it is: `export { primaryButton }` was named `primaryButton`. It is now named like a story exported with `export const`: by its `name` when the story object in the same file has one, else by its export name in start case (`Primary Button`). A story re-exported from another file, with `export { X } from './other.stories'`, is named by its export name in start case.
-
-This changes the story's name in the sidebar and the name of its Vitest test. The preview already used these names. Story ids and URLs do not change.
-
-Svelte CSF stories also get Vitest tests named like the stories: `<Story name="Hover Shows Full Date" />` had a test named `HoverShowsFullDate`, and now has one named `Hover Shows Full Date`.
-
-Vitest stores a snapshot under the name of its test. Run a renamed test that uses `toMatchSnapshot` or a screenshot once with `-u`.
 
 ### `docgenServer` is stable and enabled by default
 

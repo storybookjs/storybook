@@ -1,3 +1,5 @@
+import { stripVTControlCharacters } from 'node:util';
+
 import type { PackageJsonWithDepsAndDevDeps } from 'storybook/internal/common';
 import {
   HandledError,
@@ -21,6 +23,7 @@ import {
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import * as walk from 'empathic/walk';
+import { normalize } from 'pathe';
 // eslint-disable-next-line depend/ban-dependencies
 import { globby, globbySync } from 'globby';
 import picocolors from 'picocolors';
@@ -65,7 +68,7 @@ export interface CollectProjectsSuccessResult extends UpgradeConfig {
 }
 
 /** Result when project collection fails */
-interface CollectProjectsErrorResult {
+export interface CollectProjectsErrorResult {
   /** Path to the configuration directory that failed */
   readonly configDir: string;
   /** Error that occurred during collection */
@@ -154,7 +157,7 @@ const getVersionModifier = (versionSpecifier: string): VersionModifier => {
  * @param version - Version string to check
  * @returns True if the version is a canary release
  */
-const isCanaryVersion = (version: string): boolean =>
+export const isCanaryVersion = (version: string): boolean =>
   version.startsWith('0.0.0') ||
   version.startsWith('portal:') ||
   version.startsWith('workspace:') ||
@@ -607,21 +610,18 @@ const formatProjectDirectories = (
  * @returns The shortened path
  */
 export const shortenPath = (path: string) => {
-  const gitRoot = getProjectRoot();
-  return path.replace(gitRoot, '');
+  return normalize(path).replace(normalize(getProjectRoot()), '');
 };
 
 /**
  * Handles multiple project selection and validation
  *
  * @param validProjects - Array of valid project results
- * @param errorProjects - Array of error project results
  * @param detectedConfigDirs - Array of detected configuration directories
  * @returns Promise resolving to selected projects or undefined
  */
 const handleMultipleProjects = async (
   validProjects: readonly CollectProjectsSuccessResult[],
-  errorProjects: readonly CollectProjectsErrorResult[],
   detectedConfigDirs: readonly string[],
   yes: boolean
 ): Promise<CollectProjectsSuccessResult[] | undefined> => {
@@ -639,14 +639,6 @@ const handleMultipleProjects = async (
     ];
     if (validProjects.length > 0) {
       projectsFoundMessage.push(formatProjectDirectories(validProjects, logger.SYMBOLS.success));
-    }
-    if (errorProjects.length > 0) {
-      logTracker.enableLogWriting();
-      projectsFoundMessage.push(
-        `There were some errors while collecting data for the following projects:\n${formatProjectDirectories(errorProjects, logger.SYMBOLS.error)}`,
-        '',
-        'Full logs will be available in the Storybook debug logs at the end of the run.'
-      );
     }
     logger.log(projectsFoundMessage.join('\n'));
 
@@ -667,7 +659,8 @@ const handleMultipleProjects = async (
   if (detectedConfigDirs.length > 1) {
     const selectedConfigDirs = await prompt.multiselect({
       message: 'Select which projects to upgrade',
-      options: detectedConfigDirs.map((configDir) => ({
+      // Only the projects it can upgrade; the others were named above.
+      options: validProjects.map(({ configDir }) => ({
         label: shortenPath(configDir),
         value: configDir,
       })),
@@ -678,6 +671,29 @@ const handleMultipleProjects = async (
 
   return undefined;
 };
+
+// The error that made a project unreadable, as one line. A main config that failed to evaluate
+// keeps the original error in `data.error`.
+const unreadableReason = ({ error }: CollectProjectsErrorResult) => {
+  const original = (error as { data?: { error?: unknown } } | undefined)?.data?.error ?? error;
+  const message = original instanceof Error ? original.message : String(original);
+  const [first = '', second = ''] = stripVTControlCharacters(message)
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean);
+  // A syntax error comes as "Transform failed with 1 error:", with the error on the next line.
+  return first.endsWith(':') ? `${first} ${second}` : first;
+};
+
+/** Names the projects the upgrade leaves alone, and why it could not read each one. */
+export const formatUnreadableProjects = (projects: readonly CollectProjectsErrorResult[]) =>
+  [
+    'Not upgrading these Storybook projects, because Storybook could not read them:',
+    ...projects.map(
+      (project) =>
+        `${logger.SYMBOLS.error} ${shortenPath(project.configDir)}: ${unreadableReason(project)}`
+    ),
+  ].join('\n');
 
 /**
  * Gets and validates Storybook projects for upgrade
@@ -703,6 +719,8 @@ export const getProjects = async (
   | {
       allProjects: CollectProjectsSuccessResult[];
       selectedProjects: CollectProjectsSuccessResult[];
+      /** The Storybooks that were found but could not be read, so they are in neither list. */
+      unreadProjects: number;
     }
   | undefined
 > => {
@@ -741,9 +759,19 @@ export const getProjects = async (
       `Found ${validProjects.length} valid projects and ${errorProjects.length} error projects`
     );
 
+    if (validProjects.length > 0 && errorProjects.length > 0) {
+      // The debug log has the full errors.
+      logTracker.enableLogWriting();
+      logger.warn(formatUnreadableProjects(errorProjects));
+    }
+
     // Handle single project case
     if (validProjects.length === 1) {
-      return { allProjects: validProjects, selectedProjects: validProjects };
+      return {
+        allProjects: validProjects,
+        selectedProjects: validProjects,
+        unreadProjects: errorProjects.length,
+      };
     }
 
     // Handle case with only errors
@@ -763,12 +791,13 @@ export const getProjects = async (
     // Handle multiple projects
     const selectedProjects = await handleMultipleProjects(
       validProjects,
-      errorProjects,
       detectedConfigDirs,
       options.yes
     );
 
-    return selectedProjects ? { allProjects: validProjects, selectedProjects } : undefined;
+    return selectedProjects
+      ? { allProjects: validProjects, selectedProjects, unreadProjects: errorProjects.length }
+      : undefined;
   } catch (error) {
     if (
       !(error instanceof HandledError || error instanceof UpgradeStorybookConfigDirNotFoundError)

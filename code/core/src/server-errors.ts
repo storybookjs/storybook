@@ -1,4 +1,5 @@
 import picocolors from 'picocolors';
+import { RERUN_OUTSIDE_SANDBOX } from './common/utils/blocked-network.ts';
 import { isTypeScript71Stable } from './common/utils/typescript-7-1-stable.ts';
 import type { TypeScriptDocgenApi } from './common/utils/typescript-for-docgen.ts';
 import { dedent } from 'ts-dedent';
@@ -581,7 +582,7 @@ export class OpenServiceMissingOriginError extends StorybookError {
  */
 export function describeUnknownStoryIds(unknownIds: string[]): string {
   const plural = unknownIds.length === 1 ? 'ID is' : 'IDs are';
-  return `Refusing to publish review: ${unknownIds.length} story ${plural} not backed by a story entry in the live Storybook index (docs entries cannot be review slots):`;
+  return `Refusing to create review: ${unknownIds.length} story ${plural} not backed by a story entry in the live Storybook index (docs entries cannot be review slots):`;
 }
 
 export class OpenServiceUnknownStoryIdsError extends StorybookError {
@@ -1012,23 +1013,18 @@ export class SvelteViteWithSvelteKitError extends StorybookError {
 }
 
 export class NoMatchingExportError extends StorybookError {
-  constructor(public data: { error: unknown | Error }) {
+  constructor(public data: { error: unknown | Error; detail: string }) {
     super({
       name: 'NoMatchingExportError',
       category: Category.CORE_SERVER,
       code: 4,
       documentation: '',
       message: dedent`
-        There was an exports mismatch error when trying to build Storybook.
-        Please check whether the versions of your Storybook packages match whenever possible, as this might be the cause.
-        
-        Problematic example:
-        { "@storybook/react": "7.5.3", "@storybook/react-vite": "7.4.5", "storybook": "7.3.0" }
-        
-        Correct example:
-        { "@storybook/react": "7.5.3", "@storybook/react-vite": "7.5.3", "storybook": "7.5.3" }
-        
-        Please run \`npx storybook doctor\` for guidance on how to fix this issue.`,
+          An import in your Storybook setup could not be resolved while building Storybook's UI.
+
+          ${data.detail}
+
+          This usually happens because the installed Storybook core package versions don't match, or an addon you're using is built for an older Storybook version. Run \`npx storybook doctor\` to identify version discrepancies.`,
     });
   }
 }
@@ -1112,17 +1108,18 @@ export class NoFreePortError extends StorybookError {
       message: dedent`
         Unable to find a free port for Storybook's dev server${data.requestedPort ? ` (requested port: ${data.requestedPort})` : ''}.
         Your environment appears to block Storybook from listening on network ports.
-        If you are running Storybook in a sandboxed or restricted shell, allow binding to localhost ports and try again.`,
+        ${RERUN_OUTSIDE_SANDBOX}`,
     });
   }
 }
 
 export class StorybookDevServerDisconnectedError extends StorybookError {
-  constructor(public data: { code?: number; reason?: string } = {}) {
+  constructor(public data: { code?: number; reason?: string; cause?: unknown } = {}) {
     super({
       name: 'StorybookDevServerDisconnectedError',
       category: Category.CORE_SERVER,
       code: 19,
+      cause: data.cause,
       message: dedent`
         Storybook dev server disconnected${data.code ? ` (close code ${data.code}${data.reason ? `: ${data.reason}` : ''})` : ''}.
         Any request that was still in flight has been abandoned.

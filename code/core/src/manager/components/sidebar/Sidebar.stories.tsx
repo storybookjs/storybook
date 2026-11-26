@@ -7,8 +7,6 @@ import {
   type StatusesByStoryIdAndTypeId,
 } from 'storybook/internal/types';
 
-import { global } from '@storybook/global';
-
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import type { IndexHash } from 'storybook/manager-api';
@@ -67,6 +65,7 @@ const managerContext: any = (
     getChannel: fn().mockName('api::getChannel'),
     getElements: fn(() => ({})),
     navigate: fn().mockName('api::navigate'),
+    resolveLeafEntry: fn().mockName('api::resolveLeafEntry'),
     selectStory: fn().mockName('api::selectStory'),
     setFilter: fn().mockName('api::setFilter'),
     setFilters: fn().mockName('api::setFilters'),
@@ -208,23 +207,23 @@ export const Simple: Story = {
 
 export const SimpleInProduction: Story = {
   beforeEach: () => {
-    const configType = global.CONFIG_TYPE;
-    global.CONFIG_TYPE = 'PRODUCTION';
+    const configType = globalThis.CONFIG_TYPE;
+    globalThis.CONFIG_TYPE = 'PRODUCTION';
     return () => {
-      global.CONFIG_TYPE = configType;
+      globalThis.CONFIG_TYPE = configType;
     };
   },
 };
 
 export const SimpleNoChecklist: Story = {
   beforeEach: () => {
-    const features = global.FEATURES;
-    global.FEATURES = {
+    const features = globalThis.FEATURES;
+    globalThis.FEATURES = {
       ...features,
       sidebarOnboardingChecklist: false,
     };
     return () => {
-      global.FEATURES = features;
+      globalThis.FEATURES = features;
     };
   },
 };

@@ -44,6 +44,45 @@ describe('PNPMProxy catalogs', () => {
     vi.spyOn(pnpmProxy, 'getAllDependencies').mockReturnValue({});
   });
 
+  describe('getOverrideSources', () => {
+    const PACKAGE_JSON_SOURCE = {
+      path: '/root/package.json',
+      field: 'overrides',
+      overrides: { react: '18.0.0' },
+    };
+
+    beforeEach(() => {
+      vi.spyOn(JsPackageManager.prototype, 'getOverrideSources').mockReturnValue([
+        PACKAGE_JSON_SOURCE,
+      ]);
+    });
+
+    it('keeps the package.json sources when there is no workspace file', () => {
+      vi.mocked(find.up).mockReturnValue(undefined);
+
+      expect(pnpmProxy.getOverrideSources()).toEqual([PACKAGE_JSON_SOURCE]);
+    });
+
+    it.each([
+      { name: 'without overrides', yaml: 'packages:\n  - apps/*\n', expected: [] },
+      {
+        name: 'with overrides, reading bare numeric pins as strings',
+        yaml: 'overrides:\n  storybook: 10\n  "a>@storybook/addon-docs": ~10.5.3\n',
+        expected: [
+          {
+            path: WORKSPACE_YAML,
+            field: 'overrides',
+            overrides: { storybook: '10', 'a>@storybook/addon-docs': '~10.5.3' },
+          },
+        ],
+      },
+    ])('adds a workspace file $name', ({ yaml, expected }) => {
+      vol.fromJSON({ [WORKSPACE_YAML]: yaml });
+
+      expect(pnpmProxy.getOverrideSources()).toEqual([PACKAGE_JSON_SOURCE, ...expected]);
+    });
+  });
+
   describe('getDeclaredVersionSpecifier', () => {
     it('prefers the installed version and does not read the catalog', async () => {
       vi.spyOn(pnpmProxy, 'getInstalledVersion').mockResolvedValue('4.1.9');

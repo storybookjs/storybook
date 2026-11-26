@@ -14,6 +14,7 @@ describe('typed core getService (preview)', () => {
       .parameter(0)
       .toEqualTypeOf<{
         id: string;
+        scope: 'all' | 'manifest';
       }>();
   });
 

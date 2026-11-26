@@ -3,7 +3,6 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { emitCode } from '../../svelte-csf/runtime/emit-code.ts';
 
 afterEach(() => {
-  vi.unstubAllGlobals();
   vi.resetModules();
 });
 

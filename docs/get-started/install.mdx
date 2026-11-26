@@ -79,6 +79,12 @@ On the day a new Storybook version is published (e.g. `11.1.0`), `storybook@late
 
 You can exempt Storybook from this wait. Each list below includes `create-storybook` (the package behind `create storybook`), along with the `storybook` binary itself.
 
+Storybook's packages depend on each other at exact versions, so the exemption has to cover all of them. Packages outside the `@storybook` scope need their own entry: add `eslint-plugin-storybook`, `vite-plugin-storybook-nextjs` (a dependency of `@storybook/nextjs-vite`), and `storybook-addon-pseudo-states` if your project installs them.
+
+With Yarn, pnpm, and Bun, you do not have to write the list yourself. When `storybook upgrade` or `create storybook` finds that the wait would block the release, it offers to add the exemptions for you. It adds them without asking when you pass `--yes`, when it runs without a terminal or in CI, and when an AI agent runs `create storybook`.
+
+Storybook looks for an exemption for every package it publishes, and for `chromatic` and `@chromatic-com/storybook`. So it also offers to complete a list that you wrote yourself, even when that list already covers what your project installs.
+
 <details>
 <summary>pnpm</summary>
 
@@ -131,11 +137,11 @@ min-release-age-exclude[]=@storybook/*
 <details>
 <summary>Bun</summary>
 
-Bun does not wait unless you set [`minimumReleaseAge`](https://bun.com/docs/pm/cli/install#minimum-release-age). If you have set it, exempt packages with `minimumReleaseAgeExcludes` under `[install]` in `bunfig.toml`. An entry is a package name, or one exact version of a package. Bun's docs do not describe glob patterns for this setting, so list `@storybook` packages by name if you need them exempted too:
+Bun does not wait unless you set [`minimumReleaseAge`](https://bun.com/docs/pm/cli/install#minimum-release-age). If you have set it, exempt packages with `minimumReleaseAgeExcludes` under `[install]` in `bunfig.toml`. An entry is a package name, or one exact version of a package. Bun does not support wildcards for this setting ([oven-sh/bun#23689](https://github.com/oven-sh/bun/issues/23689)), so list each `@storybook` package by name, including the ones your framework depends on:
 
 ```toml title="bunfig.toml"
 [install]
-minimumReleaseAgeExcludes = ["storybook", "create-storybook", "@storybook/react-vite"]
+minimumReleaseAgeExcludes = ["storybook", "create-storybook", "@storybook/react-vite", "@storybook/react", "@storybook/builder-vite"]
 ```
 
 </details>

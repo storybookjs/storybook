@@ -6,34 +6,30 @@ sidebar:
 
 <If notRenderer={['react', 'vue', 'angular', 'svelte', 'web-components', 'solid']}>
 
-The `test-stories` skill lets your agent run your story tests, with their accessibility checks, and fix what fails. It isn't available for your framework yet. See [supported frameworks](../connect.mdx#supported-frameworks).
+The `/test-stories` skill tells your agent how to run your story tests, with their accessibility checks. It isn't available for your framework yet. See [supported frameworks](../connect.mdx#supported-frameworks).
 
 </If>
 
 <If renderer={['react', 'vue', 'angular', 'svelte', 'web-components', 'solid']}>
 
-The `test-stories` skill lets your agent run your [story tests](../../writing-tests/index.mdx), with their [accessibility checks](../../writing-tests/accessibility-testing.mdx), and fix what fails. Your agent doesn't finish its work with failing tests.
+The `/test-stories` skill tells your agent how to run your [story tests](../../writing-tests/index.mdx), with their [accessibility checks](../../writing-tests/accessibility-testing.mdx), and what the result means.
 
 ## When your agent uses it
 
-The skill is step 3 of the [UI workflow](./ui-workflow.mdx). With the [Storybook section in `AGENTS.md`](../connect.mdx#tell-your-agent-when-to-use-the-skills), your agent uses it after every UI change, and when you ask it to run or fix the story tests, for example "Fix the failing story tests".
+The [Storybook section in `AGENTS.md`](../agents-md.mdx) names the test command itself (step 3), so your agent can run the story tests without opening this skill. When it runs them, and what it does about a failure, is up to your agent and the tool it runs in: some test after every change, others only when you ask. The skill gives the same commands when you or your agent call it by name.
 
-## What the agent does
+## What the skill tells your agent
 
-- **Runs focused tests while it works.** After each change, the agent runs the tests of the stories it changed.
-- **Runs every test before it finishes.** When its work is done, the agent runs all story tests once.
-- **Fixes failures.** The agent fixes what fails and runs the tests again. It changes only what the fix needs.
-
-The agent runs the tests with Storybook's own command, never with a test script from your `package.json` or with `vitest` directly.
+- **The command.** `npx storybook tools test run`: with `--changed` it tests the stories that the uncommitted changes affect, with story files it tests the stories in those files, and without either it tests every story.
+- **The result.** The output lists the passing and failing stories, with the error of each failure.
 
 ### Accessibility issues
 
-If you are using the [accessibility addon](../../writing-tests/accessibility-testing.mdx), the agent fixes semantic accessibility issues, such as missing labels, roles, or alt text. For visual issues, such as low color contrast, it doesn't change your design. It describes the problem, gives you two or three options, and asks you to choose. The agent never changes your accessibility test level to make a test pass.
+If you are using the [accessibility addon](../../writing-tests/accessibility-testing.mdx), the agent fixes only the accessibility issues that its change caused, and reports the rest. For visual issues, such as low color contrast, it asks before it changes your design. The agent never changes your accessibility test level to make a test pass.
 
 ## Requirements
 
-- The [Vitest addon](../../writing-tests/integrations/vitest-addon/index.mdx), which needs the Vite builder. Without it, the agent skips this step.
-- With the [MCP server](../reference/mcp-server.mdx), the [`test` toolset](../reference/mcp-server.mdx#test) turned on
+- The [Vitest addon](../../writing-tests/integrations/vitest-addon/index.mdx), which needs the Vite builder. Without it in your main config, the `AGENTS.md` section has no test step.
 
 To run accessibility checks with the tests, also install the [accessibility addon](../../writing-tests/accessibility-testing.mdx).
 
@@ -43,7 +39,7 @@ To run accessibility checks with the tests, also install the [accessibility addo
 **More AI resources**
 
 - [Connect your agent](../connect.mdx)
-- [UI workflow](./ui-workflow.mdx)
+- [The AGENTS.md section](../agents-md.mdx)
 - [Write stories](./write-stories.mdx)
 - [UI review](./ui-review.mdx)
 - [Best practices for using Storybook with AI](../best-practices.mdx)

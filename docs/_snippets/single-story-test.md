@@ -1,6 +1,6 @@
 ```js filename="Form.test.js|jsx" renderer="react" language="js"
 import { screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import { userEvent } from 'storybook/test';
 
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
 import { composeStory } from '@storybook/your-framework';
@@ -27,7 +27,7 @@ test('Validates form', async () => {
 
 ```ts filename="Form.test.ts|tsx" renderer="react" language="ts"
 import { screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import { userEvent } from 'storybook/test';
 
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
 import { composeStory } from '@storybook/your-framework';
@@ -54,7 +54,7 @@ test('Validates form', async () => {
 
 ```js filename="tests/Form.test.js" renderer="vue" language="js"
 import { screen } from '@testing-library/vue';
-import userEvent from '@testing-library/user-event';
+import { userEvent } from 'storybook/test';
 
 import { composeStory } from '@storybook/vue3-vite';
 
@@ -80,7 +80,7 @@ test('Validates form', async () => {
 
 ```ts filename="tests/Form.test.ts" renderer="vue" language="ts"
 import { screen } from '@testing-library/vue';
-import userEvent from '@testing-library/user-event';
+import { userEvent } from 'storybook/test';
 
 import { composeStory } from '@storybook/vue3-vite';
 

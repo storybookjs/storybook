@@ -1,9 +1,11 @@
-import type { Options } from 'storybook/internal/types';
+import type { Options, StorybookConfigRaw } from 'storybook/internal/types';
 
+import { basename } from 'pathe';
 import { dedent } from 'ts-dedent';
 
-import { frameworkPackages } from './get-storybook-info.ts';
-import { normalizePath } from './normalize-path.ts';
+import { RN_FRAMEWORK_PACKAGE, RN_STORYBOOK_DIR } from '../../shared/constants/config-folder.ts';
+import { frameworkPackages } from './framework.ts';
+import { matchPackageName } from './match-package-name.ts';
 
 /** Framework can be a string or an object. This utility always returns the string name. */
 export async function getFrameworkName(options: Options) {
@@ -31,16 +33,26 @@ export async function getFrameworkName(options: Options) {
  * extractFrameworkPackageName('@third-party/framework'); // => '@third-party/framework'
  * ```
  */
-export const extractFrameworkPackageName = (framework: string) => {
-  const normalizedPath = normalizePath(framework);
-  const frameworkName = Object.keys(frameworkPackages).find(
-    (pkg) =>
-      normalizedPath.endsWith(pkg) ||
-      // pnpm virtual-store dirs encode the scope slash as '+' and append '@<version>',
-      // e.g. .../node_modules/.pnpm/@storybook+react-vite@9.0.0 — the trailing '@' keeps
-      // '@storybook/react' from matching '@storybook+react-vite@...'.
-      normalizedPath.includes(`/.pnpm/${pkg.replace('/', '+')}@`)
-  );
+export const extractFrameworkPackageName = (framework: string) =>
+  matchPackageName(framework, [...Object.keys(frameworkPackages), RN_FRAMEWORK_PACKAGE]) ??
+  framework;
 
-  return frameworkName ?? framework;
+/**
+ * Returns the framework package of a main config, or null when it has none.
+ *
+ * A React Native on-device config in `.rnstorybook` may omit `framework`; it resolves to
+ * `@storybook/react-native`. Omit `configDir` to skip that folder fallback.
+ */
+export const getFrameworkPackageName = (
+  mainConfig: StorybookConfigRaw | undefined,
+  configDir?: string
+) => {
+  const framework =
+    typeof mainConfig?.framework === 'string' ? mainConfig.framework : mainConfig?.framework?.name;
+
+  if (framework) {
+    return extractFrameworkPackageName(framework);
+  }
+
+  return configDir && basename(configDir) === RN_STORYBOOK_DIR ? RN_FRAMEWORK_PACKAGE : null;
 };

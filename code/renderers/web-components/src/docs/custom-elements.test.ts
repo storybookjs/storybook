@@ -1,14 +1,10 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { global } from '@storybook/global';
-
 import { logger, once } from 'storybook/internal/client-logger';
 
 import customElementsManifest from './__testfixtures__/custom-elements.json';
 import { extractArgTypes, extractArgTypesFromElements } from './custom-elements';
-
-const { window } = global;
 
 describe('extractArgTypes', () => {
   beforeEach((): void => {

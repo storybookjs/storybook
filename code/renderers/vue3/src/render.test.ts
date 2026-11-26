@@ -1,11 +1,19 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+// @vitest-environment happy-dom
+import { describe, expect, it, vi } from 'vitest';
 
-import type { Args, Globals, StoryContextForRender } from 'storybook/internal/types';
+import type {
+  Args,
+  Globals,
+  RenderContext,
+  StoryContext,
+  StrictArgTypes,
+} from 'storybook/internal/types';
 
 import { expectTypeOf } from 'expect-type';
-import { computed, defineComponent, h, reactive, type VNode } from 'vue';
+import { computed, defineComponent, h, nextTick, reactive, type VNode } from 'vue';
 
-import { render, updateArgs } from './render.ts';
+import { decorateStory } from './decorateStory.ts';
+import { render, renderToCanvas, updateArgs } from './render.ts';
 import type { VueRenderer } from './types.ts';
 
 describe('Render Story', () => {
@@ -127,29 +135,99 @@ describe('render slots', () => {
     default: () => 'Default slot',
     footer: h('p', 'Footer'),
   };
-  const slotNames = (argTypes: StoryContextForRender<VueRenderer>['argTypes'] = {}) => {
+  const slotNames = (argTypes: StrictArgTypes = {}) => {
     const storyFn = render(args, {
       id: 'layout--default',
       component: Layout,
       argTypes,
-    } as unknown as StoryContextForRender<VueRenderer>) as () => VNode;
+    } as unknown as StoryContext<VueRenderer>) as () => VNode;
     const vnode = storyFn();
     return Object.keys((vnode.children ?? {}) as object).filter((key) => !key.startsWith('_'));
   };
 
-  afterEach(() => {
-    vi.unstubAllGlobals();
+  it('passes every arg that is neither a declared prop nor a listener as a slot', () => {
+    expect(slotNames()).toEqual(['default', 'footer']);
   });
 
-  it('passes args documented as slots by docgen', () => {
-    expect(slotNames({ footer: { name: 'footer', table: { category: 'slots' } } })).toEqual([
+  it('passes an arg named like a declared prop to the prop, even with a slot argType', () => {
+    expect(slotNames({ label: { name: 'label', table: { category: 'slots' } } })).toEqual([
+      'default',
       'footer',
     ]);
   });
+});
 
-  it('passes every undeclared, non-listener arg as a slot under server docgen', () => {
-    vi.stubGlobal('FEATURES', { docgenServer: true });
+describe('renderToCanvas', () => {
+  it('ends on showException when a decorator throws during mount', async () => {
+    const error = new Error('Story did something wrong');
+    const storyContext = { args: {}, globals: {} } as unknown as StoryContext<VueRenderer>;
+    const storyFn = decorateStory(
+      () => ({ render: () => null }),
+      [
+        () => {
+          throw error;
+        },
+      ]
+    );
+    const calls: unknown[][] = [];
+    // Vue warns that the app has no render function once its setup throws.
+    vi.spyOn(console, 'warn').mockImplementationOnce(() => {});
 
-    expect(slotNames()).toEqual(['default', 'footer']);
+    const teardown = await renderToCanvas(
+      {
+        id: 'error-story',
+        storyContext,
+        storyFn: () => storyFn(storyContext),
+        forceRemount: true,
+        showMain: () => calls.push(['showMain']),
+        showException: (e: Error) => calls.push(['showException', e]),
+      } as unknown as RenderContext<VueRenderer>,
+      document.createElement('div')
+    );
+    teardown();
+
+    expect(calls.at(-1)).toEqual(['showException', error]);
+  });
+
+  it('shows main again when an args update repairs a component that threw on mount', async () => {
+    const Label = defineComponent({
+      props: ['label'],
+      render() {
+        if (this.label === 'boom') {
+          throw new Error('Story did something wrong');
+        }
+        return h('span', this.label);
+      },
+    });
+    const calls: string[] = [];
+    const renderContext = (args: Args, forceRemount: boolean) => {
+      const storyContext = {
+        id: 'label--default',
+        component: Label,
+        args,
+        argTypes: {},
+        globals: {},
+      } as unknown as StoryContext<VueRenderer>;
+      return {
+        id: 'label--default',
+        storyContext,
+        storyFn: () => render(storyContext.args, storyContext),
+        forceRemount,
+        showMain: () => calls.push('showMain'),
+        showException: () => calls.push('showException'),
+      } as unknown as RenderContext<VueRenderer>;
+    };
+    const canvasElement = document.createElement('div');
+
+    await renderToCanvas(renderContext({ label: 'boom' }, true), canvasElement);
+    const teardown = await renderToCanvas(
+      renderContext({ label: 'Repaired' }, false),
+      canvasElement
+    );
+    await nextTick();
+
+    expect(canvasElement.textContent).toBe('Repaired');
+    teardown();
+    expect(calls).toEqual(['showMain', 'showException', 'showMain']);
   });
 });

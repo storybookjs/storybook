@@ -11,7 +11,7 @@ import type {
   AnnotatedStoryFn,
   Args,
   StoryAnnotations,
-  StoryContextForRender,
+  StoryContext,
   StrictArgTypes,
 } from 'storybook/internal/types';
 
@@ -150,12 +150,7 @@ describe('svelte legacy baselines', () => {
         // The composed args include the preview args, as in Storybook's source decorator.
         const { args } = composeModuleStory(plain, story, exportName);
         const snippetComponent = getPlainCsfSnippetComponent(plain.meta, story, args);
-        const snippet = generateSvelteSource(
-          snippetComponent,
-          args,
-          argTypes as StrictArgTypes,
-          null
-        );
+        const snippet = generateSvelteSource(snippetComponent, args, null);
         expect(snippet, `${fixtureCase}/plain-csf-snippet-${exportName}.snapshot`).not.toBeNull();
         if (snippet === null) {
           throw new Error(
@@ -246,7 +241,7 @@ function getPlainCsfSnippetComponent(
   story: SvelteStory,
   args: Args
 ): ComponentWithDocgen {
-  const context = { args } as StoryContextForRender<SvelteRenderer, Args>;
+  const context = { args } as StoryContext<SvelteRenderer, Args>;
 
   if (typeof story === 'function') {
     const rendered = story(args, context);

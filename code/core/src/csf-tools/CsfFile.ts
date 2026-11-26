@@ -468,7 +468,9 @@ export class CsfFile {
 
   /**
    * Discover editors for the meta and stories; a story's CSF2 annotation assignments are its fields.
-   * Unsupported targets are skipped and reported in `mutationDiagnostics`.
+   * A story whose value it cannot read, such as `export const A = makeStory()`, gets an editor that
+   * reads nothing, removes a field its value does not show as a no-op, and refuses any other edit.
+   * Other unsupported targets are skipped and reported in `mutationDiagnostics`.
    *
    * @example
    * ```ts
@@ -493,7 +495,8 @@ export class CsfFile {
 
   /**
    * Find the editor of the story exported as `exportName`, as `objects()` would give it, or the
-   * diagnostic that says why it has none, which is added to `mutationDiagnostics` as well. Returns
+   * diagnostic that says why it has none, which is added to `mutationDiagnostics` as well. Unlike
+   * `objects()`, it refuses a story whose value it cannot read. Returns
    * `undefined` when the file has no story of that name. A story that shares its object with
    * another story, such as `Secondary` in `export { Primary as Secondary }` or `export const
    * Secondary = Primary`, has none: it is refused as `aliased-story`, naming `Primary`, whose
@@ -1026,10 +1029,13 @@ export class CsfFile {
           }
           this._storyAnnotations[exportName] = annotations;
           this._storyStatements[exportName] = decl as Node;
+          // A story of another file has its name there, and the preview takes an empty name as none
+          const ownName =
+            !node.source && isStringLiteral(annotations.name) && annotations.name.value;
           this._stories[exportName] = {
             exportName,
             id: 'FIXME',
-            name: exportName,
+            name: ownName || storyNameFromExport(exportName),
             localName,
             parameters: {},
             factory: storyIsFactory,

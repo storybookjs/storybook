@@ -249,6 +249,7 @@ export const features: PresetProperty<'features'> = async (existing, options) =>
   backgrounds: true,
   componentsManifest: false,
   experimentalChunkedPreviewRuntime: false,
+  experimentalLiveServerSnippets: true,
   controls: true,
   docgenServer: await options.presets.apply('isDocgenProviderEnabled', false),
   highlight: true,

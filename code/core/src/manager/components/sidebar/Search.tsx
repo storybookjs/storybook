@@ -3,7 +3,6 @@ import React, { type ReactNode, useCallback, useRef, useState } from 'react';
 import { Button } from 'storybook/internal/components';
 import { REVIEW_STATUS_TYPE_ID } from 'storybook/internal/types';
 
-import { global } from '@storybook/global';
 import { CloseIcon, SearchIcon } from '@storybook/icons';
 
 import type { DownshiftState, StateChangeOptions } from 'downshift';
@@ -13,6 +12,7 @@ import Fuse from 'fuse.js';
 import { shortcutToHumanString, useStorybookApi } from 'storybook/manager-api';
 import { styled } from 'storybook/theming/emotion';
 
+import { isOwnEntry } from '../../../manager-api/lib/stories.ts';
 import { useLandmark } from '../../hooks/useLandmark.ts';
 import { getGroupStatus, getMostCriticalStatusValue } from '../../utils/status.tsx';
 import { scrollIntoView, searchItem } from '../../utils/tree.ts';
@@ -28,7 +28,7 @@ import type {
 } from './types.ts';
 import { isExpandType, isSearchResult } from './types.ts';
 
-const { document } = global;
+import { resolveHighlightRanges } from './SearchResults.utils.ts';
 
 const DEFAULT_MAX_SEARCH_RESULTS = 50;
 
@@ -213,7 +213,7 @@ export const Search = React.memo<SearchProps>(function Search({
           ? getMostCriticalStatusValue(ownStatusValues)
           : null;
 
-        const status = mostCriticalStatusValue ?? groupStatus[datasetValue.id] ?? null;
+        const status = mostCriticalStatusValue ?? groupStatus.get(datasetValue.id);
 
         if (datasetValue.type !== 'docs' || !globalThis?.FEATURES?.experimentalSearchDocsHeadings) {
           list.push({
@@ -260,11 +260,16 @@ export const Search = React.memo<SearchProps>(function Search({
       const resultIds: Set<string> = new Set();
 
       const distinctResults = (fuse.search(input) as SearchResult[]).filter(({ item }) => {
-        if (
-          !(item.type === 'component' || item.type === 'docs' || item.type === 'story') ||
-          // @ts-expect-error (non strict)
-          resultIds.has(item.parent)
-        ) {
+        if (!(item.type === 'component' || item.type === 'docs' || item.type === 'story')) {
+          return false;
+        }
+        // A matching result already stands for the entries under it, except for subcomponents and
+        // docs hoisted from a nested title (e.g. `Components/Button/Guide`), which are results of
+        // their own.
+        const isNested =
+          item.type === 'component' ||
+          (item.type === 'docs' && !!item.parent && !isOwnEntry({ id: item.parent }, item));
+        if (item.parent && resultIds.has(item.parent) && !isNested) {
           return false;
         }
         resultIds.add(item.id);
@@ -272,7 +277,12 @@ export const Search = React.memo<SearchProps>(function Search({
       });
 
       if (distinctResults.length) {
-        results = distinctResults.slice(0, allComponents ? 1000 : DEFAULT_MAX_SEARCH_RESULTS);
+        results = distinctResults
+          .slice(0, allComponents ? 1000 : DEFAULT_MAX_SEARCH_RESULTS)
+          .map((result) => ({
+            ...result,
+            matches: resolveHighlightRanges(result.matches, input),
+          }));
         if (distinctResults.length > DEFAULT_MAX_SEARCH_RESULTS && !allComponents) {
           results.push({
             showAll: () => showAllComponents(true),

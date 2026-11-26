@@ -25,10 +25,11 @@ export function getMismatchingVersionsWarnings(
 
   const messages: string[] = [];
   try {
+    // Community frameworks are versioned outside Storybook, so only compare frameworks it releases
     const frameworkPackageName = Object.keys(installationMetadata?.dependencies || []).find(
-      (packageName) => {
-        return Object.keys(frameworkPackages).includes(packageName);
-      }
+      (packageName) =>
+        Object.keys(frameworkPackages).includes(packageName) &&
+        Object.keys(storybookCorePackages).includes(packageName)
     );
     const cliVersion = getPrimaryVersion('storybook', installationMetadata);
     const frameworkVersion = getPrimaryVersion(frameworkPackageName, installationMetadata);

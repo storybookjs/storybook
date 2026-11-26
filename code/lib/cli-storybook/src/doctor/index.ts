@@ -7,12 +7,18 @@ import { dedent } from 'ts-dedent';
 
 import { getStorybookData } from '../automigrate/helpers/mainConfigFile.ts';
 import { shortenPath } from '../util.ts';
+import { getAppliedDeprecations, getDeprecatedPackagesMessage } from './deprecatedPackages.ts';
 import { getDuplicatedDepsWarnings } from './getDuplicatedDepsWarnings.ts';
 import {
   getIncompatiblePackagesSummary,
   getIncompatibleStorybookPackages,
 } from './getIncompatibleStorybookPackages.ts';
 import { getMismatchingVersionsWarnings } from './getMismatchingVersionsWarning.ts';
+import {
+  STORYBOOK_OVERRIDES_TITLE,
+  getStorybookOverrides,
+  getStorybookOverridesSummary,
+} from './getStorybookOverrides.ts';
 import { DiagnosticType as DiagType, DiagnosticStatus } from './types.ts';
 import type {
   DiagnosticMessage,
@@ -178,6 +184,7 @@ export async function runMultiProjectDoctor(
     storybookVersion: project.storybookVersion,
     mainConfig: project.mainConfig,
     configurationError: project.configurationError,
+    warnedFixIds: project.warnedFixIds,
   }));
 
   // Always return the project-based results structure
@@ -188,6 +195,7 @@ export async function runMultiProjectDoctor(
 export const doctor = async ({
   configDir: userSpecifiedConfigDir,
   packageManager: packageManagerName,
+  warnedFixIds,
 }: DoctorOptions) => {
   logger.step('Checking the health of your Storybook..');
 
@@ -224,6 +232,7 @@ export const doctor = async ({
       storybookVersion: versionInstalled,
       mainConfig,
       configurationError,
+      warnedFixIds,
     },
   ]);
 
@@ -241,6 +250,7 @@ export async function getDoctorDiagnostics({
   storybookVersion,
   mainConfig,
   configurationError,
+  warnedFixIds,
 }: ProjectDoctorData): Promise<DoctorCheckResult[]> {
   const results: DoctorCheckResult[] = [];
 
@@ -294,6 +304,27 @@ export async function getDoctorDiagnostics({
     });
   }
 
+  // Deprecations come from the one table in ./deprecatedPackages.ts, applied to the version and the
+  // project's dependencies. A fix whose skip warning was printed this run already told the user,
+  // so its packages stay silent here and the deprecation shows exactly once per run. A fix that
+  // cancelled itself from `run` printed no warning and is not in the list, so it still gets the
+  // doctor's deprecation.
+  const appliedDeprecations = getAppliedDeprecations({
+    storybookVersion,
+    installedDependencies: packageManager.getAllDependencies(),
+  }).filter(
+    ({ entry }) => !(entry.automigrateFixId && warnedFixIds?.includes(entry.automigrateFixId))
+  );
+
+  if (appliedDeprecations.length > 0) {
+    results.push({
+      type: DiagType.DEPRECATED_PACKAGES,
+      title: 'Deprecated packages',
+      message: getDeprecatedPackagesMessage(appliedDeprecations),
+      project: { configDir },
+    });
+  }
+
   // Check for incompatible packages
   const incompatibleStorybookPackagesList = await getIncompatibleStorybookPackages({
     currentStorybookVersion: storybookVersion,
@@ -309,6 +340,21 @@ export async function getDoctorDiagnostics({
       type: DiagType.INCOMPATIBLE_PACKAGES,
       title: 'Incompatible packages found',
       message: incompatiblePackagesMessage,
+      project: { configDir },
+    });
+  }
+
+  const overrides = getStorybookOverrides({ packageManager, targetVersion: storybookVersion });
+
+  if (overrides.length > 0) {
+    results.push({
+      type: DiagType.STORYBOOK_OVERRIDES,
+      title: STORYBOOK_OVERRIDES_TITLE,
+      message: getStorybookOverridesSummary(
+        overrides,
+        storybookVersion,
+        'reinstall your dependencies'
+      ),
       project: { configDir },
     });
   }

@@ -60,5 +60,5 @@
   "id": "example-header",
   "jsDocTags": {},
   "name": "Header",
-  "path": "./src/stories/Header.stories.ts"
+  "path": "./src/stories/Header.stories.tsx"
 }

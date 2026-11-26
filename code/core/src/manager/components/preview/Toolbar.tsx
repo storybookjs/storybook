@@ -81,16 +81,22 @@ export const ToolbarComp = React.memo<ToolData>(function ToolbarComp({
   tools,
   toolsExtra,
 }) {
+  return isShown && (tools.length > 0 || toolsExtra.length > 0) ? (
+    <ToolbarSection key="toolbar" tools={tools} toolsExtra={toolsExtra} />
+  ) : null;
+});
+
+/** Mounted only while shown, so its landmark never outlives the section element. */
+function ToolbarSection({ tools, toolsExtra }: Omit<ToolData, 'isShown'>): React.ReactElement {
   const sectionRef = useRef<HTMLElement>(null);
   const { landmarkProps } = useLandmark(
     { 'aria-labelledby': 'sb-preview-toolbar-title', role: 'region' },
     sectionRef
   );
 
-  return isShown && (tools.length > 0 || toolsExtra.length > 0) ? (
+  return (
     <StyledSection
       className="sb-bar"
-      key="toolbar"
       data-testid="sb-preview-toolbar"
       ref={sectionRef}
       {...landmarkProps}
@@ -103,8 +109,8 @@ export const ToolbarComp = React.memo<ToolData>(function ToolbarComp({
         <Tools key="right" list={toolsExtra} />
       </StyledToolbar>
     </StyledSection>
-  ) : null;
-});
+  );
+}
 
 export const Tools = React.memo<{ list: Addon_BaseType[] }>(function Tools({ list }) {
   return (

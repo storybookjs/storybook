@@ -6,8 +6,6 @@ import {
 } from 'storybook/internal/core-events';
 import type { StoryContext } from 'storybook/internal/types';
 
-import { global as globalThis } from '@storybook/global';
-
 import { expect, waitFor, within } from 'storybook/test';
 
 export default {
@@ -21,7 +19,7 @@ export default {
 export const ForceRemount = {
   /**
    * This play function runs in an infinite loop, because the final FORCE_REMOUNT event retriggers
-   * the function Because of this, it is disabled in both Chromatic and the test runner. To test it
+   * the function Because of this, it is disabled in both Chromatic and Vitest. To test it
    * manually, inspect that the button alternates being focused and blurred every 3 seconds. If the
    * button ALWAYS has focus it means the renderer didn't correctly remount the tree at the
    * FORCE_REMOUNT event

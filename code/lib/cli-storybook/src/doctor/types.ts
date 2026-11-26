@@ -4,6 +4,8 @@ import type { StorybookConfigRaw } from 'storybook/internal/types';
 export interface DoctorOptions {
   configDir?: string;
   packageManager?: PackageManagerName;
+  /** Automigrations whose skip warning was printed this run; the doctor stays silent about their deprecations. */
+  warnedFixIds?: string[];
 }
 
 export interface DiagnosticMessage {
@@ -17,14 +19,18 @@ export interface ProjectDoctorData {
   storybookVersion?: string;
   mainConfig: StorybookConfigRaw;
   configurationError?: DiagnosticMessage;
+  /** Automigrations whose skip warning was printed this run; the doctor stays silent about their deprecations. */
+  warnedFixIds?: string[];
 }
 
 export enum DiagnosticType {
   MISSING_STORYBOOK_DEPENDENCY = 'missing_storybook_dependency',
   INCOMPATIBLE_PACKAGES = 'incompatible_packages',
+  STORYBOOK_OVERRIDES = 'storybook_overrides',
   MISMATCHING_VERSIONS = 'mismatching_versions',
   DUPLICATED_DEPENDENCIES = 'duplicated_dependencies',
   CONFIGURATION_ERROR = 'configuration_error',
+  DEPRECATED_PACKAGES = 'deprecated_packages',
 }
 
 export enum DiagnosticStatus {

@@ -2,7 +2,11 @@ import { closeSync, openSync, readSync } from 'node:fs';
 
 import type { Engine, Os } from './schema.ts';
 
-const SEMVER = /^(\d+)\.(\d+)\.\d+(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/;
+// Return the repository that holds an entry's baseline and receives its cycle refs.
+export const cycleRepo = (entry: { repo: string; pushTo?: string }): string =>
+  entry.pushTo ?? entry.repo;
+
+export const SEMVER = /^(\d+)\.(\d+)\.\d+(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/;
 const SHA = /^[0-9a-f]{40}(?:[0-9a-f]{24})?$/;
 
 export const versionLine = (version: string): string => {

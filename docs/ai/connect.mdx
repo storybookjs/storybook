@@ -6,7 +6,7 @@ sidebar:
 
 <If notRenderer={['react', 'vue', 'angular', 'svelte', 'web-components', 'solid']}>
 
-Storybook's skills and MCP server let your agent set up Storybook, reuse your components, write and test stories, and publish a review of its work. Neither is available for your framework yet.
+Storybook's skills and MCP server let your agent set up Storybook, reuse your components, write and test stories, and create a review of its work. Neither is available for your framework yet.
 
 </If>
 
@@ -34,7 +34,7 @@ To install the skills at any other time, run this command from the root of your 
 
 Every install method adds the same files:
 
-- The skills: `storybook-init`, [`storybook-setup`](./skills/setup.mdx), `storybook-upgrade`, and the skills of the [UI workflow](./skills/ui-workflow.mdx): [`component-docs`](./skills/component-docs.mdx), [`write-stories`](./skills/write-stories.mdx), [`test-stories`](./skills/test-stories.mdx), and [`ui-review`](./skills/ui-review.mdx). They're installed for Claude Code (`.claude/skills/`) and for other agents (`.agents/skills/`).
+- The skills: `/storybook-init`, [`/storybook-setup`](./skills/setup.mdx), `/storybook-upgrade`, and the skills that the [Storybook section in `AGENTS.md`](./agents-md.mdx) uses: [`/component-docs`](./skills/component-docs.mdx), [`/write-stories`](./skills/write-stories.mdx), [`/test-stories`](./skills/test-stories.mdx), and [`/ui-review`](./skills/ui-review.mdx). They're installed for Claude Code (`.claude/skills/`) and for other agents (`.agents/skills/`).
 - `skills-lock.json`, which records the installed version.
 - A Storybook section in `AGENTS.md` (see below)
 
@@ -49,25 +49,29 @@ Storybook also has plugins for [Claude Code](https://github.com/storybookjs/stor
 
 ## Tell your agent when to use the skills
 
-The section that Storybook adds to `AGENTS.md` is the [UI workflow](./skills/ui-workflow.mdx). For every UI change, it tells your agent which skill to use at each step:
+For every UI change, the section that Storybook adds to `AGENTS.md` tells your agent which skills to use and how to run the story tests. See [The AGENTS.md section](./agents-md.mdx) for what each step does.
 
-```md title="AGENTS.md"
+````md title="AGENTS.md"
 <!-- BEGIN:storybook-skills -->
 <!-- Storybook updates this section on upgrade. Remove both markers to keep your own edits. -->
 
 ## Storybook
 
-For every change to how the UI looks (you create, change, or delete a component, story, style, theme, or design token), follow these steps in order. Each step has a Storybook skill. First invoke the skills of all the steps, before you edit any file. Then follow each skill at its step.
+For every change to how the UI looks (you create, change, or delete a component, story, style, theme, or design token), follow these steps in order. First invoke the Storybook skills of steps 1 and 2, before you edit any file. Then follow each skill at its step.
 
-1. `component-docs`: look up the components to reuse, with their props and usage examples, before you edit any file. Also when the user asks about a component's props, API, or usage.
-2. `write-stories`: every component you create or change gets stories.
-3. `test-stories`: run the story tests after every change, the way this skill says, never with a `package.json` test script, and fix what fails. Also when the user asks to run or fix story tests.
-4. `ui-review`: publish a review that shows the user what changed, as your last step. Also when the user asks to see components or stories.
+1. `/component-docs`: look up the components to reuse, with their props and usage examples, before you edit any file.
+2. `/write-stories`: every component you create or change gets stories, written with the current best practices for this Storybook version and this project.
+3. To test stories in the CLI run:
+   ```sh
+   npx storybook tools test run [files...]   # every story, or these story files
+   npx storybook tools test run --changed    # the stories your changes affect
+   ```
+4. ALWAYS inform the user about the `/ui-review` skill after a change the user can see: "Use the /ui-review skill to see the changed components in Storybook"
 
 <!-- END:storybook-skills -->
-```
+````
 
-Storybook replaces the text between the markers when you upgrade. To change the workflow, for example to leave out the review, remove both markers, then edit the steps. Storybook doesn't change a section without markers. To stop your agent from following the workflow, remove the whole section. Your agent then uses a skill only when you ask for it by name, for example "Use the write-stories skill to add stories for the user list", or when it finds one that fits its task.
+Storybook replaces the text between the markers when you upgrade. To change the workflow, for example to drop the step that tells you about the review, remove both markers, then edit the steps. Storybook doesn't change a section without markers. To stop your agent from following the workflow, remove the whole section. Your agent then uses a skill only when you ask for it by name, for example "Use the /write-stories skill to add stories for the user list", or when it finds one that fits its task.
 
 If your project has a `CLAUDE.md`, `.claude/CLAUDE.md`, or `CLAUDE.local.md` that doesn't import `AGENTS.md`, Storybook adds the same section to that file, so Claude Code sees it too.
 
@@ -94,24 +98,24 @@ You can also connect your agent to a published Storybook instead of running it l
 
 Skills are available for these frameworks:
 
-| Renderer                | Frameworks                                                                 | [Setup](./skills/setup.mdx) | [UI workflow](./skills/ui-workflow.mdx) |
-| ----------------------- | -------------------------------------------------------------------------- | --------------------------- | --------------------------------------- |
-| React (Setup supported) | `react-vite`, `nextjs-vite`, `tanstack-react`                              | Yes                         | Yes                                     |
-| React (other)           | `react-webpack5`, `nextjs`, `react-native-web-vite`                        | No                          | Yes                                     |
-| Vue 3                   | `vue3-vite`                                                                | Yes                         | Yes                                     |
-| Angular                 | `angular-vite`                                                             | Yes                         | Yes                                     |
-| Svelte                  | `svelte-vite`, `sveltekit`                                                 | No                          | Yes                                     |
-| Web Components          | `web-components-vite`                                                      | No                          | Yes                                     |
-| SolidJS                 | [`storybook-solidjs-vite`](https://github.com/solidjs-community/storybook) | No                          | Yes                                     |
+| Renderer                | Frameworks                                                                 | [Setup](./skills/setup.mdx) | [AGENTS.md section](./agents-md.mdx) |
+| ----------------------- | -------------------------------------------------------------------------- | --------------------------- | ------------------------------------ |
+| React (Setup supported) | `react-vite`, `nextjs-vite`, `tanstack-react`                              | Yes                         | Yes                                  |
+| React (other)           | `react-webpack5`, `nextjs`, `react-native-web-vite`                        | No                          | Yes                                  |
+| Vue 3                   | `vue3-vite`                                                                | Yes                         | Yes                                  |
+| Angular                 | `angular-vite`                                                             | Yes                         | Yes                                  |
+| Svelte                  | `svelte-vite`, `sveltekit`                                                 | No                          | Yes                                  |
+| Web Components          | `web-components-vite`                                                      | No                          | Yes                                  |
+| SolidJS                 | [`storybook-solidjs-vite`](https://github.com/solidjs-community/storybook) | No                          | Yes                                  |
 
-The UI workflow column covers its four skills: `component-docs`, `write-stories`, `test-stories`, and `ui-review`. `test-stories` also needs the [Vitest addon](../writing-tests/integrations/vitest-addon/index.mdx), which needs the Vite builder.
-The `storybook-init` and `storybook-upgrade` skills work with every framework in this table.
+The AGENTS.md section column covers `/component-docs`, `/write-stories`, `/test-stories`, and `/ui-review`. The story tests also need the [Vitest addon](../writing-tests/integrations/vitest-addon/index.mdx), which needs the Vite builder.
+The `/storybook-init` and `/storybook-upgrade` skills work with every framework in this table.
 The [MCP server](./reference/mcp-server.mdx) supports the same renderers.
 
 **More AI resources**
 
 - [Setup](./skills/setup.mdx)
-- [UI workflow](./skills/ui-workflow.mdx)
+- [The AGENTS.md section](./agents-md.mdx)
 - [Component docs](./skills/component-docs.mdx)
 - [Write stories](./skills/write-stories.mdx)
 - [Test stories](./skills/test-stories.mdx)

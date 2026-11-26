@@ -8,14 +8,10 @@ import type {
   StoryIndex,
 } from 'storybook/internal/types';
 
-import { global } from '@storybook/global';
-
 import { dedent } from 'ts-dedent';
 
 import { transformStoryIndexToStoriesHash } from '../lib/stories.ts';
 import type { ModuleFn } from '../lib/types.tsx';
-
-const { location, fetch } = global;
 
 export interface SubState {
   refs: API_Refs;
@@ -268,7 +264,7 @@ export const init: ModuleFn<SubAPI, SubState> = (
         handleRequest(storiesRequest),
       ]);
       const refUrl =
-        global.CONFIG_TYPE === 'DEVELOPMENT' && indexResult.storyIndex
+        globalThis.CONFIG_TYPE === 'DEVELOPMENT' && indexResult.storyIndex
           ? getRedirectedRefUrl(urlParseResult.url, (await indexRequest).url)
           : urlParseResult.url;
 
@@ -376,7 +372,7 @@ export const init: ModuleFn<SubAPI, SubState> = (
     },
   };
 
-  const refs: API_Refs = (!singleStory && global.REFS) || {};
+  const refs: API_Refs = (!singleStory && globalThis.REFS) || {};
 
   const initialState: SubState['refs'] = refs;
 

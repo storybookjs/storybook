@@ -139,9 +139,9 @@ export function expectWorkflowCalls(expectedNames: string[]): void {
   }
 }
 
-// The tool that a step of the workflow runs, by the skill of that step.
+// The tool that a step of the workflow runs, by the skill of that step. The tests have no skill
+// in the workflow: `AGENTS.md` names the test command itself.
 const STEP_TOOLS: Record<string, string> = {
-  'test-stories': 'test-run',
   'ui-review': 'review-create',
 };
 
@@ -207,21 +207,73 @@ export function expectDisplayReviewForVisualChange(): void {
   expectFinalResponseSharesReviewLink();
 }
 
-// Trigger correctness: a pure non-visual refactor must NOT publish a review,
-// and the final response must not pretend there is one.
+// Trigger correctness: an agent creates a review only when the user asks for one or to see
+// stories, so a task that does not ask must NOT create one, and the final response must not
+// pretend there is one.
 export function expectNoDisplayReview(): void {
   const displayReviewCalls = getWorkflowCalls('review-create');
   expect(
     displayReviewCalls.length,
-    `Expected review-create NOT to be called for a non-visual change. Received payloads: ${JSON.stringify(
+    `Expected review-create NOT to be called for a task that did not ask for a review. Received payloads: ${JSON.stringify(
       displayReviewCalls.map((call) => call.input)
     )}`
   ).toBe(0);
 
   expect(
     getFinalAssistantMessage() ?? '',
-    'Final response must not link to the Storybook review page for a non-visual change'
+    'Final response must not link to the Storybook review page when no review was asked for'
   ).not.toMatch(/[?&]path=\/review\//);
+}
+
+// For a request to test or fix one component (810, 811): a \`test-run\` call with \`changed\`,
+// with story \`files\`, or with \`stories\` (the MCP tool takes story ids). A run of every story
+// alone also tests it, but is not the run that was asked for.
+export function expectFocusedTestRun(): void {
+  const calls = getWorkflowCalls('test-run');
+  const isList = (value: unknown) => Array.isArray(value) && value.length > 0;
+  expect(
+    calls.some(
+      ({ input }) =>
+        (input.changed !== undefined && input.changed !== false) ||
+        isList(input.files) ||
+        isList(input.stories)
+    ),
+    `Expected a test-run call with changed, files or stories. Received inputs: ${JSON.stringify(calls.map(({ input }) => input))}`
+  ).toBe(true);
+}
+
+// The workflow tells the agent to inform the user about the `/ui-review` skill after a visible
+// change. The words are the agent's; the skill has to be named the way a user invokes it: with a
+// slash, or `$` in Codex, with or without the plugin namespace (`/storybook:ui-review`).
+const REVIEW_HINT = /(?:^|[\s`'"(*_[“>])[/$](?:storybook:)?ui-review(?![\w-])/m;
+
+export const mentionsReviewSkill = (answer: string): boolean => REVIEW_HINT.test(answer);
+
+export function expectReviewHint(): void {
+  expect(
+    getFinalAssistantMessage() ?? '',
+    'Expected the final answer to tell the user about the /ui-review skill'
+  ).toMatch(REVIEW_HINT);
+}
+
+// A clause that names the skill recommends it, unless the clause says the opposite: that the
+// agent left the review out ("I didn't suggest `/ui-review`", "`/ui-review` isn't needed"), or
+// would make one on request ("tell me if you want a `/ui-review` anyway"). Clauses, not
+// sentences: "the UI didn't change, but you can use /ui-review" recommends it.
+const DECLINES = /\b(?:not|no|without|if|unless|skipped|left (?:out|off))\b|n['’]t\b/i;
+// A comma between two skill names ("`/write-stories`, or `/ui-review`") does not end the clause.
+const CLAUSE_END =
+  /(?<=[.!?])\s+|\n+|(?<![/$][\w:-]+`?),\s+|,\s+(?!(?:(?:or|and)\s+)?`?[/$])|[;:]\s+|\s+[—–]\s+|\s+(?=but\b)/i;
+
+export const recommendsReviewSkill = (answer: string): boolean =>
+  answer.split(CLAUSE_END).some((clause) => REVIEW_HINT.test(clause) && !DECLINES.test(clause));
+
+export function expectNoReviewHint(): void {
+  const answer = getFinalAssistantMessage() ?? '';
+  expect(
+    recommendsReviewSkill(answer),
+    `Expected the final answer not to recommend /ui-review: nothing visible changed, or a review was just created. Answer:\n${answer}`
+  ).toBe(false);
 }
 
 // Browse request: the review is resolved from the live story index, so the
@@ -243,7 +295,7 @@ export function expectDisplayReviewForBrowseRequest(): void {
 }
 
 // Hard completeness floor: every story exported from the story files written
-// during the run must appear in the published review — curation may group
+// during the run must appear in the created review — curation may group
 // stories, never omit them. Assumes the template starts without story files,
 // so every story file on disk was created by the agent.
 export function expectAllStoryExportsInDisplayReview(): void {
@@ -270,7 +322,7 @@ export function expectAllStoryExportsInDisplayReview(): void {
 }
 
 // Targeted completeness floor: the stories the task is about must appear in
-// the published review. Deliberately weaker than the every-new-story rule of
+// the created review. Deliberately weaker than the every-new-story rule of
 // expectAllStoryExportsInDisplayReview, for fixtures with pre-existing
 // stories the agent may legitimately leave out of the review.
 export function expectStoryIdsInDisplayReview(idSubstrings: string[]): void {
@@ -358,7 +410,7 @@ export function findDevServerKillCommands(commands: string[]): string[] {
 
 // Story IDs must come from a discovery tool (stories-changed, or the
 // stories-find-by-component fallback), never from file names or memory. A
-// published review without a prior discovery call means the agent guessed
+// created review without a prior discovery call means the agent guessed
 // its way to valid-looking IDs.
 const STORY_DISCOVERY_WORKFLOW_NAMES = ['stories-changed', 'stories-find-by-component'];
 
@@ -369,14 +421,14 @@ export function expectStoryDiscoveryBeforeReview(): void {
   );
   expect(
     firstDiscoveryIndex,
-    `Expected a story-discovery call (${STORY_DISCOVERY_WORKFLOW_NAMES.join(' or ')}) before publishing the review`
+    `Expected a story-discovery call (${STORY_DISCOVERY_WORKFLOW_NAMES.join(' or ')}) before creating the review`
   ).toBeGreaterThanOrEqual(0);
 
   const lastReviewIndex = calls.findLastIndex((call) => call.name === 'review-create');
   expect(lastReviewIndex, 'Expected review-create to be called').toBeGreaterThanOrEqual(0);
   expect(
     firstDiscoveryIndex,
-    'Story discovery must happen before the review is published'
+    'Story discovery must happen before the review is created'
   ).toBeLessThan(lastReviewIndex);
 }
 
@@ -385,11 +437,12 @@ export type WorkflowToolResult = {
   isError: boolean;
 };
 
-// The agent's own test output is often cut by `| tail` or `| grep`, so the
-// verdict is a run of the harness's own. The transcript only has to show that
-// the agent ran the tests and that its last run did not end red: a fix that was
-// never re-run is unverified. There is no after-the-edit ordering check, because
-// real passing flows run tests before the discovery step.
+// The AGENTS.md section names the command that tests stories. When to run it is up to the agent
+// and its own harness, and the agents of the evals do test after a change: Haiku in Claude Code,
+// and Luna in Codex with the test rules of Sol. So the transcript has to show that the agent ran
+// the story tests, and that its last run did not end red: a fix that was never re-run is
+// unverified. The agent's own output is often cut by `| tail` or `| grep`, so the verdict is a
+// run of the harness's own. There is no after-the-edit ordering check.
 //
 // `covering` requires one of the given substrings in the passing story ids.
 // `cwd` is the Storybook project, for fixtures where that is not the root.
@@ -994,7 +1047,7 @@ function killProcessTree(child: ReturnType<typeof spawn>): void {
 // mechanically, because "meaningful grouping" and "useful rationale" are
 // judgment calls.
 export const DISPLAY_REVIEW_CURATION_CRITERION = [
-  'The final review-create tool call publishes a well-curated review.',
+  'The final review-create tool call creates a well-curated review.',
   'It groups stories into 2 to 5 collections.',
   'No collection contains only a single story, unless there are too few stories to avoid it.',
   "Collections follow a meaningful layering, such as the changed component's visual states, its interaction behavior, or the surfaces that consume it — not arbitrary groupings.",

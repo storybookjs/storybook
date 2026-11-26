@@ -1,15 +1,9 @@
-import { beforeEach, describe, expect, test, vi } from 'vitest';
+import { describe, expect, test, vi } from 'vitest';
 
 import type { JsPackageManager } from 'storybook/internal/common';
 import type { PackageJson } from 'storybook/internal/types';
 
-import { getVitePlusVersions } from 'storybook/internal/common';
-
 import { blocker } from './block-dependencies-versions.ts';
-
-vi.mock('storybook/internal/common', () => ({
-  getVitePlusVersions: vi.fn(async () => null),
-}));
 
 vi.mock('storybook/internal/node-logger', () => ({
   CLI_COLORS: {
@@ -25,12 +19,21 @@ vi.mock('../util.ts', () => ({
 type GateVersions = Record<string, string | null | (() => Promise<string | null>)>;
 
 const createPackageManager = (
-  versions: Record<string, string>,
+  installed: Record<string, string | PackageJson>,
   gateVersions: GateVersions = {}
 ): JsPackageManager =>
   ({
-    getModulePackageJSON: async (packageName: string): Promise<PackageJson | null> =>
-      versions[packageName] ? { version: versions[packageName] } : null,
+    getModulePackageJSON: async (packageName: string): Promise<PackageJson | null> => {
+      const packageJson = installed[packageName];
+
+      if (!packageJson) {
+        return null;
+      }
+
+      return typeof packageJson === 'string'
+        ? { name: packageName, version: packageJson }
+        : packageJson;
+    },
     getInstalledVersion: async (packageName: string) => {
       const gateVersion = gateVersions[packageName] ?? null;
 
@@ -47,10 +50,6 @@ const createCheckOptions = (packageManager: JsPackageManager) => ({
 });
 
 describe('dependenciesVersions blocker', () => {
-  beforeEach(() => {
-    vi.mocked(getVitePlusVersions).mockImplementation(async () => null);
-  });
-
   test.each(['10.0.0', '10.7.1', '10.8.2'])(
     'blocks Preact %s before upgrading',
     async (version) => {
@@ -125,9 +124,42 @@ describe('dependenciesVersions blocker', () => {
 
     expect(logged.title).toBe('Vite 6.3 or newer required');
     expect(logged.message).toContain('Support for Vite < 6.3.0 has been removed.');
+    expect(logged.message).toContain(`You are currently using Vite ${version}.`);
     expect(logged.link).toBe(
       'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#vite-requires-vite-63-or-higher'
     );
+  });
+
+  test('accepts Vite+ installed as vite by the Vite version it bundles', async () => {
+    const packageManager = createPackageManager({
+      vite: {
+        name: '@voidzero-dev/vite-plus-core',
+        version: '1.4.0',
+        bundledVersions: { vite: '8.3.5', rolldown: '1.2.15', tsdown: '0.23.1' },
+      },
+    });
+
+    const result = await blocker.check(createCheckOptions(packageManager));
+
+    expect(result).toBe(false);
+  });
+
+  test('blocks Vite+ installed as vite when the Vite it bundles is too old', async () => {
+    const packageManager = createPackageManager({
+      vite: {
+        name: '@voidzero-dev/vite-plus-core',
+        version: '1.4.0',
+        bundledVersions: { vite: '6.2.2', rolldown: '1.2.15', tsdown: '0.23.1' },
+      },
+    });
+
+    const result = await blocker.check(createCheckOptions(packageManager));
+
+    expect(result).toEqual({
+      packageName: 'vite',
+      installedVersion: '6.2.2',
+      minimumVersion: '6.3.0',
+    });
   });
 
   test('blocks Vite prereleases of the floor version', async () => {
@@ -328,20 +360,21 @@ describe('dependenciesVersions blocker', () => {
     expect(moduleSpy).toHaveBeenCalledWith('vitest');
   });
 
-  test('uses the vite-plus vendored Vitest version when available', async () => {
-    vi.mocked(getVitePlusVersions).mockImplementation(async () => ({
-      vite: '7.1.2',
-      vitest: '3.2.4',
-    }));
-    const packageManager = createPackageManager({}, { '@storybook/addon-vitest': '11.0.0' });
+  test('accepts Vite+ installed as vitest by the Vitest version it bundles', async () => {
+    const packageManager = createPackageManager(
+      {
+        vitest: {
+          name: '@voidzero-dev/vite-plus-test',
+          version: '0.1.16',
+          bundledVersions: { vitest: '4.1.2' },
+        },
+      },
+      { '@storybook/addon-vitest': '11.0.0' }
+    );
 
     const result = await blocker.check(createCheckOptions(packageManager));
 
-    expect(result).toEqual({
-      packageName: 'vitest',
-      installedVersion: '3.2.4',
-      minimumVersion: '4.0.0',
-    });
+    expect(result).toBe(false);
   });
 
   test('does not block when the addon lookup throws', async () => {

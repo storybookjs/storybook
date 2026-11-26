@@ -8,7 +8,7 @@ import type { IncomingMessage, ServerResponse } from 'node:http';
 import { buffer } from 'node:stream/consumers';
 import { collectTelemetry } from './telemetry.ts';
 import type { DocsAccess } from 'storybook/internal/toolsets-docs';
-import type { AddonContext, AddonOptionsOutput } from './types.ts';
+import type { AddonContext } from './types.ts';
 import { getEffectiveToolAvailability, getToolAvailability } from 'storybook/internal/core-server';
 import { buildServerInstructions } from 'storybook/internal/skills';
 import type { CompositionAuth } from './auth/index.ts';
@@ -33,25 +33,22 @@ const initializeMCPServer = async (options: Options, multiSource?: boolean) => {
   const availability = getEffectiveToolAvailability(rawAvailability, { multiSource });
   a11yEnabled = availability.a11yEnabled;
 
-  // oxlint-disable-next-line prefer-const -- the instructions getter below may run before this is assigned
-  let server: McpServer<any, AddonContext>;
-
   const serverOptions = {
     adapter: new ValibotJsonSchemaAdapter(),
-    get instructions() {
-      return buildServerInstructions({
-        devEnabled: server?.ctx.custom?.toolsets?.dev ?? true,
-        testSupported: (server?.ctx.custom?.toolsets?.test ?? true) && availability.testSupported,
-        docsEnabled: (server?.ctx.custom?.toolsets?.docs ?? true) && availability.docsEnabled,
-      });
-    },
+    instructions: buildServerInstructions({
+      testSupported: availability.testSupported,
+      docsEnabled: availability.docsEnabled,
+    }),
+    // Storybook sends no list-changed notifications, and the handler below buffers each response
+    // before it sends it, so a stream that waits for them never gets an answer. A client that
+    // opens one because the server announces them (Claude Code) waits out its own time limit.
     capabilities: {
-      tools: { listChanged: true },
-      resources: { listChanged: true },
+      tools: { listChanged: false },
+      resources: { listChanged: false },
     },
   };
 
-  server = new McpServer(
+  const server = new McpServer(
     {
       name: pkgJson.name,
       version: pkgJson.version,
@@ -81,7 +78,6 @@ type McpServerHandlerParams = {
   req: IncomingMessage;
   res: ServerResponse;
   options: Options;
-  addonOptions: AddonOptionsOutput;
   /** Origin of the local Storybook, e.g. `http://localhost:6006`. */
   origin: string;
   /** URL path prefix the local Storybook is served from, `/` or `/seg/`. */
@@ -115,7 +111,6 @@ export const mcpServerHandler = async ({
   req,
   res,
   options,
-  addonOptions,
   origin,
   basePath,
   endpoint = DEFAULT_MCP_ENDPOINT,
@@ -139,7 +134,6 @@ export const mcpServerHandler = async ({
   const addonContext: AddonContext = {
     options,
     endpoint,
-    toolsets: getToolsets(webRequest, addonOptions),
     origin,
     basePath,
     disableTelemetry: disableTelemetry!,
@@ -218,35 +212,4 @@ export async function webResponseToServerResponse(
   }
 
   nodeResponse.end();
-}
-
-export function getToolsets(
-  request: Request,
-  addonOptions: AddonOptionsOutput
-): AddonOptionsOutput['toolsets'] {
-  const toolsetHeader = request.headers.get('X-MCP-Toolsets');
-  if (!toolsetHeader || toolsetHeader.trim() === '') {
-    // If no header is present, return the addon options as-is
-    return addonOptions.toolsets;
-  }
-
-  // If the toolsets headers are present, default to everything being disabled
-  // except for the ones explicitly enabled in the header
-  const toolsets: AddonOptionsOutput['toolsets'] = {
-    dev: false,
-    docs: false,
-    test: false,
-  };
-
-  // The format of the header is a comma-separated list of enabled toolsets
-  // e.g., "dev,docs"
-  const enabledToolsets = toolsetHeader.split(',');
-
-  for (const enabledToolset of enabledToolsets) {
-    const trimmedToolset = enabledToolset.trim();
-    if (trimmedToolset in toolsets) {
-      toolsets[trimmedToolset as keyof typeof toolsets] = true;
-    }
-  }
-  return toolsets;
 }

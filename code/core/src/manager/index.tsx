@@ -6,8 +6,6 @@ import { ProviderDoesNotExtendBaseProviderError } from 'storybook/internal/manag
 import { Location, LocationProvider, useNavigate } from 'storybook/internal/router';
 import type { Addon_PageType } from 'storybook/internal/types';
 
-import { global } from '@storybook/global';
-
 import { HelmetProvider } from 'react-helmet-async';
 import { Provider as ManagerProvider, types } from 'storybook/manager-api';
 import type { Combo } from 'storybook/manager-api';
@@ -48,7 +46,7 @@ export const Main: FC<{ provider: Provider }> = ({ provider }) => {
           provider={provider}
           {...locationData}
           navigate={navigate}
-          docsOptions={global?.DOCS_OPTIONS || {}}
+          docsOptions={globalThis.DOCS_OPTIONS || {}}
         >
           {(combo: Combo) => {
             const { state, api } = combo;

@@ -115,6 +115,7 @@ export type DocsManifestMapV0 = v.InferOutput<typeof DocsManifestMapV0>;
 export const DocV1 = v.object({
   id: v.string(),
   name: v.string(),
+  title: v.optional(v.string()),
   summary: v.optional(v.string()),
   mdx: v.optional(JsonRef),
   error: v.optional(ManifestErrorSchema),

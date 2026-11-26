@@ -591,7 +591,7 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
 
     // The doctor checks the installed dependencies, so a dry run, which installs nothing, names it.
     await effects.runCommand(
-      'npx storybook doctor',
+      rootPackageManager.getPackageCommand(['storybook', 'doctor']),
       async () => {
         logger.step('Checking the health of your project(s)..');
         doctorResults = await runMultiProjectDoctor(doctorProjects);

@@ -104,7 +104,7 @@ export const doAutomigrate = async (options: AutofixOptionsFromCLI) => {
   // The doctor checks the installed dependencies, so a dry run, which installs nothing, names it.
   if (outcome && !options.skipDoctor) {
     await effects.runCommand(
-      'npx storybook doctor',
+      packageManager.getPackageCommand(['storybook', 'doctor']),
       () => doctor({ configDir, packageManager: options.packageManager }),
       { purpose: 'to verify the automigrations went well' }
     );

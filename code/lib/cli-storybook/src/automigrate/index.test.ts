@@ -88,6 +88,10 @@ class PackageManager implements Partial<JsPackageManager> {
   ): Promise<PackageJson | null> {
     return getModulePackageJSON(packageName, basePath);
   }
+
+  getPackageCommand(args: string[]) {
+    return `pnpm exec ${args.join(' ')}`;
+  }
 }
 
 const packageManager = new PackageManager() as unknown as JsPackageManager;
@@ -240,7 +244,7 @@ describe('a dry run', () => {
     expect(fixSummary.manual).toEqual(['notice']);
   });
 
-  it('fails when a fix fails, and lists the doctor among the steps of a run', async () => {
+  it('fails when a fix fails, and lists the doctor with the package manager of the project', async () => {
     run1.mockImplementationOnce(() => {
       throw new Error('cannot migrate');
     });
@@ -256,7 +260,7 @@ describe('a dry run', () => {
     );
 
     expect(effects.describeDryRunChanges()).toContain(
-      'run npx storybook doctor to verify the automigrations went well'
+      'run pnpm exec storybook doctor to verify the automigrations went well'
     );
   });
 });

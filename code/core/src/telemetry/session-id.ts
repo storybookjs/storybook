@@ -15,17 +15,16 @@ export const resetSessionIdForTest = (val: string | undefined = undefined) => {
   sessionId = val;
 };
 
-// Synchronous so an event is fully built, and can be handed off on exit, without an await in between.
-export const getSessionId = () => {
+export const getSessionId = async () => {
   const now = Date.now();
   if (!sessionId) {
-    const session = cache.getSync<Session | undefined>('session');
-    sessionId = session && session.lastUsed >= now - SESSION_TIMEOUT ? session.id : nanoid();
+    const session: Session | undefined = await cache.get('session');
+    if (session && session.lastUsed >= now - SESSION_TIMEOUT) {
+      sessionId = session.id;
+    } else {
+      sessionId = nanoid();
+    }
   }
-  try {
-    cache.setSync('session', { id: sessionId, lastUsed: now });
-  } catch {
-    // An unwritable cache must not cost the event; the session just restarts next time.
-  }
+  await cache.set('session', { id: sessionId, lastUsed: now });
   return sessionId;
 };

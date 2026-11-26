@@ -161,7 +161,7 @@ In the future, we plan to share relevant data with the community through public 
 
 ## How is the data sent?
 
-Storybook sends each event to `https://storybook.js.org/event-log` when it occurs and does not wait for the reply, so telemetry does not slow down your commands. If a command finishes while an event has no reply yet, Storybook writes those events to a file in your operating system's temporary directory that only your user can read, and starts a short-lived background process. That process deletes the file, sends the events, and exits within about 30 seconds. When telemetry is turned off, no events are written and no background process is started.
+The command you run never contacts the telemetry endpoint itself, so a slow or unreachable endpoint cannot slow it down or keep it from exiting. Storybook writes the events to a file in your operating system's temporary directory that only your user can read, and starts a short-lived background process. That process deletes the file, sends the events to `https://storybook.js.org/event-log`, and exits within about 30 seconds. This happens when the command exits, and every few seconds in a command that keeps running, such as `storybook dev`. When telemetry is turned off, no events are written and no background process is started.
 
 ## How to opt-out
 

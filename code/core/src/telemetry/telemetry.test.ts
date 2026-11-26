@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 
 import { spawn } from 'node:child_process';
+import { EventEmitter } from 'node:events';
 import * as fs from 'node:fs';
 import * as os from 'node:os';
 
@@ -8,19 +9,18 @@ import * as memfs from 'memfs';
 import { vol } from 'memfs';
 
 import { set as saveToCache } from './event-cache.ts';
-import { ConnectTimeoutError, postEvent } from './post-event.ts';
 import { getSessionId } from './session-id.ts';
-import { handOffPendingEvents, sendTelemetry } from './telemetry.ts';
+import { handOverPendingEvents, sendTelemetry } from './telemetry.ts';
 
-vi.mock('./post-event.ts', { spy: true });
 vi.mock('./event-cache.ts', { spy: true });
 vi.mock('./session-id.ts', { spy: true });
 vi.mock('node:fs', { spy: true });
 vi.mock('node:child_process', { spy: true });
 
-const postMock = vi.mocked(postEvent);
+const fetchMock = vi.fn();
 
-const neverResponds = () => new Promise<void>(() => {});
+const childProcess = (pid: number | undefined) =>
+  Object.assign(new EventEmitter(), { pid, unref: vi.fn() });
 
 beforeEach(() => {
   vol.reset();
@@ -28,46 +28,69 @@ beforeEach(() => {
   vi.mocked(fs.writeFileSync).mockImplementation(memfs.fs.writeFileSync as any);
   vi.mocked(fs.rmSync).mockImplementation(memfs.fs.rmSync as any);
   vi.mocked(saveToCache).mockImplementation(async () => {});
-  vi.mocked(getSessionId).mockImplementation(() => 'session-id');
-  vi.mocked(spawn).mockImplementation(() => ({ pid: 1, unref: vi.fn() }) as any);
-  postMock.mockImplementation(async () => {});
+  vi.mocked(getSessionId).mockImplementation(async () => 'session-id');
+  vi.mocked(spawn).mockImplementation(() => childProcess(1) as any);
+  vi.stubGlobal('fetch', fetchMock);
 });
 
 afterEach(() => {
-  handOffPendingEvents();
+  handOverPendingEvents();
+  vi.useRealTimers();
   vi.clearAllMocks();
   vi.unstubAllEnvs();
 });
 
-const writtenEvents = () =>
+const handedOver = () =>
   Object.entries(vol.toJSON())
     .filter(([file]) => file.includes('storybook-telemetry-'))
     .map(([file, contents]) => [file, JSON.parse(contents as string)] as const);
 
-it('posts the event with its data and context, without holding the process', async () => {
+it('hands the events to one detached process, with their data and context', async () => {
   await sendTelemetry({ eventType: 'dev', payload: { foo: 'bar' } });
+  await sendTelemetry({ eventType: 'build', payload: {} });
 
-  expect(postMock).toHaveBeenCalledTimes(1);
-  const [event, options] = postMock.mock.calls[0];
-  expect(event.body).toMatchObject({
-    eventType: 'dev',
-    payload: { foo: 'bar' },
-    sessionId: 'session-id',
-    eventId: expect.any(String),
-    context: { storybookVersion: expect.any(String) },
-  });
-  expect(options).toMatchObject({ keepProcessAlive: false });
+  handOverPendingEvents();
+  handOverPendingEvents();
+
+  expect(handedOver()).toEqual([
+    [
+      expect.stringMatching(/storybook-telemetry-.*\.json$/),
+      [
+        expect.objectContaining({
+          eventType: 'dev',
+          payload: { foo: 'bar' },
+          sessionId: 'session-id',
+          eventId: expect.any(String),
+          context: expect.objectContaining({ storybookVersion: expect.any(String) }),
+        }),
+        expect.objectContaining({ eventType: 'build' }),
+      ],
+    ],
+  ]);
+
+  expect(spawn).toHaveBeenCalledTimes(1);
+  const [command, args, options] = vi.mocked(spawn).mock.calls[0];
+  expect(command).toBe(process.execPath);
+  expect(args).toEqual([expect.stringMatching(/detached-flush/), handedOver()[0][0]]);
+  expect(options).toMatchObject({ detached: true, stdio: 'ignore', windowsHide: true });
 });
 
-it('returns as soon as the request is started, without waiting for the response', async () => {
-  postMock.mockImplementation(neverResponds);
-
+it('never talks to the endpoint itself', async () => {
   await sendTelemetry({ eventType: 'dev', payload: {} });
+  handOverPendingEvents();
 
-  expect(postMock).toHaveBeenCalledTimes(1);
+  expect(fetchMock).not.toHaveBeenCalled();
 });
 
-it('registers the exit hook when loaded', async () => {
+it('saves the event it hands over to the local event cache', async () => {
+  await sendTelemetry({ eventType: 'dev', payload: {} });
+  handOverPendingEvents();
+
+  const [[, [event]]] = handedOver();
+  expect(saveToCache).toHaveBeenCalledWith('dev', event);
+});
+
+it('registers the hand-over as an exit hook when loaded', async () => {
   vi.resetModules();
   const once = vi.spyOn(process, 'once');
 
@@ -77,99 +100,75 @@ it('registers the exit hook when loaded', async () => {
   once.mockRestore();
 });
 
-it('hands events without a response to a detached process on exit, once', async () => {
-  postMock.mockImplementation(neverResponds);
+it('hands over after 5 seconds in a process that keeps running', async () => {
+  vi.useFakeTimers();
   await sendTelemetry({ eventType: 'dev', payload: {} });
-  await sendTelemetry({ eventType: 'build', payload: {} }, { retryDelay: 5 });
 
-  handOffPendingEvents();
-  handOffPendingEvents();
+  vi.advanceTimersByTime(4_999);
+  expect(spawn).not.toHaveBeenCalled();
 
-  expect(writtenEvents()).toEqual([
-    [
-      expect.stringMatching(/storybook-telemetry-.*\.json$/),
-      [
-        { body: expect.objectContaining({ eventType: 'dev' }) },
-        { body: expect.objectContaining({ eventType: 'build' }), retryDelay: 5 },
-      ],
-    ],
-  ]);
-
+  vi.advanceTimersByTime(1);
   expect(spawn).toHaveBeenCalledTimes(1);
-  const [command, args, options] = vi.mocked(spawn).mock.calls[0];
-  expect(command).toBe(process.execPath);
-  expect(args).toEqual([expect.stringMatching(/detached-flush/), writtenEvents()[0][0]]);
-  expect(options).toMatchObject({ detached: true, stdio: 'ignore' });
+
+  await sendTelemetry({ eventType: 'build', payload: {} });
+  vi.advanceTimersByTime(5_000);
+  expect(spawn).toHaveBeenCalledTimes(2);
 });
 
-it('writes the handed-off events to a file only its owner can read', async () => {
-  postMock.mockImplementation(neverResponds);
+it('starts no process when there is no event', () => {
+  handOverPendingEvents();
+
+  expect(handedOver()).toEqual([]);
+  expect(spawn).not.toHaveBeenCalled();
+});
+
+it('writes the events to a file only its owner can read', async () => {
   await sendTelemetry({ eventType: 'dev', payload: {} });
 
-  handOffPendingEvents();
+  handOverPendingEvents();
 
-  const [[file]] = writtenEvents();
+  const [[file]] = handedOver();
   expect(vol.statSync(file).mode & 0o777).toBe(0o600);
   expect(vi.mocked(fs.writeFileSync).mock.calls[0][2]).toMatchObject({ flag: 'wx' });
 });
 
 it('starts the detached process without the debugger flags of this one', async () => {
   vi.stubEnv('NODE_OPTIONS', '--inspect-brk=0 --max-old-space-size=4096 --inspect');
-  postMock.mockImplementation(neverResponds);
   await sendTelemetry({ eventType: 'dev', payload: {} });
 
-  handOffPendingEvents();
+  handOverPendingEvents();
 
   const [, , options] = vi.mocked(spawn).mock.calls[0];
   expect(options.env?.NODE_OPTIONS?.trim()).toBe('--max-old-space-size=4096');
 });
 
-it('hands off an event this process gave up connecting for', async () => {
-  postMock.mockRejectedValue(new ConnectTimeoutError());
-  await sendTelemetry({ eventType: 'dev', payload: {} });
-  await new Promise((resolve) => setTimeout(resolve, 0));
-
-  handOffPendingEvents();
-
-  expect(writtenEvents()).toHaveLength(1);
-});
-
-it('drops an event that failed for any other reason', async () => {
-  postMock.mockRejectedValue(new Error('network'));
-  await sendTelemetry({ eventType: 'dev', payload: {} });
-  await new Promise((resolve) => setTimeout(resolve, 0));
-
-  handOffPendingEvents();
-
-  expect(writtenEvents()).toEqual([]);
-});
-
-it('hands off nothing when every response has arrived', async () => {
-  await sendTelemetry({ eventType: 'dev', payload: {} });
-  await new Promise((resolve) => setTimeout(resolve, 0));
-
-  handOffPendingEvents();
-
-  expect(writtenEvents()).toEqual([]);
-  expect(spawn).not.toHaveBeenCalled();
-});
-
 it('removes the file again when the detached process cannot be started', async () => {
-  postMock.mockImplementation(neverResponds);
-  vi.mocked(spawn).mockImplementationOnce(() => ({ pid: undefined, unref: vi.fn() }) as any);
+  const child = childProcess(undefined);
+  vi.mocked(spawn).mockImplementationOnce(() => child as any);
   await sendTelemetry({ eventType: 'dev', payload: {} });
 
-  handOffPendingEvents();
+  handOverPendingEvents();
 
-  expect(writtenEvents()).toEqual([]);
+  expect(handedOver()).toEqual([]);
+  expect(() => child.emit('error', new Error('spawn ENOENT'))).not.toThrow();
+});
+
+it('removes the file again when starting the detached process throws', async () => {
+  vi.mocked(spawn).mockImplementationOnce(() => {
+    throw new Error('spawn EPERM');
+  });
+  await sendTelemetry({ eventType: 'dev', payload: {} });
+
+  expect(() => handOverPendingEvents()).not.toThrow();
+
+  expect(handedOver()).toEqual([]);
 });
 
 it('still resolves when the session id cannot be read', async () => {
-  const { getSessionId } = await import('./session-id.ts');
-  vi.mocked(getSessionId).mockImplementationOnce(() => {
-    throw new Error('disk');
-  });
+  vi.mocked(getSessionId).mockRejectedValueOnce(new Error('disk'));
 
   await expect(sendTelemetry({ eventType: 'dev', payload: {} })).resolves.toBeUndefined();
-  expect(postMock).not.toHaveBeenCalled();
+
+  handOverPendingEvents();
+  expect(spawn).not.toHaveBeenCalled();
 });

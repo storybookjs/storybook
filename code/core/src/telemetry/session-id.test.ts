@@ -10,8 +10,8 @@ import { SESSION_TIMEOUT, getSessionId, resetSessionIdForTest } from './session-
 vi.mock('storybook/internal/common', async (importOriginal) => ({
   ...(await importOriginal<typeof import('storybook/internal/common')>()),
   cache: {
-    getSync: vi.fn(),
-    setSync: vi.fn(),
+    get: vi.fn(),
+    set: vi.fn(),
   },
 }));
 vi.mock('nanoid');
@@ -28,11 +28,11 @@ describe('getSessionId', () => {
     const existingSessionId = 'memory-session-id';
     resetSessionIdForTest(existingSessionId);
 
-    const sessionId = getSessionId();
+    const sessionId = await getSessionId();
 
-    expect(cache.getSync).not.toHaveBeenCalled();
-    expect(cache.setSync).toHaveBeenCalledTimes(1);
-    expect(cache.setSync).toHaveBeenCalledWith(
+    expect(cache.get).not.toHaveBeenCalled();
+    expect(cache.set).toHaveBeenCalledTimes(1);
+    expect(cache.set).toHaveBeenCalledWith(
       'session',
       expect.objectContaining({ id: existingSessionId })
     );
@@ -46,14 +46,14 @@ describe('getSessionId', () => {
       lastUsed: Date.now() - SESSION_TIMEOUT + 1000,
     };
 
-    spy(cache.getSync).mockReturnValueOnce(existingSession);
+    spy(cache.get).mockResolvedValueOnce(existingSession);
 
-    const sessionId = getSessionId();
+    const sessionId = await getSessionId();
 
-    expect(cache.getSync).toHaveBeenCalledTimes(1);
-    expect(cache.getSync).toHaveBeenCalledWith('session');
-    expect(cache.setSync).toHaveBeenCalledTimes(1);
-    expect(cache.setSync).toHaveBeenCalledWith(
+    expect(cache.get).toHaveBeenCalledTimes(1);
+    expect(cache.get).toHaveBeenCalledWith('session');
+    expect(cache.set).toHaveBeenCalledTimes(1);
+    expect(cache.set).toHaveBeenCalledWith(
       'session',
       expect.objectContaining({ id: existingSessionId })
     );
@@ -64,15 +64,15 @@ describe('getSessionId', () => {
     const newSessionId = 'new-session-id';
     (nanoid as unknown as MockInstance).mockReturnValueOnce(newSessionId);
 
-    spy(cache.getSync).mockReturnValueOnce(undefined);
+    spy(cache.get).mockResolvedValueOnce(undefined);
 
-    const sessionId = getSessionId();
+    const sessionId = await getSessionId();
 
-    expect(cache.getSync).toHaveBeenCalledTimes(1);
-    expect(cache.getSync).toHaveBeenCalledWith('session');
+    expect(cache.get).toHaveBeenCalledTimes(1);
+    expect(cache.get).toHaveBeenCalledWith('session');
     expect(nanoid).toHaveBeenCalledTimes(1);
-    expect(cache.setSync).toHaveBeenCalledTimes(1);
-    expect(cache.setSync).toHaveBeenCalledWith(
+    expect(cache.set).toHaveBeenCalledTimes(1);
+    expect(cache.set).toHaveBeenCalledWith(
       'session',
       expect.objectContaining({ id: newSessionId })
     );
@@ -85,29 +85,18 @@ describe('getSessionId', () => {
     const newSessionId = 'new-session-id';
     spy(nanoid).mockReturnValueOnce(newSessionId);
 
-    spy(cache.getSync).mockReturnValueOnce(expiredSession);
+    spy(cache.get).mockResolvedValueOnce(expiredSession);
 
-    const sessionId = getSessionId();
+    const sessionId = await getSessionId();
 
-    expect(cache.getSync).toHaveBeenCalledTimes(1);
-    expect(cache.getSync).toHaveBeenCalledWith('session');
+    expect(cache.get).toHaveBeenCalledTimes(1);
+    expect(cache.get).toHaveBeenCalledWith('session');
     expect(nanoid).toHaveBeenCalledTimes(1);
-    expect(cache.setSync).toHaveBeenCalledTimes(1);
-    expect(cache.setSync).toHaveBeenCalledWith(
+    expect(cache.set).toHaveBeenCalledTimes(1);
+    expect(cache.set).toHaveBeenCalledWith(
       'session',
       expect.objectContaining({ id: newSessionId })
     );
     expect(sessionId).toBe(newSessionId);
-  });
-});
-
-describe('getSessionId when the cache cannot be written', () => {
-  it('still returns the session id', () => {
-    resetSessionIdForTest('memory-session-id');
-    spy(cache.setSync).mockImplementationOnce(() => {
-      throw new Error('read-only');
-    });
-
-    expect(getSessionId()).toBe('memory-session-id');
   });
 });

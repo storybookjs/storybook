@@ -1,67 +1,119 @@
-import { beforeEach, expect, it, vi } from 'vitest';
-
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 
 import * as memfs from 'memfs';
 import { vol } from 'memfs';
 
 import { flushEventsFile } from './flush-events-file.ts';
-import { postEvent } from './post-event.ts';
 
 vi.mock('node:fs/promises', { spy: true });
-vi.mock('./post-event.ts', { spy: true });
 
-const file = join(tmpdir(), 'storybook-telemetry-abc_-123.json');
+const file = '/tmp/storybook-telemetry-abc.json';
+const fetchMock = vi.fn();
+
+const postedEvents = () => fetchMock.mock.calls.map(([, init]) => JSON.parse(init.body));
 
 beforeEach(async () => {
   vol.reset();
   const fs = await import('node:fs/promises');
   vi.mocked(fs.readFile).mockImplementation(memfs.fs.promises.readFile as any);
   vi.mocked(fs.rm).mockImplementation(memfs.fs.promises.rm as any);
-  vi.mocked(postEvent).mockClear();
-  vi.mocked(postEvent).mockImplementation(async () => {});
+  fetchMock.mockReset();
+  fetchMock.mockResolvedValue({ status: 200 });
+  vi.stubGlobal('fetch', fetchMock);
+  vi.useFakeTimers();
 });
 
-it('posts every event in the file and removes the file', async () => {
-  const events = [{ body: { eventId: 'a' } }, { body: { eventId: 'b' }, retryDelay: 5 }];
+afterEach(() => {
+  vi.useRealTimers();
+});
+
+const flush = async () => {
+  const flushed = flushEventsFile(file);
+  await vi.runAllTimersAsync();
+  return flushed;
+};
+
+it('posts every event in the file as JSON and removes the file', async () => {
+  const events = [{ eventId: 'a' }, { eventId: 'b' }];
   vol.fromJSON({ [file]: JSON.stringify(events) });
 
-  await flushEventsFile(file);
+  await flush();
 
-  expect(vi.mocked(postEvent).mock.calls.map(([event]) => event)).toEqual(events);
-  expect(vi.mocked(postEvent).mock.calls[0][1]).toMatchObject({ keepProcessAlive: true });
+  expect(postedEvents()).toEqual(events);
+  expect(fetchMock.mock.calls[0]).toEqual([
+    'https://storybook.js.org/event-log',
+    expect.objectContaining({ method: 'post', headers: { 'Content-Type': 'application/json' } }),
+  ]);
   expect(vol.existsSync(file)).toBe(false);
 });
 
-it('keeps delivering the others when one post fails', async () => {
-  vi.mocked(postEvent).mockRejectedValueOnce(new Error('network'));
-  vol.fromJSON({
-    [file]: JSON.stringify([{ body: { eventId: 'a' } }, { body: { eventId: 'b' } }]),
+it.each([503, 504])('retries a %i response three times', async (status) => {
+  fetchMock.mockResolvedValue({ status });
+  vol.fromJSON({ [file]: JSON.stringify([{ eventId: 'a' }]) });
+
+  await flush();
+
+  expect(fetchMock).toHaveBeenCalledTimes(4);
+});
+
+it('retries a network error until the event is delivered', async () => {
+  fetchMock.mockRejectedValueOnce(new Error('network'));
+  vol.fromJSON({ [file]: JSON.stringify([{ eventId: 'a' }]) });
+
+  await flush();
+
+  expect(fetchMock).toHaveBeenCalledTimes(2);
+});
+
+it('does not retry any other response', async () => {
+  fetchMock.mockResolvedValue({ status: 500 });
+  vol.fromJSON({ [file]: JSON.stringify([{ eventId: 'a' }]) });
+
+  await flush();
+
+  expect(fetchMock).toHaveBeenCalledTimes(1);
+});
+
+it('delivers the other events when one cannot be delivered', async () => {
+  fetchMock.mockImplementation(async (_url, init) => {
+    if (JSON.parse(init.body).eventId === 'a') {
+      throw new Error('network');
+    }
+    return { status: 200 };
   });
+  vol.fromJSON({ [file]: JSON.stringify([{ eventId: 'a' }, { eventId: 'b' }]) });
 
-  await expect(flushEventsFile(file)).resolves.toBeUndefined();
+  await expect(flush()).resolves.toBeUndefined();
 
-  expect(postEvent).toHaveBeenCalledTimes(2);
+  expect(postedEvents()).toContainEqual({ eventId: 'b' });
+});
+
+it('gives up on an endpoint that does not respond within 30 seconds', async () => {
+  const controller = new AbortController();
+  const timeout = vi.spyOn(AbortSignal, 'timeout').mockReturnValue(controller.signal);
+  fetchMock.mockImplementation(
+    (_url, init) =>
+      new Promise((_resolve, reject) => {
+        init.signal.addEventListener('abort', () => reject(init.signal.reason));
+      })
+  );
+  vol.fromJSON({ [file]: JSON.stringify([{ eventId: 'a' }]) });
+
+  const flushed = flushEventsFile(file);
+  await vi.waitFor(() => expect(fetchMock).toHaveBeenCalled());
+  controller.abort();
+
+  await expect(flushed).resolves.toBeUndefined();
+  expect(timeout).toHaveBeenCalledWith(30_000);
+  expect(fetchMock).toHaveBeenCalledTimes(1);
+  timeout.mockRestore();
 });
 
 it('removes a file it cannot parse', async () => {
-  vol.fromJSON({ [file]: '[{"body":' });
+  vol.fromJSON({ [file]: '[{"eventId":' });
 
   await expect(flushEventsFile(file)).rejects.toThrow();
 
   expect(vol.existsSync(file)).toBe(false);
-  expect(postEvent).not.toHaveBeenCalled();
+  expect(fetchMock).not.toHaveBeenCalled();
 });
-
-it.each([join(tmpdir(), 'package.json'), '/project/storybook-telemetry-abc.json'])(
-  'leaves %s alone, which is not a hand-over file',
-  async (other) => {
-    vol.fromJSON({ [other]: '[]' });
-
-    await flushEventsFile(other);
-
-    expect(vol.existsSync(other)).toBe(true);
-    expect(postEvent).not.toHaveBeenCalled();
-  }
-);

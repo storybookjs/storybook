@@ -362,6 +362,7 @@
     "execa": "^9.6.1",
     "exsolve": "^1.0.7",
     "extend-to-be-announced": "^2.0.0",
+    "fetch-retry": "^6.0.0",
     "flush-promises": "^1.0.2",
     "fuse.js": "^3.6.1",
     "get-npm-tarball-url": "^2.1.0",

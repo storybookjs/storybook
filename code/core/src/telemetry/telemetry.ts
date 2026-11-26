@@ -14,12 +14,14 @@ import { importMetaResolve, resolvePackageDir } from '../shared/utils/module.ts'
 import { getAnonymousProjectId, getProjectSince } from './anonymous-id.ts';
 import { detectAgent } from './detect-agent.ts';
 import { set as saveToCache } from './event-cache.ts';
-import { ConnectTimeoutError, type PendingEvent, postEvent } from './post-event.ts';
 import { getSessionId } from './session-id.ts';
 import type { Options, TelemetryData, TelemetryEvent } from './types.ts';
 
-const inFlight = new Map<string, PendingEvent>();
-process.once('exit', handOffPendingEvents);
+const HAND_OVER_AFTER = 5_000;
+
+const pending: TelemetryEvent[] = [];
+let handOverTimer: ReturnType<typeof setTimeout> | undefined;
+process.once('exit', handOverPendingEvents);
 
 export const addToGlobalContext = (key: string, value: any) => {
   globalContext[key] = value;
@@ -80,23 +82,18 @@ export async function sendTelemetry(data: TelemetryData, options: Partial<Option
       };
 
   try {
-    // The eventId lets the server de-duplicate an event that arrives more than once: a retry
-    // after a timed-out response, or the detached process re-sending what this one had started.
     const body: TelemetryEvent = {
       ...rest,
       eventType,
       eventId: nanoid(),
-      sessionId: getSessionId(),
+      sessionId: await getSessionId(),
       metadata,
       payload,
       context,
     };
-    const event: PendingEvent = { body, retryDelay: options.retryDelay };
-    inFlight.set(body.eventId, event);
-    postEvent(event, { keepProcessAlive: false }).then(
-      () => inFlight.delete(body.eventId),
-      (error) => error instanceof ConnectTimeoutError || inFlight.delete(body.eventId)
-    );
+    pending.push(body);
+    // A long-running process may be killed without an exit event, so it does not keep its events.
+    handOverTimer ??= setTimeout(handOverPendingEvents, HAND_OVER_AFTER).unref();
 
     await saveToCache(eventType, body);
   } catch (err) {
@@ -104,14 +101,15 @@ export async function sendTelemetry(data: TelemetryData, options: Partial<Option
   }
 }
 
-// Runs on process exit, where only synchronous work is possible: the events without a response
-// go to a detached child that outlives this process and posts them.
-export function handOffPendingEvents() {
-  if (inFlight.size === 0) {
+// Synchronous, because it also runs on process exit. A detached child outlives this process and
+// posts the events, so this process never waits for the endpoint.
+export function handOverPendingEvents() {
+  clearTimeout(handOverTimer);
+  handOverTimer = undefined;
+  if (pending.length === 0) {
     return;
   }
-  const events = [...inFlight.values()];
-  inFlight.clear();
+  const events = pending.splice(0);
   const file = join(os.tmpdir(), `storybook-telemetry-${nanoid()}.json`);
   try {
     // The temp directory is shared between users on Linux: only the owner may read the events,
@@ -119,22 +117,24 @@ export function handOffPendingEvents() {
     writeFileSync(file, JSON.stringify(events), { mode: 0o600, flag: 'wx' });
     const script = fileURLToPath(importMetaResolve('storybook/internal/telemetry/detached-flush'));
     const child = spawn(process.execPath, [script, file], {
-      // With an inherited --inspect-brk the process would wait for a debugger forever.
+      // With an inherited --inspect-brk the child would wait for a debugger forever.
       env: { ...process.env, NODE_OPTIONS: process.env.NODE_OPTIONS?.replace(/--inspect\S*/g, '') },
       detached: true,
       stdio: 'ignore',
       windowsHide: true,
     });
-    // A spawn that fails reports it after this process is gone, but sets no pid right away.
-    if (child.pid === undefined) {
-      rmSync(file, { force: true });
-    }
+    // Without a listener, a spawn that fails later would crash a process that keeps running.
+    child.on('error', () => {});
     child.unref();
-  } catch {
-    try {
-      rmSync(file, { force: true });
-    } catch {
-      //
+    if (child.pid !== undefined) {
+      return;
     }
+  } catch {
+    //
+  }
+  try {
+    rmSync(file, { force: true });
+  } catch {
+    //
   }
 }

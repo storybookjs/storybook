@@ -8,15 +8,12 @@ import { Feature } from 'storybook/internal/types';
 import { TelemetryService } from './TelemetryService.ts';
 
 vi.mock('storybook/internal/telemetry', { spy: true });
-vi.mock('storybook/internal/common', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('storybook/internal/common')>()),
-  getProcessAncestry: vi.fn(),
-}));
 
 describe('TelemetryService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(telemetry).mockResolvedValue(undefined);
+    vi.mocked(getProcessAncestry).mockReturnValue([]);
   });
 
   describe('when telemetry is enabled', () => {
@@ -127,8 +124,8 @@ describe('TelemetryService', () => {
       const selectedFeatures = new Set([Feature.DOCS, Feature.TEST]);
 
       vi.mocked(getProcessAncestry).mockReturnValue([
-        { command: 'npx storybook@8.0.5 init' },
-      ] as any);
+        { pid: 2, ppid: 1, command: 'npx storybook@8.0.5 init' },
+      ]);
 
       await telemetryService.trackInitWithContext(
         ProjectType.REACT,
@@ -161,7 +158,9 @@ describe('TelemetryService', () => {
       const telemetryService = new TelemetryService();
       const selectedFeatures = new Set([]);
 
-      vi.mocked(getProcessAncestry).mockReturnValue([{ command: 'sv create my-app' }] as any);
+      vi.mocked(getProcessAncestry).mockReturnValue([
+        { pid: 2, ppid: 1, command: 'sv create my-app' },
+      ]);
 
       await telemetryService.trackInitWithContext(ProjectType.NEXTJS, selectedFeatures, false);
 
@@ -175,10 +174,6 @@ describe('TelemetryService', () => {
     });
 
     describe('when AI feature is selected', () => {
-      beforeEach(() => {
-        vi.mocked(getProcessAncestry).mockReturnValue([]);
-      });
-
       it('should set ai: true when AI feature is selected', async () => {
         const telemetryService = new TelemetryService();
         const selectedFeatures = new Set([Feature.AI]);

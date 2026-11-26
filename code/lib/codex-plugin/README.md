@@ -15,7 +15,7 @@ You can use Storybook's Codex plugin to connect agents to your Storybook. Agents
 1. Run this command to add the Storybook marketplace to Codex:
 
    ```bash
-   codex plugin marketplace add storybookjs/storybook
+   codex plugin marketplace add storybookjs/storybook --sparse .agents/plugins/marketplace.json --sparse code/lib/codex-plugin/plugins/storybook
    ```
 
 2. Then install the plugin:

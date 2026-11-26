@@ -672,6 +672,94 @@ describe('TestManager', () => {
     ]);
   });
 
+  it('runs the story files Vitest matches for file filters, without a test name pattern', async () => {
+    vitest.globTestSpecifications.mockImplementation((filters?: string[]) =>
+      filters ? tests.slice(0, 1) : tests
+    );
+    const testManager = await startWithIndex();
+
+    await testManager.handleTriggerRunEvent({
+      type: 'TRIGGER_RUN',
+      payload: { fileFilters: ['to/file'], triggeredBy: 'global' },
+    });
+
+    expect(vitest.globTestSpecifications).toHaveBeenLastCalledWith(['to/file']);
+    expect(vitest.runTestSpecifications).toHaveBeenCalledWith(tests.slice(0, 1), true);
+    expect(setTestNamePattern.mock.calls.map(([pattern]) => pattern)).not.toContainEqual(
+      expect.any(RegExp)
+    );
+    expect(mockStore.getState().currentRun).toMatchObject({
+      storyIds: ['story--one', 'story--two'],
+      matchedFileCount: 1,
+    });
+    expect(mockComponentTestStatusStore.unset).toHaveBeenLastCalledWith([
+      'story--one',
+      'story--two',
+    ]);
+    expect(mockComponentTestStatusStore.unset).not.toHaveBeenCalledWith(undefined);
+  });
+
+  it('selects by test name only the requested stories inside the story files that match', async () => {
+    vitest.globTestSpecifications.mockImplementation((filters?: string[]) =>
+      filters ? tests.slice(0, 1) : tests
+    );
+    const testManager = await startWithIndex();
+
+    await testManager.handleTriggerRunEvent({
+      type: 'TRIGGER_RUN',
+      payload: {
+        fileFilters: ['to/file'],
+        storyIds: ['story--one', 'another--two'],
+        triggeredBy: 'global',
+      },
+    });
+
+    expect(setTestNamePattern).toHaveBeenCalledWith(new RegExp('^One$'));
+    expect(vitest.runTestSpecifications).toHaveBeenCalledWith(tests.slice(0, 1), true);
+    expect(mockStore.getState().currentRun.storyIds).toEqual(['story--one']);
+  });
+
+  it('runs exactly the given story files, without a test name pattern', async () => {
+    vitest.globTestSpecifications.mockImplementation(() => tests);
+    const testManager = await startWithIndex();
+
+    await testManager.handleTriggerRunEvent({
+      type: 'TRIGGER_RUN',
+      payload: { storyFiles: ['path/to/another/file'], triggeredBy: 'global' },
+    });
+
+    expect(vitest.runTestSpecifications).toHaveBeenCalledWith(tests.slice(1), true);
+    expect(setTestNamePattern.mock.calls.map(([pattern]) => pattern)).not.toContainEqual(
+      expect.any(RegExp)
+    );
+    expect(mockStore.getState().currentRun).toMatchObject({
+      storyIds: ['another--one', 'another--two'],
+      matchedFileCount: undefined,
+    });
+  });
+
+  it('runs the given story files among the ones the file filters match, and counts the matched ones', async () => {
+    vitest.globTestSpecifications.mockImplementation((filters?: string[]) =>
+      filters ? tests : []
+    );
+    const testManager = await startWithIndex();
+
+    await testManager.handleTriggerRunEvent({
+      type: 'TRIGGER_RUN',
+      payload: {
+        fileFilters: ['file'],
+        storyFiles: ['path/to/another/file'],
+        triggeredBy: 'global',
+      },
+    });
+
+    expect(vitest.runTestSpecifications).toHaveBeenCalledWith(tests.slice(1), true);
+    expect(mockStore.getState().currentRun).toMatchObject({
+      storyIds: ['another--one', 'another--two'],
+      matchedFileCount: 2,
+    });
+  });
+
   it('should filter tests', async () => {
     vitest.globTestSpecifications.mockImplementation(() => tests);
     const testManager = await startWithIndex();
@@ -935,4 +1023,22 @@ describe('TestManager', () => {
     expect(createVitest).not.toHaveBeenCalled();
     expect(vitest.enableCoverage).not.toHaveBeenCalled();
   });
+
+  it.each([{ fileFilters: ['to/file'] }, { storyFiles: ['path/to/file'] }])(
+    'should not enable coverage for a run of story files: %o',
+    async (selection) => {
+      const testManager = await startWithIndex();
+      mockStore.setState((s) => ({
+        ...s,
+        config: { coverage: true, a11y: false },
+      }));
+
+      await testManager.handleTriggerRunEvent({
+        type: 'TRIGGER_RUN',
+        payload: { ...selection, triggeredBy: 'global' },
+      });
+
+      expect(vitest.enableCoverage).not.toHaveBeenCalled();
+    }
+  );
 });

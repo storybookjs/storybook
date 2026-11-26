@@ -3,7 +3,6 @@ import {
   JsPackageManagerFactory,
   PackageManagerName,
   getPrettyPackageManagerName,
-  resolveStorybookVersionSpecifier,
   isCI,
   invalidateProjectRootCache,
   warnOnYarn1,
@@ -38,8 +37,6 @@ export class PreflightCheckCommand {
     private readonly telemetryService = new TelemetryService()
   ) {}
   async execute(options: CommandOptions): Promise<PreflightCheckResult> {
-    options.storybookVersionSpecifier ??= resolveStorybookVersionSpecifier();
-
     const isEmptyDirProject = options.force !== true && currentDirectoryIsEmpty();
     let packageManagerType = JsPackageManagerFactory.getPackageManagerType();
 

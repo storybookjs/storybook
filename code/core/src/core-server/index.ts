@@ -70,7 +70,6 @@ export {
   type FoundStory,
   type NotFoundStory,
 } from '../shared/open-service/toolsets/stories/find-story-ids.ts';
-export { filterStoryFiles } from '../shared/open-service/toolsets/stories/select-stories.ts';
 export {
   storyInputArraySchema,
   type StoryInput,

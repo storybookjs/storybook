@@ -10,7 +10,6 @@ import type { Fix } from '../types.ts';
 
 export const VITE_DEFAULT_VERSION = '^7.0.0';
 
-/** Logged when the user declines this migration, mirroring the dev-server deprecation in the `@storybook/nextjs` preset. */
 export const nextjsDeprecationWarning = (packageManager: JsPackageManager): string =>
   dedent`
   @storybook/nextjs is deprecated and will be removed in Storybook 12.

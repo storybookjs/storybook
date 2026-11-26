@@ -1,5 +1,3 @@
-import { global as globalThis } from '@storybook/global';
-
 import './import';
 
 export default {

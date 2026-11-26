@@ -101,17 +101,9 @@ export class TelemetryService {
     newUser: boolean,
     configDir?: string
   ): Promise<void> {
-    // Get telemetry info from process ancestry
-    let versionSpecifier: string | undefined;
-    let cliIntegration: string | undefined;
-
-    try {
-      const ancestry = getProcessAncestry();
-      versionSpecifier = getStorybookVersionSpecifierFromAncestry(ancestry);
-      cliIntegration = this.versionService.getCliIntegrationFromAncestry(ancestry);
-    } catch {
-      // Ignore errors getting ancestry
-    }
+    const ancestry = getProcessAncestry();
+    const versionSpecifier = getStorybookVersionSpecifierFromAncestry(ancestry);
+    const cliIntegration = this.versionService.getCliIntegrationFromAncestry(ancestry);
 
     // Create features object and track
     const telemetryFeatures = {

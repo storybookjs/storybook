@@ -1,5 +1,3 @@
-import { global as globalThis } from '@storybook/global';
-
 import { MINIMAL_VIEWPORTS } from 'storybook/viewport';
 
 const first = Object.keys(MINIMAL_VIEWPORTS)[0];

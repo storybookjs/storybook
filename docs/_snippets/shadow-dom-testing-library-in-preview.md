@@ -12,6 +12,7 @@ declare module 'storybook/internal/csf' {
 }
 
 export default definePreview({
+  addons: [/* ... */],
   // 👇 Augment the canvas with the shadow DOM queries
   beforeEach({ canvasElement, canvas }) {
     Object.assign(canvas, { ...withinShadow(canvasElement) });
@@ -26,6 +27,7 @@ import { definePreview } from '@storybook/web-components-vite';
 import { within as withinShadow } from 'shadow-dom-testing-library';
 
 export default definePreview({
+  addons: [/* ... */],
   // 👇 Augment the canvas with the shadow DOM queries
   beforeEach({ canvasElement, canvas }) {
     Object.assign(canvas, { ...withinShadow(canvasElement) });
@@ -35,7 +37,7 @@ export default definePreview({
 ```
 
 ```ts filename=".storybook/preview.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
-// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/11/writing-stories/csf/upgrade
 import type { Preview } from '@storybook/web-components-vite';
 
 import { within as withinShadow } from 'shadow-dom-testing-library';
@@ -60,7 +62,7 @@ export default preview;
 ```
 
 ```js filename=".storybook/preview.js" renderer="web-components" language="js" tabTitle="CSF 3"
-// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/11/writing-stories/csf/upgrade
 import { within as withinShadow } from 'shadow-dom-testing-library';
 
 export default {

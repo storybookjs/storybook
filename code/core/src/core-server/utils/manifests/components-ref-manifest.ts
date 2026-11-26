@@ -12,7 +12,7 @@ import {
 import type { StoryDocsPayload } from '../../../shared/open-service/services/story-docs/types.ts';
 import {
   type StoryDocsScope,
-  type StoryDocsServiceState,
+  isStoryDocsServiceState,
   readStoryDocs,
 } from '../../../shared/open-service/services/story-docs/definition.ts';
 import { getOwn } from '../../../shared/open-service/plain-object.ts';
@@ -63,15 +63,7 @@ function readStoryDocsSnapshotPayload(
   id: string,
   scope: StoryDocsScope
 ): StoryDocsPayload | undefined {
-  const state = document as Partial<StoryDocsServiceState> | null;
-  if (!state?.components) {
-    return undefined;
-  }
-  return readStoryDocs(
-    { components: state.components, nonManifestStories: state.nonManifestStories ?? {} },
-    id,
-    scope
-  );
+  return isStoryDocsServiceState(document) ? readStoryDocs(document, id, scope) : undefined;
 }
 
 /**

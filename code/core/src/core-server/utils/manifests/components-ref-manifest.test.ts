@@ -205,6 +205,7 @@ describe('components-ref-manifest', () => {
     };
     vol.fromNestedJSON({
       '/output/services/core/story-docs/button.json': JSON.stringify({
+        nonManifestStories: {},
         components: { button: payload },
       }),
     });

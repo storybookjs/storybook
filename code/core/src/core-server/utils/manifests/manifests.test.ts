@@ -411,6 +411,7 @@ describe('manifests', () => {
           },
         }),
         '/output/services/core/story-docs/button.json': JSON.stringify({
+          nonManifestStories: {},
           components: {
             button: {
               id: 'button',
@@ -507,6 +508,7 @@ describe('manifests', () => {
 
       vol.fromNestedJSON({
         '/output/services/core/story-docs/billboard.json': JSON.stringify({
+          nonManifestStories: {},
           components: {
             billboard: {
               id: 'billboard',

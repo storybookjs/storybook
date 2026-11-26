@@ -63,6 +63,16 @@ export type StoryDocsServiceState = {
   nonManifestStories: Record<string, StoryDocsById>;
 };
 
+const storyDocsServiceStateSchema = v.object({
+  components: v.record(v.string(), storyDocsPayloadSchema),
+  nonManifestStories: v.record(v.string(), v.record(v.string(), storyDocSchema)),
+});
+
+/** Whether a value, such as a static snapshot read from disk, has the shape of the service state. */
+export function isStoryDocsServiceState(value: unknown): value is StoryDocsServiceState {
+  return v.is(storyDocsServiceStateSchema, value);
+}
+
 /**
  * A stored payload as the manifests show it. A component in the manifests only through its attached
  * docs has no manifest stories, so it gets nothing: no stories and no import.
@@ -82,12 +92,10 @@ export function readStoryDocs(
   id: string,
   scope: StoryDocsScope
 ): StoryDocsPayload | undefined {
-  const payload: unknown = readComponent(state.components, id);
-  // A snapshot read from disk is not validated, so a component there can be any value.
-  if (payload === null || typeof payload !== 'object') {
+  const storyDocs = readComponent(state.components, id);
+  if (!storyDocs) {
     return undefined;
   }
-  const storyDocs = payload as StoryDocsPayload;
   switch (scope) {
     case 'manifest':
       return toManifestStoryDocs(storyDocs);

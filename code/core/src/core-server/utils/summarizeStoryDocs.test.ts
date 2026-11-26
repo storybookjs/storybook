@@ -45,7 +45,7 @@ const writeStoryDocs = (components: Record<string, unknown>) =>
     Object.fromEntries(
       Object.entries(components).map(([id, payload]) => [
         join(outputDir, 'services/core/story-docs', `${id}.json`),
-        JSON.stringify({ components: { [id]: payload } }),
+        JSON.stringify({ components: { [id]: payload }, nonManifestStories: {} }),
       ])
     )
   );

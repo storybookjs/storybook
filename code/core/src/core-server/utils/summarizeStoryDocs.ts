@@ -13,7 +13,6 @@ export async function summarizeStoryDocs(storyIndex: StoryIndex, outputDir: stri
     ),
     getComponentIdFromEntry
   );
-  // The Storybook UI shows every story, so a story left out of the manifests still counts.
   const payloads = await loadStoryDocsPayloadsFromDisk(
     outputDir,
     [...storiesByComponentId.keys()],

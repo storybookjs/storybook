@@ -187,7 +187,8 @@ function withDocsOnlyComponents(
   return next;
 }
 
-// The story docs the manifests show, by the same rule as a build's snapshot reader.
+// Picks the story docs the dev components.html shows for the given components. It applies the
+// manifest rule itself, because `storyDocsForAllComponents` returns every extracted component.
 function readManifestStoryDocs(
   components: Record<string, StoryDocsPayload>,
   componentIds: string[]

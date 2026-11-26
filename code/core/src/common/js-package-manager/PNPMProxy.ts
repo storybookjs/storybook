@@ -472,6 +472,7 @@ export class PNPMProxy extends JsPackageManager {
   }
 
   protected runInstall(options?: { force?: boolean }) {
+    // eslint-disable-next-line local-rules/project-writes-through-effects -- installDependencies runs this through effects, which records it in a dry run
     return executeCommand({
       command: 'pnpm',
       args: [

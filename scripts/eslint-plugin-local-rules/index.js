@@ -5,5 +5,6 @@ module.exports = {
     'storybook-monorepo-imports': require('./storybook-monorepo-imports'),
     'no-untracked-service-state-key-check': require('./no-untracked-service-state-key-check'),
     'docgen-node-fields-through-contract': require('./docgen-node-fields-through-contract'),
+    'project-writes-through-effects': require('./project-writes-through-effects'),
   },
 };

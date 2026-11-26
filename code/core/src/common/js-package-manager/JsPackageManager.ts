@@ -259,6 +259,7 @@ export abstract class JsPackageManager {
   async #dedupeDependencies(options?: { force?: boolean; legacyPeerDeps?: boolean }) {
     await prompt.executeTask(
       (_signal) =>
+        // eslint-disable-next-line local-rules/project-writes-through-effects -- dedupeDependencies runs this through effects, which records it in a dry run
         this.runInternalCommand(
           'dedupe',
           [

@@ -1,4 +1,3 @@
-// eslint-disable-next-line no-restricted-imports -- the instance registry is not a project file
 import * as fs from 'node:fs/promises';
 import { join } from 'node:path';
 
@@ -72,6 +71,7 @@ async function readRegistryDir(registryDir: string): Promise<StorybookInstanceRe
             !isProcessAlive(parsed.output.pid) &&
             !isAnotherPidNamespace(parsed.output.pidNamespace)
           ) {
+            // eslint-disable-next-line local-rules/project-writes-through-effects -- the instance registry is not a project file
             await fs.rm(join(registryDir, name), { force: true }).catch(() => {});
             return null;
           }

@@ -1,5 +1,5 @@
 import { existsSync } from 'node:fs';
-// eslint-disable-next-line no-restricted-imports -- manages the sandbox directory it creates, not the project
+// eslint-disable-next-line local-rules/project-writes-through-effects -- manages the sandbox directory it creates, not the project
 import { mkdir, readdir, rm } from 'node:fs/promises';
 import { isAbsolute } from 'node:path';
 

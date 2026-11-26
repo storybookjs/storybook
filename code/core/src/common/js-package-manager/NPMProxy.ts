@@ -192,6 +192,7 @@ export class NPMProxy extends JsPackageManager {
     const workspacePackageJsonPath =
       packageJsonPath && this.findWorkspaceRootPackageJsonPath(packageJsonPath);
 
+    // eslint-disable-next-line local-rules/project-writes-through-effects -- installDependencies runs this through effects, which records it in a dry run
     return executeCommand({
       command: 'npm',
       args: [
@@ -301,6 +302,7 @@ export class NPMProxy extends JsPackageManager {
       args = ['-D', ...args];
     }
 
+    // eslint-disable-next-line local-rules/project-writes-through-effects -- addDependencies runs this through effects, which records it in a dry run
     return executeCommand({
       command: 'npm',
       args: ['install', ...args, ...this.getInstallArgs()],

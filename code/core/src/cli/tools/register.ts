@@ -1,4 +1,4 @@
-// eslint-disable-next-line no-restricted-imports -- writes the file `--output` names, not a project change
+// eslint-disable-next-line local-rules/project-writes-through-effects -- writes the file `--output` names, not a project change
 import { writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 

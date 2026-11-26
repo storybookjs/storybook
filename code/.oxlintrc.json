@@ -113,109 +113,7 @@
         "core/src/csf-tools/**"
       ],
       "rules": {
-        "no-restricted-imports": [
-          "error",
-          {
-            "paths": [
-              {
-                "name": "react-aria",
-                "message": "Don't import from the react-aria root, but use the react-aria/HookOrComponent entrypoints which are optimised for tree-shaking",
-                "allowTypeImports": false
-              },
-              {
-                "name": "react-stately",
-                "message": "Don't import from the react-stately root, but use the react-stately/HookOrComponent entrypoints which are optimised for tree-shaking",
-                "allowTypeImports": false
-              },
-              {
-                "name": "react-aria-components",
-                "message": "Don't import from react-aria-components root, but use the react-aria-components/ComponentX entrypoints which are optimised for tree-shaking. See https://github.com/storybookjs/storybook/pull/32594",
-                "allowTypeImports": true
-              },
-              {
-                "name": "es-toolkit",
-                "message": "Don't import from es-toolkit root, but use the sub-exports like es-toolkit/array entrypoints instead which are optimised for tree-shaking.",
-                "allowTypeImports": true
-              },
-              {
-                "name": "node:fs",
-                "importNames": [
-                  "writeFile",
-                  "writeFileSync",
-                  "appendFile",
-                  "appendFileSync",
-                  "rm",
-                  "rmSync",
-                  "unlink",
-                  "unlinkSync",
-                  "rename",
-                  "renameSync",
-                  "copyFile",
-                  "copyFileSync",
-                  "cp",
-                  "cpSync",
-                  "rmdir",
-                  "rmdirSync",
-                  "createWriteStream",
-                  "promises"
-                ],
-                "message": "Write and remove project files through `effects` from `storybook/internal/common`, so a dry run stages the change and lists it. See .agents/guidelines/code-authoring.md."
-              },
-              {
-                "name": "fs",
-                "importNames": [
-                  "writeFile",
-                  "writeFileSync",
-                  "appendFile",
-                  "appendFileSync",
-                  "rm",
-                  "rmSync",
-                  "unlink",
-                  "unlinkSync",
-                  "rename",
-                  "renameSync",
-                  "copyFile",
-                  "copyFileSync",
-                  "cp",
-                  "cpSync",
-                  "rmdir",
-                  "rmdirSync",
-                  "createWriteStream",
-                  "promises"
-                ],
-                "message": "Write and remove project files through `effects` from `storybook/internal/common`, so a dry run stages the change and lists it. See .agents/guidelines/code-authoring.md."
-              },
-              {
-                "name": "node:fs/promises",
-                "importNames": [
-                  "writeFile",
-                  "appendFile",
-                  "rm",
-                  "unlink",
-                  "rename",
-                  "copyFile",
-                  "cp",
-                  "rmdir"
-                ],
-                "message": "Write and remove project files through `effects` from `storybook/internal/common`, so a dry run stages the change and lists it. See .agents/guidelines/code-authoring.md."
-              },
-              {
-                "name": "fs/promises",
-                "importNames": [
-                  "writeFile",
-                  "appendFile",
-                  "rm",
-                  "unlink",
-                  "rename",
-                  "copyFile",
-                  "cp",
-                  "rmdir"
-                ],
-                "message": "Write and remove project files through `effects` from `storybook/internal/common`, so a dry run stages the change and lists it. See .agents/guidelines/code-authoring.md."
-              }
-            ]
-          }
-        ]
+        "local-rules/project-writes-through-effects": "error"
       }
     },
     {
@@ -226,33 +124,7 @@
         "core/src/common/utils/effects.ts"
       ],
       "rules": {
-        "no-restricted-imports": [
-          "error",
-          {
-            "paths": [
-              {
-                "name": "react-aria",
-                "message": "Don't import from the react-aria root, but use the react-aria/HookOrComponent entrypoints which are optimised for tree-shaking",
-                "allowTypeImports": false
-              },
-              {
-                "name": "react-stately",
-                "message": "Don't import from the react-stately root, but use the react-stately/HookOrComponent entrypoints which are optimised for tree-shaking",
-                "allowTypeImports": false
-              },
-              {
-                "name": "react-aria-components",
-                "message": "Don't import from react-aria-components root, but use the react-aria-components/ComponentX entrypoints which are optimised for tree-shaking. See https://github.com/storybookjs/storybook/pull/32594",
-                "allowTypeImports": true
-              },
-              {
-                "name": "es-toolkit",
-                "message": "Don't import from es-toolkit root, but use the sub-exports like es-toolkit/array entrypoints instead which are optimised for tree-shaking.",
-                "allowTypeImports": true
-              }
-            ]
-          }
-        ]
+        "local-rules/project-writes-through-effects": "off"
       }
     },
     {

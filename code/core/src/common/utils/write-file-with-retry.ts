@@ -1,4 +1,4 @@
-// eslint-disable-next-line no-restricted-imports -- writes cache files for file-cache.ts, not project files
+// eslint-disable-next-line local-rules/project-writes-through-effects -- writes cache files for file-cache.ts, not project files
 import { writeFile } from 'node:fs/promises';
 
 type File = Parameters<typeof writeFile>[0];

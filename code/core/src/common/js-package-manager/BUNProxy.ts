@@ -84,6 +84,7 @@ export class BUNProxy extends JsPackageManager {
   installArgs: string[] | undefined;
 
   async initPackageJson() {
+    // eslint-disable-next-line local-rules/project-writes-through-effects -- creates the package.json of a new project, which has no dry run
     return executeCommand({ command: 'bun', args: ['init'] });
   }
 
@@ -202,6 +203,7 @@ export class BUNProxy extends JsPackageManager {
   }
 
   protected runInstall(options?: { force?: boolean }) {
+    // eslint-disable-next-line local-rules/project-writes-through-effects -- installDependencies runs this through effects, which records it in a dry run
     return executeCommand({
       command: 'bun',
       args: ['install', ...this.getInstallArgs(), ...(options?.force ? ['--force'] : [])],
@@ -359,6 +361,7 @@ export class BUNProxy extends JsPackageManager {
       args = ['-D', ...args];
     }
 
+    // eslint-disable-next-line local-rules/project-writes-through-effects -- addDependencies runs this through effects, which records it in a dry run
     return executeCommand({
       command: 'bun',
       args: ['add', ...args, ...this.getInstallArgs()],

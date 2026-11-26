@@ -1,4 +1,4 @@
-// eslint-disable-next-line no-restricted-imports -- writes into the reproduction it creates, not the project
+// eslint-disable-next-line local-rules/project-writes-through-effects -- writes into the reproduction it creates, not the project
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { basename, extname, join } from 'node:path';
 
@@ -65,6 +65,7 @@ export const link = async ({ target, local, start }: LinkOptions) => {
   }
 
   logger.info(`Linking ${reproDir}`);
+  // eslint-disable-next-line local-rules/project-writes-through-effects -- runs in the reproduction that link creates, not in the project
   await executeCommand({
     command: 'yarn',
     args: ['link', '--all', '--relative', storybookDir],
@@ -92,6 +93,7 @@ export const link = async ({ target, local, start }: LinkOptions) => {
 
   await writeFile(join(reproDir, 'package.json'), JSON.stringify(reproPackageJson, null, 2));
 
+  // eslint-disable-next-line local-rules/project-writes-through-effects -- runs in the reproduction that link creates, not in the project
   await executeCommand({
     command: 'yarn',
     // We just edited package.json; Yarn Berry refuses lockfile changes when CI is set.

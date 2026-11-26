@@ -124,6 +124,7 @@ export class Settings {
     invariant(this.filePath, 'No file path to save settings to');
     try {
       await fs.mkdir(dirname(this.filePath), { recursive: true });
+      // eslint-disable-next-line local-rules/project-writes-through-effects -- user settings, not project files
       await fs.writeFile(this.filePath, JSON.stringify(this.value, null, 2));
     } catch (err) {
       console.warn(dedent`

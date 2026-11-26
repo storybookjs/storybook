@@ -186,6 +186,7 @@ export class Yarn2Proxy extends JsPackageManager {
   }
 
   protected runInstall() {
+    // eslint-disable-next-line local-rules/project-writes-through-effects -- installDependencies runs this through effects, which records it in a dry run
     return executeCommand({
       command: 'yarn',
       // Yarn 3 and 4 freeze the lockfile when CI is set.
@@ -338,6 +339,7 @@ export class Yarn2Proxy extends JsPackageManager {
       args = ['-D', ...args];
     }
 
+    // eslint-disable-next-line local-rules/project-writes-through-effects -- addDependencies runs this through effects, which records it in a dry run
     return executeCommand({
       command: 'yarn',
       args: ['add', ...this.getInstallArgs(), ...args],

@@ -297,9 +297,19 @@ export async function promptForAutomigrations(
     required: false,
   });
 
-  for (const { fix } of automigrations) {
-    if (fix.skipWarning && !selectedIds.includes(fix.id)) {
-      logger.warn(fix.skipWarning);
+  for (const { fix, reports } of automigrations) {
+    if (selectedIds.includes(fix.id) || !fix.skipWarning) {
+      continue;
+    }
+    // The projects of one automigration share the workspace's package manager, so the first
+    // report's is the one the warning names a command for.
+    const { packageManager } = reports[0]?.project ?? {};
+    const skipWarning =
+      typeof fix.skipWarning === 'function'
+        ? packageManager && fix.skipWarning(packageManager)
+        : fix.skipWarning;
+    if (skipWarning) {
+      logger.warn(skipWarning);
     }
   }
 

@@ -453,7 +453,9 @@ export async function runFixes({
         logger.log(`Skipped ${picocolors.cyan(f.id)} migration`);
         // A dry run skipped nothing, so it does not carry the fix's skip warning.
         if (!dryRun && f.skipWarning) {
-          logger.warn(f.skipWarning);
+          logger.warn(
+            typeof f.skipWarning === 'function' ? f.skipWarning(packageManager) : f.skipWarning
+          );
         }
       }
     }

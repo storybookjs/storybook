@@ -1,4 +1,4 @@
-import { transformImports } from 'storybook/internal/common';
+import { type JsPackageManager, transformImports } from 'storybook/internal/common';
 import { dedent } from 'ts-dedent';
 
 import { assertMainConfigNamesFramework } from '../helpers/main-config-framework.ts';
@@ -11,9 +11,14 @@ import type { Fix } from '../types.ts';
 export const VITE_DEFAULT_VERSION = '^7.0.0';
 
 /** Logged when the user declines this migration, mirroring the dev-server deprecation in the `@storybook/nextjs` preset. */
-export const nextjsDeprecationWarning = dedent`
+export const nextjsDeprecationWarning = (packageManager: JsPackageManager): string =>
+  dedent`
   @storybook/nextjs is deprecated and will be removed in Storybook 12.
-  Migrate to @storybook/nextjs-vite by running \`npx storybook automigrate nextjs-to-nextjs-vite\`.
+  Migrate to @storybook/nextjs-vite by running \`${packageManager.getRemoteRunCommand([
+    'storybook',
+    'automigrate',
+    'nextjs-to-nextjs-vite',
+  ])}\`.
 `;
 
 const NEXTJS_FRAMEWORK = /@storybook\/nextjs(?!-vite)/g;
@@ -30,13 +35,13 @@ export const nextjsToNextjsVite: Fix<NextjsToNextjsViteOptions> = {
   // runs under --yes and is preselected in the prompt.
   skipWarning: nextjsDeprecationWarning,
 
-  async check({ packageManager, files, mainConfigPath }) {
+  async check({ packageManager, mainConfig }) {
     if (!packageManager.getAllDependencies()['@storybook/nextjs']) {
       return null;
     }
 
     return {
-      hasWebpackFinal: await hasActiveWebpackFinal(files, mainConfigPath),
+      hasWebpackFinal: hasActiveWebpackFinal(mainConfig),
     };
   },
 
@@ -60,7 +65,11 @@ export const nextjsToNextjsVite: Fix<NextjsToNextjsViteOptions> = {
       !(await confirmWebpackFinalCarryover({
         hasWebpackFinal: result.hasWebpackFinal,
         yes: !!yes,
-        retryInstruction: '`npx storybook automigrate nextjs-to-nextjs-vite`',
+        retryInstruction: `\`${packageManager.getRemoteRunCommand([
+          'storybook',
+          'automigrate',
+          'nextjs-to-nextjs-vite',
+        ])}\``,
       }))
     ) {
       return false;

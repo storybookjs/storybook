@@ -329,21 +329,21 @@ describe('angular-to-angular-vite', () => {
       }
     );
 
-    it('reports hasWebpackFinal: true when main config contains webpackFinal', async () => {
+    it('reports hasWebpackFinal: true when the parsed main config contains webpackFinal', async () => {
       vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({
         [ANGULAR_PACKAGE]: '^9.0.0',
       });
       mockAngularCore({ declared: '^21.0.0', resolved: '21.0.4' });
 
-      vol.fromJSON({
-        [MAIN]: `export default { framework: '${ANGULAR_PACKAGE}', webpackFinal: async (c) => c };`,
-      });
-
       const result = await checkFix(angularToAngularVite, {
         packageManager: mockPackageManager,
-        mainConfig: { framework: ANGULAR_PACKAGE },
+        mainConfig: {
+          framework: ANGULAR_PACKAGE,
+          stories: [],
+          webpackFinal: async (c: unknown) => c,
+        },
         mainConfigPath: MAIN,
-      } as CheckOptions);
+      } as unknown as CheckOptions);
 
       expect(result?.hasWebpackFinal).toBe(true);
     });
@@ -353,32 +353,6 @@ describe('angular-to-angular-vite', () => {
         [ANGULAR_PACKAGE]: '^9.0.0',
       });
       mockAngularCore({ declared: '^21.0.0', resolved: '21.0.4' });
-
-      const result = await checkFix(angularToAngularVite, {
-        packageManager: mockPackageManager,
-        mainConfig: { framework: ANGULAR_PACKAGE },
-        mainConfigPath: MAIN,
-      } as CheckOptions);
-
-      expect(result?.hasWebpackFinal).toBe(false);
-    });
-
-    it.each([
-      [
-        'a line comment',
-        `// webpackFinal: async (c) => c,\nexport default { framework: '${ANGULAR_PACKAGE}' };`,
-      ],
-      [
-        'a block comment',
-        `export default { framework: '${ANGULAR_PACKAGE}' }; /* webpackFinal: async (c) => c */`,
-      ],
-    ])('ignores a webpackFinal hook that only appears in %s', async (_label, mainConfig) => {
-      vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({
-        [ANGULAR_PACKAGE]: '^9.0.0',
-      });
-      mockAngularCore({ declared: '^21.0.0', resolved: '21.0.4' });
-
-      vol.fromJSON({ [MAIN]: mainConfig });
 
       const result = await checkFix(angularToAngularVite, {
         packageManager: mockPackageManager,
@@ -510,28 +484,6 @@ describe('angular-to-angular-vite', () => {
         expect.stringContaining('npx storybook automigrate angular-to-angular-vite')
       );
       expect(mockPackageManager.removeDependencies).not.toHaveBeenCalled();
-    });
-
-    it('migrates without a webpackFinal prompt when the hook appears only in comments', async () => {
-      // A commented-out hook is not active: no spurious confirm (the mock declines every prompt,
-      // so a webpackFinal confirm would cancel) and no skip, driving check -> run as the runner does.
-      vol.fromJSON({
-        [MAIN]: `// webpackFinal: async (c) => c,\nexport default { framework: '${ANGULAR_PACKAGE}' };`,
-        [PACKAGE_JSON]: '{}',
-      });
-      vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({
-        [ANGULAR_PACKAGE]: '^9.0.0',
-      });
-      mockAngularCore({ declared: '^21.0.0', resolved: '21.0.4' });
-
-      const result = await checkThenRun();
-
-      expect(result?.hasWebpackFinal).toBe(false);
-      expect(logger.logBox).not.toHaveBeenCalled();
-      expect(mockPromptConfirm).not.toHaveBeenCalledWith(
-        expect.objectContaining({ message: expect.stringContaining('Continue anyway?') })
-      );
-      expect(mockPackageManager.removeDependencies).toHaveBeenCalledWith([ANGULAR_PACKAGE]);
     });
 
     it('continues when user accepts to proceed after webpackFinal warning', async () => {

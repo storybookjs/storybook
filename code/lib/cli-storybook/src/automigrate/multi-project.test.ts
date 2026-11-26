@@ -210,6 +210,9 @@ describe('multi-project automigrations', () => {
       vi.mocked(prompt.multiselect).mockResolvedValue([]);
 
       const project = createMockProject('/project1/.storybook');
+      project.packageManager.getRemoteRunCommand = vi
+        .fn()
+        .mockReturnValue('yarn dlx storybook automigrate nextjs-to-nextjs-vite');
 
       await promptForAutomigrations([asAutomigration(nextjsToNextjsVite, project)], {
         dryRun: false,
@@ -222,7 +225,7 @@ describe('multi-project automigrations', () => {
         )
       );
       expect(vi.mocked(logger.warn)).toHaveBeenCalledWith(
-        expect.stringContaining('npx storybook automigrate nextjs-to-nextjs-vite')
+        expect.stringContaining('yarn dlx storybook automigrate nextjs-to-nextjs-vite')
       );
     });
 

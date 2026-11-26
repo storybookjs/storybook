@@ -71,11 +71,12 @@ type BaseFix<ResultType = any> = {
   link?: string;
   /**
    * Warning logged once when the user declines this fix at the prompt or leaves it unselected in
-   * the multi-project prompt. A fix that cancels itself from `run` logs its own guidance instead,
-   * so no skip warning is printed and the doctor still reports its deprecation (see
-   * `getWarnedFixIds`).
+   * the multi-project prompt. A function receives the project's package manager, so the warning
+   * can carry a package-manager-specific command. A fix that cancels itself from `run` logs its
+   * own guidance instead, so no skip warning is printed and the doctor still reports its
+   * deprecation (see `getWarnedFixIds`).
    */
-  skipWarning?: string;
+  skipWarning?: string | ((packageManager: JsPackageManager) => string);
 };
 
 type PromptType<ResultType = any, T = Prompt> =

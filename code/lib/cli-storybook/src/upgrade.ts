@@ -550,7 +550,7 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
     }
 
     // Run doctor for each project
-const doctorProjects: ProjectDoctorData[] = storybookProjects.map((project) => ({
+    const doctorProjects: ProjectDoctorData[] = storybookProjects.map((project) => ({
       configDir: project.configDir,
       packageManager: project.packageManager,
       storybookVersion: project.currentCLIVersion,

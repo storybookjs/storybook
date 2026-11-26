@@ -274,12 +274,7 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
   link: FRAMEWORK_DOC_URL,
   defaultSelected: false,
 
-  async check({
-    files,
-    packageManager,
-    mainConfig,
-    mainConfigPath,
-  }): Promise<AngularToAngularViteOptions | null> {
+  async check({ files, packageManager, mainConfig }): Promise<AngularToAngularViteOptions | null> {
     const migration = await inspectMigration(packageManager, mainConfig);
     if (!migration) {
       return null;
@@ -322,7 +317,7 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
 
     return {
       framework,
-      hasWebpackFinal: await hasActiveWebpackFinal(files, mainConfigPath),
+      hasWebpackFinal: hasActiveWebpackFinal(mainConfig),
       angularVersion: angularMajor === null ? null : angularSpecifier,
       zoneJs: resolveZoneJs(workspaceJson, packageManager.isDependencyInstalled('zone.js')),
     };

@@ -366,7 +366,7 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
       !(await confirmWebpackFinalCarryover({
         hasWebpackFinal: result.hasWebpackFinal,
         yes: !!yes,
-        retryInstruction: 'the automigration',
+        retryInstruction: '`npx storybook automigrate angular-to-angular-vite`',
       }))
     ) {
       return false;

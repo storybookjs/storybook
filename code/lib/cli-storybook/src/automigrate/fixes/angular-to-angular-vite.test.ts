@@ -505,6 +505,10 @@ describe('angular-to-angular-vite', () => {
       await runMigration({ result: { ...baseResult, hasWebpackFinal: true } });
 
       expect(mockPromptConfirm).toHaveBeenCalledOnce();
+      // The cancel message names the exact command to run after porting the hook.
+      expect(logger.log).toHaveBeenCalledWith(
+        expect.stringContaining('npx storybook automigrate angular-to-angular-vite')
+      );
       expect(mockPackageManager.removeDependencies).not.toHaveBeenCalled();
     });
 

@@ -72,25 +72,6 @@ export const getStorybookVersion = (line: string) => {
   };
 };
 
-const deprecatedPackages = [
-  {
-    minVersion: '6.0.0-alpha.0',
-    url: 'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#60-deprecations',
-    deprecations: [
-      '@storybook/addon-notes',
-      '@storybook/addon-info',
-      '@storybook/addon-contexts',
-      '@storybook/addon-options',
-      '@storybook/addon-centered',
-    ],
-  },
-  {
-    minVersion: '11.0.0',
-    url: 'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#nextjs-storybooknextjs-is-deprecated',
-    deprecations: ['@storybook/nextjs'],
-  },
-];
-
 const formatPackage = (pkg: Package) => `${pkg.package}@${pkg.version}`;
 
 const warnPackages = (pkgs: Package[]) => pkgs.map((pkg) => `- ${formatPackage(pkg)}`).join('\n');
@@ -119,19 +100,6 @@ export const checkVersionConsistency = () => {
       ${warnPackages(outdated)}`
     );
   }
-
-  deprecatedPackages.forEach(({ minVersion, url, deprecations }) => {
-    if (semver.gte(latestVersion, minVersion)) {
-      const deprecated = storybookPackages.filter((pkg) => deprecations.includes(pkg.package));
-      if (deprecated.length > 0) {
-        logger.warn(
-          dedent`Found ${deprecated.length} deprecated packages since ${minVersion}
-          See ${url}
-          ${warnPackages(deprecated)}`
-        );
-      }
-    }
-  });
   logger.debug('End of version consistency check');
 };
 
@@ -581,12 +549,18 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
       await refreshAgentInstructions(agentInstructions);
     }
 
-    // Run doctor for each project
+    // Run doctor for each project. Migrations the user (or an unattended run) skipped already
+    // printed their skip warning, so the doctor stays silent about those deprecations this run.
     const doctorProjects: ProjectDoctorData[] = storybookProjects.map((project) => ({
       configDir: project.configDir,
       packageManager: project.packageManager,
       storybookVersion: project.currentCLIVersion,
       mainConfig: project.mainConfig,
+      skippedFixIds: options.dryRun
+        ? undefined
+        : Object.entries(automigrationResults[project.configDir]?.automigrationStatuses ?? {})
+            .filter(([, status]) => status === FixStatus.SKIPPED)
+            .map(([fixId]) => fixId),
     }));
 
     logger.step('Checking the health of your project(s)..');

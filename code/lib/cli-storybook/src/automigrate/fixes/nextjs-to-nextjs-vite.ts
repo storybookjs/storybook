@@ -26,7 +26,8 @@ export interface NextjsToNextjsViteOptions {
 export const nextjsToNextjsVite: Fix<NextjsToNextjsViteOptions> = {
   id: 'nextjs-to-nextjs-vite',
   link: 'https://storybook.js.org/docs/get-started/frameworks/nextjs-vite',
-  defaultSelected: true,
+  // No `defaultSelected`: a missing value already means selected in both runners, so this migration
+  // runs under --yes and is preselected in the prompt.
   skipWarning: nextjsDeprecationWarning,
 
   async check({ packageManager, files, mainConfigPath }) {

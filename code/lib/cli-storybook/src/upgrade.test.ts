@@ -98,9 +98,7 @@ describe.each([
 });
 
 describe('checkVersionConsistency', () => {
-  it('warns about the deprecated @storybook/nextjs package without throwing', () => {
-    // `checkVersionConsistency` stringifies the spawnSync output array and splits on newlines,
-    // so the fake `npm ls` stdout must be a single multi-line string.
+  it('no longer prints deprecation warnings: the doctor\'s deprecatedPackages table owns them', () => {
     spawnSyncMock.mockReturnValueOnce({
       output: [null, 'my-project@1.0.0 /path/to/project\n├── @storybook/nextjs@11.0.0\n', null],
     });
@@ -108,10 +106,10 @@ describe('checkVersionConsistency', () => {
 
     expect(() => checkVersionConsistency()).not.toThrow();
 
-    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('@storybook/nextjs'));
-    expect(warnSpy).toHaveBeenCalledWith(
-      expect.stringContaining('MIGRATION.md#nextjs-storybooknextjs-is-deprecated')
-    );
+    // Deprecations are surfaced once, by the doctor, from its single table; the upgrade path
+    // must not repeat them.
+    expect(warnSpy).not.toHaveBeenCalledWith(expect.stringContaining('deprecated'));
+    expect(warnSpy).not.toHaveBeenCalledWith(expect.stringContaining('MIGRATION.md'));
   });
 });
 

@@ -4,7 +4,6 @@ import type { JsPackageManager, PackageJson } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
 
 import * as mainConfigFile from './helpers/mainConfigFile.ts';
-import { nextjsDeprecationWarning, nextjsToNextjsVite } from './fixes/nextjs-to-nextjs-vite.ts';
 import { doAutomigrate, runFixes } from './index.ts';
 import type { Fix } from './types.ts';
 
@@ -187,59 +186,78 @@ describe('runFixes', () => {
     expect(run1).toHaveBeenCalled();
   });
 
-  it('warns that @storybook/nextjs is deprecated when the nextjs-vite migration is skipped with --yes', async () => {
-    const declined = {
+  it("prints a skipped fix's skip warning exactly once under --yes, naming its command", async () => {
+    const optIn = {
       ...fixes[0],
-      id: nextjsToNextjsVite.id,
+      id: 'generic-opt-in',
       defaultSelected: false,
-      skipWarning: nextjsDeprecationWarning,
+      skipWarning:
+        'The generic-opt-in migration was skipped. Run `npx storybook automigrate generic-opt-in` to migrate later.',
     };
 
-    await runFixes({ ...common, fixes: [declined], storybookVersion: '7.0.0' });
+    const { fixResults } = await runFixes({ ...common, fixes: [optIn], storybookVersion: '7.0.0' });
 
-    expect(vi.mocked(logger.warn)).toHaveBeenCalledWith(
-      expect.stringContaining('@storybook/nextjs is deprecated and will be removed in Storybook 12')
-    );
-    expect(vi.mocked(logger.warn)).toHaveBeenCalledWith(
-      expect.stringContaining('npx storybook automigrate nextjs-to-nextjs-vite')
-    );
+    expect(fixResults).toEqual({ 'generic-opt-in': 'skipped' });
+    expect(run1).not.toHaveBeenCalled();
+    const skipWarnings = vi
+      .mocked(logger.warn)
+      .mock.calls.filter(([message]) =>
+        String(message).includes('npx storybook automigrate generic-opt-in')
+      );
+    expect(skipWarnings).toHaveLength(1);
   });
 
-  it('skips the nextjs-vite migration and warns when the user declines it interactively', async () => {
+  it('skips a fix and prints its skip warning when the user declines it interactively', async () => {
     vi.mocked(prompt.confirm).mockResolvedValue(false);
-    const declined = {
+    const declinable = {
       ...fixes[0],
-      id: nextjsToNextjsVite.id,
-      defaultSelected: nextjsToNextjsVite.defaultSelected,
-      skipWarning: nextjsDeprecationWarning,
+      id: 'declinable-fix',
+      skipWarning:
+        'The declinable-fix migration was declined. Run `npx storybook automigrate declinable-fix` to migrate later.',
     };
 
     const { fixResults } = await runFixes({
       ...common,
       yes: false,
-      fixes: [declined],
+      fixes: [declinable],
       storybookVersion: '7.0.0',
     });
 
-    expect(fixResults).toEqual({ 'nextjs-to-nextjs-vite': 'skipped' });
+    expect(fixResults).toEqual({ 'declinable-fix': 'skipped' });
     expect(run1).not.toHaveBeenCalled();
+    // The user was asked, and the warning names the command to run later.
     expect(vi.mocked(prompt.confirm)).toHaveBeenCalled();
     expect(vi.mocked(logger.warn)).toHaveBeenCalledWith(
-      expect.stringContaining('@storybook/nextjs is deprecated and will be removed in Storybook 12')
-    );
-    expect(vi.mocked(logger.warn)).toHaveBeenCalledWith(
-      expect.stringContaining('npx storybook automigrate nextjs-to-nextjs-vite')
+      expect.stringContaining('npx storybook automigrate declinable-fix')
     );
   });
 
-  it('does not warn about the deprecation when another fix is skipped', async () => {
+  it('does not print a skip warning in a dry run, where nothing was declined', async () => {
+    const optIn = {
+      ...fixes[0],
+      id: 'generic-opt-in',
+      defaultSelected: false,
+      skipWarning: 'The generic-opt-in migration was skipped.',
+    };
+
+    await runFixes({
+      ...common,
+      dryRun: true,
+      fixes: [optIn],
+      storybookVersion: '7.0.0',
+    });
+
+    expect(vi.mocked(logger.warn)).not.toHaveBeenCalledWith(
+      expect.stringContaining('generic-opt-in migration was skipped')
+    );
+  });
+
+  it('does not print a skip warning for fixes that define none', async () => {
     const optIn = { ...fixes[0], id: 'opt-in', defaultSelected: false };
 
     await runFixes({ ...common, fixes: [optIn], storybookVersion: '7.0.0' });
 
-    expect(vi.mocked(logger.warn)).not.toHaveBeenCalledWith(
-      expect.stringContaining('will be removed in Storybook 12')
-    );
+    expect(vi.mocked(logger.warn)).not.toHaveBeenCalled();
   });
 
   it('should fail if an error is thrown by migration', async () => {

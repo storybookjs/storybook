@@ -97,7 +97,16 @@ export const doAutomigrate = async (options: AutofixOptionsFromCLI) => {
   }
 
   if (outcome && !options.skipDoctor) {
-    await doctor({ configDir, packageManager: options.packageManager });
+    await doctor({
+      configDir,
+      packageManager: options.packageManager,
+      // In a dry run nothing was skipped for real, so the doctor owns the deprecation warning.
+      skippedFixIds: options.dryRun
+        ? undefined
+        : Object.entries(outcome.fixResults ?? {})
+            .filter(([, status]) => status === FixStatus.SKIPPED)
+            .map(([fixId]) => fixId),
+    });
   }
 
   const failedMigrations = Object.entries(outcome?.fixResults ?? {})
@@ -432,7 +441,8 @@ export async function runFixes({
         fixResults[f.id] = FixStatus.SKIPPED;
         fixSummary.skipped.push(f.id);
         logger.log(`Skipped ${picocolors.cyan(f.id)} migration`);
-        if (f.skipWarning) {
+        // A dry run skipped nothing, so it does not carry the fix's skip warning.
+        if (!dryRun && f.skipWarning) {
           logger.warn(f.skipWarning);
         }
       }

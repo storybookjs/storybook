@@ -8,6 +8,7 @@ import { logger, prompt } from 'storybook/internal/node-logger';
 import { fs, vol } from 'memfs';
 
 import { checkFix, runFix } from '../helpers/fix-test-utils.ts';
+import { applyFixes } from '../pipeline.ts';
 import type { CheckOptions, RunOptions } from '../types.ts';
 import {
   VITE_DEFAULT_VERSION,
@@ -61,12 +62,6 @@ describe('nextjs-to-nextjs-vite', () => {
     vi.mocked(readFile).mockImplementation(fs.promises.readFile as typeof readFile);
     vi.mocked(writeFile).mockImplementation(fs.promises.writeFile as typeof writeFile);
     vi.mocked(mockPackageManager.getDependencyVersion).mockReturnValue(null);
-  });
-
-  describe('default selection', () => {
-    it('is selected by default so it runs under --yes and is preselected in the prompt', () => {
-      expect(nextjsToNextjsVite.defaultSelected).toBe(true);
-    });
   });
 
   describe('check function', () => {
@@ -192,13 +187,29 @@ describe('nextjs-to-nextjs-vite', () => {
       });
     });
 
-    it('warns and skips without prompting under --yes', async () => {
-      await runFix(nextjsToNextjsVite, { ...webpackFinalRunOptions, yes: true });
+    // Drives the fix through the real runner so the test sees what a user's `--yes` run reports,
+    // and asserts the skipped outcome: a `run` that silently resolved without cancelling would
+    // report the migration as succeeded instead.
+    const runThroughRunner = async (yes: boolean) =>
+      applyFixes(
+        {
+          ...webpackFinalRunOptions,
+          yes,
+        } as unknown as Parameters<typeof applyFixes>[0],
+        [{ fix: nextjsToNextjsVite, result: { hasWebpackFinal: true } }]
+      );
 
+    it('skips under --yes without prompting, naming the command to run later', async () => {
+      const outcomes = await runThroughRunner(true);
+
+      expect(outcomes.get(nextjsToNextjsVite.id)).toEqual({ status: 'skipped' });
       expect(prompt.confirm).not.toHaveBeenCalled();
       expect(logger.logBox).toHaveBeenCalledWith(expect.stringContaining('webpackFinal'));
       expect(logger.log).toHaveBeenCalledWith(
         expect.stringContaining('Port your webpackFinal hook to viteFinal first')
+      );
+      expect(logger.log).toHaveBeenCalledWith(
+        expect.stringContaining('npx storybook automigrate nextjs-to-nextjs-vite')
       );
       expect(mockPackageManager.removeDependencies).not.toHaveBeenCalled();
       expect(mockPackageManager.addDependencies).not.toHaveBeenCalled();
@@ -207,8 +218,9 @@ describe('nextjs-to-nextjs-vite', () => {
     it('migrates when the user confirms interactively', async () => {
       vi.mocked(prompt.confirm).mockResolvedValue(true);
 
-      await runFix(nextjsToNextjsVite, { ...webpackFinalRunOptions, yes: false });
+      const outcomes = await runThroughRunner(false);
 
+      expect(outcomes.get(nextjsToNextjsVite.id)?.status).toBe('succeeded');
       expect(prompt.confirm).toHaveBeenCalledWith(
         expect.objectContaining({ message: expect.stringContaining('Continue anyway?') })
       );
@@ -216,11 +228,13 @@ describe('nextjs-to-nextjs-vite', () => {
       expect(mockPackageManager.addDependencies).toHaveBeenCalled();
     });
 
-    it('cancels when the user declines interactively', async () => {
+    it('cancels when the user declines interactively, without migrating', async () => {
       vi.mocked(prompt.confirm).mockResolvedValue(false);
 
-      await runFix(nextjsToNextjsVite, { ...webpackFinalRunOptions, yes: false });
+      const outcomes = await runThroughRunner(false);
 
+      expect(outcomes.get(nextjsToNextjsVite.id)).toEqual({ status: 'skipped' });
+      expect(prompt.confirm).toHaveBeenCalledOnce();
       expect(logger.log).toHaveBeenCalledWith(expect.stringContaining('Migration cancelled'));
       expect(mockPackageManager.removeDependencies).not.toHaveBeenCalled();
       expect(mockPackageManager.addDependencies).not.toHaveBeenCalled();

@@ -69,7 +69,11 @@ type BaseFix<ResultType = any> = {
   /** Whether the automigration is selected by default when the user is prompted. */
   defaultSelected?: boolean;
   link?: string;
-  /** Warning logged when the user skips this fix, e.g. one that migrates off a deprecated package. */
+  /**
+   * Warning logged once when the user declines this fix at the prompt. A fix that cancels itself
+   * from `run` logs its own guidance instead (see the doctor's deprecation diagnostic for the
+   * shared source of deprecation warnings).
+   */
   skipWarning?: string;
 };
 

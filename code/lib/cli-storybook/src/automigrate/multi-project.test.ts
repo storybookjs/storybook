@@ -7,7 +7,7 @@ import {
   promptForAutomigrations,
 } from './multi-project.ts';
 import type { Fix } from './types.ts';
-import { nextjsDeprecationWarning } from './fixes/nextjs-to-nextjs-vite.ts';
+import { nextjsToNextjsVite } from './fixes/nextjs-to-nextjs-vite.ts';
 
 vi.mock('storybook/internal/node-logger', async (importOriginal) => {
   return {
@@ -199,20 +199,13 @@ describe('multi-project automigrations', () => {
       expect(result).toEqual([]);
     });
 
-    it('warns that @storybook/nextjs is deprecated when the nextjs-vite automigration is declined', async () => {
+    it('warns that @storybook/nextjs is deprecated when the real nextjs-vite migration is declined', async () => {
       const { logger, prompt } = await import('storybook/internal/node-logger');
       vi.mocked(prompt.multiselect).mockResolvedValue([]);
 
-      const fix = createMockFix(
-        'nextjs-to-nextjs-vite',
-        { needsFix: true },
-        {
-          skipWarning: nextjsDeprecationWarning,
-        }
-      );
       const project = createMockProject('/project1/.storybook');
 
-      await promptForAutomigrations([asAutomigration(fix, project)], {
+      await promptForAutomigrations([asAutomigration(nextjsToNextjsVite, project)], {
         dryRun: false,
         yes: false,
       });
@@ -231,16 +224,9 @@ describe('multi-project automigrations', () => {
       const { logger, prompt } = await import('storybook/internal/node-logger');
       vi.mocked(prompt.multiselect).mockResolvedValue(['nextjs-to-nextjs-vite']);
 
-      const fix = createMockFix(
-        'nextjs-to-nextjs-vite',
-        { needsFix: true },
-        {
-          skipWarning: nextjsDeprecationWarning,
-        }
-      );
       const project = createMockProject('/project1/.storybook');
 
-      await promptForAutomigrations([asAutomigration(fix, project)], {
+      await promptForAutomigrations([asAutomigration(nextjsToNextjsVite, project)], {
         dryRun: false,
         yes: false,
       });
@@ -248,6 +234,17 @@ describe('multi-project automigrations', () => {
       expect(vi.mocked(logger.warn)).not.toHaveBeenCalledWith(
         expect.stringContaining('will be removed in Storybook 12')
       );
+    });
+
+    it('runs the nextjs-vite migration under --yes because it is opted in by default', async () => {
+      const project = createMockProject('/project1/.storybook');
+
+      const result = await promptForAutomigrations([asAutomigration(nextjsToNextjsVite, project)], {
+        dryRun: false,
+        yes: true,
+      });
+
+      expect(result.map(({ fix }) => fix.id)).toEqual(['nextjs-to-nextjs-vite']);
     });
 
     it('should return all automigrations when yes option is true', async () => {

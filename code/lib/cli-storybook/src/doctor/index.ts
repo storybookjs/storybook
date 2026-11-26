@@ -3,12 +3,11 @@ import { CLI_COLORS, logTracker, logger } from 'storybook/internal/node-logger';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import picocolors from 'picocolors';
-import semver from 'semver';
 import { dedent } from 'ts-dedent';
 
-import { nextjsToNextjsVite } from '../automigrate/fixes/nextjs-to-nextjs-vite.ts';
 import { getStorybookData } from '../automigrate/helpers/mainConfigFile.ts';
 import { shortenPath } from '../util.ts';
+import { getAppliedDeprecations, getDeprecatedPackagesMessage } from './deprecatedPackages.ts';
 import { getDuplicatedDepsWarnings } from './getDuplicatedDepsWarnings.ts';
 import {
   getIncompatiblePackagesSummary,
@@ -185,6 +184,7 @@ export async function runMultiProjectDoctor(
     storybookVersion: project.storybookVersion,
     mainConfig: project.mainConfig,
     configurationError: project.configurationError,
+    skippedFixIds: project.skippedFixIds,
   }));
 
   // Always return the project-based results structure
@@ -195,6 +195,7 @@ export async function runMultiProjectDoctor(
 export const doctor = async ({
   configDir: userSpecifiedConfigDir,
   packageManager: packageManagerName,
+  skippedFixIds,
 }: DoctorOptions) => {
   logger.step('Checking the health of your Storybook..');
 
@@ -231,6 +232,7 @@ export const doctor = async ({
       storybookVersion: versionInstalled,
       mainConfig,
       configurationError,
+      skippedFixIds,
     },
   ]);
 
@@ -248,6 +250,7 @@ export async function getDoctorDiagnostics({
   storybookVersion,
   mainConfig,
   configurationError,
+  skippedFixIds,
 }: ProjectDoctorData): Promise<DoctorCheckResult[]> {
   const results: DoctorCheckResult[] = [];
 
@@ -301,22 +304,21 @@ export async function getDoctorDiagnostics({
     });
   }
 
-  // Version-scoped: @storybook/nextjs is deprecated in Storybook 11 and removed in Storybook 12.
-  const coercedVersion = semver.coerce(storybookVersion);
-  if (
-    coercedVersion &&
-    semver.major(coercedVersion) === 11 &&
-    packageManager.getAllDependencies()['@storybook/nextjs']
-  ) {
+  // Deprecations come from the one table in ./deprecatedPackages.ts, applied to the version and the
+  // project's dependencies. A migration the user (or an unattended run) skipped already printed its
+  // skip warning, so its packages stay silent here and the deprecation shows exactly once per run.
+  const appliedDeprecations = getAppliedDeprecations({
+    storybookVersion,
+    installedDependencies: packageManager.getAllDependencies(),
+  }).filter(
+    ({ entry }) => !(entry.automigrateFixId && skippedFixIds?.includes(entry.automigrateFixId))
+  );
+
+  if (appliedDeprecations.length > 0) {
     results.push({
-      type: DiagType.DEPRECATED_NEXTJS,
-      title: 'Deprecated framework',
-      message: dedent`
-        @storybook/nextjs is deprecated and will be removed in Storybook 12.
-        Migrate to @storybook/nextjs-vite by running ${picocolors.cyan(
-          `npx storybook automigrate ${nextjsToNextjsVite.id}`
-        )}.
-      `,
+      type: DiagType.DEPRECATED_PACKAGES,
+      title: 'Deprecated packages',
+      message: getDeprecatedPackagesMessage(appliedDeprecations),
       project: { configDir },
     });
   }

@@ -63,6 +63,7 @@ async function run() {
     getPkgPrNewPackageSpecifier,
     getRemotePackageRunnerArgs,
     resolveStorybookVersionSpecifier,
+    STORYBOOK_VERSION_SPECIFIER_ENV,
   } = await import('storybook/internal/common');
 
   const targetCli =
@@ -78,7 +79,7 @@ async function run() {
 
   const storybookVersionSpecifier = resolveStorybookVersionSpecifier();
   if (storybookVersionSpecifier) {
-    process.env.STORYBOOK_VERSION_SPECIFIER = storybookVersionSpecifier;
+    process.env[STORYBOOK_VERSION_SPECIFIER_ENV] = storybookVersionSpecifier;
   }
 
   const dispatchedVersion =

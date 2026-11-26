@@ -135,3 +135,6 @@ vi.mock('./core/src/shared/utils/module.ts', async (importOriginal) => {
 vi.mock('./core/src/common/utils/process-ancestry.ts', () => ({
   getProcessAncestry: vi.fn(() => []),
 }));
+
+// Set by the `storybook` dispatcher, so a shell it started would leak a specifier into tests.
+delete process.env.STORYBOOK_VERSION_SPECIFIER;

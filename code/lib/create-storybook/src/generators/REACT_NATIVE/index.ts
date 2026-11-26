@@ -141,9 +141,7 @@ export default defineGeneratorModule({
 
     await assertReactNativeOnDevicePeers(packageManager, versions.storybook);
 
-    const versionedPackages = await packageManager.getVersionedPackages(packagesToResolve, {
-      storybookVersionSpecifier: context.storybookVersionSpecifier,
-    });
+    const versionedPackages = await packageManager.getVersionedPackages(packagesToResolve);
 
     const packages: string[] = [
       ...versionedPackages,

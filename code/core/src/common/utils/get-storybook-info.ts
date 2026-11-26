@@ -1,5 +1,5 @@
 import { existsSync, readFileSync } from 'node:fs';
-import { basename, dirname, join } from 'node:path';
+import { dirname, join } from 'node:path';
 
 import type {
   CoreCommon_StorybookInfo,
@@ -10,7 +10,7 @@ import { CoreWebpackCompiler, SupportedRenderer } from 'storybook/internal/types
 
 import invariant from 'tiny-invariant';
 
-import { RN_STORYBOOK_DIR } from '../../shared/constants/config-folder.ts';
+import { RN_FRAMEWORK_PACKAGE } from '../../shared/constants/config-folder.ts';
 import { storybookConfigExtensions } from '../../shared/constants/extensions.ts';
 import { JsPackageManager } from '../js-package-manager/JsPackageManager.ts';
 import {
@@ -20,7 +20,7 @@ import {
   rendererRegistry,
 } from './framework.ts';
 import { getAddonNames } from './get-addon-names.ts';
-import { extractFrameworkPackageName } from './get-framework-name.ts';
+import { getFrameworkPackageName } from './get-framework-name.ts';
 import { extractRenderer } from './get-renderer-name.ts';
 import { getStorybookConfiguration } from './get-storybook-configuration.ts';
 import { loadMainConfig } from './load-main-config.ts';
@@ -108,34 +108,32 @@ export const getStorybookInfo = async (
 
   invariant(mainConfig, `Unable to find or evaluate ${configInfo.mainConfigPath}`);
 
-  const frameworkValue = mainConfig.framework;
-  const frameworkField =
-    (typeof frameworkValue === 'string' ? frameworkValue : frameworkValue?.name) ||
-    /*
-      React Native on-device Storybook historically omitted `framework` from main.ts.
-      When the config lives in `.rnstorybook`, infer the framework so telemetry
-      `metadata.framework.name` is populated for existing projects (scoped to the
-      RN config dir to avoid mis-attributing web Storybooks in the same monorepo).
-    */
-    (basename(configInfo.configDir) === RN_STORYBOOK_DIR
-      ? rendererRegistry[SupportedRenderer.REACT_NATIVE].packageName
-      : undefined);
+  const frameworkPackage = getFrameworkPackageName(mainConfig, configInfo.configDir);
   const addons = getAddonNames(mainConfig);
   const versionSpecifier = getStorybookVersionSpecifier(configDir);
 
-  if (!frameworkField) {
-    return {
-      ...configInfo,
-      versionSpecifier,
-      addons,
-      mainConfig,
-      mainConfigPath: configInfo.mainConfigPath ?? undefined,
-      previewConfigPath: configInfo.previewConfigPath ?? undefined,
-      managerConfigPath: configInfo.managerConfigPath ?? undefined,
-    };
+  const base = {
+    ...configInfo,
+    versionSpecifier,
+    addons,
+    mainConfig,
+    mainConfigPath: configInfo.mainConfigPath ?? undefined,
+    previewConfigPath: configInfo.previewConfigPath ?? undefined,
+    managerConfigPath: configInfo.managerConfigPath ?? undefined,
+  };
+
+  if (!frameworkPackage) {
+    return base;
   }
 
-  const frameworkPackage = extractFrameworkPackageName(frameworkField);
+  if (frameworkPackage === RN_FRAMEWORK_PACKAGE) {
+    return {
+      ...base,
+      frameworkPackage,
+      rendererPackage: RN_FRAMEWORK_PACKAGE,
+      renderer: SupportedRenderer.REACT_NATIVE,
+    };
+  }
 
   const framework = frameworkPackages[frameworkPackage];
   const renderer = await extractRenderer(frameworkPackage);
@@ -145,18 +143,12 @@ export const getStorybookInfo = async (
   const builderPackage = builder ? builderRegistry[builder].packageName : undefined;
 
   return {
-    ...configInfo,
-    addons,
-    mainConfig,
+    ...base,
     framework,
-    versionSpecifier,
     renderer: renderer ?? undefined,
     builder: builder ?? undefined,
     frameworkPackage,
     rendererPackage,
     builderPackage,
-    mainConfigPath: configInfo.mainConfigPath ?? undefined,
-    previewConfigPath: configInfo.previewConfigPath ?? undefined,
-    managerConfigPath: configInfo.managerConfigPath ?? undefined,
   };
 };

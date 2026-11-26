@@ -1,6 +1,12 @@
 // Passed to `node --eval` as source, so the process that runs it needs nothing from the Storybook
 // install: `yarn dlx` removes that install as soon as the command exits.
-export const flushEventsScript = `
+export const createFlushEventsScript = ({
+  deadline,
+  retryDelay,
+}: {
+  deadline: number;
+  retryDelay: number;
+}) => `
 const { readFileSync, rmSync } = require('node:fs');
 const { setTimeout: sleep } = require('node:timers/promises');
 
@@ -9,7 +15,7 @@ const file = process.argv.at(-1);
 const contents = readFileSync(file, 'utf8');
 // Removed before anything can fail, so a file is never left behind.
 rmSync(file, { force: true });
-const signal = AbortSignal.timeout(30_000);
+const signal = AbortSignal.timeout(${deadline});
 
 async function post(event) {
   for (let attempt = 0; ; attempt += 1) {
@@ -29,7 +35,7 @@ async function post(event) {
     if (!retry || attempt === 3 || signal.aborted) {
       return;
     }
-    await sleep(2 ** attempt * 1000, undefined, { signal }).catch(() => {});
+    await sleep(2 ** attempt * ${retryDelay}, undefined, { signal }).catch(() => {});
   }
 }
 
@@ -40,3 +46,5 @@ async function post(event) {
   }
 })();
 `;
+
+export const flushEventsScript = createFlushEventsScript({ deadline: 30_000, retryDelay: 1_000 });

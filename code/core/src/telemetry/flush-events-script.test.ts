@@ -10,7 +10,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'pathe';
 
 import { set as saveToCache } from './event-cache.ts';
-import { flushEventsScript } from './flush-events-script.ts';
+import { createFlushEventsScript, flushEventsScript } from './flush-events-script.ts';
 import { getSessionId } from './session-id.ts';
 import { handOverPendingEvents, sendTelemetry } from './telemetry.ts';
 
@@ -53,10 +53,12 @@ afterEach(() => {
   rmSync(directory, { recursive: true, force: true });
 });
 
-const flush = async (contents: string) => {
+// The real delays are 1, 2 and 4 seconds, and the real deadline is 30 seconds.
+const flush = async (contents: string, { deadline = 30_000, retryDelay = 5 } = {}) => {
   const file = join(directory, 'events.json');
   writeFileSync(file, contents);
-  const child = spawn(process.execPath, ['--eval', flushEventsScript, file], {
+  const script = createFlushEventsScript({ deadline, retryDelay });
+  const child = spawn(process.execPath, ['--eval', script, file], {
     env: { ...process.env, NODE_OPTIONS: '' },
     stdio: 'ignore',
   });
@@ -124,6 +126,34 @@ it('retries when the connection fails', async () => {
   await flush(JSON.stringify([{ eventId: 'a' }]));
 
   expect(requests).toHaveLength(2);
+});
+
+it('stops after three retries', async () => {
+  respond = (_attempt, _request, response) => {
+    response.statusCode = 503;
+    response.end();
+  };
+
+  const { exitCode } = await flush(JSON.stringify([{ eventId: 'a' }]));
+
+  expect(exitCode).toBe(0);
+  expect(requests).toHaveLength(4);
+});
+
+it('gives up on every event at its deadline when the endpoint does not answer', async () => {
+  respond = () => {};
+
+  const { exitCode } = await flush(JSON.stringify([{ eventId: 'a' }, { eventId: 'b' }]), {
+    deadline: 300,
+  });
+
+  expect(exitCode).toBe(0);
+  expect(requests.map(({ body }) => body)).toEqual([{ eventId: 'a' }]);
+});
+
+it('waits 30 seconds at most, and 1 second before the first retry', () => {
+  expect(flushEventsScript).toContain('AbortSignal.timeout(30000)');
+  expect(flushEventsScript).toContain('2 ** attempt * 1000');
 });
 
 it('does not retry any other response', async () => {

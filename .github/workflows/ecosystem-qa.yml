@@ -65,8 +65,7 @@ jobs:
   smoke:
     name: Smoke-test the harness
     if: ${{ github.event_name == 'pull_request' }}
-    # Not ubuntu-latest: the pinned Playwright has no Chromium build for Ubuntu 26.04.
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
       issues: read # list the internal-qa issues

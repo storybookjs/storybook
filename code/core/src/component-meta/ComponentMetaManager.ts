@@ -59,8 +59,10 @@ export class ComponentMetaManager<
     { timeout: ReturnType<typeof setTimeout>; renamed: boolean }
   >();
 
-  // Heap-pressure recycle: bytes of `heapUsed` past which the TS program(s) are disposed and rebuilt.
-  private readonly heapRecycleThresholdBytes: number;
+  private readonly heapLimitBytes = v8.getHeapStatistics().heap_size_limit;
+  // The heap the program(s) fill on their own while that is past the recycle threshold, else 0.
+  private recycleFloorBytes = 0;
+  private recycledAtLastCheck = false;
 
   /**
    * @param recycleHeapPressureRatio Fraction of the V8 heap limit at which the shared program(s) are
@@ -74,11 +76,13 @@ export class ComponentMetaManager<
     // pass their own `typescript` module, which satisfies the shape via `ts.sys`.
     private typescript: ComponentMetaFileSystem,
     private factory: ComponentMetaProjectFactory<P, CL>,
-    recycleHeapPressureRatio: number = RECYCLE_HEAP_PRESSURE_RATIO
-  ) {
-    this.heapRecycleThresholdBytes = Math.floor(
-      v8.getHeapStatistics().heap_size_limit * recycleHeapPressureRatio
-    );
+    private recycleHeapPressureRatio: number = RECYCLE_HEAP_PRESSURE_RATIO
+  ) {}
+
+  // Bytes of `heapUsed` past which the TS program(s) are disposed and rebuilt, when a recycle
+  // cannot bring the heap below `floorBytes`.
+  private heapRecycleThresholdBytes(floorBytes: number): number {
+    return floorBytes + (this.heapLimitBytes - floorBytes) * this.recycleHeapPressureRatio;
   }
 
   // ---------------------------------------------------------------------------
@@ -136,7 +140,19 @@ export class ComponentMetaManager<
     if (this.configProjects.size === 0 && !this.inferredProject) {
       return false;
     }
-    if (process.memoryUsage().heapUsed < this.heapRecycleThresholdBytes) {
+    const { heapUsed } = process.memoryUsage();
+    if (heapUsed < this.heapRecycleThresholdBytes(0)) {
+      this.recycleFloorBytes = 0;
+      this.recycledAtLastCheck = false;
+      return false;
+    }
+    if (this.recycledAtLastCheck) {
+      // The program(s) were just rebuilt and are past the threshold on their own. A recycle after
+      // every extraction would rebuild them for each component and reclaim nothing.
+      this.recycleFloorBytes = heapUsed;
+      this.recycledAtLastCheck = false;
+    }
+    if (heapUsed < this.heapRecycleThresholdBytes(this.recycleFloorBytes)) {
       return false;
     }
 
@@ -159,6 +175,7 @@ export class ComponentMetaManager<
     this.referencedTsConfigs.clear();
     this.inferredProject = undefined;
     this.factory.recycle?.();
+    this.recycledAtLastCheck = true;
     return true;
   }
 

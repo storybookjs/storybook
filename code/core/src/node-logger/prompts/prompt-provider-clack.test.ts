@@ -147,7 +147,7 @@ describe('ClackPromptProvider', () => {
 
       const { hint } = vi.mocked(clack.multiselect).mock.calls[0][0].options[0];
       const linkLine = stripVTControlCharacters(hint ?? '').split('\n')[1];
-      expect(`${linkLine})`.length).toBeLessThanOrEqual(100 - 13);
+      expect(`${linkLine})`.length).toBeLessThanOrEqual(columns - 13);
       expect(hint).toContain(`\u001b]8;;${url}\u0007`);
     }
   );

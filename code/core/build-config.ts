@@ -102,6 +102,11 @@ const config: BuildEntries = {
         dts: false,
       },
       {
+        exportEntries: ['./internal/telemetry/sender'],
+        entryPoint: './src/telemetry/sender.ts',
+        dts: false,
+      },
+      {
         exportEntries: ['./internal/telemetry'],
         entryPoint: './src/telemetry/index.ts',
       },

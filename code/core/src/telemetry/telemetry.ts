@@ -1,27 +1,23 @@
 /// <reference types="node" />
-import { spawn } from 'node:child_process';
-import { readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { type ChildProcess, spawn } from 'node:child_process';
+import { readFileSync } from 'node:fs';
 import * as os from 'node:os';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import { isCI } from 'storybook/internal/common';
 
 import { nanoid } from 'nanoid';
-import { dirname, join } from 'pathe';
 
 import { version } from '../../package.json';
-import { resolvePackageDir } from '../shared/utils/module.ts';
+import { importMetaResolve, resolvePackageDir } from '../shared/utils/module.ts';
 import { getAnonymousProjectId, getProjectSince } from './anonymous-id.ts';
 import { detectAgent } from './detect-agent.ts';
 import { set as saveToCache } from './event-cache.ts';
-import { flushEventsScript } from './flush-events-script.ts';
 import { getSessionId } from './session-id.ts';
 import type { Options, TelemetryData, TelemetryEvent } from './types.ts';
 
-const HAND_OVER_AFTER = 5_000;
-
-const pending: string[] = [];
-let handOverTimer: ReturnType<typeof setTimeout> | undefined;
-process.once('exit', handOverPendingEvents);
+let sender: ChildProcess | undefined;
 
 export const addToGlobalContext = (key: string, value: any) => {
   globalContext[key] = value;
@@ -91,52 +87,33 @@ export async function sendTelemetry(data: TelemetryData, options: Partial<Option
       payload,
       context,
     };
-    pending.push(JSON.stringify(body));
-    // A long-running process may be killed without an exit event, so it hands over while it runs.
-    handOverTimer ??= setTimeout(handOverPendingEvents, HAND_OVER_AFTER).unref();
+    if (!sender?.connected) {
+      sender = startSender();
+    }
+    // On Windows the write is asynchronous, so an exit right after this call would lose the event.
+    const written = new Promise<void>((resolve) => sender?.send(body, () => resolve()));
 
-    await saveToCache(eventType, body);
+    await Promise.all([written, saveToCache(eventType, body)]);
   } catch (err) {
     //
   }
 }
 
-// Synchronous, because it also runs on process exit. A detached child outlives this process and
-// posts the events, so this process never waits for the endpoint.
-export function handOverPendingEvents() {
-  clearTimeout(handOverTimer);
-  handOverTimer = undefined;
-  if (pending.length === 0) {
-    return;
-  }
-  const events = `[${pending.splice(0).join(',')}]`;
-  const file = join(os.tmpdir(), `storybook-telemetry-${nanoid()}.json`);
-  try {
-    // The temp directory is shared between users on Linux: only the owner may read the events,
-    // and an existing path, such as a planted symlink, is never written through.
-    writeFileSync(file, events, { mode: 0o600, flag: 'wx' });
-    const child = spawn(process.execPath, ['--eval', flushEventsScript, file], {
-      // Not the project, which a process inside it keeps from being deleted on Windows, and not
-      // the temp directory, where another user could plant a bunfig.toml for a Bun child to load.
-      cwd: dirname(process.execPath),
-      // Its preloads may point into an install that is gone, and --inspect-brk would hang the child.
-      env: { ...process.env, NODE_OPTIONS: '' },
-      detached: true,
-      stdio: 'ignore',
-      windowsHide: true,
-    });
-    // Without a listener, a spawn that fails later would crash a process that keeps running.
-    child.on('error', () => {});
-    child.unref();
-    if (child.pid !== undefined) {
-      return;
-    }
-  } catch {
-    //
-  }
-  try {
-    rmSync(file, { force: true });
-  } catch {
-    //
-  }
+// A detached child posts the events, so this process never waits for the endpoint. The child
+// exits by itself once this process is gone and its requests are done.
+function startSender() {
+  const script = fileURLToPath(importMetaResolve('storybook/internal/telemetry/sender'));
+  const child = spawn(process.execPath, [script], {
+    // With an inherited --inspect-brk the child would wait for a debugger forever.
+    env: { ...process.env, NODE_OPTIONS: process.env.NODE_OPTIONS?.replace(/--inspect\S*/g, '') },
+    detached: true,
+    stdio: ['ignore', 'ignore', 'ignore', 'ipc'],
+    windowsHide: true,
+  });
+  // Without a listener, a spawn that fails later would crash this process.
+  child.on('error', () => {});
+  // Neither the child nor its channel may keep this process from exiting. Bun has no channel.unref.
+  child.unref();
+  child.channel?.unref?.();
+  return child;
 }

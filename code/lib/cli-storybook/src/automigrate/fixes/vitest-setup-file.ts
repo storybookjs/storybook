@@ -20,7 +20,6 @@ import {
   staticKey,
   walk,
 } from 'storybook/internal/csf-tools';
-import { logger } from 'storybook/internal/node-logger';
 
 import path from 'path';
 import picocolors from 'picocolors';
@@ -44,11 +43,9 @@ const CONFIG_FILE_PATTERNS = [
 interface VitestSetupFileInfo {
   path: string;
   transform:
-    // The `setProjectAnnotations()` call was removed but other statements remain; `code` is written back to the file
     | { kind: 'rewritten'; code: string }
     // Nothing remains after removing the call, so the file and its `setupFiles` entries are deleted
     | { kind: 'empty' }
-    | { kind: 'retained' }
     // The call can't be removed safely; `reason` is shown to the user as a manual step
     | { kind: 'manual'; reason: string };
 }
@@ -196,7 +193,7 @@ export const vitestSetupFile: Fix<VitestSetupFileOptions> = {
         path: filePath,
         transform:
           transform.kind === 'empty' && references.length === 0 && unresolvedEntries.length === 0
-            ? { kind: 'retained' }
+            ? { kind: 'rewritten', code: '' }
             : transform,
       });
     }
@@ -219,7 +216,7 @@ export const vitestSetupFile: Fix<VitestSetupFileOptions> = {
   },
 
   prompt() {
-    return `We'll check for "setProjectAnnotations" calls in your Vitest setup files, as ${VITEST_ADDON_NAME} now applies project annotations itself`;
+    return `We'll remove "setProjectAnnotations" calls from your Vitest setup files, as ${VITEST_ADDON_NAME} now applies project annotations itself`;
   },
 
   async run({ result, files }) {
@@ -284,15 +281,7 @@ export const vitestSetupFile: Fix<VitestSetupFileOptions> = {
         // `check` read the file through another `files`; this read lets the commit keep the
         // file's line endings and notice when it changed on disk since.
         await files.edit(setupFile, () => formatExistingFile(setupFile, transform.code));
-      } else if (transform.kind === 'retained') {
-        logger.warn(
-          `No Vitest or Vite config listing ${picocolors.cyan(setupFile)} in "setupFiles" was found. The file was left in place. If a Storybook Vitest project still loads it, remove its "setupFiles" entry from that project.`
-        );
       }
-    }
-
-    if (!rewritesAny && deletedPaths.size === 0) {
-      return false;
     }
 
     if (deletedPaths.size > 0) {

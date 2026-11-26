@@ -15,7 +15,6 @@ import { describe, expect, it, onTestFinished, vi } from 'vitest';
 
 import { formatExistingFile } from 'storybook/internal/common';
 import { loadConfig } from 'storybook/internal/csf-tools';
-import { logger } from 'storybook/internal/node-logger';
 
 import { checkFix, runFix } from '../helpers/fix-test-utils.ts';
 import { transformSetupFile, vitestSetupFile } from './vitest-setup-file.ts';
@@ -922,31 +921,17 @@ describe('vitestSetupFile', () => {
       expect(readFixture('vitest.config.ts')).not.toContain('vitest.setup.ts');
     });
 
-    it('completes without removing a stock setup file with no config reference', async () => {
-      const setupFile = dedent`
-        import { setProjectAnnotations } from '@storybook/svelte';
-        import * as previewAnnotations from './preview';
-
-        setProjectAnnotations([previewAnnotations]);
-      `;
-      await migrate({ '.storybook/vitest.setup.ts': setupFile });
-
-      expect(readFixture('.storybook/vitest.setup.ts')).toBe(setupFile);
-    });
-
-    it('warns and retains a setup file referenced by an unscanned config', async () => {
-      await migrate({
+    it('clears the setup file without deleting it when an unscanned config references it', async () => {
+      const { setupFilePath } = await migrate({
         '.storybook/vitest.setup.ts': PREVIEW_ONLY_SETUP_FILE,
         'vitest.storybook.config.ts': STANDARD_VITEST_CONFIG,
       });
 
-      expect(logger.warn).toHaveBeenCalledWith(
-        expect.stringContaining(
-          'vitest.setup.ts in "setupFiles" was found. The file was left in place.'
-        )
+      expect(existsSync(setupFilePath)).toBe(true);
+      expect(readFileSync(setupFilePath, 'utf8')).not.toContain('setProjectAnnotations');
+      expect(readFileSync(path.join(fixtureRoot, 'vitest.storybook.config.ts'), 'utf8')).toBe(
+        STANDARD_VITEST_CONFIG
       );
-      expect(readFixture('.storybook/vitest.setup.ts')).toBe(PREVIEW_ONLY_SETUP_FILE);
-      expect(readFixture('vitest.storybook.config.ts')).toBe(STANDARD_VITEST_CONFIG);
     });
 
     it('still rewrites an unreferenced setup file that keeps other code', async () => {

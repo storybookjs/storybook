@@ -7,6 +7,7 @@ import type { ComponentInputsOutputs } from './utils/NgComponentAnalyzer.ts';
 import {
   getComponentDecoratorMetadata,
   getComponentInputsOutputs,
+  resolveOutputArgs,
 } from './utils/NgComponentAnalyzer.ts';
 
 /**
@@ -29,14 +30,15 @@ const separateInputsOutputsAttributes = (
   const inputs = ngComponentInputsOutputs.inputs
     .filter((i) => i.templateName in props)
     .map((i) => i.templateName);
-  const outputs = ngComponentInputsOutputs.outputs
-    .filter((o) => o.templateName in props)
-    .map((o) => o.templateName);
+  const { bindings: outputs, argKeys: outputArgKeys } = resolveOutputArgs(
+    ngComponentInputsOutputs.outputs,
+    props
+  );
 
   return {
     inputs,
     outputs,
-    otherProps: Object.keys(props).filter((k) => ![...inputs, ...outputs].includes(k)),
+    otherProps: Object.keys(props).filter((k) => !inputs.includes(k) && !outputArgKeys.has(k)),
   };
 };
 
@@ -75,7 +77,12 @@ export const computesTemplateFromComponent = (
       : '';
   const templateOutputs =
     initialOutputs.length > 0
-      ? ` ${initialOutputs.map((i) => `(${i})="${formatPropInTemplate(i)}($event)"`).join(' ')}`
+      ? ` ${initialOutputs
+          .map(
+            ({ bindingName, propKey }) =>
+              `(${bindingName})="${formatPropInTemplate(propKey)}($event)"`
+          )
+          .join(' ')}`
       : '';
 
   return buildTemplate(
@@ -174,7 +181,12 @@ export const computesTemplateSourceFromComponent = (
       : '';
   const templateOutputs =
     initialOutputs.length > 0
-      ? ` ${initialOutputs.map((i) => `(${i})="${formatPropInTemplate(i)}($event)"`).join(' ')}`
+      ? ` ${initialOutputs
+          .map(
+            ({ bindingName, propKey }) =>
+              `(${bindingName})="${formatPropInTemplate(propKey)}($event)"`
+          )
+          .join(' ')}`
       : '';
 
   return buildTemplate(ngComponentMetadata.selector, '', templateInputs, templateOutputs);

@@ -118,6 +118,20 @@ describe('buildTemplate', () => {
       `<sb-button [label]="'x'">hi</sb-button>`
     );
   });
+  it('renders output bindings with a separate handler expression', () => {
+    expect(
+      buildTemplate('sb-button', {
+        inputs: [],
+        outputs: [{ name: 'my-click', expression: 'myClick' }],
+      })
+    ).toBe(`<sb-button (my-click)="myClick($event)"></sb-button>`);
+    expect(
+      buildTemplate('sb-button', {
+        inputs: [],
+        outputs: [{ name: 'dash-out' }],
+      })
+    ).toBe(`<sb-button (dash-out)="this['dash-out']($event)"></sb-button>`);
+  });
 });
 
 describe('buildComponentOutletTemplate', () => {

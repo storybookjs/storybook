@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, EventEmitter, Output } from '@angular/core';
 import { describe, it, expect } from 'vitest';
 import {
   computesTemplateFromComponent,
@@ -713,5 +713,58 @@ describe('angular source decorator', () => {
         ].join('\n')
       );
     });
+  });
+});
+
+describe('aliased outputs', () => {
+  it('binds an aliased output when the arg uses the class property name', () => {
+    const source = computesTemplateFromComponent(InputComponent, {
+      dashOut: () => {},
+    });
+    expect(source).toEqual(`<doc-button (dash-out)="dashOut($event)"></doc-button>`);
+  });
+
+  it('generates the source binding when an aliased output arg uses the class property name', () => {
+    const source = computesTemplateSourceFromComponent(InputComponent, {
+      dashOut: () => {},
+    });
+    expect(source).toEqual(`<doc-button (dash-out)="dashOut($event)"></doc-button>`);
+  });
+
+  it('prefers the alias when an output arg is set under both names', () => {
+    const source = computesTemplateFromComponent(InputComponent, {
+      dashOut: () => {},
+      'dash-out': () => {},
+    });
+    expect(source).toEqual(`<doc-button (dash-out)="this['dash-out']($event)"></doc-button>`);
+  });
+
+  it('leaves a property name that matches another output alias to that output', () => {
+    @Component({
+      selector: 'crossed-outputs',
+      template: '',
+    })
+    class CrossedOutputsComponent {
+      @Output('second') first = new EventEmitter<string>();
+      @Output('first') second = new EventEmitter<string>();
+    }
+
+    const source = computesTemplateFromComponent(CrossedOutputsComponent, {
+      first: () => {},
+    });
+    expect(source).toEqual(`<crossed-outputs (first)="first($event)"></crossed-outputs>`);
+  });
+  it('binds an aliased compiled output when the arg uses the class property name', () => {
+    @Component({
+      selector: 'signal-output',
+      template: '',
+    })
+    class SignalOutputComponent {}
+    Object.assign(SignalOutputComponent, { ɵcmp: { outputs: { 'my-click': 'myClick' } } });
+
+    const source = computesTemplateFromComponent(SignalOutputComponent, {
+      myClick: () => {},
+    });
+    expect(source).toEqual(`<signal-output (my-click)="myClick($event)"></signal-output>`);
   });
 });

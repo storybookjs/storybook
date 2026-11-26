@@ -428,6 +428,78 @@ describe('StorybookModule', () => {
       });
     });
 
+    describe('with aliased output', () => {
+      @Component({
+        selector: 'aliased-output',
+        template: `<p id="trigger" (click)="myClick.emit('hi')"></p>`,
+      })
+      class AliasedOutputComponent {
+        @Output('my-click') myClick = new EventEmitter<string>();
+      }
+
+      const render = async (props: ICollection) => {
+        const storyProps$ = new BehaviorSubject<ICollection | undefined>(props);
+        const analyzedMetadata = new PropertyExtractor({}, AliasedOutputComponent);
+        await analyzedMetadata.init();
+        const application = getApplication({
+          storyFnAngular: { props },
+          component: AliasedOutputComponent,
+          targetSelector: 'my-selector',
+          analyzedMetadata,
+        });
+        const { fixture } = await configureTestingModule({
+          imports: [application],
+          providers: [storyPropsProvider(storyProps$)],
+        });
+        fixture.detectChanges();
+        return { fixture, storyProps$ };
+      };
+
+      it('binds an arg keyed by the class property name without replacing the emitter', async () => {
+        const firstCalls: string[] = [];
+        const secondCalls: string[] = [];
+        const { fixture, storyProps$ } = await render({
+          myClick: (value: string) => firstCalls.push(value),
+        });
+
+        fixture.nativeElement.querySelector('#trigger').click();
+        expect(firstCalls).toEqual(['hi']);
+
+        storyProps$.next({
+          myClick: (value: string) => secondCalls.push(value),
+        });
+        fixture.detectChanges();
+
+        fixture.nativeElement.querySelector('#trigger').click();
+        expect(firstCalls).toEqual(['hi']);
+        expect(secondCalls).toEqual(['hi']);
+      });
+
+      it('prefers the alias handler when both alias and property name are provided without replacing the emitter', async () => {
+        const aliasCalls: string[] = [];
+        const propCalls: string[] = [];
+        const nextAliasCalls: string[] = [];
+        const { fixture, storyProps$ } = await render({
+          myClick: (value: string) => propCalls.push(value),
+          'my-click': (value: string) => aliasCalls.push(value),
+        });
+
+        fixture.nativeElement.querySelector('#trigger').click();
+        expect(aliasCalls).toEqual(['hi']);
+        expect(propCalls).toEqual([]);
+
+        storyProps$.next({
+          myClick: (value: string) => propCalls.push(value),
+          'my-click': (value: string) => nextAliasCalls.push(value),
+        });
+        fixture.detectChanges();
+
+        fixture.nativeElement.querySelector('#trigger').click();
+        expect(nextAliasCalls).toEqual(['hi']);
+        expect(propCalls).toEqual([]);
+      });
+    });
+
     it('should keep template with an empty value', async () => {
       @Component({
         selector: 'foo',

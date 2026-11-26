@@ -9,6 +9,8 @@ import {
   ɵgetComponentDef as getComponentDef,
 } from '@angular/core';
 
+import type { ICollection } from '../../types.ts';
+
 const reflectionCapabilities = new ReflectionCapabilities();
 
 export type ComponentInputsOutputs = {
@@ -20,6 +22,31 @@ export type ComponentInputsOutputs = {
     propName: string;
     templateName: string;
   }[];
+};
+
+// Alias wins when both are set; a property name that is another output's alias stays with that output.
+export const resolveOutputArgs = (
+  outputs: ComponentInputsOutputs['outputs'],
+  props: ICollection = {}
+) => {
+  const templateNames = new Set(outputs.map((output) => output.templateName));
+  const bindings: { bindingName: string; propKey: string }[] = [];
+  const argKeys = new Set<string>();
+
+  for (const { propName, templateName } of outputs) {
+    let propKey: string | undefined;
+    if (templateName in props) {
+      propKey = templateName;
+    } else if (propName in props && !templateNames.has(propName)) {
+      propKey = propName;
+    }
+    if (propKey !== undefined) {
+      bindings.push({ bindingName: templateName, propKey });
+      argKeys.add(templateName).add(propName);
+    }
+  }
+
+  return { bindings, argKeys };
 };
 
 /** Returns component Inputs / Outputs by browsing these properties and decorator */

@@ -53,7 +53,7 @@ export function storyDocsSourceBeforeEach(context: StoryContext): CleanupCallbac
   const query = service.queries.storyDocs;
   let load = loads.get(context.parameters);
   if (!load) {
-    load = query.loaded({ id: componentId });
+    load = query.loaded({ id: componentId, scope: 'all' });
     loads.set(context.parameters, load);
     // A failed load is tried again on the next render.
     load.catch(() => loads.delete(context.parameters));
@@ -66,7 +66,7 @@ export function storyDocsSourceBeforeEach(context: StoryContext): CleanupCallbac
         return;
       }
       const { snippet, warning } = selectLiveSnippetForStory(
-        query.get({ id: componentId }),
+        query.get({ id: componentId, scope: 'all' }),
         storyId,
         args,
         getPrintHole(context.parameters)

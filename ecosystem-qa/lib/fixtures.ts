@@ -1,4 +1,5 @@
 import { cycleBranchName } from './cycle.ts';
+import type { Cluster, FindingGroup, IssueHit, QaIssue } from './proposals.ts';
 import type { LoadedResult } from './results.ts';
 import type {
   CatalogEntry,
@@ -86,3 +87,26 @@ export const asIssue = (proposal: Proposal): IssueProposal => {
   }
   return proposal;
 };
+
+export const single = (lead: FindingGroup | undefined): Cluster => ({
+  lead: lead!,
+  members: [lead!],
+});
+
+// The metadata block the harness ends an issue body or a comment with, for these fingerprints.
+export const metadata = (...fingerprints: string[]): string =>
+  [
+    '<!-- sb-qa-metadata -->',
+    '```yaml',
+    `fingerprint: ${fingerprints[0]}`,
+    ...(fingerprints.length > 1 ? [`fingerprints: ${fingerprints.join(', ')}`] : []),
+    '```',
+  ].join('\n');
+
+// A listed QA issue whose body carries the group's fingerprint, or another one without a group.
+export const issueOn = (group: FindingGroup | undefined, hit: IssueHit): QaIssue => ({
+  ...hit,
+  title: `Issue ${hit.number}`,
+  body: metadata(group?.fingerprint ?? '0000000000000000'),
+  comments: [],
+});

@@ -19,7 +19,7 @@ const meta = preview.meta({
 ```
 
 ```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
-// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/11/writing-stories/csf/upgrade
 import type { Meta } from '@storybook/angular';
 
 import { Button } from './button.component';
@@ -78,7 +78,7 @@ const meta = preview.meta({
 ```
 
 ```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
-// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/11/writing-stories/csf/upgrade
 export default {
   component: 'demo-button',
   parameters: {
@@ -95,7 +95,7 @@ export default {
 ```
 
 ```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
-// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/11/writing-stories/csf/upgrade
 import type { Meta } from '@storybook/web-components-vite';
 
 const meta: Meta = {
@@ -196,7 +196,7 @@ const meta = preview.meta({
 ```
 
 ```ts filename="Button.stories.ts" renderer="vue" language="ts" tabTitle="CSF 3"
-// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/11/writing-stories/csf/upgrade
 import type { Meta } from '@storybook/vue3-vite';
 
 import Button from './Button.vue';
@@ -219,7 +219,7 @@ export default meta;
 ```
 
 ```js filename="Button.stories.js" renderer="vue" language="js" tabTitle="CSF 3"
-// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/11/writing-stories/csf/upgrade
 import Button from './Button.vue';
 
 export default {
@@ -260,7 +260,7 @@ export default {
 ```
 
 ```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 3"
-<!-- ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4 -->
+<!-- ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/11/writing-stories/csf/upgrade -->
 <script module>
   // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
   import { defineMeta } from '@storybook/your-framework';
@@ -306,7 +306,7 @@ export default {
 ```
 
 ```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="CSF 3"
-<!-- ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4 -->
+<!-- ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/11/writing-stories/csf/upgrade -->
 <script module>
   // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
   import { defineMeta } from '@storybook/your-framework';
@@ -330,7 +330,7 @@ export default {
 ```
 
 ```ts filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
-// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/11/writing-stories/csf/upgrade
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
 import type { Meta } from '@storybook/your-framework';
 
@@ -354,7 +354,7 @@ export default meta;
 ```
 
 ```js filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
-// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/11/writing-stories/csf/upgrade
 import { Button } from './Button';
 
 export default {

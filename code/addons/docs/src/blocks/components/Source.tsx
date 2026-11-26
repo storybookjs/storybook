@@ -1,5 +1,5 @@
 import type { ComponentProps, FunctionComponent } from 'react';
-import React from 'react';
+import React, { useMemo } from 'react';
 
 import type { SupportedLanguage, SyntaxHighlighterProps } from 'storybook/internal/components';
 import { SyntaxHighlighter } from 'storybook/internal/components';
@@ -116,6 +116,17 @@ const Source: FunctionComponent<SourceProps> = ({
   ...rest
 }) => {
   const { typography } = useTheme();
+  // A theme object made on every render would re-render the whole highlighter through the theme
+  // context.
+  const snippetTheme = useMemo(
+    () =>
+      convert({
+        ...(dark ? themes.dark : themes.light),
+        fontCode: typography.fonts.mono,
+        fontBase: typography.fonts.base,
+      }),
+    [dark, typography.fonts.base, typography.fonts.mono]
+  );
   if (isLoading) {
     return <SourceSkeleton />;
   }
@@ -147,18 +158,7 @@ const Source: FunctionComponent<SourceProps> = ({
   if (typeof dark === 'undefined') {
     return syntaxHighlighter;
   }
-  const overrideTheme = dark ? themes.dark : themes.light;
-  return (
-    <ThemeProvider
-      theme={convert({
-        ...overrideTheme,
-        fontCode: typography.fonts.mono,
-        fontBase: typography.fonts.base,
-      })}
-    >
-      {syntaxHighlighter}
-    </ThemeProvider>
-  );
+  return <ThemeProvider theme={snippetTheme}>{syntaxHighlighter}</ThemeProvider>;
 };
 
 export { Source, StyledSyntaxHighlighter };

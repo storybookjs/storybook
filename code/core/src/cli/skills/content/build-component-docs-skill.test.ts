@@ -2,10 +2,18 @@ import { describe, expect, it } from 'vitest';
 
 import { buildComponentDocsSkill } from './build-component-docs-skill.ts';
 
-const cli = { transport: 'cli', docsSupported: true } as const;
-const mcp = { transport: 'mcp', docsSupported: true } as const;
+const cli = { transport: 'cli', docsSupported: true, composed: false } as const;
+const mcp = { transport: 'mcp', docsSupported: true, composed: false } as const;
 
 describe('buildComponentDocsSkill', () => {
+  it('names the sandbox for the docs of a composed Storybook, on the CLI only', () => {
+    const sentence = 'it runs in a sandbox, re-run it with escalated permissions';
+
+    expect(buildComponentDocsSkill({ ...cli, composed: true })).toContain(sentence);
+    expect(buildComponentDocsSkill(cli)).not.toContain(sentence);
+    expect(buildComponentDocsSkill({ ...mcp, composed: true })).not.toContain(sentence);
+  });
+
   it('teaches docs list before docs show, with the source of a composed Storybook', () => {
     const text = buildComponentDocsSkill(cli);
 
@@ -45,15 +53,5 @@ describe('buildComponentDocsSkill', () => {
 
       This Storybook has no component docs to look up. Skip this step, and read the source files of the components you use instead."
     `);
-  });
-
-  it('says when to skip the step, and keeps its tools, when main.ts turns the docs toolset off', () => {
-    const text = buildComponentDocsSkill({ ...mcp, toolsetOff: true });
-
-    expect(text).toContain(
-      'The `main.ts` of this project turns the `docs` toolset of the Storybook MCP server off. When the server does not give you `docs-list`, skip this step.'
-    );
-    expect(text).toContain('- `docs-show` with an `id`');
-    expect(buildComponentDocsSkill(mcp)).not.toContain('skip this step');
   });
 });

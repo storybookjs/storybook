@@ -13,7 +13,7 @@ const meta = {
     <pre data-testid="initial-globals">{JSON.stringify(globals.initialGlobalsWork)}</pre>
   ),
   // The pinned global only exists in the `storybook-ui` Vitest project, so this story is meaningful
-  // only there. Drop the `test` tag so the Chromatic/test-runner build (which has no such global)
+  // only there. Drop the `test` tag so the Chromatic build (which has no such global)
   // does not run the play, and skip the snapshot since there is nothing visual to capture. It keeps
   // the `vitest` tag from the preview, so the `tests-stories` Vitest project still runs it.
   tags: ['!test'],

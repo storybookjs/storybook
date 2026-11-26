@@ -3,6 +3,7 @@ import type { StoryIndex } from 'storybook/internal/types';
 import * as v from 'valibot';
 
 import {
+  OpenServiceGitRefError,
   OpenServiceMissingOriginError,
   OpenServiceModuleGraphUnavailableError,
 } from '../../../../server-errors.ts';
@@ -13,8 +14,11 @@ import type {
 import { defineToolset, type ToolsetCtx, type ToolsetOutcome } from '../../toolset-definition.ts';
 import { getToolName } from '../../toolset-names.ts';
 import type { StatusesByStoryIdAndTypeId } from '../../../status-store/index.ts';
-import { getChangedStories } from './changed.ts';
-import { detectChangedFilesOutsideStories } from './changed-files-outside-stories.ts';
+import { getChangedStories, getChangedStoriesSince } from './changed.ts';
+import {
+  detectChangedFilesOutsideStories,
+  type GitChanges,
+} from './changed-files-outside-stories.ts';
 import { DEFAULT_MAX_DISTANCE, findStoriesByComponent } from './find-by-component.ts';
 import type { ModuleGraphAccess, ModuleGraphStatus } from './resolve-component-stories.ts';
 import { reasonForStatus } from './resolve-component-stories.ts';
@@ -86,6 +90,10 @@ const changedOutputSchema = v.object({
     )
   ),
   changedConfigFiles: v.array(v.string()),
+  since: v.pipe(
+    v.optional(v.string()),
+    v.description('The git ref the changes are listed since, when one was passed.')
+  ),
 });
 
 export type ChangedStoriesOutput = v.InferOutput<typeof changedOutputSchema>;
@@ -141,7 +149,11 @@ export type StoryIndexAccess = {
 
 export type StoriesGitAccess = {
   getRepoRoot: () => Promise<string>;
-  getChangedFiles: () => Promise<{
+  /**
+   * The uncommitted changes; with `since`, also what this branch committed since it forked from
+   * that ref. Repo-root-relative paths.
+   */
+  getChangedFiles: (since?: string) => Promise<{
     changed: Set<string>;
     new: Set<string>;
   }>;
@@ -209,13 +221,15 @@ function isGitUnusableReadiness(readiness: ChangeDetectionReadinessResult): bool
 
 function describePreview(ctx: ToolsetCtx): string {
   // No "include the URLs in your final response" and no "when available" hedge: both let agents
-  // end visual work at preview links.
+  // end a browse request or an asked-for review at preview links.
   return `Use this tool to get Storybook preview URLs while iterating on a specific story, or when the user asks for a direct link to one.
-Do not end visual work or browse requests with these links — publish a curated review with ${getToolName(ctx)('review.create')} instead (passing changedFiles: [] when no code changed) and link that.`;
+Do not end browse requests or a review that was asked for with these links — create a curated review with ${getToolName(ctx)('review.create')} instead (passing changedFiles: [] when no code changed) and link that.`;
 }
 
 function describeChanged(ctx: ToolsetCtx): string {
   return `Get Storybook stories marked as new, modified, or related. Returns story metadata only (no URLs).
+
+By default the result covers the uncommitted changes. Pass since with a git ref, such as the branch this one forked from, to also cover what is committed since then.
 
 The result reflects the cumulative working-tree diff, not just your latest edit — after multiple edits in one session, a non-empty result may cover an earlier sub-change and miss your most recent one. Check that every file you touched is represented; for any that isn't, find its consumer components and pass their paths to ${getToolName(ctx)('stories.findByComponent')} instead. The response surfaces this gap with a "coverage sanity check" hint when it detects unreachable working-tree files.`;
 }
@@ -225,7 +239,7 @@ function describeFindByComponent(ctx: ToolsetCtx): string {
 
   return `Map component source files to the stories that render them, returning grounded storyId values from the live Storybook index; hand these to ${ref('stories.preview')} or ${ref('review.create')} instead of guessing. When the result says a component has no stories found, it has none yet: say so, never fabricate IDs.
 
-Use it whenever you need story IDs: files you just edited, a feature/domain/topic the user named, a query like "all consumers of X", or an autonomous review after a UI change. First resolve the input to absolute component file paths yourself (grep / Glob / find, code reading); this tool starts there. Shared infrastructure (theme or design token, util, hook, CSS module) is not a component: grep for its consumers and pass their paths. If the symbol is one of a related group (sibling tokens, neighboring exports), widen to the whole group; a too-narrow grep silently drops stories. For "I just edited X", try ${ref('stories.changed')} first; for any touched file missing from its response, treat it as shared infrastructure and pass its consumers here.
+Use it whenever you need story IDs: files you just edited, a feature/domain/topic the user named, a query like "all consumers of X", or a review of a UI change. First resolve the input to absolute component file paths yourself (grep / Glob / find, code reading); this tool starts there. Shared infrastructure (theme or design token, util, hook, CSS module) is not a component: grep for its consumers and pass their paths. If the symbol is one of a related group (sibling tokens, neighboring exports), widen to the whole group; a too-narrow grep silently drops stories. For "I just edited X", try ${ref('stories.changed')} first; for any touched file missing from its response, treat it as shared infrastructure and pass its consumers here.
 
 Results are sorted by distance (0 = the path is itself a story file, 1 = direct importer, 2+ = transitive; lower = stronger). Shared primitives are usually consumed through wrappers, so distance 1 is often empty; the default maxDistance: ${DEFAULT_MAX_DISTANCE} keeps the cascade visible while capping noise from wide decorators. Raise it for recall, lower it for precision. For ${ref('review.create')}, the distance buckets map onto the visual cascade (component → direct importers → page context), one collection per layer. Among a component's stories at one distance, prefer the variant whose name signals it renders the changed surface.
 
@@ -247,6 +261,34 @@ function moduleGraphAccessFromCtx(
       },
       storiesForFiles: {
         loaded: (files) => moduleGraph.commands.storiesForFiles(files),
+      },
+    },
+  };
+}
+
+/** Looks each file up in the graph once, however often it is asked for. */
+function withLookupCache(moduleGraph: ModuleGraphAccess): ModuleGraphAccess {
+  type Hits = Awaited<
+    ReturnType<ModuleGraphAccess['queries']['storiesForFiles']['loaded']>
+  >[number];
+  const cache = new Map<string, Promise<Hits>>();
+  return {
+    queries: {
+      ...moduleGraph.queries,
+      storiesForFiles: {
+        loaded: ({ files }) => {
+          const missing = [...new Set(files)].filter((file) => !cache.has(file));
+          if (missing.length > 0) {
+            const lookup = moduleGraph.queries.storiesForFiles.loaded({ files: missing });
+            missing.forEach((file, position) =>
+              cache.set(
+                file,
+                lookup.then((hits) => hits[position])
+              )
+            );
+          }
+          return Promise.all(files.map((file) => cache.get(file)!));
+        },
       },
     },
   };
@@ -311,10 +353,20 @@ Use { absoluteStoryPath + exportName } only when you're already working in a spe
         },
       },
       changed: {
-        input: v.strictObject({}),
+        input: v.strictObject({
+          since: v.optional(
+            v.pipe(
+              v.string(),
+              v.minLength(1),
+              v.description(
+                'A git ref: a branch, tag or commit. Lists the stories for what this branch committed since it forked from that ref, plus the uncommitted changes. Leave it out for the uncommitted changes only.'
+              )
+            )
+          ),
+        }),
         title: 'Get changed stories metadata',
         description: describeChanged,
-        handler: async (_input, ctx): Promise<ToolsetOutcome<ChangedStoriesOutput, never>> => {
+        handler: async ({ since }, ctx): Promise<ToolsetOutcome<ChangedStoriesOutput, never>> => {
           const graphService = ctx.getService<ModuleGraphService>('core/module-graph', {
             internal: true,
           });
@@ -328,39 +380,71 @@ Use { absoluteStoryPath + exportName } only when you're already working in a spe
             });
           }
 
-          const changeDetection =
-            await graphService.queries.changeDetectionReadiness.loaded(undefined);
-          if (changeDetection.status !== 'ready') {
-            if (isGitUnusableReadiness(changeDetection)) {
-              const data = emptyChangedStories();
-              return {
-                ok: true,
-                data,
-                markdown: formatChangedStories(data, ctx),
-                telemetry: {
-                  payload: {
-                    storyCount: 0,
-                    newStoryCount: 0,
-                    modifiedStoryCount: 0,
-                    affectedStoryCount: 0,
-                  },
+          // Without git there are no changes to list.
+          const noChanges = (): ToolsetOutcome<ChangedStoriesOutput, never> => {
+            const data = emptyChangedStories();
+            return {
+              ok: true,
+              data,
+              markdown: formatChangedStories(data, ctx),
+              telemetry: {
+                payload: {
+                  storyCount: 0,
+                  newStoryCount: 0,
+                  modifiedStoryCount: 0,
+                  affectedStoryCount: 0,
                 },
-              };
+              },
+            };
+          };
+
+          // The statuses of change detection cover the uncommitted changes only. With a ref, the
+          // stories are computed here from git and the graph; change detection is not involved.
+          let changesSince: GitChanges | undefined;
+          if (since === undefined) {
+            const changeDetection =
+              await graphService.queries.changeDetectionReadiness.loaded(undefined);
+            if (changeDetection.status !== 'ready') {
+              if (isGitUnusableReadiness(changeDetection)) {
+                return noChanges();
+              }
+              throw new OpenServiceModuleGraphUnavailableError({
+                reason: reasonForChangeDetectionReadiness(changeDetection),
+              });
             }
-            throw new OpenServiceModuleGraphUnavailableError({
-              reason: reasonForChangeDetectionReadiness(changeDetection),
-            });
+          } else {
+            try {
+              const [changedFiles, repoRoot] = await Promise.all([
+                git.getChangedFiles(since),
+                git.getRepoRoot(),
+              ]);
+              changesSince = { changedFiles, repoRoot };
+            } catch (error) {
+              // Without a ref, no git means no changes to list. A ref that cannot be compared is
+              // not "nothing changed".
+              if (error instanceof Error && GIT_UNUSABLE_REASONS.has(error.message)) {
+                throw new OpenServiceGitRefError({ ref: since, reason: 'no-git' });
+              }
+              throw error;
+            }
           }
 
           // Files outside the story graph are why an empty or partial result can still be wrong,
           // so they are part of the answer rather than a separate lookup.
           const read = async () => {
+            // With a ref, the notes and the statuses ask the graph about the same files.
+            const graph = changesSince ? withLookupCache(moduleGraph) : moduleGraph;
             const { reachableFiles, ...filesOutsideStories } =
-              await detectChangedFilesOutsideStories({ git, moduleGraph, storybookDirs });
-            const changed = getChangedStories({
-              statuses: await changeStatuses.getAll(),
-              index: await storyIndex.getIndex(),
-            });
+              await detectChangedFilesOutsideStories({
+                git,
+                moduleGraph: graph,
+                storybookDirs,
+                changes: changesSince,
+              });
+            const index = await storyIndex.getIndex();
+            const changed = changesSince
+              ? await getChangedStoriesSince({ ...changesSince, moduleGraph: graph, index })
+              : getChangedStories({ statuses: await changeStatuses.getAll(), index });
             return { changed, filesOutsideStories, reachableFiles };
           };
           // A new story file reaches the index, and an edit the statuses, only after a debounced
@@ -379,6 +463,7 @@ Use { absoluteStoryPath + exportName } only when you're already working in a spe
             ...changed,
             ...filesOutsideStories,
             pendingFiles: changed.stories.length === 0 ? reachableFiles : [],
+            ...(since === undefined ? {} : { since }),
           };
 
           return {
@@ -391,6 +476,7 @@ Use { absoluteStoryPath + exportName } only when you're already working in a spe
                 newStoryCount: data.counts.new,
                 modifiedStoryCount: data.counts.modified,
                 affectedStoryCount: data.counts.affected,
+                ...(since === undefined ? {} : { since: true }),
               },
             },
           };

@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 
-import type { Finding, RepoClass } from './schema.ts';
+import type { Finding } from './schema.ts';
 
 // A path outside node_modules keeps only its file name: anything above it can be the checkout
 // directory, whose name differs per repo, sandbox and machine.
@@ -28,13 +28,21 @@ const SIGNATURE_RULES: readonly ((text: string) => string)[] = [
 export const normalizeErrorSignature = (text: string): string =>
   SIGNATURE_RULES.reduce((current, rule) => rule(current), text.toLowerCase()).trim();
 
-// The Storybook version is never an input, so one bug keeps its fingerprint across prereleases.
+// When doctor wrongly reports a healthy project, the agent copies its success message as the error.
+// That message is the same whatever broke, so it would give unrelated bugs one fingerprint.
+const SUCCESS_MESSAGE = /your storybook project looks good/i;
+
+const signatureOf = ({ errorText, actual }: Finding): string => {
+  const error = errorText?.trim();
+  return normalizeErrorSignature(error && !SUCCESS_MESSAGE.test(error) ? error : actual);
+};
+
+// Neither the Storybook version nor the repo is an input, so one bug keeps its fingerprint across
+// prereleases and across the projects that hit it.
 // It does depend on how much of the error the agent copied, so two agents can still fingerprint
 // one bug differently; grouping by root cause is a separate pass (SB-2488).
-export const fingerprint = (finding: Finding, repoClass: RepoClass): string =>
+export const fingerprint = (finding: Finding): string =>
   createHash('sha256')
-    .update(
-      `${finding.checkId}|${repoClass}|${normalizeErrorSignature(finding.errorText?.trim() || finding.actual)}`
-    )
+    .update(`${finding.checkId}|${signatureOf(finding)}`)
     .digest('hex')
     .slice(0, 16);

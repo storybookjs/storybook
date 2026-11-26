@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { Options } from 'storybook/internal/types';
 import { getToolAvailability } from 'storybook/internal/core-server';
-import { experimental_devServer, mcpToolsets } from './preset.ts';
+import { experimental_devServer } from './preset.ts';
 import * as mcpHandlerModule from './mcp-handler.ts';
 import { registerCoreToolsetsForTest } from './test-support/register-core-toolsets.ts';
 
@@ -37,10 +37,6 @@ describe('experimental_devServer', () => {
         }),
       },
     } as unknown as Options;
-  });
-
-  afterEach(() => {
-    vi.unstubAllGlobals();
   });
 
   const stubPrivateRefDiscovery = () => {
@@ -221,9 +217,7 @@ describe('experimental_devServer', () => {
 
     expect(mcpServerHandler).toHaveBeenCalledWith(
       expect.objectContaining({
-        addonOptions: expect.objectContaining({
-          endpoint: '/custom-mcp',
-        }),
+        endpoint: '/custom-mcp',
         manifestProvider: undefined,
         sources: undefined,
       })
@@ -466,46 +460,6 @@ describe('experimental_devServer', () => {
       expect(html).toContain(`<code>${tool}</code>`);
     }
     // Every placeholder must be substituted — no `{{...}}` may leak to the page.
-    expect(html).not.toMatch(/\{\{[A-Z_]+\}\}/);
-  });
-
-  it('marks dev tools disabled on the landing page when the dev toolset is turned off', async () => {
-    // Module graph IS supported, so `stories-find-by-component` would otherwise badge
-    // as enabled — proving the badge now also honors the `dev` toolset being disabled.
-    // Everything else here matches what `mockOptions`'s fixture (features: { componentsManifest:
-    // false }, no other presets) would resolve for real; only `moduleGraphSupported` is forced.
-    vi.mocked(getToolAvailability).mockResolvedValueOnce({
-      moduleGraphSupported: true,
-      docsEnabled: false,
-      docsEnabledForCli: false,
-      docsHasManifests: false,
-      docsFeatureEnabled: false,
-      testSupported: false,
-      a11yEnabled: false,
-      docgenServer: false,
-    });
-
-    let getHandler: any;
-    mockApp.get = vi.fn((_path, handler) => {
-      getHandler = handler;
-    });
-
-    const devOffOptions = {
-      ...mockOptions,
-      toolsets: { dev: false },
-    } as unknown as Options;
-
-    await (experimental_devServer as any)(mockApp, devOffOptions);
-
-    const mockRes = { writeHead: vi.fn(), end: vi.fn() } as any;
-    await getHandler({ headers: { accept: 'text/html' } } as any, mockRes);
-
-    const html = mockRes.end.mock.calls[0][0] as string;
-
-    expect(html).toMatch(
-      /<code>stories-find-by-component<\/code>\s*<span class="toolset-status disabled"/
-    );
-    expect(html).toContain('The <code>dev</code> toolset is disabled via addon options.');
     expect(html).not.toMatch(/\{\{[A-Z_]+\}\}/);
   });
 
@@ -948,27 +902,6 @@ describe('experimental_devServer', () => {
     );
   });
 
-  it('should handle partial toolsets configuration', async () => {
-    const partialOptions = {
-      presets: {
-        apply: vi.fn((key: string) => {
-          if (key === 'features') {
-            return Promise.resolve({ componentsManifest: false });
-          }
-          return Promise.resolve(undefined);
-        }),
-      },
-      toolsets: {
-        dev: false,
-      },
-    } as unknown as Options;
-
-    await (experimental_devServer as any)(mockApp, partialOptions);
-
-    expect(mockApp.post).toHaveBeenCalledWith('/mcp', expect.any(Function));
-    expect(mockApp.get).toHaveBeenCalledWith('/mcp', expect.any(Function));
-  });
-
   it('should register .well-known endpoint that returns 404 when no auth required', async () => {
     const handlers: Record<string, any> = {};
     mockApp.get = vi.fn((path: string, handler: any) => {
@@ -1102,19 +1035,5 @@ describe('experimental_devServer', () => {
 
     const result = await (experimental_devServer as any)(mockApp, optionsWithThrowingRefs);
     expect(result).toBe(mockApp);
-  });
-});
-
-describe('mcpToolsets', () => {
-  it('turns every toolset on by default', async () => {
-    expect(await mcpToolsets(undefined, {})).toEqual({ dev: true, docs: true, test: true });
-  });
-
-  it('keeps a toolset that main.ts turns off', async () => {
-    expect(await mcpToolsets(undefined, { toolsets: { dev: false } })).toEqual({
-      dev: false,
-      docs: true,
-      test: true,
-    });
   });
 });

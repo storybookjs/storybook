@@ -50,7 +50,6 @@ import type {
 } from 'storybook/internal/types';
 import { isReviewManagerRoute } from '../../shared/review/routes.ts';
 
-import { global } from '@storybook/global';
 import { throttle } from 'es-toolkit/function';
 
 import { BUILT_IN_FILTERS } from '../../shared/constants/tags.ts';
@@ -60,6 +59,7 @@ import {
   addPreparedStories,
   getComponentLookupList,
   getStoriesLookupList,
+  isOwnEntry,
   transformStoryIndexToStoriesHash,
 } from '../lib/stories.ts';
 import type { ModuleFn } from '../lib/types.tsx';
@@ -103,7 +103,6 @@ const normalizeSelectStoryPayload = (payload: SelectStoryEvent): SelectStoryPayl
   return { title, name, viewMode, scrollTo };
 };
 
-const { fetch } = global;
 const STORY_INDEX_PATH = './index.json';
 
 const TAGS_FILTER = 'tags-filter';
@@ -153,6 +152,15 @@ export interface SubAPI {
    * @returns {API_HashEntry} - The hash entry corresponding to the given story ID.
    */
   resolveStory: (storyId: StoryId, refsId?: string) => API_HashEntry | undefined;
+  /**
+   * Resolves an entry ID to the first docs or story entry that qualifies as its child.
+   * Use this to implement preloading or navigating from a group/component entry.
+   *
+   * @param {StoryId} entryId - The ID of the entry to resolve.
+   * @param {string} [refId] - The ID of the ref the entry belongs to.
+   * @returns {API_LeafEntry | undefined} The first qualifying child for `entryId`.
+   */
+  resolveLeafEntry: (entryId: StoryId, refId?: string) => API_LeafEntry | undefined;
   /**
    * Selects the first story to display in the Storybook UI.
    *
@@ -525,6 +533,18 @@ export const init: ModuleFn<SubAPI, SubState> = ({
     });
   };
 
+  // The one lookup behind a component jump and its preload, so that the two cannot drift apart.
+  const findSubtreeJumpTarget = (direction: Direction): StoryId | undefined => {
+    const { filteredIndex, storyId, refs, refId } = store.getState();
+    const hash = refId ? refs[refId]?.filteredIndex : filteredIndex;
+
+    // cannot navigate when there's no current selection
+    if (!hash || !api.getData(storyId, refId)) {
+      return undefined;
+    }
+    return api.findSiblingStoryId(storyId, hash, direction, true);
+  };
+
   const api: SubAPI = {
     storyId: toId,
     getData: (storyId, refId): any => {
@@ -550,6 +570,15 @@ export const init: ModuleFn<SubAPI, SubState> = ({
         return refs?.[refId]?.index?.[storyId] ?? undefined;
       }
       return index ? index[storyId] : undefined;
+    },
+    resolveLeafEntry: (entryId, refId) => {
+      const { refs, index, filteredIndex } = store.getState();
+      const entry = (refId ? refs[refId]?.index : index)?.[entryId];
+      if (entry?.type === 'docs' || entry?.type === 'story') {
+        return entry;
+      }
+      const filteredHash = refId ? refs[refId]?.filteredIndex : filteredIndex;
+      return entry && filteredHash ? api.findLeafEntry(filteredHash, entryId) : undefined;
     },
     getCurrentStoryData: () => {
       const { storyId, refId } = store.getState();
@@ -585,24 +614,10 @@ export const init: ModuleFn<SubAPI, SubState> = ({
       return parameters || undefined;
     },
     jumpToSubtree: (direction) => {
-      const { filteredIndex, storyId, refs, refId } = store.getState();
-      const story = api.getData(storyId, refId);
-
-      // cannot navigate when there's no current selection
-      if (!story) {
-        return;
-      }
-
-      const hash = refId ? refs[refId].filteredIndex || {} : filteredIndex;
-
-      if (!hash) {
-        return;
-      }
-
-      const result = api.findSiblingStoryId(storyId, hash, direction, true);
+      const result = findSubtreeJumpTarget(direction);
 
       if (result) {
-        api.selectStory(result, undefined, { ref: refId });
+        api.selectStory(result, undefined, { ref: store.getState().refId });
       }
     },
     jumpToStory: (direction) => {
@@ -691,10 +706,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
           throw new Error(`Unknown id or title: '${titleOrId}'`);
         }
 
-        if (!gotoStory(entry)) {
-          // If the entry is not a story or docs, find the first descendant entry that is
-          gotoStory(api.findLeafEntry(filteredHash, entry.id));
-        }
+        gotoStory(api.resolveLeafEntry(entry.id, ref));
       } else if (!titleOrId) {
         // Navigate to a named story/docs within the current component (i.e. "kind")
         // This is a slugified version of the kind, but that's OK, our toId function is idempotent
@@ -722,8 +734,12 @@ export const init: ModuleFn<SubAPI, SubState> = ({
         return entry;
       }
 
-      const childStoryId = entry.children.find((childId) => index[childId]);
-      return childStoryId ? api.findLeafEntry(index, childStoryId) : undefined;
+      const ownEntryId =
+        entry.type === 'component'
+          ? entry.children.find((childId) => isOwnEntry(entry, index[childId]))
+          : undefined;
+      const childId = ownEntryId ?? entry.children.find((childId) => index[childId]);
+      return childId ? api.findLeafEntry(index, childId) : undefined;
     },
     findLeafStoryId(index, storyId) {
       return api.findLeafEntry(index, storyId)?.id;
@@ -1243,16 +1259,13 @@ export const init: ModuleFn<SubAPI, SubState> = ({
       if (sourceType !== 'local') {
         return;
       }
-      global.requestIdleCallback(() => {
-        const { storyId, index, refId } = store.getState();
-        if (!index || storyId !== finishedStoryId) {
+      const preloadSiblings = () => {
+        const { storyId, refId } = store.getState();
+        if (storyId !== finishedStoryId) {
           return;
         }
         const toBePreloaded = Array.from(
-          new Set([
-            api.findSiblingStoryId(storyId, index, 1, true),
-            api.findSiblingStoryId(storyId, index, -1, true),
-          ])
+          new Set([findSubtreeJumpTarget(1), findSubtreeJumpTarget(-1)])
         ).filter(Boolean);
         if (toBePreloaded.length > 0) {
           provider.channel?.emit(PRELOAD_ENTRIES, {
@@ -1261,7 +1274,12 @@ export const init: ModuleFn<SubAPI, SubState> = ({
             options: { target: refId },
           });
         }
-      });
+      };
+      if (typeof globalThis.requestIdleCallback === 'function') {
+        globalThis.requestIdleCallback(preloadSiblings);
+      } else {
+        setTimeout(preloadSiblings, 1);
+      }
     }
   );
 
@@ -1345,7 +1363,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
   );
 
   // Compute default tag filter values from presets
-  const tagPresets: TagsOptions = global.TAGS_OPTIONS || {};
+  const tagPresets: TagsOptions = globalThis.TAGS_OPTIONS || {};
   const defaultTags = getDefaultTagsFromPreset(tagPresets);
 
   const { tags, statuses } = queryFromLocation(location ?? ({ search: '' } as any));

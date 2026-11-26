@@ -4,12 +4,13 @@ import { describe, expect, it } from 'vitest';
 import { type Call, CallStates, type LogItem, type RenderPhase } from '../../instrumenter/types.ts';
 import { INTERNAL_RENDER_CALL_ID } from '../constants.ts';
 import {
-  type PanelState,
   type RenderTracker,
   getInteractions,
   getPanelState,
+  pruneToggles,
   trackRenderPhase,
 } from './Panel.tsx';
+import type { PanelState } from './panelStore.ts';
 
 describe('Panel', () => {
   const log: LogItem[] = [
@@ -180,6 +181,7 @@ describe('Panel', () => {
     interactions: [],
     interactionsCount: 0,
     hasException: false,
+    revision: 0,
   };
 
   describe('getInteractions', () => {
@@ -226,6 +228,28 @@ describe('Panel', () => {
           toggleCollapsed: expect.any(Function),
         },
       ]);
+    });
+
+    it('reuses the collapse toggle of each call from the cache it is given', () => {
+      const toggles = new Map<Call['id'], () => void>();
+
+      const first = getInteractions({ log, calls, collapsed, setCollapsed, toggles });
+      const second = getInteractions({ log, calls, collapsed, setCollapsed, toggles });
+
+      expect(second).toEqual(first);
+      expect(second[1].toggleCollapsed).toBe(first[1].toggleCollapsed);
+      expect(toggles.size).toBe(log.length);
+    });
+
+    it('drops the cached toggles of calls that left the log', () => {
+      const toggles = new Map<Call['id'], () => void>();
+      getInteractions({ log, calls, collapsed, setCollapsed, toggles });
+      const kept = toggles.get(log[1].callId);
+
+      pruneToggles(toggles, log.slice(0, 2));
+
+      expect([...toggles.keys()]).toEqual(log.slice(0, 2).map((item) => item.callId));
+      expect(toggles.get(log[1].callId)).toBe(kept);
     });
 
     it('hides calls for which the parent is collapsed', () => {
@@ -607,6 +631,7 @@ describe('Panel', () => {
         ...baseState,
         status: 'completed' as const,
         hasException: true,
+        revision: 3,
         pausedAt: 'some-call-id',
         caughtException: new Error('test error'),
         unhandledErrors: [{ name: 'Error', message: 'test error', stack: 'stack trace' }],
@@ -616,6 +641,7 @@ describe('Panel', () => {
 
       expect(result.status).toBe('completed');
       expect(result.hasException).toBe(true);
+      expect(result.revision).toBe(3);
       expect(result.pausedAt).toBe('some-call-id');
       expect(result.caughtException).toEqual(new Error('test error'));
       expect(result.unhandledErrors).toEqual([

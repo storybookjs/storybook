@@ -14,12 +14,8 @@ import type {
   Renderer,
   StoryContext,
   StoryContextForEnhancers,
-  StoryContextForRender,
   StrictArgTypes,
 } from 'storybook/internal/types';
-
-import { global } from '@storybook/global';
-import { global as globalThis } from '@storybook/global';
 
 import { Tag } from '../../../../shared/constants/tags.ts';
 import { applyHooks } from '../../addons/index.ts';
@@ -27,6 +23,7 @@ import { mountDestructured } from '../../preview-web/render/mount-utils.ts';
 import { UNTARGETED, groupArgsByTarget } from '../args.ts';
 import { defaultDecorateStory } from '../decorators.ts';
 import { combineParameters } from '../parameters.ts';
+import { hideArgTypes } from './hideArgTypes.ts';
 import { normalizeArrays } from './normalizeArrays.ts';
 
 // Combine all the metadata about a story (both direct and inherited from the component/global scope)
@@ -101,8 +98,8 @@ export function prepareStory<TRenderer extends Renderer>(
     }
   };
 
-  const undecoratedStoryFn = (context: StoryContextForRender<TRenderer>) =>
-    context.originalStoryFn(context.args, context);
+  const undecoratedStoryFn = (context: StoryContext<TRenderer>) =>
+    context.originalStoryFn(context.args, hideArgTypes(context));
 
   // Currently it is only possible to set these globally
   const { applyDecorators = defaultDecorateStory, runStep } = projectAnnotations;
@@ -122,7 +119,7 @@ export function prepareStory<TRenderer extends Renderer>(
     projectAnnotations.render;
 
   const decoratedStoryFn = applyHooks<TRenderer>(applyDecorators)(undecoratedStoryFn, decorators);
-  const unboundStoryFn = (context: StoryContextForRender<TRenderer>) => decoratedStoryFn(context);
+  const unboundStoryFn = (context: StoryContext<TRenderer>) => decoratedStoryFn(context);
 
   const playFunction = storyAnnotations?.play ?? componentAnnotations?.play;
 
@@ -266,7 +263,7 @@ function preparePartialAnnotations<TRenderer extends Renderer>(
     .filter((enhancer) => {
       // Server docgen merges component prop metadata at UI read time (`mergeServiceArgTypes`).
       // Second-pass enhancers run there instead so `customArgTypes` stays annotation-only.
-      if (global.FEATURES?.docgenServer && enhancer.secondPass) {
+      if (globalThis.FEATURES?.docgenServer && enhancer.secondPass) {
         return false;
       }
       return true;
@@ -300,15 +297,16 @@ function preparePartialAnnotations<TRenderer extends Renderer>(
 // eg. reactive proxies set by frameworks like SolidJS or Vue
 export function prepareContext<
   TRenderer extends Renderer,
-  TContext extends Pick<StoryContextForRender<TRenderer>, 'args' | 'argTypes' | 'globals'>,
+  TContext extends Pick<StoryContext<TRenderer>, 'args' | 'globals'> & {
+    argTypes: StrictArgTypes;
+  },
 >(
   context: TContext
-): TContext & Pick<StoryContextForRender<TRenderer>, 'allArgs' | 'argsByTarget' | 'unmappedArgs'> {
+): TContext & Pick<StoryContext<TRenderer>, 'allArgs' | 'argsByTarget' | 'unmappedArgs'> {
   const { args: unmappedArgs } = context;
 
   const argsByTarget = groupArgsByTarget(context);
-  const targetedContext: TContext &
-    Pick<StoryContextForRender<TRenderer>, 'allArgs' | 'argsByTarget'> = {
+  const targetedContext: TContext & Pick<StoryContext<TRenderer>, 'allArgs' | 'argsByTarget'> = {
     ...context,
     allArgs: context.args,
     argsByTarget,

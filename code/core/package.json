@@ -1,6 +1,6 @@
 {
   "name": "storybook",
-  "version": "11.0.0-beta.2",
+  "version": "11.0.0-rc.0",
   "description": "Storybook: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -246,6 +246,10 @@
     },
     "./theming": {
       "types": "./dist/theming/create.d.ts",
+      "browser": {
+        "code": "./src/theming/emotion.ts",
+        "default": "./dist/theming/emotion.js"
+      },
       "code": "./src/theming/create.ts",
       "default": "./dist/theming/create.js"
     },
@@ -435,17 +439,13 @@
   },
   "peerDependencies": {
     "@types/react": "^18.0.0 || ^19.0.0",
-    "prettier": "^2 || ^3",
-    "vite-plus": "^0.1.15 || ^0.2.0 || ^0.3.0"
+    "prettier": "^2 || ^3"
   },
   "peerDependenciesMeta": {
     "@types/react": {
       "optional": true
     },
     "prettier": {
-      "optional": true
-    },
-    "vite-plus": {
       "optional": true
     }
   },

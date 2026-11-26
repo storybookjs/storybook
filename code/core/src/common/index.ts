@@ -9,13 +9,13 @@ export * from './utils/cache.ts';
 export * from './utils/cli.ts';
 export * from './utils/check-addon-order.ts';
 export * from './utils/envs.ts';
+export * from './utils/blocked-network.ts';
 export * from './utils/find-storybook-package-root.ts';
 export * from './utils/common-glob-options.ts';
 export * from './utils/deep-merge.ts';
 export * from './utils/framework.ts';
 export * from './utils/get-builder-options.ts';
 export * from './utils/get-pkg-pr-new-package-specifier.ts';
-export * from './utils/get-storybook-version-specifier-from-ancestry.ts';
 export * from './utils/resolve-storybook-version-specifier.ts';
 export * from './utils/get-framework-name.ts';
 export * from './utils/get-renderer-name.ts';
@@ -36,6 +36,13 @@ export * from './utils/normalize-stories.ts';
 export * from './utils/paths.ts';
 export * from './utils/read-dependency-manifest.ts';
 export * from './utils/readTemplate.ts';
+export {
+  type ExportOrigin,
+  type ExportReader,
+  followBinding,
+  followExport,
+} from './utils/follow-export.ts';
+export * from './utils/component-path-from-story.ts';
 export * from './utils/resolve-meta-component.ts';
 export * from './utils/subcomponents.ts';
 export * from './utils/remove.ts';

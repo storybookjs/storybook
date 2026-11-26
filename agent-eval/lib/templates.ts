@@ -941,16 +941,11 @@ export async function writeMcpAgentInstructions(sandbox: Sandbox): Promise<void>
       'code/core/src/cli/skills/content/build-workflow-instructions.ts'
     )
   )) as {
-    buildServerInstructions: (options: {
-      devEnabled: boolean;
-      testSupported: boolean;
-      docsEnabled: boolean;
-    }) => string;
+    buildServerInstructions: (options: { testSupported: boolean; docsEnabled: boolean }) => string;
   };
-  // The MCP fixtures are all react-vite with addon-vitest, docs and MCP, so every toolset is on.
   await writeStorybookAgentInstructions(
     sandbox,
-    `${buildServerInstructions({ devEnabled: true, testSupported: true, docsEnabled: true })}\n`
+    `${buildServerInstructions({ testSupported: true, docsEnabled: true })}\n`
   );
 }
 
@@ -995,6 +990,26 @@ export async function writeCodexLunaTestRules(sandbox: Sandbox, model: string): 
   await sandbox.writeFiles({
     [CODEX_CONFIG_PATH]: `model_instructions_file = ${JSON.stringify(result.stdout.trim())}\n\n${rest}`,
   });
+  await trustCodexProject(sandbox);
+}
+
+// Codex reads a project's `.codex/config.toml` only when the user trusts the project, so without
+// this it starts without the MCP server and the instructions that the config names. The harness
+// copies a Vercel sandbox to `/workspace` before the agent runs, so that path is trusted too.
+async function trustCodexProject(sandbox: Sandbox): Promise<void> {
+  const result = await sandbox.runCommand('bash', [
+    '-c',
+    [
+      'mkdir -p ~/.codex',
+      'for project in "$(pwd -P)" /workspace; do',
+      '  grep -qsF "[projects.\\"$project\\"]" ~/.codex/config.toml && continue',
+      '  printf \'[projects."%s"]\\ntrust_level = "trusted"\\n\\n\' "$project" >> ~/.codex/config.toml',
+      'done',
+    ].join('\n'),
+  ]);
+  if (result.exitCode !== 0) {
+    throw new Error(`Failed to trust the project in Codex: ${result.stderr || result.stdout}`);
+  }
 }
 
 async function appendCodexConfig(sandbox: Sandbox, section: string): Promise<void> {
@@ -1013,6 +1028,7 @@ async function appendCodexConfig(sandbox: Sandbox, section: string): Promise<voi
   await sandbox.writeFiles({
     [CODEX_CONFIG_PATH]: config,
   });
+  await trustCodexProject(sandbox);
 }
 
 // The section that `create storybook` and `storybook upgrade` add next to the skills, which makes

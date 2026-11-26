@@ -12,9 +12,12 @@
         }
       },
       "type": {
-        "name": "other",
+        "name": "array",
+        "raw": "string[]",
         "required": false,
-        "value": "string[]"
+        "value": {
+          "name": "string"
+        }
       }
     },
     "arrayRequired": {
@@ -26,9 +29,12 @@
         }
       },
       "type": {
-        "name": "other",
+        "name": "array",
+        "raw": "string[]",
         "required": true,
-        "value": "string[]"
+        "value": {
+          "name": "string"
+        }
       }
     },
     "booleanOptional": {
@@ -318,9 +324,12 @@
             }
           },
           "type": {
-            "name": "other",
+            "name": "array",
+            "raw": "string[]",
             "required": false,
-            "value": "string[]"
+            "value": {
+              "name": "string"
+            }
           }
         },
         "arrayRequired": {
@@ -332,9 +341,12 @@
             }
           },
           "type": {
-            "name": "other",
+            "name": "array",
+            "raw": "string[]",
             "required": true,
-            "value": "string[]"
+            "value": {
+              "name": "string"
+            }
           }
         },
         "booleanOptional": {
@@ -600,9 +612,12 @@
             }
           },
           "type": {
-            "name": "other",
+            "name": "array",
+            "raw": "string[]",
             "required": false,
-            "value": "string[]"
+            "value": {
+              "name": "string"
+            }
           }
         },
         "booleanOptional": {

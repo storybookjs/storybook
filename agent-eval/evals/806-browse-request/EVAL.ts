@@ -1,7 +1,8 @@
 import {
-  expectDisplayReviewForBrowseRequest,
-  expectDevServerLeftRunning,
   expectAnyWorkflowSkillInvoked,
+  expectDevServerLeftRunning,
+  expectDisplayReviewForBrowseRequest,
+  expectNoReviewHint,
   expectStoryIdsInDisplayReview,
   expectWorkflowCalls,
   getEvalContext,
@@ -9,7 +10,7 @@ import {
 import { describe, test } from 'vitest';
 
 describe('browsing existing ReviewCard Storybook states', () => {
-  test('publishes a display review for a browse request without changed files', () => {
+  test('creates a display review for a browse request without changed files', () => {
     expectDisplayReviewForBrowseRequest();
   });
 
@@ -23,12 +24,20 @@ describe('browsing existing ReviewCard Storybook states', () => {
     ]);
   });
 
+  test('leaves out the review line: nothing changed', () => {
+    expectNoReviewHint();
+  });
+
   describe('depending on the current agent and integration', () => {
     const { integration } = getEvalContext();
 
-    test('runs the ui-review skill for a request to see stories', () => {
-      expectWorkflowCalls(['ui-review']);
-    });
+    // Over MCP the review is what counts, not that the agent read the skill first.
+    test.skipIf(integration === 'mcp')(
+      'runs the ui-review skill for a request to see stories',
+      () => {
+        expectWorkflowCalls(['ui-review']);
+      }
+    );
 
     test.skipIf(integration === 'mcp')('finds the workflow through the plugin skills', () => {
       expectAnyWorkflowSkillInvoked();

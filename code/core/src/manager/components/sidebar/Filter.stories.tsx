@@ -2,8 +2,6 @@ import React, { useMemo, useState } from 'react';
 
 import type { DocsIndexEntry, StoryIndex, StoryIndexEntry } from 'storybook/internal/types';
 
-import { global } from '@storybook/global';
-
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { ManagerContext } from 'storybook/manager-api';
@@ -15,7 +13,7 @@ import { Filter } from './Filter.tsx';
 import { IconSymbolsDecorator } from './Filter.story-helpers.tsx';
 
 const getDefaultTagFilters = () => {
-  const tagOptions = global.TAGS_OPTIONS ?? {};
+  const tagOptions = globalThis.TAGS_OPTIONS ?? {};
 
   return Object.entries(tagOptions).reduce(
     (acc, [tag, option]) => {
@@ -187,14 +185,14 @@ export const Closed: Story = {
 export const ClosedWithDefaultTags: Story = {
   ...Closed,
   beforeEach: () => {
-    const originalTagsOptions = global.TAGS_OPTIONS;
-    global.TAGS_OPTIONS = {
+    const originalTagsOptions = globalThis.TAGS_OPTIONS;
+    globalThis.TAGS_OPTIONS = {
       A: { defaultFilterSelection: 'include' },
       B: { defaultFilterSelection: 'include' },
     };
 
     return () => {
-      global.TAGS_OPTIONS = originalTagsOptions;
+      globalThis.TAGS_OPTIONS = originalTagsOptions;
     };
   },
 };
@@ -218,14 +216,14 @@ export const ClosedWithSelection: Story = {
 export const HiddenTagStillActive: Story = {
   ...ClosedWithSelection,
   beforeEach: () => {
-    const originalTagsOptions = global.TAGS_OPTIONS;
-    global.TAGS_OPTIONS = {
+    const originalTagsOptions = globalThis.TAGS_OPTIONS;
+    globalThis.TAGS_OPTIONS = {
       ...originalTagsOptions,
       hidden: { hideFromFilterPanel: true },
     };
 
     return () => {
-      global.TAGS_OPTIONS = originalTagsOptions;
+      globalThis.TAGS_OPTIONS = originalTagsOptions;
     };
   },
   parameters: {

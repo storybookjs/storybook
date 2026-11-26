@@ -63,10 +63,6 @@ describe('CompositionAuth', () => {
     vi.restoreAllMocks();
   });
 
-  afterEach(() => {
-    vi.unstubAllGlobals();
-  });
-
   describe('extractBearerToken', () => {
     it('extracts token from valid Bearer header', () => {
       expect(extractBearerToken('Bearer abc123')).toBe('abc123');

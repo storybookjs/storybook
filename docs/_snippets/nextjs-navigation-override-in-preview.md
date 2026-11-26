@@ -6,6 +6,7 @@ import { definePreview } from '@storybook/your-framework';
 import { getRouter } from '@storybook/your-framework/navigation.mock';
 
 const preview = definePreview({
+  addons: [/* ... */],
   parameters: {
     nextjs: {
       // 👇 Override the default navigation properties
@@ -33,6 +34,7 @@ import { definePreview } from '@storybook/your-framework';
 import { getRouter } from '@storybook/your-framework/navigation.mock';
 
 const preview = definePreview({
+  addons: [/* ... */],
   parameters: {
     nextjs: {
       // 👇 Override the default navigation properties
@@ -53,7 +55,7 @@ export default preview;
 ```
 
 ```ts filename=".storybook/preview.tsx" renderer="react" language="ts" tabTitle="CSF 3"
-// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/11/writing-stories/csf/upgrade
 // Replace your-framework with nextjs or nextjs-vite
 import { getRouter } from '@storybook/your-framework/navigation';
 
@@ -76,7 +78,7 @@ export default {
 ```
 
 ```js filename=".storybook/preview.jsx" renderer="react" language="js" tabTitle="CSF 3"
-// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/11/writing-stories/csf/upgrade
 // Replace your-framework with nextjs or nextjs-vite
 import type { Preview } from '@storybook/your-framework';
 

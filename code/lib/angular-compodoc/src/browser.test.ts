@@ -1,14 +1,8 @@
-import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
-
-// browser.ts destructures FEATURES from the global once at first import, so the stub must exist
-// before that import evaluates; only property mutation on this reference is live afterwards.
-const flags = vi.hoisted(() => {
-  const features = { angularFilterNonInputControls: false };
-  vi.stubGlobal('FEATURES', features);
-  return features;
-});
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { extractArgTypesFromData, setCompodocJson } from './browser.ts';
+
+const flags = { angularFilterNonInputControls: false };
 
 setCompodocJson({
   components: [],
@@ -19,12 +13,9 @@ setCompodocJson({
   miscellaneous: { typealiases: [], enumerations: [] },
 } as never);
 
-afterEach(() => {
+beforeEach(() => {
   flags.angularFilterNonInputControls = false;
-});
-
-afterAll(() => {
-  vi.unstubAllGlobals();
+  vi.stubGlobal('FEATURES', flags);
 });
 
 const componentData = {

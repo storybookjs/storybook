@@ -64,15 +64,13 @@ describe('normalizeErrorSignature', () => {
       finding({
         errorText:
           '[MISSING_EXPORT] "css" is not exported by "node_modules/storybook/dist/theming/create.js".',
-      }),
-      'owned'
+      })
     );
     const blocksJs = fingerprint(
       finding({
         errorText:
           '[MISSING_EXPORT] "css" is not exported by "node_modules/@storybook/addon-docs/dist/blocks.js".',
-      }),
-      'owned'
+      })
     );
 
     expect(createJs).not.toBe(blocksJs);
@@ -92,12 +90,10 @@ describe('fingerprint', () => {
     const onBeta = fingerprint(
       finding({
         errorText: 'Missing addon at /home/runner/work/x/node_modules/a.js:3:9 in 11.0.0-beta.0',
-      }),
-      'owned'
+      })
     );
     const onRc = fingerprint(
-      finding({ errorText: 'Missing addon at D:\\a\\x\\node_modules\\a.js:4:1 in 11.0.0-rc.2' }),
-      'owned'
+      finding({ errorText: 'Missing addon at D:\\a\\x\\node_modules\\a.js:4:1 in 11.0.0-rc.2' })
     );
 
     expect(onBeta).toMatch(/^[0-9a-f]{16}$/);
@@ -118,24 +114,34 @@ describe('fingerprint', () => {
   });
 
   it('falls back to the actual text when the error text is empty', () => {
-    const a = fingerprint(finding({ errorText: '', actual: 'Sidebar is empty' }), 'owned');
-    const b = fingerprint(finding({ errorText: '  ', actual: 'Docs page is blank' }), 'owned');
+    const a = fingerprint(finding({ errorText: '', actual: 'Sidebar is empty' }));
+    const b = fingerprint(finding({ errorText: '  ', actual: 'Docs page is blank' }));
 
     expect(a).not.toBe(b);
-    expect(a).toBe(
-      fingerprint(finding({ errorText: undefined, actual: 'Sidebar is empty' }), 'owned')
-    );
+    expect(a).toBe(fingerprint(finding({ errorText: undefined, actual: 'Sidebar is empty' })));
   });
 
-  it('differs by check, repo class and error', () => {
+  it('tells doctor false positives apart by what broke, not by the success message', () => {
+    const doctor = (actual: string, errorText: string) =>
+      fingerprint(finding({ checkId: 'upgrade.doctor', actual, errorText }));
+
+    const designs = doctor(
+      'doctor says fine while addon-designs crashes',
+      '│ Your Storybook project looks good!'
+    );
+    const sveltekit = doctor(
+      'doctor says fine while SvelteKit 3 is missing',
+      'Your Storybook project looks good!'
+    );
+
+    expect(designs).not.toBe(sveltekit);
+    expect(designs).toBe(doctor('doctor says fine while addon-designs crashes', ''));
+  });
+
+  it('differs by check and error', () => {
     const base = finding({ errorText: 'Missing addon' });
 
-    expect(fingerprint(base, 'owned')).not.toBe(fingerprint(base, 'tier1'));
-    expect(fingerprint(base, 'owned')).not.toBe(
-      fingerprint({ ...base, checkId: 'build.static' }, 'owned')
-    );
-    expect(fingerprint(base, 'owned')).not.toBe(
-      fingerprint(finding({ errorText: 'Missing preset' }), 'owned')
-    );
+    expect(fingerprint(base)).not.toBe(fingerprint({ ...base, checkId: 'build.static' }));
+    expect(fingerprint(base)).not.toBe(fingerprint(finding({ errorText: 'Missing preset' })));
   });
 });

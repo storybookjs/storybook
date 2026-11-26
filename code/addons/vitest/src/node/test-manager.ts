@@ -153,7 +153,8 @@ export class TestManager {
 
   async handleTriggerRunEvent(event: TriggerRunEvent) {
     await this.runTestsWithState({
-      storyIds: event.payload.storyIds,
+      // The stories of a run of files are known once Vitest has matched the files
+      storyIds: event.payload.fileFilters || event.payload.storyFiles ? [] : event.payload.storyIds,
       triggeredBy: event.payload.triggeredBy,
       configOverride: event.payload.configOverride,
       callback: async () => {
@@ -232,6 +233,15 @@ export class TestManager {
         throw new Error('Tests completed but there are unhandled errors');
       }
     });
+  }
+
+  setRunStories(storyIds: string[], matchedFileCount: number | undefined) {
+    this.componentTestStatusStore.unset(storyIds);
+    this.a11yStatusStore.unset(storyIds);
+    this.store.setState((s) => ({
+      ...s,
+      currentRun: { ...s.currentRun, storyIds, matchedFileCount },
+    }));
   }
 
   onTestModuleCollected(collectedTestCount: number) {

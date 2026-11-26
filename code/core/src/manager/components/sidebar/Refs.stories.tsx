@@ -21,6 +21,7 @@ const managerContext = {
     emit: fn().mockName('api::emit'),
     getElements: fn(() => ({})).mockName('api::getElements'),
     getShortcutKeys: fn(() => ({})).mockName('api::getShortcutKeys'),
+    resolveLeafEntry: fn().mockName('api::resolveLeafEntry'),
   },
 } as any;
 

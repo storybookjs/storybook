@@ -175,6 +175,7 @@ describe('typed core getService (server)', () => {
       .parameter(0)
       .toEqualTypeOf<{
         id: string;
+        scope: 'all' | 'manifest';
       }>();
     expectTypeOf(
       getService('core/module-graph', { internal: true }).queries.latestStoryChanges.subscribe

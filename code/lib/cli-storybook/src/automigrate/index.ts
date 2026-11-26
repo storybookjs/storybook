@@ -22,6 +22,7 @@ import type {
 import { type FixFileFailure, pluralFiles, reportFileFailures } from './helpers/failure-report.ts';
 import { applyFixes, type CheckedFix, detectApplicable, runCheck } from './pipeline.ts';
 import { FixStatus, allFixes, commandFixes } from './fixes/index.ts';
+import { nextjsDeprecationWarning, nextjsToNextjsVite } from './fixes/nextjs-to-nextjs-vite.ts';
 import { upgradeStorybookRelatedDependencies } from './fixes/upgrade-storybook-related-dependencies.ts';
 import { logMigrationSummary } from './helpers/logMigrationSummary.ts';
 import { getStorybookData } from './helpers/mainConfigFile.ts';
@@ -432,6 +433,9 @@ export async function runFixes({
         fixResults[f.id] = FixStatus.SKIPPED;
         fixSummary.skipped.push(f.id);
         logger.log(`Skipped ${picocolors.cyan(f.id)} migration`);
+        if (f.id === nextjsToNextjsVite.id) {
+          logger.warn(nextjsDeprecationWarning);
+        }
       }
     }
   }

@@ -3,8 +3,10 @@ import { CLI_COLORS, logTracker, logger } from 'storybook/internal/node-logger';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import picocolors from 'picocolors';
+import semver from 'semver';
 import { dedent } from 'ts-dedent';
 
+import { nextjsToNextjsVite } from '../automigrate/fixes/nextjs-to-nextjs-vite.ts';
 import { getStorybookData } from '../automigrate/helpers/mainConfigFile.ts';
 import { shortenPath } from '../util.ts';
 import { getDuplicatedDepsWarnings } from './getDuplicatedDepsWarnings.ts';
@@ -294,6 +296,26 @@ export async function getDoctorDiagnostics({
       message: dedent`
         The "storybook" package was not found in your package.json.
         Installing "storybook" as a direct dev dependency in your package.json is required.
+      `,
+      project: { configDir },
+    });
+  }
+
+  // Version-scoped: @storybook/nextjs is deprecated in Storybook 11 and removed in Storybook 12.
+  const coercedVersion = semver.coerce(storybookVersion);
+  if (
+    coercedVersion &&
+    semver.major(coercedVersion) === 11 &&
+    packageManager.getAllDependencies()['@storybook/nextjs']
+  ) {
+    results.push({
+      type: DiagType.DEPRECATED_NEXTJS,
+      title: 'Deprecated framework',
+      message: dedent`
+        @storybook/nextjs is deprecated and will be removed in Storybook 12.
+        Migrate to @storybook/nextjs-vite by running ${picocolors.cyan(
+          `npx storybook automigrate ${nextjsToNextjsVite.id}`
+        )}.
       `,
       project: { configDir },
     });

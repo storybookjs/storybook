@@ -18,6 +18,7 @@ vi.mock('storybook/internal/node-logger', async (importOriginal) => {
     logger: {
       log: vi.fn(),
       logBox: vi.fn(),
+      warn: vi.fn(),
       error: vi.fn(),
       debug: vi.fn(),
       SYMBOLS: {
@@ -195,6 +196,45 @@ describe('multi-project automigrations', () => {
       });
 
       expect(result).toEqual([]);
+    });
+
+    it('warns that @storybook/nextjs is deprecated when the nextjs-vite automigration is declined', async () => {
+      const { logger, prompt } = await import('storybook/internal/node-logger');
+      vi.mocked(prompt.multiselect).mockResolvedValue([]);
+
+      const fix = createMockFix('nextjs-to-nextjs-vite', { needsFix: true });
+      const project = createMockProject('/project1/.storybook');
+
+      await promptForAutomigrations([asAutomigration(fix, project)], {
+        dryRun: false,
+        yes: false,
+      });
+
+      expect(vi.mocked(logger.warn)).toHaveBeenCalledWith(
+        expect.stringContaining(
+          '@storybook/nextjs is deprecated and will be removed in Storybook 12'
+        )
+      );
+      expect(vi.mocked(logger.warn)).toHaveBeenCalledWith(
+        expect.stringContaining('npx storybook automigrate nextjs-to-nextjs-vite')
+      );
+    });
+
+    it('does not warn about the deprecation when the nextjs-vite automigration is selected', async () => {
+      const { logger, prompt } = await import('storybook/internal/node-logger');
+      vi.mocked(prompt.multiselect).mockResolvedValue(['nextjs-to-nextjs-vite']);
+
+      const fix = createMockFix('nextjs-to-nextjs-vite', { needsFix: true });
+      const project = createMockProject('/project1/.storybook');
+
+      await promptForAutomigrations([asAutomigration(fix, project)], {
+        dryRun: false,
+        yes: false,
+      });
+
+      expect(vi.mocked(logger.warn)).not.toHaveBeenCalledWith(
+        expect.stringContaining('will be removed in Storybook 12')
+      );
     });
 
     it('should return all automigrations when yes option is true', async () => {

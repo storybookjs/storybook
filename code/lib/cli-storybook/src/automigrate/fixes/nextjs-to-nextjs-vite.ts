@@ -1,16 +1,23 @@
 import { transformImports } from 'storybook/internal/common';
+import { dedent } from 'ts-dedent';
 
 import { assertMainConfigNamesFramework } from '../helpers/main-config-framework.ts';
 import type { Fix } from '../types.ts';
 
 export const VITE_DEFAULT_VERSION = '^7.0.0';
 
+/** Logged when the user declines this migration, mirroring the dev-server deprecation in the `@storybook/nextjs` preset. */
+export const nextjsDeprecationWarning = dedent`
+  @storybook/nextjs is deprecated and will be removed in Storybook 12.
+  Migrate to @storybook/nextjs-vite by running \`npx storybook automigrate nextjs-to-nextjs-vite\`.
+`;
+
 const NEXTJS_FRAMEWORK = /@storybook\/nextjs(?!-vite)/g;
 
 export const nextjsToNextjsVite: Fix = {
   id: 'nextjs-to-nextjs-vite',
   link: 'https://storybook.js.org/docs/get-started/frameworks/nextjs-vite',
-  defaultSelected: false,
+  defaultSelected: true,
 
   async check({ packageManager }) {
     return packageManager.getAllDependencies()['@storybook/nextjs'] ? {} : null;

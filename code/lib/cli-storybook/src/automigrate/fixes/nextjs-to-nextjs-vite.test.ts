@@ -42,6 +42,12 @@ describe('nextjs-to-nextjs-vite', () => {
     vi.mocked(mockPackageManager.getDependencyVersion).mockReturnValue(null);
   });
 
+  describe('default selection', () => {
+    it('is selected by default so it runs under --yes and is preselected in the prompt', () => {
+      expect(nextjsToNextjsVite.defaultSelected).toBe(true);
+    });
+  });
+
   describe('check function', () => {
     it('should return null if @storybook/nextjs is not installed', async () => {
       mockPackageManager.getAllDependencies = vi.fn().mockReturnValue({

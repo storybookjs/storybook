@@ -26,6 +26,7 @@ export enum DiagnosticType {
   MISMATCHING_VERSIONS = 'mismatching_versions',
   DUPLICATED_DEPENDENCIES = 'duplicated_dependencies',
   CONFIGURATION_ERROR = 'configuration_error',
+  DEPRECATED_NEXTJS = 'deprecated_nextjs',
 }
 
 export enum DiagnosticStatus {

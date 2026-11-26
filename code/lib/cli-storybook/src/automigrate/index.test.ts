@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { JsPackageManager, PackageJson } from 'storybook/internal/common';
-import { prompt } from 'storybook/internal/node-logger';
+import { logger, prompt } from 'storybook/internal/node-logger';
 
 import * as mainConfigFile from './helpers/mainConfigFile.ts';
 import { doAutomigrate, runFixes } from './index.ts';
@@ -184,6 +184,29 @@ describe('runFixes', () => {
     });
     expect(named.fixResults).toEqual({ 'opt-in': 'succeeded' });
     expect(run1).toHaveBeenCalled();
+  });
+
+  it('warns that @storybook/nextjs is deprecated when the nextjs-vite migration is skipped', async () => {
+    const declined = { ...fixes[0], id: 'nextjs-to-nextjs-vite', defaultSelected: false };
+
+    await runFixes({ ...common, fixes: [declined], storybookVersion: '7.0.0' });
+
+    expect(vi.mocked(logger.warn)).toHaveBeenCalledWith(
+      expect.stringContaining('@storybook/nextjs is deprecated and will be removed in Storybook 12')
+    );
+    expect(vi.mocked(logger.warn)).toHaveBeenCalledWith(
+      expect.stringContaining('npx storybook automigrate nextjs-to-nextjs-vite')
+    );
+  });
+
+  it('does not warn about the deprecation when another fix is skipped', async () => {
+    const optIn = { ...fixes[0], id: 'opt-in', defaultSelected: false };
+
+    await runFixes({ ...common, fixes: [optIn], storybookVersion: '7.0.0' });
+
+    expect(vi.mocked(logger.warn)).not.toHaveBeenCalledWith(
+      expect.stringContaining('will be removed in Storybook 12')
+    );
   });
 
   it('should fail if an error is thrown by migration', async () => {

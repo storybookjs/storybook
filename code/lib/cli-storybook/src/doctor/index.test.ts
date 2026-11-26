@@ -94,6 +94,69 @@ describe('getDoctorDiagnostics overrides check', () => {
   });
 });
 
+describe('getDoctorDiagnostics deprecated nextjs check', () => {
+  const getAllDependencies = vi.fn<() => Record<string, string>>();
+  const packageManager = {
+    packageJsonPaths: ['package.json'],
+    getAllDependencies,
+    findInstallations: async () => undefined,
+    getOverrideSources: () => [],
+  } as unknown as JsPackageManager;
+
+  beforeEach(() => {
+    getAllDependencies.mockReturnValue({ storybook: '^11.0.0' });
+  });
+
+  it('warns that @storybook/nextjs is deprecated when it is installed on Storybook 11', async () => {
+    getAllDependencies.mockReturnValue({ storybook: '^11.0.0', '@storybook/nextjs': '^11.0.0' });
+
+    const results = await getDoctorDiagnostics({
+      ...projectData,
+      packageManager,
+      storybookVersion: '11.0.0',
+    });
+
+    expect(results.filter(({ type }) => type === DiagnosticType.DEPRECATED_NEXTJS))
+      .toMatchInlineSnapshot(`
+        [
+          {
+            "message": "@storybook/nextjs is deprecated and will be removed in Storybook 12.
+        Migrate to @storybook/nextjs-vite by running npx storybook automigrate nextjs-to-nextjs-vite.",
+            "project": {
+              "configDir": ".storybook",
+            },
+            "title": "Deprecated framework",
+            "type": "deprecated_nextjs",
+          },
+        ]
+      `);
+  });
+
+  it('does not warn when @storybook/nextjs is not installed', async () => {
+    const results = await getDoctorDiagnostics({
+      ...projectData,
+      packageManager,
+      storybookVersion: '11.0.0',
+    });
+
+    expect(results.some(({ type }) => type === DiagnosticType.DEPRECATED_NEXTJS)).toBe(false);
+  });
+
+  it('does not warn on Storybook versions other than 11', async () => {
+    getAllDependencies.mockReturnValue({ storybook: '^12.0.0', '@storybook/nextjs': '^12.0.0' });
+
+    for (const storybookVersion of ['10.0.0', '12.0.0']) {
+      const results = await getDoctorDiagnostics({
+        ...projectData,
+        packageManager,
+        storybookVersion,
+      });
+
+      expect(results.some(({ type }) => type === DiagnosticType.DEPRECATED_NEXTJS)).toBe(false);
+    }
+  });
+});
+
 describe('doctor', () => {
   const reported = () =>
     [

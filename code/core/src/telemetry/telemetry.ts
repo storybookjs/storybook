@@ -3,23 +3,23 @@ import { spawn } from 'node:child_process';
 import { readFileSync, rmSync, writeFileSync } from 'node:fs';
 import * as os from 'node:os';
 import { join } from 'node:path';
-import { fileURLToPath } from 'node:url';
 
 import { isCI } from 'storybook/internal/common';
 
 import { nanoid } from 'nanoid';
 
 import { version } from '../../package.json';
-import { importMetaResolve, resolvePackageDir } from '../shared/utils/module.ts';
+import { resolvePackageDir } from '../shared/utils/module.ts';
 import { getAnonymousProjectId, getProjectSince } from './anonymous-id.ts';
 import { detectAgent } from './detect-agent.ts';
 import { set as saveToCache } from './event-cache.ts';
+import { flushEventsScript } from './flush-events-script.ts';
 import { getSessionId } from './session-id.ts';
 import type { Options, TelemetryData, TelemetryEvent } from './types.ts';
 
 const HAND_OVER_AFTER = 5_000;
 
-const pending: TelemetryEvent[] = [];
+const pending: string[] = [];
 let handOverTimer: ReturnType<typeof setTimeout> | undefined;
 process.once('exit', handOverPendingEvents);
 
@@ -91,7 +91,7 @@ export async function sendTelemetry(data: TelemetryData, options: Partial<Option
       payload,
       context,
     };
-    pending.push(body);
+    pending.push(JSON.stringify(body));
     // A long-running process may be killed without an exit event, so it does not keep its events.
     handOverTimer ??= setTimeout(handOverPendingEvents, HAND_OVER_AFTER).unref();
 
@@ -109,16 +109,17 @@ export function handOverPendingEvents() {
   if (pending.length === 0) {
     return;
   }
-  const events = pending.splice(0);
+  const events = `[${pending.splice(0).join(',')}]`;
   const file = join(os.tmpdir(), `storybook-telemetry-${nanoid()}.json`);
   try {
     // The temp directory is shared between users on Linux: only the owner may read the events,
     // and an existing path, such as a planted symlink, is never written through.
-    writeFileSync(file, JSON.stringify(events), { mode: 0o600, flag: 'wx' });
-    const script = fileURLToPath(importMetaResolve('storybook/internal/telemetry/detached-flush'));
-    const child = spawn(process.execPath, [script, file], {
-      // With an inherited --inspect-brk the child would wait for a debugger forever.
-      env: { ...process.env, NODE_OPTIONS: process.env.NODE_OPTIONS?.replace(/--inspect\S*/g, '') },
+    writeFileSync(file, events, { mode: 0o600, flag: 'wx' });
+    const child = spawn(process.execPath, ['--eval', flushEventsScript, file], {
+      // A process inside the project directory would block deleting it on Windows.
+      cwd: os.tmpdir(),
+      // Its preloads may point into an install that is gone, and --inspect-brk would hang the child.
+      env: { ...process.env, NODE_OPTIONS: '' },
       detached: true,
       stdio: 'ignore',
       windowsHide: true,

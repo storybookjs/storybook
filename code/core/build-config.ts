@@ -102,11 +102,6 @@ const config: BuildEntries = {
         dts: false,
       },
       {
-        exportEntries: ['./internal/telemetry/detached-flush'],
-        entryPoint: './src/telemetry/detached-flush.ts',
-        dts: false,
-      },
-      {
         exportEntries: ['./internal/telemetry'],
         entryPoint: './src/telemetry/index.ts',
       },

@@ -116,6 +116,31 @@ it('keeps snippet and each parameters local', () => {
   ).toEqual({ unresolved: [], unresolvedIdentifiers: ['items'] });
 });
 
+it('does not report the `const` of a const assertion in the markup', () => {
+  expect(
+    buildSnippetImportBlock(
+      `{#each ['sm', 'md'] as const as size (size)}<Tag label="Design" {size} />{/each}`,
+      { bindings: bindings("import Tag from './Tag.svelte';"), typescript: true }
+    )
+  ).toEqual({
+    block: `<script lang="ts">\n  import Tag from './Tag.svelte';\n</script>`,
+    unresolved: [],
+  });
+});
+
+it('does not report the `const` of a const assertion in a copied declaration', () => {
+  expect(
+    buildSnippetImportBlock('{#each sizes as size (size)}<Tag label="Design" {size} />{/each}', {
+      bindings: bindings("import Tag from './Tag.svelte';"),
+      moduleScript: "const sizes = ['sm', 'md'] as const;",
+      typescript: true,
+    })
+  ).toEqual({
+    block: `<script lang="ts">\n  import Tag from './Tag.svelte';\n\n  const sizes = ['sm', 'md'] as const;\n</script>`,
+    unresolved: [],
+  });
+});
+
 it('copies type declarations used by copied state', () => {
   expect(
     buildSnippetImportBlock('{value}', {

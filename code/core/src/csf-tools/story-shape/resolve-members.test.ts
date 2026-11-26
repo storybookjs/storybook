@@ -717,6 +717,24 @@ describe('externalize', () => {
     );
     expect(argsOf('', 'Reuse', ctx)).toEqual({ args: {}, unresolved: ['...shared'] });
   });
+
+  it('accepts a value another module owns that carries a const assertion', () => {
+    const ctx = contextOf(
+      {
+        'constants.ts': `export const shared = { size: 'large' as const };`,
+        'entry.ts': dedent`
+          import { shared } from './constants';
+          export const Reuse = { args: { ...shared } };
+        `,
+      },
+      'entry.ts',
+      (node) => (isSelfContained(node) ? node : undefined)
+    );
+    expect(argsOf('', 'Reuse', ctx)).toEqual({
+      args: { size: "'large' as const" },
+      unresolved: [],
+    });
+  });
 });
 
 describe('resolveReferencedValue', () => {

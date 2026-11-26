@@ -549,12 +549,8 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
       await refreshAgentInstructions(agentInstructions);
     }
 
-    // Run doctor for each project. The runners hand over only the fixes whose skip warning was
-    // printed this run, so the doctor stays silent about those deprecations; a fix that cancelled
-    // itself from `run` printed none and still gets the doctor's deprecation. On a dry run nothing
-    // was skipped for real, so the doctor owns the deprecation warning (`warnedFixIds` is
-    // `undefined`).
-    const doctorProjects: ProjectDoctorData[] = storybookProjects.map((project) => ({
+    // Run doctor for each project
+const doctorProjects: ProjectDoctorData[] = storybookProjects.map((project) => ({
       configDir: project.configDir,
       packageManager: project.packageManager,
       storybookVersion: project.currentCLIVersion,

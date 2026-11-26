@@ -104,8 +104,8 @@ that `error`; a file the provider returns nothing for contributes no stories.
 
 The Storybook UI shows every story, but the docs tools, the MCP and the components manifest show
 only the stories tagged `manifest`. So every `storyDocs` read names a `scope`: `all` for the UI,
-`manifest` for the others. The scope is required, so a new reader cannot leak stories by leaving it
-out.
+`manifest` for the others. The scope has no default, so code that leaves it out fails the type check
+and the input validation, and cannot show a hidden story by mistake.
 
 The state stores each story once. `components` holds each payload with only its stories tagged
 `manifest`, and `nonManifestStories` holds the others; the `all` scope joins them. In a build,

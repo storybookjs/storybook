@@ -31,13 +31,8 @@ type ExtractionServiceState = { components: Record<string, unknown> };
 type AllComponentsQuery = { get(): unknown };
 
 type RegisteredExtraction = {
-  // The ids to extract again until an extraction of them completes. They were missing from the
-  // index (a reverted rename or `git stash pop` brings them back) or their stories changed, so a
-  // failed refresh is retried on the next index change.
-  pendingIds: Set<string>;
-  storyKey: (entry: IndexEntry) => string;
-  // Whether a payload is stored for the component. It reads the one-component query, whose `.get`
-  // never fires its `load`, so it checks one payload, not every stored one.
+  idsToExtractAgain: Set<string>;
+  storySignature: (entry: IndexEntry) => string;
   isExtracted: (id: string) => boolean;
 };
 
@@ -82,25 +77,13 @@ export type RegisterExtractionServiceOptions<
   extractCommand: keyof TCommands & string;
   /** Command that extracts every component in the story index. Keyed against the service's commands. */
   extractAllCommand: keyof TCommands & string;
-  /**
-   * The input of `queryName` that reads one component, for the static build and for the checks that
-   * read the state.
-   */
   toQueryInput: (id: string) => InferSchemaInput<TQueries[TQueryName]['input']>;
-  /**
-   * Stores one component's payload and the input it was extracted from in the state, or removes
-   * the component when `extracted` is `undefined`. Defaults to `state.components[key]`.
-   */
   writeComponent?: (
     state: TState,
     key: string,
     extracted: { payload: TPayload; input: ExtractionInput } | undefined
   ) => void;
-  /**
-   * What a component's story contributes to the check that extracts it again when the index
-   * changes. Defaults to the story id; a service that stores stories by their tags adds them.
-   */
-  storyKey?: (entry: IndexEntry) => string;
+  storySignature?: (entry: IndexEntry) => string;
 };
 
 /**
@@ -127,7 +110,6 @@ export function subscribeExtractionServiceToModuleGraphChanges<
     channel: ChannelLike;
     workingDir: string;
     getIndex: () => Promise<StoryIndex>;
-    /** Query whose `.get()` returns every extracted component, keyed by its state key. */
     allQueryName: keyof TQueries & string;
     extractCommand: keyof TCommands & string;
   }
@@ -139,7 +121,7 @@ export function subscribeExtractionServiceToModuleGraphChanges<
   const allQuery: AllComponentsQuery = runtime.queries[options.allQueryName];
   const registered = registeredExtractions.get(runtime);
   invariant(registered, `Extraction service "${definition.id}" is not registered.`);
-  const { pendingIds, storyKey, isExtracted } = registered;
+  const { idsToExtractAgain, storySignature, isExtracted } = registered;
   const extract = (runtime.commands as Record<string, (input: { id: string }) => Promise<unknown>>)[
     options.extractCommand
   ];
@@ -180,12 +162,12 @@ export function subscribeExtractionServiceToModuleGraphChanges<
     await refreshExtracted(new Set(affectedEntries.map(getComponentIdFromEntry)));
   });
 
-  // The story ids of each component at the last sweep, so a component whose stories changed (a
+  // The story signatures of each component at the last sweep, so a component whose stories changed (a
   // renamed title in one of its files) is extracted again.
-  let previousStoryIds: Map<string, string> | undefined;
+  let previousSignatures: Map<string, string> | undefined;
   void options.getIndex().then(
     (index) => {
-      previousStoryIds ??= getStoryIdsByComponent(index, storyKey);
+      previousSignatures ??= getStorySignatureByComponent(index, storySignature);
     },
     () => undefined
   );
@@ -196,37 +178,38 @@ export function subscribeExtractionServiceToModuleGraphChanges<
       return;
     }
 
-    const storyIds = getStoryIdsByComponent(index, storyKey);
+    const signatures = getStorySignatureByComponent(index, storySignature);
     const storedIds = new Set(
       Object.keys(allQuery.get() as Record<string, unknown>).map(fromComponentStateKey)
     );
     for (const id of storedIds) {
       if (
-        !storyIds.has(id) ||
-        (previousStoryIds !== undefined && previousStoryIds.get(id) !== storyIds.get(id))
+        !signatures.has(id) ||
+        (previousSignatures !== undefined && previousSignatures.get(id) !== signatures.get(id))
       ) {
-        pendingIds.add(id);
+        idsToExtractAgain.add(id);
       }
     }
-    previousStoryIds = storyIds;
+    previousSignatures = signatures;
 
     await Promise.all(
-      [...pendingIds].filter((id) => storyIds.has(id) || storedIds.has(id)).map(refreshComponent)
+      [...idsToExtractAgain]
+        .filter((id) => signatures.has(id) || storedIds.has(id))
+        .map(refreshComponent)
     );
   });
 }
 
-// The entry each component is extracted from and its stories, keyed by component id.
-const getStoryIdsByComponent = (
+const getStorySignatureByComponent = (
   index: StoryIndex,
-  storyKey: (entry: IndexEntry) => string
+  storySignature: (entry: IndexEntry) => string
 ): Map<string, string> => {
   const entries = Object.values(index.entries);
   const storyEntries = Map.groupBy(entries.filter(isEligibleStoryEntry), getComponentIdFromEntry);
   return new Map(
     Array.from(selectComponentEntriesByComponentId(entries), ([id, entry]) => [
       id,
-      [entry, ...(storyEntries.get(id) ?? [])].map(storyKey).join('\n'),
+      [entry, ...(storyEntries.get(id) ?? [])].map(storySignature).join('\n'),
     ])
   );
 };
@@ -264,7 +247,7 @@ export function registerExtractionService<
         delete state.components[key];
       }
     },
-    storyKey = (entry: IndexEntry) => entry.id,
+    storySignature = (entry: IndexEntry) => entry.id,
   } = options;
 
   // The registration object below is built with computed keys and cast to `ServiceRegistrationOptions`,
@@ -279,7 +262,7 @@ export function registerExtractionService<
     `Extraction service "${definition.id}" is missing command "${extractCommand}" or "${extractAllCommand}".`
   );
 
-  const pendingIds = new Set<string>();
+  const idsToExtractAgain = new Set<string>();
   // The latest extraction of each component in each runtime, so an older one that finishes later
   // does not overwrite its payload. The static build runs these handlers on runtimes of its own.
   const latestRunsByState = new WeakMap<object, Map<string, Promise<void>>>();
@@ -329,14 +312,14 @@ export function registerExtractionService<
     const extractionInput = (await resolveInputs()).get(id);
     if (!extractionInput) {
       if (isLatestRun()) {
-        pendingIds.add(id);
+        idsToExtractAgain.add(id);
         ctx.self.setState((state) => writePayload(state, id, undefined));
       }
       throw new OpenServiceDocgenMissingComponentError({ id });
     }
     const payload = await provider(extractionInput);
     // The file can be deleted or the title renamed while the provider runs. When the index cannot
-    // be read, keep the payload. Its tags can change too, so the latest input stores the payload.
+    // be read, keep the payload.
     const latestInput = await resolveInputs().then(
       (inputs) => inputs.get(id),
       () => extractionInput
@@ -347,9 +330,9 @@ export function registerExtractionService<
         writePayload(state, id, payload && latestInput && { payload, input: latestInput })
       );
       if (indexed) {
-        pendingIds.delete(id);
+        idsToExtractAgain.delete(id);
       } else {
-        pendingIds.add(id);
+        idsToExtractAgain.add(id);
       }
     }
     if (!indexed) {
@@ -384,9 +367,9 @@ export function registerExtractionService<
     const latestResults = results.filter(([id]) => isLatestRun(id));
     for (const [id] of latestResults) {
       if (current.has(id)) {
-        pendingIds.delete(id);
+        idsToExtractAgain.delete(id);
       } else {
-        pendingIds.add(id);
+        idsToExtractAgain.add(id);
       }
     }
     ctx.self.setState((state) => {
@@ -436,8 +419,8 @@ export function registerExtractionService<
       queryName
     ];
     registeredExtractions.set(service, {
-      pendingIds,
-      storyKey,
+      idsToExtractAgain,
+      storySignature,
       isExtracted: (id) => componentQuery.get(toQueryInput(id)) !== undefined,
     });
   }

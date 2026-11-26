@@ -11,13 +11,9 @@ import invariant from 'tiny-invariant';
 import { getService } from '../../../shared/open-service/server.ts';
 import type { ComponentsManifest } from '../../../types/modules/core-common.ts';
 import { getOwn } from '../../../shared/open-service/plain-object.ts';
-import {
-  readAllComponents,
-  readComponent,
-} from '../../../shared/open-service/services/component-state-key.ts';
+import { readAllComponents } from '../../../shared/open-service/services/component-state-key.ts';
 import type { DocgenPayload } from '../../../shared/open-service/services/docgen/types.ts';
 import type { StoryDocsPayload } from '../../../shared/open-service/services/story-docs/types.ts';
-import { toManifestStoryDocs } from '../../../shared/open-service/services/story-docs/definition.ts';
 import {
   buildComponentsRefManifest,
   type ComponentManifestWithStoryDocs,
@@ -187,20 +183,6 @@ function withDocsOnlyComponents(
   return next;
 }
 
-// Picks the story docs the dev components.html shows for the given components. It applies the
-// manifest rule itself, because `storyDocsForAllComponents` returns every extracted component.
-function readManifestStoryDocs(
-  components: Record<string, StoryDocsPayload>,
-  componentIds: string[]
-): Record<string, StoryDocsPayload> {
-  return Object.fromEntries(
-    componentIds.flatMap((id) => {
-      const payload = toManifestStoryDocs(readComponent(components, id));
-      return payload ? [[id, payload] as const] : [];
-    })
-  );
-}
-
 /**
  * Renders the components HTML debugger from the live docgen, story-docs, and MDX services (dev
  * only).
@@ -214,7 +196,7 @@ async function renderComponentsHtmlFromService(
   const storyDocsService = getService('core/story-docs', { internal: true });
   const startTime = performance.now();
 
-  const [allDocgenPayloads, allStoryDocsPayloads, mdxPayloads] = await Promise.all([
+  const [allDocgenPayloads, , mdxPayloads] = await Promise.all([
     docgenService.queries.docgenForAllComponents.loaded(),
     storyDocsService.queries.storyDocsForAllComponents.loaded(),
     loadMdxPayloadsFromServiceIfNeeded(manifests, docsManifest),
@@ -225,7 +207,12 @@ async function renderComponentsHtmlFromService(
   const components = withDocsOnlyComponents(
     mergeServicePayloads(
       readAllComponents(allDocgenPayloads),
-      readManifestStoryDocs(allStoryDocsPayloads, manifestComponentIds),
+      Object.fromEntries(
+        manifestComponentIds.flatMap((id) => {
+          const payload = storyDocsService.queries.storyDocs.get({ id, scope: 'manifest' });
+          return payload ? [[id, payload] as const] : [];
+        })
+      ),
       manifestComponentIds
     ),
     manifestComponentIds,

@@ -117,8 +117,6 @@ function withStoriesFromEveryFile(provider: StoryDocsProvider, liveSnippets: boo
   };
 }
 
-// Stores the stories in the manifests in `components`, which the components manifest points at, and
-// the others in `nonManifestStories`, so each story is stored once.
 function writeComponent(
   state: StoryDocsServiceState,
   key: string,
@@ -162,8 +160,7 @@ export function registerStoryDocsService(options: RegisterStoryDocsServiceOption
     extractAllCommand: 'extractAllStoryDocs',
     toQueryInput: (id) => ({ id, scope: 'all' as const }),
     writeComponent,
-    // A change to a story's `manifest` tag moves the story between the two parts of the state.
-    storyKey: (entry) => (isManifestEntry(entry) ? entry.id : `${entry.id}!`),
+    storySignature: (entry) => `${entry.id} manifest=${isManifestEntry(entry)}`,
   });
 }
 

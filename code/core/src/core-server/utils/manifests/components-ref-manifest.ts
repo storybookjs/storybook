@@ -106,8 +106,7 @@ export async function loadDocgenPayloadsFromDisk(
 }
 
 /**
- * Reads the built story-docs service snapshots for the given component ids from disk, with every
- * story (`all`) or only the stories in the manifests (`manifest`).
+ * Reads the built story-docs service snapshots for the given component ids from disk.
  */
 export async function loadStoryDocsPayloadsFromDisk(
   outputDir: string,

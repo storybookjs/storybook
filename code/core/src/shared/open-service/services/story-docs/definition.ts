@@ -8,9 +8,6 @@ import { readComponent } from '../component-state-key.ts';
 import type { StoryDocsById, StoryDocsPayload } from './types.ts';
 import { storyDocsQueryStaticPath } from './paths.ts';
 
-// Which stories a `storyDocs` read returns: `all` for the Storybook UI, which shows every story, and
-// `manifest` for the docs tools, the MCP and the components manifest, which show only the stories
-// tagged `manifest`. Required, so that a new reader cannot leak stories by leaving it out.
 const storyDocsScopeSchema = v.picklist(['all', 'manifest']);
 export type StoryDocsScope = v.InferOutput<typeof storyDocsScopeSchema>;
 
@@ -53,13 +50,8 @@ const storyDocsPayloadSchema = v.object({
 const storyDocsOutputSchema = v.optional(storyDocsPayloadSchema);
 
 export type StoryDocsServiceState = {
-  /**
-   * Extracted story docs keyed by component id, with only the stories tagged `manifest`. The
-   * components manifest points here. Code that reads the state, such as a query handler or a
-   * reader of the static snapshot, gets a scope's stories through `readStoryDocs`.
-   */
+  /** Holds only the stories tagged `manifest`. The others are in `nonManifestStories`. */
   components: Record<string, StoryDocsPayload>;
-  /** The stories each component leaves out of the manifests, keyed by component id, then story id. */
   nonManifestStories: Record<string, StoryDocsById>;
 };
 
@@ -68,25 +60,10 @@ const storyDocsServiceStateSchema = v.object({
   nonManifestStories: v.record(v.string(), v.record(v.string(), storyDocSchema)),
 });
 
-/** Whether a value, such as a static snapshot read from disk, has the shape of the service state. */
 export function isStoryDocsServiceState(value: unknown): value is StoryDocsServiceState {
   return v.is(storyDocsServiceStateSchema, value);
 }
 
-/**
- * A stored payload as the manifests show it. A component in the manifests only through its attached
- * docs has no manifest stories, so it gets nothing: no stories and no import.
- */
-export function toManifestStoryDocs(
-  payload: StoryDocsPayload | undefined
-): StoryDocsPayload | undefined {
-  return payload && Object.keys(payload.stories).length > 0 ? payload : undefined;
-}
-
-/**
- * Reads one component's story docs from the service state, as the `storyDocs` query and a build's
- * snapshot reader both do.
- */
 export function readStoryDocs(
   state: StoryDocsServiceState,
   id: string,
@@ -98,7 +75,7 @@ export function readStoryDocs(
   }
   switch (scope) {
     case 'manifest':
-      return toManifestStoryDocs(storyDocs);
+      return Object.keys(storyDocs.stories).length > 0 ? storyDocs : undefined;
     case 'all': {
       const nonManifestStories = readComponent(state.nonManifestStories, id);
       return nonManifestStories
@@ -131,16 +108,13 @@ export const storyDocsServiceDef = defineService({
       load: async ({ id }, ctx) => {
         await ctx.self.commands.extractStoryDocs({ id });
       },
-      // Both scopes read the same state, so they share one file.
       staticPath: (input) => storyDocsQueryStaticPath(input.id),
     },
     storyDocsForAllComponents: {
       description:
-        'Returns the story-docs payload of every extracted component, with only its stories in the manifests, also for a component with none. A manifest reader passes each payload through `toManifestStoryDocs`.',
+        'Returns the story-docs payload of every extracted component, with only its stories tagged `manifest`.',
       input: v.void(),
       output: v.record(v.string(), storyDocsPayloadSchema),
-      // Every stored component, also one with no manifest stories: the extraction service reads
-      // these keys to find the components it extracts again after a file changes.
       handler: (_input, ctx) => ctx.self.state.components,
       load: async (_input, ctx) => {
         await ctx.self.commands.extractAllStoryDocs(undefined);

@@ -140,7 +140,6 @@ export type UpgradeOptions = {
   skipCheck: boolean;
   skipAutomigrations?: boolean;
   packageManager?: PackageManagerName;
-  dryRun: boolean;
   yes: boolean;
   features?: string;
   force: boolean;

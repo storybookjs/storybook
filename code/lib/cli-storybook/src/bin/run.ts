@@ -31,8 +31,8 @@ import { type UpgradeOptions, upgrade } from '../upgrade.ts';
 addToGlobalContext('cliVersion', versions.storybook);
 
 /** Log a command's intro, which says a dry run is one. */
-const logIntro = (message: string, dryRun: boolean | undefined) =>
-  logger.intro(dryRun ? CLI_COLORS.dryRun(message) : message);
+const logIntro = (message: string) =>
+  logger.intro(effects.isDryRun() ? CLI_COLORS.dryRun(message) : message);
 
 // Return a failed exit code but write the logs to a file first
 const handleCommandFailure =
@@ -214,16 +214,11 @@ command('upgrade')
       { cliOptions: { ...options, configDir: options.configDir?.[0] } },
       async () => {
         logIntro(
-          `Storybook upgrade${options.dryRun ? ' (dry run)' : ''} - v${versions.storybook}`,
-          options.dryRun
+          `Storybook upgrade${effects.isDryRun() ? ' (dry run)' : ''} - v${versions.storybook}`
         );
         await upgrade(options);
         effects.logDryRunChanges();
-        logger.outro(
-          options.dryRun
-            ? picocolors.bold(CLI_COLORS.success('Storybook upgrade dry run completed!'))
-            : 'Storybook upgrade completed!'
-        );
+        logger.outro(effects.isDryRun() ? 'Done' : 'Storybook upgrade completed!');
       }
     ).catch(handleCommandFailure(options.logfile));
   });
@@ -248,17 +243,10 @@ command('migrate [migration]')
   )
   .action((migration, options) => {
     withTelemetry('migrate', { cliOptions: options }, async () => {
-      logIntro(
-        `${options.dryRun ? 'Dry-running' : 'Running'} ${migration} migration`,
-        options.dryRun
-      );
+      logIntro(`${effects.isDryRun() ? 'Dry-running' : 'Running'} ${migration} migration`);
       await migrate(migration, options);
       effects.logDryRunChanges();
-      logger.outro(
-        options.dryRun
-          ? picocolors.bold(CLI_COLORS.success('Migration dry run completed'))
-          : 'Migration completed'
-      );
+      logger.outro(effects.isDryRun() ? 'Done' : 'Migration completed');
     }).catch(handleCommandFailure(options.logfile));
   });
 
@@ -300,16 +288,11 @@ command('automigrate [fixId]')
   .option('--glob <pattern>', 'Glob pattern for story files (for csf-factories codemod)')
   .action(async (fixId, options) => {
     withTelemetry('automigrate', { cliOptions: options }, async () => {
-      const running = options.dryRun ? 'Dry-running' : 'Running';
-      logIntro(
-        fixId ? `${running} ${fixId} automigration` : `${running} automigrations`,
-        options.dryRun
-      );
+      const running = effects.isDryRun() ? 'Dry-running' : 'Running';
+      logIntro(fixId ? `${running} ${fixId} automigration` : `${running} automigrations`);
       await doAutomigrate({ fixId, ...options });
       effects.logDryRunChanges();
-      logger.outro(
-        options.dryRun ? picocolors.bold(CLI_COLORS.success('Dry run completed')) : 'Done'
-      );
+      logger.outro('Done');
     }).catch(handleCommandFailure(options.logfile));
   });
 

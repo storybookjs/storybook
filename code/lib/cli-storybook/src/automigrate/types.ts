@@ -151,7 +151,6 @@ export interface AutofixOptionsFromCLI {
   fixes?: Fix[];
   yes?: boolean;
   packageManager?: PackageManagerName;
-  dryRun?: boolean;
   configDir: string;
   skipInstall?: boolean;
   hideMigrationSummary?: boolean;

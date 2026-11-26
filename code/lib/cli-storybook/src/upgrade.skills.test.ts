@@ -63,7 +63,6 @@ const project = (
 
 const baseOptions: UpgradeOptions = {
   skipCheck: true,
-  dryRun: false,
   yes: false,
   force: false,
   disableTelemetry: false,

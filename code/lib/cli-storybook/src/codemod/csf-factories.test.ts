@@ -255,7 +255,6 @@ it('logs Windows preview and package.json paths with forward slashes', async () 
   const step = vi.mocked(logger.step).mockImplementation(() => {});
 
   await csfFactories.run({
-    dryRun: true,
     yes: false,
     glob: '**/*.stories.tsx',
     mainConfig: {} as any,

@@ -1,6 +1,6 @@
 import {
-  HandledError,
   getEnvConfig,
+  isHandledError,
   optionalEnvToBoolean,
   parseList,
 } from 'storybook/internal/common';
@@ -220,7 +220,7 @@ command('index')
 const handleCliCommandFailure =
   (logFilePath: string | boolean | undefined) =>
   async (error: unknown): Promise<never> => {
-    if (!(error instanceof HandledError)) {
+    if (!isHandledError(error)) {
       logger.error(String(error));
     }
     return handleCommandFailure(logFilePath ?? false);

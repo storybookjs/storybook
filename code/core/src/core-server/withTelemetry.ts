@@ -111,7 +111,8 @@ export async function sendTelemetryError(
       errorLevel = await getErrorLevel({
         ...options,
         eventType,
-        skipPrompt: options.skipPrompt || (eventType === 'init' && !blocking),
+        skipPrompt:
+          options.skipPrompt || isHandledError(_error) || (eventType === 'init' && !blocking),
       });
     } catch (err) {
       // If this throws, eg. due to main.js breaking, we fall back to 'error'
@@ -263,17 +264,12 @@ export async function withTelemetry<T>(
       return undefined;
     }
 
-    const handled = isHandledError(error);
-
-    if (!handled) {
+    if (!isHandledError(error)) {
       const { printError = logger.error } = options;
       printError(error);
     }
 
-    await sendTelemetryError(error, eventType, {
-      ...options,
-      skipPrompt: options.skipPrompt || handled,
-    });
+    await sendTelemetryError(error, eventType, options);
 
     throw error;
   } finally {

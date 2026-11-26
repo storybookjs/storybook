@@ -1,6 +1,6 @@
 {
   "name": "@storybook/code",
-  "version": "11.0.0-rc.0",
+  "version": "11.0.0-rc.1",
   "private": true,
   "description": "Storybook root",
   "homepage": "https://storybook.js.org/",
@@ -189,6 +189,5 @@
         "Dependency Upgrades"
       ]
     ]
-  },
-  "deferredNextVersion": "11.0.0-rc.1"
+  }
 }

@@ -15,7 +15,7 @@
     "@anthropic-ai/sdk": "1.4.0",
     "gifenc": "1.0.3",
     "pathe": "^2.0.3",
-    "playwright": "1.58.2",
+    "playwright": "1.65.1",
     "pngjs": "^7.0.0",
     "zod": "^4.4.3"
   },

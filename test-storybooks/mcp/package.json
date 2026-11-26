@@ -24,7 +24,7 @@
     "@storybook/mcp": "file:../../code/lib/mcp",
     "@storybook/react": "file:../../code/renderers/react",
     "@storybook/react-vite": "file:../../code/frameworks/react-vite",
-    "playwright": "1.58.2",
+    "playwright": "1.65.1",
     "storybook": "file:../../code/core"
   },
   "devDependencies": {
@@ -38,7 +38,7 @@
     "@types/react-dom": "^18.2.21",
     "@vitejs/plugin-react": "^5.1.1",
     "@vitest/browser-playwright": "4.0.6",
-    "playwright": "1.58.2",
+    "playwright": "1.65.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "storybook": "^10.0.0",

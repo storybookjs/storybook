@@ -15,7 +15,8 @@ if (!url || !out) {
   process.exit(2);
 }
 
-// The Docker image ships Playwright's Chromium; a GitHub-hosted runner ships only Google Chrome.
+// Prefer Playwright's pinned Chromium, which the Docker image ships, and fall back to the
+// system Google Chrome, which GitHub-hosted runners ship.
 const browser = await chromium.launch(
   existsSync(chromium.executablePath()) ? {} : { channel: 'chrome' }
 );

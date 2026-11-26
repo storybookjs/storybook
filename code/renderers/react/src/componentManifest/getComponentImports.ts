@@ -1,6 +1,4 @@
 import { dirname } from 'node:path';
-import { isAbsolute as isPosixAbsolute } from 'node:path/posix';
-import { isAbsolute as isWin32Absolute } from 'node:path/win32';
 
 import {
   type CsfFile,
@@ -15,6 +13,7 @@ import { isModuleNotFoundError } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 import type { TypescriptOptions as TypescriptOptionsBase } from 'storybook/internal/types';
 
+import { isAbsolute } from 'pathe';
 import type { ParserOptions } from 'react-docgen-typescript';
 
 import { getDocgenPackageMissingError, loadReactDocgen } from './loadReactDocgen.ts';
@@ -41,19 +40,22 @@ const isReactDocgenTypescriptResolvable = () => {
 
 export type { ReactDocgenConfig };
 
-// `~` and `#` are bundler and Node aliases. tsconfig `paths` are whatever `matched` changed.
-function isLocalImport(importId: string, matched: string | undefined): boolean {
+// `~` and `#` are bundler and Node aliases. A tsconfig `paths` match is local when the original specifier does not resolve.
+function isLocalImport(
+  importId: string,
+  matched: string | undefined,
+  originalSpecifierResolves: boolean
+): boolean {
   if (
     importId.startsWith('.') ||
     importId.startsWith('~') ||
     importId.startsWith('#') ||
-    isWin32Absolute(importId) ||
-    isPosixAbsolute(importId)
+    isAbsolute(importId)
   ) {
     return true;
   }
 
-  return matched !== undefined && matched !== importId;
+  return matched !== undefined && matched !== importId && !originalSpecifierResolves;
 }
 export type DocgenEngine = 'react-docgen' | 'react-docgen-typescript' | 'react-component-meta';
 
@@ -186,20 +188,29 @@ export const getComponents = async ({
         };
 
         const { importId } = component;
-        const matched =
-          importId && storyFilePath ? matchPath(importId, dirname(storyFilePath)) : importId;
+        const basedir = storyFilePath ? dirname(storyFilePath) : undefined;
+        const matched = importId && basedir ? matchPath(importId, basedir) : importId;
         let path;
         try {
-          if (matched && storyFilePath) {
-            path = cachedResolveImport(matched, {
-              basedir: dirname(storyFilePath),
-            });
+          if (matched && basedir) {
+            path = cachedResolveImport(matched, { basedir });
           }
         } catch (e) {
           logger.debug(e);
         }
 
-        const isPackage = !!importId && !isLocalImport(importId, matched);
+        let originalSpecifierResolves = false;
+        if (importId && basedir && matched !== importId) {
+          try {
+            cachedResolveImport(importId, { basedir });
+            originalSpecifierResolves = true;
+          } catch (e) {
+            logger.debug(e);
+          }
+        }
+
+        const isPackage =
+          !!importId && !isLocalImport(importId, matched, originalSpecifierResolves);
 
         const componentWithPackage = { ...component, isPackage };
 

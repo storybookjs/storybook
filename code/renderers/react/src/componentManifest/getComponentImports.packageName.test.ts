@@ -8,6 +8,7 @@ import { createMatchPath, loadConfig } from 'tsconfig-paths';
 
 import { getComponentData } from './getComponentImports.ts';
 import { setupMemfsMocks } from './memfs-test-setup.ts';
+import { cachedResolveImport } from './utils.ts';
 
 vi.mock('node:fs');
 vi.mock('node:fs/promises');
@@ -276,17 +277,33 @@ describe('tsconfig path alias', () => {
       configFileAbsolutePath: '/app/tsconfig.json',
       baseUrl: '.',
       absoluteBaseUrl: '/app',
-      paths: { '@/*': ['src/*'] },
+      paths: { '@/*': ['src/*'], '@acme/icons': ['packages/icons/src'] },
     });
-    vi.mocked(createMatchPath).mockReturnValue((id) =>
-      typeof id === 'string' && id.startsWith('@/') ? '/app/src/components/Button.tsx' : undefined
-    );
+    vi.mocked(createMatchPath).mockReturnValue((id) => {
+      if (id === '@acme/icons') {
+        return '/app/packages/icons/src/index.ts';
+      }
+      return typeof id === 'string' && id.startsWith('@/')
+        ? '/app/src/components/Button.tsx'
+        : undefined;
+    });
+    const resolveImport = vi.mocked(cachedResolveImport).getMockImplementation();
+    vi.mocked(cachedResolveImport).mockImplementation((id, options) => {
+      if (id === '@acme/icons') {
+        return './packages/icons/src/index.ts';
+      }
+      if (!resolveImport) {
+        throw new Error(`Unable to resolve ${String(id)}`);
+      }
+      return resolveImport(id, options);
+    });
   });
 
   afterEach(() => {
     vi.mocked(findTsconfigPathForPath).mockRestore();
     vi.mocked(loadConfig).mockRestore();
     vi.mocked(createMatchPath).mockRestore();
+    vi.mocked(cachedResolveImport).mockRestore();
   });
 
   test('Rewrites a tsconfig path alias to packageName', async () => {
@@ -311,6 +328,33 @@ describe('tsconfig path alias', () => {
         ],
         "imports": [
           "import { Button } from 'pkg';",
+        ],
+      }
+    `);
+  });
+
+  test('Keeps a tsconfig path that resolves as a package', async () => {
+    const code = dedent`
+      import { Icon } from '@acme/icons';
+
+      const meta = {};
+      export default meta;
+      export const S = <Icon/>;
+    `;
+    expect(await getImports(code, 'pkg')).toMatchInlineSnapshot(`
+      {
+        "components": [
+          {
+            "componentName": "Icon",
+            "importId": "@acme/icons",
+            "importName": "Icon",
+            "isPackage": true,
+            "jsxDepth": 0,
+            "localImportName": "Icon",
+          },
+        ],
+        "imports": [
+          "import { Icon } from '@acme/icons';",
         ],
       }
     `);

@@ -82,7 +82,7 @@ export function extractComponentJsDocInfo<TChecker>(
 ): ComponentJsDocInfo {
   const description = typescript.displayPartsToString(symbol.getDocumentationComment(checker));
 
-  const jsDocTags: Record<string, string[]> = {};
+  const jsDocTags: Record<string, string[]> = Object.create(null);
   for (const tag of symbol.getJsDocTags(checker)) {
     (jsDocTags[tag.name] ??= []).push(typescript.displayPartsToString(tag.text ?? []).trim());
   }

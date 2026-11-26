@@ -1407,19 +1407,6 @@ function getJSDocDefault(
   return undefined;
 }
 
-/** Collects every per-prop JSDoc tag for the manifest / docs-show consumers. */
-function extractPropJsDocTags(
-  typescript: DocgenTypeScript,
-  prop: ts.Symbol,
-  checker: DocgenTypeChecker
-): Record<string, string[]> | undefined {
-  const jsDocTags: Record<string, string[]> = {};
-  for (const tag of prop.getJsDocTags(checker as ts.TypeChecker)) {
-    (jsDocTags[tag.name] ??= []).push(typescript.displayPartsToString(tag.text ?? []).trim());
-  }
-  return Object.keys(jsDocTags).length > 0 ? jsDocTags : undefined;
-}
-
 // ---------------------------------------------------------------------------
 // Single prop extraction
 // ---------------------------------------------------------------------------
@@ -1445,9 +1432,7 @@ function extractPropItem(
       : undefined;
   const type = serializeType(typescript, checker, propType, isRequired, 0, declaredTypeNode);
 
-  const description = typescript.displayPartsToString(
-    prop.getDocumentationComment(checker as ts.TypeChecker)
-  );
+  const { description, jsDocTags } = extractComponentJsDocInfo(typescript, checker, prop);
 
   const parent = getParentType(typescript, prop);
   const declarations = getAllDeclarationParents(typescript, prop);
@@ -1457,7 +1442,6 @@ function extractPropItem(
   const destructuringDefault = defaultsMap?.get(propName);
   const jsDocDefault = getJSDocDefault(typescript, prop, checker);
   const defaultStr = destructuringDefault ?? jsDocDefault;
-  const jsDocTags = extractPropJsDocTags(typescript, prop, checker);
 
   return {
     name: propName,
@@ -1467,7 +1451,7 @@ function extractPropItem(
     defaultValue: defaultStr !== undefined ? { value: defaultStr } : null,
     parent,
     declarations,
-    ...(jsDocTags ? { jsDocTags } : {}),
+    ...(Object.keys(jsDocTags).length > 0 ? { jsDocTags } : {}),
   };
 }
 

@@ -69,11 +69,8 @@ const command = (name: string) =>
     .option('--loglevel <trace | debug | info | warn | error | silent>', 'Define log level', 'info')
     .hook('preAction', async (self) => {
       const options = self.opts();
-      // Code that changes the project reads the mode from the effects module, not from options.
+      // Code that changes the project, and telemetry, read the mode from the effects module.
       effects.setDryRun(Boolean(options.dryRun));
-      if (options.dryRun) {
-        addToGlobalContext('dryRun', true);
-      }
       if (options.debug) {
         logger.setLogLevel('debug');
       }

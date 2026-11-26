@@ -1,4 +1,6 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest';
+
+import { effects } from 'storybook/internal/common';
 
 // We need to reset module state between tests
 let telemetryModule: typeof import('./index.ts');
@@ -174,6 +176,23 @@ describe('telemetry state machine', () => {
 
     await telemetryModule.setTelemetryEnabled(true);
     expect(telemetryModule.isTelemetryModuleEnabled()).toBe(true);
+  });
+});
+
+describe('a dry run', () => {
+  it('sends no events, whether queued, sent or forced', async () => {
+    const { sendTelemetry } = await import('./telemetry.ts');
+    const payloadFactory = vi.fn().mockReturnValue({ eventType: 'upgrade' });
+    effects.setDryRun(true);
+    onTestFinished(() => effects.setDryRun(false));
+
+    await telemetryModule.telemetry('upgrade', payloadFactory);
+    await telemetryModule.setTelemetryEnabled(true);
+    await telemetryModule.telemetry('upgrade', payloadFactory);
+    await telemetryModule.telemetry('error', { eventType: 'upgrade' }, { force: true });
+
+    expect(payloadFactory).not.toHaveBeenCalled();
+    expect(sendTelemetry).not.toHaveBeenCalled();
   });
 });
 

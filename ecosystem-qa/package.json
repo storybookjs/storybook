@@ -1,6 +1,6 @@
 {
   "name": "ecosystem-qa",
-  "version": "11.0.0-rc.0",
+  "version": "11.0.0-rc.1",
   "private": true,
   "type": "module",
   "scripts": {

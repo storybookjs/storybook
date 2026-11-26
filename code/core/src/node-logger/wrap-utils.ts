@@ -2,7 +2,6 @@ import { stripVTControlCharacters } from 'node:util';
 
 import wrapAnsi from 'wrap-ansi';
 
-// Text wrapping utility for Clack output
 function getTerminalWidth(): number {
   // Default terminal width, fallback for when we can't determine it
   const defaultWidth = 80;

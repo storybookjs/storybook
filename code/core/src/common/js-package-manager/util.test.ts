@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import versions from '../versions.ts';
 import { PackageManagerName } from './JsPackageManager.ts';
 import { NPMProxy } from './NPMProxy.ts';
 import { PNPMProxy } from './PNPMProxy.ts';
@@ -12,6 +13,7 @@ import {
   getStorybookRerunCommand,
   getStorybookRerunInstruction,
   getVitestStorybookRunCommand,
+  hasStorybookMinimumAgeExclusionNames,
   hasStorybookMinimumAgeExclusions,
   isNpmPeerResolutionError,
   parsePackageData,
@@ -20,6 +22,8 @@ import {
   parseReleaseTime,
   parseYarnMinimalAgeGateMinutes,
   readPackageVersions,
+  STORYBOOK_PACKAGE_NAMES,
+  STORYBOOK_PACKAGE_PATTERNS,
 } from './util.ts';
 
 describe('js package manager util', () => {
@@ -143,18 +147,37 @@ describe('js package manager util', () => {
   });
 
   it('detects when Storybook minimum-age exclusions are already configured', () => {
-    expect(
-      hasStorybookMinimumAgeExclusions([
-        'storybook',
-        '@storybook/*',
-        'eslint-plugin-storybook',
-        '@chromatic-com/storybook',
-        'chromatic',
-      ])
-    ).toBe(true);
+    expect(hasStorybookMinimumAgeExclusions(STORYBOOK_PACKAGE_PATTERNS)).toBe(true);
     expect(hasStorybookMinimumAgeExclusions(['storybook', '@storybook/react-vite'])).toBe(false);
-    expect(hasStorybookMinimumAgeExclusions(['*storybook*', 'chromatic'])).toBe(true);
-    expect(hasStorybookMinimumAgeExclusions(['*storybook*'])).toBe(false);
+    expect(hasStorybookMinimumAgeExclusions(['*storybook*', 'sb', 'chromatic'])).toBe(true);
+    expect(hasStorybookMinimumAgeExclusions(['*storybook*', 'sb'])).toBe(false);
+  });
+
+  it('detects exclusions for a package manager that matches exact names', () => {
+    expect(hasStorybookMinimumAgeExclusionNames(STORYBOOK_PACKAGE_NAMES)).toBe(true);
+    expect(hasStorybookMinimumAgeExclusionNames(STORYBOOK_PACKAGE_PATTERNS)).toBe(false);
+    expect(hasStorybookMinimumAgeExclusionNames(STORYBOOK_PACKAGE_NAMES.slice(1))).toBe(false);
+  });
+
+  // Storybook writes these lists into the config of users' package managers, and asks again when an
+  // entry is missing there. A change to this list is a change for every project behind an age gate.
+  it('preapproves every package Storybook publishes, and the Chromatic packages', () => {
+    expect(STORYBOOK_PACKAGE_PATTERNS).toEqual([
+      '@storybook/*',
+      'storybook-addon-pseudo-states',
+      'storybook',
+      'sb',
+      'create-storybook',
+      'eslint-plugin-storybook',
+      'vite-plugin-storybook-nextjs',
+      '@chromatic-com/storybook',
+      'chromatic',
+    ]);
+    expect(STORYBOOK_PACKAGE_NAMES).toEqual([
+      ...Object.keys(versions),
+      '@chromatic-com/storybook',
+      'chromatic',
+    ]);
   });
 
   it('builds rerun guidance', () => {

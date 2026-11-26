@@ -10,6 +10,7 @@ import { MinimumReleaseAgeHandledError } from 'storybook/internal/server-errors'
 import { executeCommand } from '../utils/command.ts';
 import { JsPackageManager } from './JsPackageManager.ts';
 import { BUNProxy } from './BUNProxy.ts';
+import { STORYBOOK_PACKAGE_PATTERNS, STORYBOOK_PACKAGE_NAMES } from './util.ts';
 
 vi.mock('storybook/internal/node-logger', () => ({
   prompt: {
@@ -178,7 +179,7 @@ describe('BUN Proxy', () => {
         [
           '[install]',
           'minimumReleaseAge = 3600',
-          'minimumReleaseAgeExcludes = ["storybook", "@storybook/*", "eslint-plugin-storybook", "@chromatic-com/storybook", "chromatic"]',
+          `minimumReleaseAgeExcludes = ${JSON.stringify(STORYBOOK_PACKAGE_NAMES)}`,
           '',
         ].join('\n')
       );
@@ -196,6 +197,28 @@ describe('BUN Proxy', () => {
       expect(vi.mocked(prompt.select)).not.toHaveBeenCalled();
       expect(vi.mocked(logger.warn)).not.toHaveBeenCalled();
       expect(updateSpy).not.toHaveBeenCalled();
+    });
+
+    it('does not count a glob pattern as an exclusion, because Bun matches exact names', async () => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date('2025-01-10T00:00:00.000Z'));
+      vi.spyOn(bunProxy as any, 'readBunfig').mockReturnValue(
+        `minimumReleaseAge = 3600\nminimumReleaseAgeExcludes = ${JSON.stringify(STORYBOOK_PACKAGE_PATTERNS)}\n`
+      );
+      const updateSpy = vi
+        .spyOn(bunProxy as any, 'updateMinimumReleaseAgeExcludes')
+        .mockImplementation(() => undefined);
+      mockedExecuteCommand.mockResolvedValueOnce({
+        stdout: JSON.stringify({ '10.4.0-alpha.17': '2025-01-09T23:30:00.000Z' }),
+      } as any);
+
+      await bunProxy.precheckStorybookPackageInstall({
+        storybookVersion: '10.4.0-alpha.17',
+        nonInteractive: true,
+        installContext: 'upgrade',
+      });
+
+      expect(updateSpy).toHaveBeenCalled();
     });
   });
 
@@ -221,14 +244,46 @@ describe('BUN Proxy', () => {
             '[install]',
             'minimumReleaseAge = 900000',
             'minimumReleaseAgeExcludes = [',
-            '  "storybook",',
-            '  "@storybook/*",',
-            '  "eslint-plugin-storybook",',
-            '  "@chromatic-com/storybook",',
-            '  "chromatic",',
+            ...STORYBOOK_PACKAGE_NAMES.map((name) => `  "${name}",`),
             ']',
             '[test]',
             'coverageThreshold = 0.9',
+            '',
+          ].join('\n')
+        );
+      } finally {
+        rmSync(tempDir, { recursive: true, force: true });
+      }
+    });
+
+    it('keeps the entries that are already listed, in either quote style', () => {
+      const tempDir = mkdtempSync(join(tmpdir(), 'storybook-bun-proxy-'));
+      const bunfigPath = join(tempDir, 'bunfig.toml');
+
+      writeFileSync(join(tempDir, 'package.json'), '{}\n');
+      const tempBunProxy = new BUNProxy({ cwd: tempDir });
+      writeFileSync(
+        bunfigPath,
+        [
+          '[install]',
+          'minimumReleaseAge = 900000',
+          `minimumReleaseAgeExcludes = ['internal-package', "@storybook/*"]`,
+          '',
+        ].join('\n')
+      );
+
+      try {
+        (tempBunProxy as any).updateMinimumReleaseAgeExcludes();
+
+        expect(readFileSync(bunfigPath, 'utf-8')).toBe(
+          [
+            '[install]',
+            'minimumReleaseAge = 900000',
+            'minimumReleaseAgeExcludes = [',
+            '  "internal-package",',
+            '  "@storybook/*",',
+            ...STORYBOOK_PACKAGE_NAMES.map((name) => `  "${name}",`),
+            ']',
             '',
           ].join('\n')
         );

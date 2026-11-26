@@ -1,31 +1,41 @@
 import { compare, gt, prerelease, valid } from 'semver';
 
+import versions from '../versions.ts';
 import type { JsPackageManager } from './JsPackageManager.ts';
 import { PackageManagerName } from './JsPackageManager.ts';
 import type { InstallationMetadata } from './types.ts';
 
 export type StorybookInstallContext = 'create' | 'upgrade';
 
-export const STORYBOOK_PACKAGE_PATTERNS = [
-  'storybook',
-  '@storybook/*',
-  'eslint-plugin-storybook',
+// Storybook's packages depend on each other at exact versions, so an age gate that lets one of them
+// through has to let all of them through.
+export const STORYBOOK_PACKAGE_NAMES: readonly string[] = [
+  ...Object.keys(versions),
   '@chromatic-com/storybook',
   'chromatic',
-] as const;
+];
+
+export const STORYBOOK_PACKAGE_PATTERNS: readonly string[] = [
+  '@storybook/*',
+  ...STORYBOOK_PACKAGE_NAMES.filter((name) => !name.startsWith('@storybook/')),
+];
 
 const escapePatternForRegex = (pattern: string) => pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 const packagePatternToRegex = (pattern: string) =>
   new RegExp(`^${escapePatternForRegex(pattern).replace(/\\\*/g, '.*')}$`);
 
-export const hasStorybookMinimumAgeExclusions = (configuredPatterns: string[]) => {
+export const hasStorybookMinimumAgeExclusions = (configuredPatterns: readonly string[]) => {
   return STORYBOOK_PACKAGE_PATTERNS.every((storybookPattern) =>
     configuredPatterns.some((configuredPattern) =>
       packagePatternToRegex(configuredPattern).test(storybookPattern)
     )
   );
 };
+
+/** For a package manager that matches exclusions against exact package names, such as Bun. */
+export const hasStorybookMinimumAgeExclusionNames = (configuredNames: readonly string[]) =>
+  STORYBOOK_PACKAGE_NAMES.every((name) => configuredNames.includes(name));
 
 type DependencyTree = Record<string, { version: string; dependencies?: DependencyTree }>;
 

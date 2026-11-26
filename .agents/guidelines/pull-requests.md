@@ -15,6 +15,14 @@ Reproduce it locally against a real PR with `DANGER_GITHUB_API_TOKEN="$(gh auth 
 - **Do not add a `ci:*` label.** The review bot or a maintainer adds it once automated review has finished, so CI does not run on work that is still changing.
 For a pkg.pr.new canary, follow the [canary skill](../skills/canary/SKILL.md) and [`CONTRIBUTING/RELEASING.md`](../../CONTRIBUTING/RELEASING.md).
 
+## Migration notes
+
+Add an entry to `MIGRATION.md` only for a breaking change or a deprecation: a change after which users have to change their code, config or setup, now or before the next major.
+
+A change is not breaking when the old behavior was a bug, even when users notice it. To decide whether a change is breaking, ask whether it could ship in a minor release, whatever the next release is. If it could, it gets no entry, unless it deprecates something. A user-visible fix belongs in the PR description, which the changelog links to.
+
+An entry is for removing or renaming an API, option or package, raising a supported version, or deprecating something. A fix that makes a name, an output or an error match what the docs or another part of Storybook already said gets none.
+
 ## Greptile review
 
 Greptile reviews a PR by itself when the PR leaves draft, and again on each push after that. It does not review a draft PR by itself. To ask for a review of a draft, comment `@greptileai review` on the PR (`gh pr comment <number> --body "@greptileai review"`). Greptile reacts with 👀, starts a "Greptile Review" check on the head commit, and posts a summary comment and inline comments after about five minutes. It reviews the head at the time of the comment, so push first. A local `greptile review` CLI run does not replace the review on the PR.

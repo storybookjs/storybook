@@ -1,6 +1,11 @@
 import { resolve } from 'node:path';
 
-import { getProjectRoot, normalizeAddonName, removeAddon } from 'storybook/internal/common';
+import {
+  getFrameworkPackageName,
+  getProjectRoot,
+  normalizeAddonName,
+  removeAddon,
+} from 'storybook/internal/common';
 import {
   type ESTree as E,
   type ESTreeNode as Node,
@@ -13,7 +18,6 @@ import { relative } from 'pathe';
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
-import { getFrameworkPackageName } from '../helpers/mainConfigFile.ts';
 import { isAtOrPastVersion } from '../helpers/versionBoundary.ts';
 import { type FileKind, collectFiles } from '../pipeline.ts';
 import type { Fix } from '../types.ts';

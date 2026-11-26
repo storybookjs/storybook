@@ -31,6 +31,7 @@ export function registerDocgenService(options: RegisterDocgenServiceOptions) {
       error,
     }),
     queryName: 'docgen',
+    toQueryInput: (id) => ({ id }),
     extractCommand: 'extractDocgen',
     extractAllCommand: 'extractAllDocgen',
   });
@@ -43,7 +44,6 @@ export function subscribeDocgenToModuleGraphChanges(options: {
 }) {
   subscribeExtractionServiceToModuleGraphChanges(docgenServiceDef, {
     ...options,
-    queryName: 'docgen',
     allQueryName: 'docgenForAllComponents',
     extractCommand: 'extractDocgen',
   });

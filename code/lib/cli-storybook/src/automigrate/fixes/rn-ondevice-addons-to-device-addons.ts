@@ -1,13 +1,15 @@
 import { existsSync } from 'node:fs';
 import { basename, dirname, join, resolve } from 'node:path';
 
-import { findConfigFile, loadMainConfig } from 'storybook/internal/common';
+import { findConfigFile, getFrameworkPackageName, loadMainConfig } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
-import { getFrameworkPackageName } from '../helpers/mainConfigFile.ts';
 import type { Fix } from '../types.ts';
-import { RN_STORYBOOK_DIR } from '../../../../../core/src/shared/constants/config-folder.ts';
+import {
+  RN_FRAMEWORK_PACKAGE,
+  RN_STORYBOOK_DIR,
+} from '../../../../../core/src/shared/constants/config-folder.ts';
 
 const SIBLING_CONFIG_DIR: Record<string, string> = {
   '.storybook': RN_STORYBOOK_DIR,
@@ -16,8 +18,7 @@ const SIBLING_CONFIG_DIR: Record<string, string> = {
 
 // `@storybook/react-native-web-vite` mains are web mains and keep their `addons`.
 const needsRename = (mainConfigPath: string, config: StorybookConfigRaw) =>
-  (basename(dirname(mainConfigPath)) === RN_STORYBOOK_DIR ||
-    getFrameworkPackageName(config) === '@storybook/react-native') &&
+  getFrameworkPackageName(config, dirname(mainConfigPath)) === RN_FRAMEWORK_PACKAGE &&
   Array.isArray(config.addons) &&
   config.addons.length > 0 &&
   (config as { deviceAddons?: unknown }).deviceAddons === undefined;

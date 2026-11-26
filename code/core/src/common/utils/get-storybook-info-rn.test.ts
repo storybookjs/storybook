@@ -4,9 +4,12 @@ import { tmpdir } from 'node:os';
 
 import { SupportedRenderer } from 'storybook/internal/types';
 
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { getStorybookInfo } from './get-storybook-info.ts';
+import { loadMainConfig } from './load-main-config.ts';
+
+vi.mock('./load-main-config.ts', { spy: true });
 
 describe('getStorybookInfo React Native framework inference', () => {
   let dir: string;
@@ -56,5 +59,26 @@ describe('getStorybookInfo React Native framework inference', () => {
     const info = await getStorybookInfo(join(dir, '.storybook'), dir);
 
     expect(info.frameworkPackage).toBeUndefined();
+  });
+});
+
+describe('getStorybookInfo with framework @storybook/react-native in main', () => {
+  beforeEach(() => {
+    vi.mocked(loadMainConfig).mockResolvedValue({
+      stories: [],
+      framework: '@storybook/react-native',
+    });
+  });
+
+  afterEach(() => {
+    vi.mocked(loadMainConfig).mockReset();
+  });
+
+  it('resolves the React Native renderer', async () => {
+    const info = await getStorybookInfo(join(tmpdir(), '.storybook'));
+
+    expect(info.frameworkPackage).toBe('@storybook/react-native');
+    expect(info.rendererPackage).toBe('@storybook/react-native');
+    expect(info.renderer).toBe(SupportedRenderer.REACT_NATIVE);
   });
 });

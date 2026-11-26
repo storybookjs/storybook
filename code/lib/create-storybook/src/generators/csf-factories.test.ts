@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { SupportedFramework } from 'storybook/internal/types';
 
 import { vol } from 'memfs';
+import ts from 'typescript';
 
 import {
   previewImportFromStory,
@@ -177,5 +178,59 @@ describe('native CLI templates', () => {
         `${template}: ${stories}`
       ).toBe(true);
     }
+  });
+
+  it('has no unused code in React components under jsx: react-jsx', () => {
+    const components = [
+      'renderers/react/template/cli/ts',
+      'renderers/react/template/cli/js',
+      'frameworks/react-vite/template/cli/ts',
+      'frameworks/react-vite/template/cli/js',
+      'frameworks/react-webpack5/template/cli/ts',
+      'frameworks/react-webpack5/template/cli/js',
+      'frameworks/nextjs/template/cli/ts',
+      'frameworks/nextjs/template/cli/js',
+      'frameworks/nextjs-vite/template/cli/ts',
+      'frameworks/nextjs-vite/template/cli/js',
+      'frameworks/tanstack-react/template/cli/ts',
+      'frameworks/react-native-web-vite/template/cli/ts',
+      'frameworks/react-native-web-vite/template/cli/js',
+    ].flatMap((template) =>
+      readdirSync(join(repoCode, template))
+        .filter((file) => /\.[jt]sx$/.test(file) && !file.includes('.stories.'))
+        .map((file) => join(repoCode, template, file))
+    );
+    const options: ts.CompilerOptions = {
+      jsx: ts.JsxEmit.ReactJSX,
+      module: ts.ModuleKind.ESNext,
+      moduleResolution: ts.ModuleResolutionKind.Bundler,
+      allowJs: true,
+      checkJs: true,
+      noEmit: true,
+      noUnusedLocals: true,
+      noUnusedParameters: true,
+      skipLibCheck: true,
+      types: [],
+    };
+
+    for (const component of components) {
+      expect(
+        ts.resolveModuleName('react/jsx-runtime', component, options, ts.sys).resolvedModule
+          ?.extension,
+        component
+      ).toBe(ts.Extension.Dts);
+    }
+
+    const unused = ts
+      .getPreEmitDiagnostics(ts.createProgram(components, options))
+      .filter((diagnostic) => diagnostic.reportsUnnecessary);
+
+    expect(
+      ts.formatDiagnostics(unused, {
+        getCanonicalFileName: (fileName) => fileName,
+        getCurrentDirectory: () => repoCode,
+        getNewLine: () => '\n',
+      })
+    ).toBe('');
   });
 });

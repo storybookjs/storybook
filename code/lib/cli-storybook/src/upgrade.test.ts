@@ -98,7 +98,7 @@ describe.each([
 });
 
 describe('checkVersionConsistency', () => {
-  it('no longer prints deprecation warnings: the doctor\'s deprecatedPackages table owns them', () => {
+  it("no longer prints deprecation warnings: the doctor's deprecatedPackages table owns them", () => {
     spawnSyncMock.mockReturnValueOnce({
       output: [null, 'my-project@1.0.0 /path/to/project\n├── @storybook/nextjs@11.0.0\n', null],
     });

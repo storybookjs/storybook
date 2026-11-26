@@ -2,6 +2,8 @@ import { join } from 'pathe';
 
 import { describe, expect, it } from 'vitest';
 
+import { parse } from 'svelte/compiler';
+
 import { createASTProperty, getSvelteAST, type SvelteAST } from '../../parser/ast.ts';
 import * as defineMeta from './parser/analyse/define-meta.ts';
 import * as story from './parser/analyse/story.ts';
@@ -43,7 +45,10 @@ const cases: [string, () => Error][] = [
   [
     'NoStoryComponentDestructuredError',
     () =>
-      new svelte.NoStoryComponentDestructuredError({ filename, metaFunctionName: 'preview.meta' }),
+      new svelte.NoStoryComponentDestructuredError({
+        filename,
+        metaFunctionName: 'preview.meta',
+      }),
   ],
   ['GetDefineMetaFirstArgumentError', () => new svelte.GetDefineMetaFirstArgumentError(filename)],
   [
@@ -56,7 +61,21 @@ const cases: [string, () => Error][] = [
   ],
   [
     'IndexerParseError',
-    () => new svelte.IndexerParseError(filename, { cause: new SyntaxError('Unexpected token') }),
+    () =>
+      new svelte.IndexerParseError(filename, {
+        cause: new SyntaxError('Unexpected token'),
+      }),
+  ],
+  [
+    'IndexerParseError (Svelte compile error)',
+    () => {
+      try {
+        parse('<Story name="A">\n  {#if}\n</Story>');
+      } catch (cause) {
+        return new svelte.IndexerParseError(filename, { cause });
+      }
+      throw new Error('parse should throw');
+    },
   ],
   ['MixedMetaError', () => new svelte.MixedMetaError(filename)],
   ['PreviewNotImportedError', () => new svelte.PreviewNotImportedError(filename)],
@@ -83,7 +102,10 @@ const cases: [string, () => Error][] = [
     () =>
       new defineMeta.InvalidComponentValueError({
         filename,
-        componentProperty: createASTProperty('component', { type: 'Literal', value: 'Button' }),
+        componentProperty: createASTProperty('component', {
+          type: 'Literal',
+          value: 'Button',
+        }),
       }),
   ],
   [
@@ -99,18 +121,29 @@ const cases: [string, () => Error][] = [
   ],
   [
     'NoStringLiteralError',
-    () => new defineMeta.NoStringLiteralError({ filename, property: identifierProperty('title') }),
+    () =>
+      new defineMeta.NoStringLiteralError({
+        filename,
+        property: identifierProperty('title'),
+      }),
   ],
   [
     'NoArrayExpressionError',
-    () => new defineMeta.NoArrayExpressionError({ filename, property: identifierProperty('tags') }),
+    () =>
+      new defineMeta.NoArrayExpressionError({
+        filename,
+        property: identifierProperty('tags'),
+      }),
   ],
   [
     'ArrayElementNotStringError',
     () =>
       new defineMeta.ArrayElementNotStringError({
         filename,
-        property: createASTProperty('tags', { type: 'ArrayExpression', elements: [] }),
+        property: createASTProperty('tags', {
+          type: 'ArrayExpression',
+          elements: [],
+        }),
         element: { type: 'Identifier', name: 'tag' },
       }),
   ],
@@ -198,11 +231,21 @@ const cases: [string, () => Error][] = [
   ],
   [
     'StoryExtendUnnamedError',
-    () => new story.StoryExtendUnnamedError({ filename, component, extend: 'Primary' }),
+    () =>
+      new story.StoryExtendUnnamedError({
+        filename,
+        component,
+        extend: 'Primary',
+      }),
   ],
   [
     'StoryExtendDuplicateNameError',
-    () => new story.StoryExtendDuplicateNameError({ filename, component, extend: 'Primary' }),
+    () =>
+      new story.StoryExtendDuplicateNameError({
+        filename,
+        component,
+        extend: 'Primary',
+      }),
   ],
   [
     'StoryExtendCycleError',

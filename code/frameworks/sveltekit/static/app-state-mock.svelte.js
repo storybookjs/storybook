@@ -1,5 +1,5 @@
 /**
- * Inspired by the the code:
+ * Inspired by the code:
  * {@link https://github.com/sveltejs/kit/blob/main/packages/kit/src/runtime/client/state.svelte.js}
  *
  * The differences:
@@ -10,6 +10,7 @@
  * @module
  */
 
+import { noteConfiguration, noteMockSet } from '@storybook/sveltekit/internal/mocks/docs-isolation';
 import { fn } from 'storybook/test';
 
 /**
@@ -35,7 +36,9 @@ import { fn } from 'storybook/test';
  * @property {any} form
  */
 
-const defaultStatePageValues = {
+// A function, so a story that mutates `page.data` doesn't change the defaults of the next story
+/** @type {() => Page} */
+const defaultStatePageValues = () => ({
   data: {},
   form: null,
   error: null,
@@ -44,24 +47,26 @@ const defaultStatePageValues = {
   state: {},
   status: -1,
   url: new URL(location.origin),
-};
+});
+
+const initialPage = defaultStatePageValues();
 
 /** @type {Page['data']} */
-let pageData = $state.raw(defaultStatePageValues.data);
+let pageData = $state.raw(initialPage.data);
 /** @type {Page['form']} */
-let pageForm = $state.raw(defaultStatePageValues.form);
+let pageForm = $state.raw(initialPage.form);
 /** @type {Page['error']} */
-let pageError = $state.raw(defaultStatePageValues.error);
+let pageError = $state.raw(initialPage.error);
 /** @type {Page['params']} */
-let pageParams = $state.raw(defaultStatePageValues.params);
+let pageParams = $state.raw(initialPage.params);
 /** @type {Page['route']} */
-let pageRoute = $state.raw(defaultStatePageValues.route);
+let pageRoute = $state.raw(initialPage.route);
 /** @type {Page['state']} */
-let pageState = $state.raw(defaultStatePageValues.state);
+let pageState = $state.raw(initialPage.state);
 /** @type {Page['status']} */
-let pageStatus = $state.raw(defaultStatePageValues.status);
+let pageStatus = $state.raw(initialPage.status);
 /** @type {Page['url']} */
-let pageUrl = $state.raw(defaultStatePageValues.url);
+let pageUrl = $state.raw(initialPage.url);
 
 /** @type {Page} */
 // oxlint-disable-next-line prefer-const -- mirrors upstream SvelteKit state.svelte.js, where this is a mutable `let` binding
@@ -70,62 +75,59 @@ export let page = {
     return pageData;
   },
   set data(newPageData) {
+    noteMockSet();
     pageData = newPageData;
   },
   get form() {
     return pageForm;
   },
   set form(newPageForm) {
+    noteMockSet();
     pageForm = newPageForm;
   },
   get error() {
     return pageError;
   },
   set error(newPageError) {
+    noteMockSet();
     pageError = newPageError;
   },
   get params() {
     return pageParams;
   },
   set params(newPageParams) {
+    noteMockSet();
     pageParams = newPageParams;
   },
   get route() {
     return pageRoute;
   },
   set route(newPageRoute) {
+    noteMockSet();
     pageRoute = newPageRoute;
   },
   get state() {
     return pageState;
   },
   set state(newPageState) {
+    noteMockSet();
     pageState = newPageState;
   },
   get status() {
     return pageStatus;
   },
   set status(newPageStatus) {
+    noteMockSet();
     pageStatus = newPageStatus;
   },
   get url() {
     return pageUrl;
   },
   set url(newPageUrl) {
+    noteMockSet();
     pageUrl = newPageUrl;
   },
 };
-
-export function setAppStatePage(params = {}) {
-  page.data = params.data ?? defaultStatePageValues.data;
-  page.form = params.form ?? defaultStatePageValues.form;
-  page.error = params.error ?? defaultStatePageValues.error;
-  page.params = params.params ?? defaultStatePageValues.params;
-  page.route = params.route ?? defaultStatePageValues.route;
-  page.state = params.state ?? defaultStatePageValues.state;
-  page.status = params.status ?? defaultStatePageValues.status;
-  page.url = params.url ?? defaultStatePageValues.url;
-}
 
 /**
  * @typedef {Object} NavigationTarget
@@ -176,48 +178,45 @@ export let navigating = {
     return navigatingFrom;
   },
   set from(newNavigatingFrom) {
+    noteMockSet();
     navigatingFrom = newNavigatingFrom;
   },
   get to() {
     return navigatingTo;
   },
   set to(newNavigatingTo) {
+    noteMockSet();
     navigatingTo = newNavigatingTo;
   },
   get type() {
     return navigatingType;
   },
   set type(newNavigatingType) {
+    noteMockSet();
     navigatingType = newNavigatingType;
   },
   get willUnload() {
     return navigatingWillUnload;
   },
   set willUnload(newNavigatingWillUnload) {
+    noteMockSet();
     navigatingWillUnload = newNavigatingWillUnload;
   },
   get delta() {
     return navigatingDelta;
   },
   set delta(newNavigatingDelta) {
+    noteMockSet();
     navigatingDelta = newNavigatingDelta;
   },
   get complete() {
     return navigatingComplete;
   },
   set complete(newNavigatingComplete) {
+    noteMockSet();
     navigatingComplete = newNavigatingComplete;
   },
 };
-
-export function setAppStateNavigating(params = {}) {
-  navigating.from = params.from ?? defaultStateNavigatingValues.from;
-  navigating.to = params.to ?? defaultStateNavigatingValues.to;
-  navigating.type = params.type ?? defaultStateNavigatingValues.type;
-  navigating.willUnload = params.willUnload ?? defaultStateNavigatingValues.willUnload;
-  navigating.delta = params.delta ?? defaultStateNavigatingValues.delta;
-  navigating.complete = params.complete ?? defaultStateNavigatingValues.complete;
-}
 
 /** @type {boolean} */
 let updatedCurrent = $state.raw(false);
@@ -228,11 +227,42 @@ export let updated = {
     return updatedCurrent;
   },
   set current(newCurrent) {
+    noteMockSet();
     updatedCurrent = newCurrent;
   },
-  check: fn(() => Promise.resolve(updatedCurrent)),
+  check: noteConfiguration(fn(() => Promise.resolve(updatedCurrent))),
 };
 
-export function setAppStateUpdated(params = {}) {
-  updated.current = params.current ?? false;
+/** Resets `page`, `navigating` and `updated` to their defaults. The framework calls it before every story. */
+// The page values of the last reset, to find writes into them, such as `page.data.user = user`
+let pageDefaults = initialPage;
+
+export function resetAppState() {
+  pageDefaults = defaultStatePageValues();
+  Object.assign(page, pageDefaults);
+  Object.assign(navigating, defaultStateNavigatingValues);
+  updated.current = false;
+}
+
+/**
+ * Tells if a write went into a default value of `page`, which its setters don't see. The defaults
+ * are flat, so a shallow comparison finds every write.
+ *
+ * @returns {boolean}
+ */
+export function pageDefaultsChanged() {
+  const fresh = defaultStatePageValues();
+  return Object.entries(pageDefaults).some(([key, value]) => {
+    if (page[key] !== value || value === null || typeof value !== 'object') {
+      return false;
+    }
+    if (value instanceof URL) {
+      return value.href !== fresh[key].href;
+    }
+    const expected = fresh[key];
+    return (
+      Object.keys(value).length !== Object.keys(expected).length ||
+      Object.entries(expected).some(([field, fieldValue]) => value[field] !== fieldValue)
+    );
+  });
 }

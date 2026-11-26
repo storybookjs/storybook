@@ -29,8 +29,8 @@ function makeRegistry(edges: EdgesMap): ParserRegistry {
 
 function makeResolver(resolutions: Resolutions): ChangeDetectionResolverFactory {
   return {
-    resolve: vi.fn(async (from: string, specifier: string) => {
-      const key = `${from}::${specifier}`;
+    resolve: vi.fn(async (from: string, specifier: string, kind?: ImportEdge['kind']) => {
+      const key = kind === 'require' ? `${from}::require(${specifier})` : `${from}::${specifier}`;
       return resolutions.has(key) ? resolutions.get(key)! : null;
     }),
   } as unknown as ChangeDetectionResolverFactory;
@@ -294,5 +294,27 @@ describe('ParseResolveCache — multi-hop barrel following', () => {
     // Chain too deep — Foo.tsx not reachable; falls back to including barrel[0]
     expect(deps.has(barrels[0])).toBe(true);
     expect(deps.has('/repo/lib/Foo.tsx')).toBe(false);
+  });
+});
+
+describe('ParseResolveCache — edge kinds', () => {
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('resolves a `require()` edge as a `require()`, not as an import', async () => {
+    const story = '/repo/story.tsx';
+    const cache = makeCache({
+      edges: new Map([[story, [{ specifier: 'dual', importedNames: null, kind: 'require' }]]]),
+      resolutions: new Map([
+        [`${story}::dual`, '/repo/packages/dual/esm.mjs'],
+        [`${story}::require(dual)`, '/repo/packages/dual/cjs.cjs'],
+      ]),
+      barrelInfos: new Map(),
+    });
+
+    const deps = await cache.resolveOnce(story);
+
+    expect([...deps]).toEqual(['/repo/packages/dual/cjs.cjs']);
   });
 });

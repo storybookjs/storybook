@@ -6,6 +6,7 @@ import { afterAll, describe, expect, it } from 'vitest';
 import type { IndexEntry } from 'storybook/internal/types';
 
 import { buildStoryDocsPayload } from '../../../../../frameworks/angular-vite/src/docgen/story-docs-build.ts';
+import { withReadableTemplates } from '../../compare/readable-templates.ts';
 import { createFixtureDocgen } from '../docgen-fixture.ts';
 import { listFixtureCases } from '../snippet-recorder.ts';
 
@@ -38,8 +39,8 @@ describe('angular story-docs payload baselines', () => {
       { getDocgenPayload: docgen.getDocgenPayload(entry), resolvePath: (path) => path }
     );
 
-    await expect(payload && { ...payload, path: '__PATH__' }).toMatchFileSnapshot(
-      join(testDir, 'story-docs.payload.snapshot')
-    );
+    await expect(
+      payload && withReadableTemplates({ ...payload, path: '__PATH__' })
+    ).toMatchFileSnapshot(join(testDir, 'story-docs.payload.snapshot'));
   });
 });

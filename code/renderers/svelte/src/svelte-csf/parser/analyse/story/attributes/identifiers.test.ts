@@ -100,7 +100,7 @@ describe(getStoryIdentifiers.name, () => {
     );
   });
 
-  it("it ignores the 'exportName' attribute of '<Story>'s children component", async () => {
+  it("ignores the 'exportName' attribute of the children components of '<Story>'", async () => {
     const ast = getSvelteAST({
       code: `
         <script module>

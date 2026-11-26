@@ -1,5 +1,6 @@
 import {
   getStoryImportPathFromEntry,
+  getTypeScriptSpecifierForDocgen,
   selectComponentEntriesByComponentId,
 } from 'storybook/internal/common';
 import type { IndexEntry } from 'storybook/internal/types';
@@ -53,7 +54,9 @@ export const manifests: PresetPropertyFn<
 
   const startTime = performance.now();
   const manager =
-    docgenEngine === 'react-component-meta' ? await getSharedComponentMetaManager() : undefined;
+    docgenEngine === 'react-component-meta'
+      ? await getSharedComponentMetaManager(await getTypeScriptSpecifierForDocgen(options))
+      : undefined;
 
   const entriesByUniqueComponent = [
     ...selectComponentEntriesByComponentId(manifestEntries).values(),

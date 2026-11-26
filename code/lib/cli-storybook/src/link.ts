@@ -93,7 +93,8 @@ export const link = async ({ target, local, start }: LinkOptions) => {
 
   await executeCommand({
     command: 'yarn',
-    args: ['install'],
+    // We just edited package.json; Yarn Berry refuses lockfile changes when CI is set.
+    args: ['install', '--no-immutable'],
     cwd: reproDir,
   });
 

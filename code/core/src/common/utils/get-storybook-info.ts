@@ -6,77 +6,24 @@ import type {
   PackageJson,
   StorybookConfigRaw,
 } from 'storybook/internal/types';
-import {
-  CoreWebpackCompiler,
-  SupportedBuilder,
-  SupportedFramework,
-  SupportedRenderer,
-} from 'storybook/internal/types';
+import { CoreWebpackCompiler, SupportedRenderer } from 'storybook/internal/types';
 
 import invariant from 'tiny-invariant';
 
 import { RN_STORYBOOK_DIR } from '../../shared/constants/config-folder.ts';
 import { storybookConfigExtensions } from '../../shared/constants/extensions.ts';
 import { JsPackageManager } from '../js-package-manager/JsPackageManager.ts';
-import { frameworkToBuilder } from './framework.ts';
+import {
+  builderRegistry,
+  frameworkPackages,
+  frameworkToBuilder,
+  rendererRegistry,
+} from './framework.ts';
 import { getAddonNames } from './get-addon-names.ts';
 import { extractFrameworkPackageName } from './get-framework-name.ts';
 import { extractRenderer } from './get-renderer-name.ts';
 import { getStorybookConfiguration } from './get-storybook-configuration.ts';
 import { loadMainConfig } from './load-main-config.ts';
-
-export const rendererPackages: Record<string, SupportedRenderer> = {
-  '@storybook/react': SupportedRenderer.REACT,
-  '@storybook/vue3': SupportedRenderer.VUE3,
-  '@storybook/angular': SupportedRenderer.ANGULAR,
-  '@storybook/html': SupportedRenderer.HTML,
-  '@storybook/web-components': SupportedRenderer.WEB_COMPONENTS,
-  '@storybook/ember': SupportedRenderer.EMBER,
-  '@storybook/svelte': SupportedRenderer.SVELTE,
-  '@storybook/preact': SupportedRenderer.PREACT,
-  '@storybook/server': SupportedRenderer.SERVER,
-  '@storybook/react-native': SupportedRenderer.REACT_NATIVE,
-
-  // community (outside of monorepo)
-  'storybook-framework-qwik': SupportedRenderer.QWIK,
-  'storybook-solidjs-vite': SupportedRenderer.SOLID,
-  '@storybook-astro/renderer': SupportedRenderer.ASTRO,
-};
-
-export const frameworkPackages: Record<string, SupportedFramework> = {
-  '@storybook/angular': SupportedFramework.ANGULAR,
-  '@storybook/angular-vite': SupportedFramework.ANGULAR_VITE,
-  '@storybook/ember': SupportedFramework.EMBER,
-  '@storybook/html-vite': SupportedFramework.HTML_VITE,
-  '@storybook/nextjs': SupportedFramework.NEXTJS,
-  '@storybook/preact-vite': SupportedFramework.PREACT_VITE,
-  '@storybook/react-vite': SupportedFramework.REACT_VITE,
-  '@storybook/react-webpack5': SupportedFramework.REACT_WEBPACK5,
-  '@storybook/server-webpack5': SupportedFramework.SERVER_WEBPACK5,
-  '@storybook/svelte-vite': SupportedFramework.SVELTE_VITE,
-  '@storybook/sveltekit': SupportedFramework.SVELTEKIT,
-  '@storybook/vue3-vite': SupportedFramework.VUE3_VITE,
-  '@storybook/nextjs-vite': SupportedFramework.NEXTJS_VITE,
-  '@storybook/react-native-web-vite': SupportedFramework.REACT_NATIVE_WEB_VITE,
-  '@storybook/web-components-vite': SupportedFramework.WEB_COMPONENTS_VITE,
-  '@storybook/tanstack-react': SupportedFramework.TANSTACK_REACT,
-  // community (outside of monorepo)
-  'storybook-framework-qwik': SupportedFramework.QWIK,
-  'storybook-solidjs-vite': SupportedFramework.SOLID,
-  'storybook-react-rsbuild': SupportedFramework.REACT_RSBUILD,
-  'storybook-vue3-rsbuild': SupportedFramework.VUE3_RSBUILD,
-  'storybook-web-components-rsbuild': SupportedFramework.WEB_COMPONENTS_RSBUILD,
-  'storybook-html-rsbuild': SupportedFramework.HTML_RSBUILD,
-  '@storybook-vue/nuxt': SupportedFramework.NUXT,
-  '@storybook-astro/framework': SupportedFramework.ASTRO,
-};
-
-export const builderPackages: Record<string, SupportedBuilder> = {
-  '@storybook/builder-webpack5': SupportedBuilder.WEBPACK5,
-  '@storybook/builder-vite': SupportedBuilder.VITE,
-  // community (outside of monorepo)
-  'storybook-builder-rsbuild': SupportedBuilder.RSBUILD,
-};
 
 export const compilerPackages: Record<string, CoreWebpackCompiler> = {
   '@storybook/addon-webpack5-compiler-babel': CoreWebpackCompiler.Babel,
@@ -162,32 +109,21 @@ export const getStorybookInfo = async (
   invariant(mainConfig, `Unable to find or evaluate ${configInfo.mainConfigPath}`);
 
   const frameworkValue = mainConfig.framework;
-  const frameworkField = typeof frameworkValue === 'string' ? frameworkValue : frameworkValue?.name;
-  const addons = getAddonNames(mainConfig);
-  const versionSpecifier = getStorybookVersionSpecifier(configDir);
-
-  if (!frameworkField) {
+  const frameworkField =
+    (typeof frameworkValue === 'string' ? frameworkValue : frameworkValue?.name) ||
     /*
       React Native on-device Storybook historically omitted `framework` from main.ts.
       When the config lives in `.rnstorybook`, infer the framework so telemetry
       `metadata.framework.name` is populated for existing projects (scoped to the
       RN config dir to avoid mis-attributing web Storybooks in the same monorepo).
     */
-    if (basename(configInfo.configDir) === RN_STORYBOOK_DIR) {
-      return {
-        ...configInfo,
-        versionSpecifier,
-        addons,
-        mainConfig,
-        frameworkPackage: '@storybook/react-native',
-        rendererPackage: '@storybook/react-native',
-        renderer: SupportedRenderer.REACT_NATIVE,
-        mainConfigPath: configInfo.mainConfigPath ?? undefined,
-        previewConfigPath: configInfo.previewConfigPath ?? undefined,
-        managerConfigPath: configInfo.managerConfigPath ?? undefined,
-      };
-    }
+    (basename(configInfo.configDir) === RN_STORYBOOK_DIR
+      ? rendererRegistry[SupportedRenderer.REACT_NATIVE].packageName
+      : undefined);
+  const addons = getAddonNames(mainConfig);
+  const versionSpecifier = getStorybookVersionSpecifier(configDir);
 
+  if (!frameworkField) {
     return {
       ...configInfo,
       versionSpecifier,
@@ -205,13 +141,8 @@ export const getStorybookInfo = async (
   const renderer = await extractRenderer(frameworkPackage);
   const builder = frameworkToBuilder[framework];
 
-  const rendererPackage = Object.entries(rendererPackages).find(
-    ([, value]) => value === renderer
-  )?.[0];
-
-  const builderPackage = Object.entries(builderPackages).find(
-    ([, value]) => value === builder
-  )?.[0];
+  const rendererPackage = renderer ? rendererRegistry[renderer].packageName : undefined;
+  const builderPackage = builder ? builderRegistry[builder].packageName : undefined;
 
   return {
     ...configInfo,

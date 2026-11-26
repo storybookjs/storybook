@@ -55,7 +55,6 @@ afterEach(() => {
   restore();
   restore = () => {};
   (globalThis.document as unknown as AnimationRoot).getAnimations = originalGetAnimations;
-  vi.unstubAllGlobals();
   vi.restoreAllMocks();
   vi.useRealTimers();
 });

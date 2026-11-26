@@ -102,6 +102,16 @@ If you encounter issues during the upgrade:
 2. For more detailed information, set the log level to `debug` using the `--loglevel debug` flag
 3. Create a GitHub issue with the logs if you need help resolving the problem
 
+## Upgrade with an agent
+
+Your agent can run the upgrade for you. Copy this prompt into your agent's chat:
+
+```text
+Upgrade Storybook. Read https://storybook.js.org/docs/releases/upgrading.md in its entirety and follow its instructions.
+```
+
+If your project has the [Storybook skills](../ai/connect.mdx#install-the-skills), ask your agent to "Use the storybook-upgrade skill" instead. The skill gives the agent the same instructions. When the upgrade finishes, Storybook updates the skills to match the new version.
+
 ## Command-line options
 
 The upgrade command supports several flags to customize the upgrade process:

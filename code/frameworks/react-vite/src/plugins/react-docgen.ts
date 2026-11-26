@@ -119,7 +119,9 @@ export function getReactDocgenImporter(matchPath: TsconfigPaths.MatchPath | unde
   return makeFsImporter((filename, basedir) => {
     const mappedFilenameByPaths = (() => {
       if (matchPath) {
-        const match = matchPath(filename);
+        // Without extensions, tsconfig-paths only tries `.js`, `.json` and `.node`, so an alias to a
+        // TypeScript file such as `@/components/types` would never match.
+        const match = matchPath(filename, undefined, undefined, RESOLVE_EXTENSIONS);
         return match || filename;
       } else {
         return filename;

@@ -11,6 +11,17 @@ import type { EngineId } from './types.ts';
 const reactScenarios = (profile: SuiteProfile): ScenarioSpec[] =>
   profile.react.map((scenario) => ({ name: scenario.shape, params: { ...scenario } }));
 
+const angularScenarios = (profile: SuiteProfile): ScenarioSpec[] => [
+  { name: 'default', params: { ...profile.angular } },
+];
+
+const angularArgs = ({ params }: ScenarioSpec): string[] => [
+  '--components',
+  String(params.components),
+  '--props',
+  String(params.props),
+];
+
 const workspaceScenarios = (profile: SuiteProfile): ScenarioSpec[] =>
   profile.workspace.map((scenario) => ({ name: scenario.name, params: { ...scenario } }));
 
@@ -81,6 +92,21 @@ export const ENGINES: BenchEngine[] = [
     args: (scenario) => [...reactArgs(scenario), '--mode', 'refresh', '--scope', 'changed'],
   }),
   new SeriesChildEngine({
+    id: 'react-osa-native',
+    child: '../docgen-memory/memory-harness.ts',
+    scenarios: reactScenarios,
+    jiti: true,
+    args: (scenario) => [
+      ...reactArgs(scenario),
+      '--mode',
+      'refresh',
+      '--scope',
+      'changed',
+      '--typescript',
+      'native',
+    ],
+  }),
+  new SeriesChildEngine({
     id: 'vue-docgen-api',
     child: 'engines/vue-docgen-api.ts',
     scenarios: workspaceScenarios,
@@ -119,6 +145,20 @@ export const ENGINES: BenchEngine[] = [
     args: (scenario) => [...workspaceArgs(scenario), '--engine', 'component-meta'],
   }),
   new CompodocEngine(),
+  new SeriesChildEngine({
+    id: 'angular-cm',
+    child: 'engines/angular-cm.ts',
+    scenarios: angularScenarios,
+    jiti: true,
+    args: angularArgs,
+  }),
+  new SeriesChildEngine({
+    id: 'angular-cm-native',
+    child: 'engines/angular-cm.ts',
+    scenarios: angularScenarios,
+    jiti: true,
+    args: (scenario) => [...angularArgs(scenario), '--typescript', 'native'],
+  }),
   // Always fails. The gate names it explicitly to prove the gate reports a failing engine as a
   // failure; nothing else ever runs it.
   new SeriesChildEngine({

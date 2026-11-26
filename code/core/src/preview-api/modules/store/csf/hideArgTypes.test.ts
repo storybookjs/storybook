@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { ArgTypesRemovedFromStoryContextError } from 'storybook/internal/preview-errors';
-import type { StoryContextForRender } from 'storybook/internal/types';
+import type { StoryContext } from 'storybook/internal/types';
 
 import { hideArgTypes } from './hideArgTypes.ts';
 
@@ -11,7 +11,7 @@ const createContext = () => {
     args: { label: 'hello' },
     argTypes: { label: { name: 'label' } },
     loaded: {},
-  } as unknown as StoryContextForRender;
+  } as unknown as StoryContext;
   context.context = context;
   return context;
 };
@@ -47,5 +47,30 @@ describe('hideArgTypes', () => {
 
     expect(hidden.context).toBe(hidden);
     expect(() => hidden.context.argTypes).toThrow(ArgTypesRemovedFromStoryContextError);
+  });
+
+  it('returns the same hidden context for the same context', () => {
+    const context = createContext();
+    const hidden = hideArgTypes(context);
+
+    expect(hideArgTypes(context)).toBe(hidden);
+    expect(hideArgTypes(hidden)).toBe(hidden);
+  });
+
+  it('hides argTypes on a frozen context', () => {
+    const hidden = hideArgTypes(Object.freeze(createContext()));
+
+    expect(() => hidden.argTypes).toThrow(ArgTypesRemovedFromStoryContextError);
+    expect('argTypes' in hidden).toBe(false);
+    expect(Object.keys(hidden)).toEqual(['id', 'args', 'loaded', 'context']);
+    expect(hidden.args).toEqual({ label: 'hello' });
+  });
+
+  it('keeps argTypes hidden on a copy that is hidden again', () => {
+    const hidden = hideArgTypes({ ...hideArgTypes(createContext()), args: { label: 'updated' } });
+
+    expect(() => hidden.argTypes).toThrow(ArgTypesRemovedFromStoryContextError);
+    expect(Object.keys(hidden)).toEqual(['id', 'args', 'loaded', 'context']);
+    expect(hidden.args).toEqual({ label: 'updated' });
   });
 });

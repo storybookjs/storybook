@@ -19,6 +19,9 @@ import rule from './no-redundant-story-name.ts';
 ruleTester.run('no-redundant-story-name', rule, {
   valid: [
     "export const PrimaryButton = { name: 'The Primary Button' }",
+    "export const PrimaryButton = meta.story({ name: 'The Primary Button' })",
+    // extended stories inherit the base story's name, so a matching override is not redundant
+    "export const PrimaryButton = BaseButton.extend({ name: 'Primary Button' })",
     "export const PrimaryButton: Story = { name: 'The Primary Button' }",
     `
       const Default = {}
@@ -43,6 +46,51 @@ ruleTester.run('no-redundant-story-name', rule, {
   ],
 
   invalid: [
+    {
+      code: "export const PrimaryButton = meta.story({ name: 'Primary Button', args: {} })",
+      errors: [
+        {
+          messageId: 'storyNameIsRedundant',
+          type: AST_NODE_TYPES.Property,
+          suggestions: [
+            {
+              messageId: 'removeRedundantName',
+              output: 'export const PrimaryButton = meta.story({  args: {} })',
+            },
+          ],
+        },
+      ],
+    },
+    {
+      code: "export const PrimaryButton = { name: 'Primary Button', args: {} }",
+      errors: [
+        {
+          messageId: 'storyNameIsRedundant',
+          type: AST_NODE_TYPES.Property,
+          suggestions: [
+            {
+              messageId: 'removeRedundantName',
+              output: 'export const PrimaryButton = {  args: {} }',
+            },
+          ],
+        },
+      ],
+    },
+    {
+      code: "export const PrimaryButton = meta.story({ name: 'Primary Button' })",
+      errors: [
+        {
+          messageId: 'storyNameIsRedundant',
+          type: AST_NODE_TYPES.Property,
+          suggestions: [
+            {
+              messageId: 'removeRedundantName',
+              output: 'export const PrimaryButton = meta.story({  })',
+            },
+          ],
+        },
+      ],
+    },
     {
       code: "export const PrimaryButton = { name: 'Primary Button' }",
       errors: [

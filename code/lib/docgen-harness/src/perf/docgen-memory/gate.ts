@@ -79,6 +79,27 @@ const CONFIGS: GateConfig[] = [
     budgets: memoryBudgetsFor('react-osa'),
   },
   {
+    name: 'changed-scope steady state on TypeScript 7.1 (N=600, props=10, 20 saves)',
+    args: [
+      '--components',
+      '600',
+      '--variants',
+      '4',
+      '--props',
+      '10',
+      '--saves',
+      '20',
+      '--mode',
+      'refresh',
+      '--scope',
+      'changed',
+      '--typescript',
+      'native',
+    ],
+    outSubdir: 'changed-scope-native',
+    budgets: memoryBudgetsFor('react-osa-native'),
+  },
+  {
     // Positive control: the live per-edit workload survives under a tight cap BECAUSE the shared
     // program is recycled under heap pressure. Pair with the negative control below.
     name: 'live path survives WITH recycling (N=800, --heavy, cap 1536MB)',

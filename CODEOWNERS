@@ -42,7 +42,6 @@
 # /code/lib/cli/            @yannbf @valentinpalkovic @ndelangen
 # /code/lib/cli-sb/         @yannbf @valentinpalkovic @ndelangen
 # /code/lib/cli-storybook/  @yannbf @valentinpalkovic @ndelangen
-# /code/lib/codemod/        @kasperpeulen @ndelangen
 # /code/lib/core-webpack/   @valentinpalkovic @ndelangen
 # /code/lib/node-logger/    @yannbf @ndelangen
 # /code/lib/telemetry/      @shilman @yannbf @ndelangen

@@ -1,5 +1,5 @@
 /* eslint-disable local-rules/no-uncategorized-errors */
-import { getStoryTitle } from 'storybook/internal/common';
+import { getStoryTitle } from '../../common/utils/get-story-id.ts';
 import { combineTags } from 'storybook/internal/csf/csf-utils';
 import { logger } from 'storybook/internal/node-logger';
 import type { StoriesEntry, Tag } from 'storybook/internal/types';

@@ -2,6 +2,7 @@ import { inspect } from 'node:util';
 
 import { logger } from 'storybook/internal/node-logger';
 
+import type { CompileError } from 'svelte/compiler';
 import { dedent } from 'ts-dedent';
 
 import type { SvelteAST } from '../../../../parser/ast.ts';
@@ -20,9 +21,14 @@ const BASE_INITIAL_SNIPPET = dedent`
   const { Story } = defineMeta({});
 </script>
 
+<Story name="Primary" />
+
 In a SvelteKit project, import defineMeta from "${StorybookSvelteCSFError.sveltekitImportSource}".
 With CSF factories, call preview.meta() in place of defineMeta(), with preview imported from '#.storybook/preview'.
 `;
+
+const STORIES_FILE_REQUIREMENTS =
+  'A Svelte stories file needs a <script module> that calls defineMeta() and uses the Story component that it returns, like so:';
 
 const category = StorybookSvelteCSFError.CATEGORY.parserExtractSvelte;
 
@@ -35,9 +41,9 @@ export class MissingModuleTagError extends StorybookSvelteCSFError {
       documentation: DOCS.meta,
       message: dedent`
         The file '${filepathURL(filename)}'
-        does not have a module context (<script module> ... </script>).
+        does not have a <script module>.
 
-        defineMeta(...) or preview.meta(...) should be called inside a module script tag, like so:
+        ${STORIES_FILE_REQUIREMENTS}
 
         ${BASE_INITIAL_SNIPPET}
       `,
@@ -74,9 +80,9 @@ export class MissingDefineMetaImportError extends StorybookSvelteCSFError {
       documentation: DOCS.meta,
       message: dedent`
         The file '${filepathURL(filename)}'
-        does not import defineMeta from ${StorybookSvelteCSFError.importSourcesText}, or the preview from .storybook/preview, inside the module context.
+        does not import defineMeta from ${StorybookSvelteCSFError.importSourcesText}, or preview from the preview file of Storybook, in its <script module>.
 
-        Make sure to import defineMeta from the package and use it inside the module context like so:
+        ${STORIES_FILE_REQUIREMENTS}
 
         ${BASE_INITIAL_SNIPPET}
       `,
@@ -169,11 +175,24 @@ export class InvalidStoryTemplateAttributeError extends StorybookSvelteCSFError 
   }
 }
 
-const describeCause = (cause: unknown) => {
+// Svelte doesn't export the class of its `CompileError` at runtime, and the error has an empty `stack`
+const describeSvelteLocation = (
+  error: Error & Partial<Pick<CompileError, 'start' | 'frame'>>,
+  filename: string | undefined
+) => {
+  const { start, frame } = error;
+  const location = start ? `${filepathURL(filename)}:${start.line}:${start.column + 1}` : undefined;
+
+  return [location, frame].filter(Boolean).join('\n\n');
+};
+
+const describeCause = (cause: unknown, filename: string | undefined) => {
   if (cause instanceof Error) {
-    return logger.shouldLog('debug') && cause.stack
-      ? cause.stack
-      : `${cause.name}: ${cause.message}`;
+    const description =
+      logger.shouldLog('debug') && cause.stack ? cause.stack : `${cause.name}: ${cause.message}`;
+    const location = describeSvelteLocation(cause, filename);
+
+    return location ? `${description}\n\n${location}` : description;
   }
   if (typeof cause === 'string') {
     return cause;
@@ -196,7 +215,7 @@ export class IndexerParseError extends StorybookSvelteCSFError {
       message: dedent`
         Storybook stories indexer parser threw an unrecognized error while indexing the file '${filepathURL(filename)}':
 
-        ${describeCause(cause)}
+        ${describeCause(cause, filename)}
 
         The indexer doesn't run Svelte preprocessors. It ignores the content of <style> blocks, but the rest of a stories file must be standard Svelte syntax.
 

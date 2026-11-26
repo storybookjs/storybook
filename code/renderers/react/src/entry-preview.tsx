@@ -2,11 +2,14 @@ import * as React from 'react';
 
 import { Tag } from 'storybook/internal/preview-api';
 
-import { global } from '@storybook/global';
-
 import { configure } from 'storybook/test';
 
-import { getAct, getReactActEnvironment, setReactActEnvironment } from './act-compat.ts';
+import {
+  createEventWrapper,
+  getAct,
+  getReactActEnvironment,
+  setReactActEnvironment,
+} from './act-compat.ts';
 import type { Decorator } from './public-types.ts';
 
 export { render } from './render.tsx';
@@ -33,7 +36,7 @@ export const decorators: Decorator[] = [
   },
   (story, context) => {
     // @ts-expect-error this feature flag only exists in the react frameworks
-    if (context.tags?.includes(Tag.TEST_FN) && !global.FEATURES?.experimentalTestSyntax) {
+    if (context.tags?.includes(Tag.TEST_FN) && !globalThis.FEATURES?.experimentalTestSyntax) {
       throw new Error(
         'To use the experimental test function, you must enable the experimentalTestSyntax feature flag. See https://storybook.js.org/docs/api/main-config/main-config-features#experimentaltestsyntax'
       );
@@ -83,14 +86,7 @@ export const beforeAll = async () => {
           setReactActEnvironment(previousActEnvironment);
         }
       },
-      eventWrapper: (cb) => {
-        let result;
-        act(() => {
-          result = cb();
-          return result;
-        });
-        return result;
-      },
+      eventWrapper: createEventWrapper(act),
     });
   } catch (e) {
     // no-op

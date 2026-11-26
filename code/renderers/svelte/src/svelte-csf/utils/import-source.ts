@@ -1,4 +1,5 @@
-import { isValidPreviewPath, unwrapExpression } from 'storybook/internal/csf-tools';
+import { isValidPreviewPath } from 'storybook/internal/csf/csf-utils';
+import { unwrapExpression } from 'storybook/internal/csf-tools';
 
 import type * as ESTreeAST from 'estree';
 

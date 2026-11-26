@@ -1,8 +1,9 @@
-import { SourceType, SNIPPET_RENDERED } from 'storybook/internal/docs-tools';
+import { SNIPPET_RENDERED } from 'storybook/internal/docs-tools';
 import { addons } from 'storybook/internal/preview-api';
 import type { StoryObj } from '@storybook/svelte';
 import { get } from 'es-toolkit/compat';
 
+import { skipSourceRender } from '../../docs/sourceDecorator.ts';
 import type { StoryContext } from '../types.ts';
 
 type Params = {
@@ -17,7 +18,7 @@ export const emitCode = (params: Params) => {
   if (globalThis.FEATURES?.docgenServer) return;
   const { storyContext } = params;
 
-  if (skipSourceRender(storyContext)) {
+  if (!storyContext.parameters.__svelteCsf?.rawCode || skipSourceRender(storyContext)) {
     return;
   }
 
@@ -26,34 +27,11 @@ export const emitCode = (params: Params) => {
     args: params.args,
   });
 
-  // The source decorator also emits a snippet for `.stories.svelte` stories, so emit after it to replace it.
-  setTimeout(() => {
-    channel.emit(SNIPPET_RENDERED, {
-      id: storyContext.id,
-      args: storyContext.unmappedArgs,
-      source: codeToEmit,
-    });
+  channel.emit(SNIPPET_RENDERED, {
+    id: storyContext.id,
+    args: storyContext.unmappedArgs,
+    source: codeToEmit,
   });
-};
-
-// Same rules as `skipSourceRender` in `docs/sourceDecorator.ts`
-const skipSourceRender = (context: Params['storyContext']) => {
-  const sourceParams = context?.parameters.docs?.source;
-  const isArgsStory = context?.parameters.__isArgsStory;
-  const rawCode = context?.parameters.__svelteCsf?.rawCode;
-
-  if (!rawCode) {
-    return true;
-  }
-
-  // always render if the user forces it
-  if (sourceParams?.type === SourceType.DYNAMIC) {
-    return false;
-  }
-
-  // never render if the user is forcing the block to render code, or
-  // if the user provides code, or if it's not an args story.
-  return !isArgsStory || sourceParams?.code || sourceParams?.type === SourceType.CODE;
 };
 
 export const generateCodeToEmit = ({ code, args }: { code: string; args: StoryObj['args'] }) => {

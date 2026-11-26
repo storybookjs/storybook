@@ -7,8 +7,6 @@ import {
 } from 'storybook/internal/core-events';
 import type { StoryId } from 'storybook/internal/types';
 
-import { global } from '@storybook/global';
-
 import { processError } from '@vitest/utils/error';
 
 import { EVENTS } from './EVENTS.ts';
@@ -287,7 +285,8 @@ export class Instrumenter {
 
   loadParentWindowState = () => {
     try {
-      this.state = global.window?.parent?.__STORYBOOK_ADDON_INTERACTIONS_INSTRUMENTER_STATE__ || {};
+      this.state =
+        globalThis.window?.parent?.__STORYBOOK_ADDON_INTERACTIONS_INSTRUMENTER_STATE__ || {};
     } catch {
       // This happens when window.parent is not on the same origin (e.g. for a composed storybook)
       this.detached = true;
@@ -296,7 +295,7 @@ export class Instrumenter {
 
   updateParentWindowState = () => {
     try {
-      global.window.parent.__STORYBOOK_ADDON_INTERACTIONS_INSTRUMENTER_STATE__ = this.state;
+      globalThis.window.parent.__STORYBOOK_ADDON_INTERACTIONS_INSTRUMENTER_STATE__ = this.state;
     } catch {
       // This happens when window.parent is not on the same origin (e.g. for a composed storybook)
       this.detached = true;
@@ -448,7 +447,8 @@ export class Instrumenter {
     options: Options
   ) {
     const storyId: StoryId =
-      args?.[0]?.__storyId__ || global.__STORYBOOK_PREVIEW__?.selectionStore?.selection?.storyId;
+      args?.[0]?.__storyId__ ||
+      globalThis.__STORYBOOK_PREVIEW__?.selectionStore?.selection?.storyId;
     const { cursor, ancestors } = this.getState(storyId);
     this.setState(storyId, { cursor: cursor + 1 });
     const id = `${ancestors.slice(-1)[0] || storyId} [${cursor}] ${method}`;
@@ -522,7 +522,7 @@ export class Instrumenter {
         const { flags, source } = value;
         return { __regexp__: { flags, source } };
       }
-      if (value instanceof global.window?.HTMLElement) {
+      if (value instanceof globalThis.window?.HTMLElement) {
         const { prefix, localName, id, classList, innerText } = value;
         const classNames = Array.from(classList);
         return { __element__: { prefix, localName, id, classNames, innerText } };
@@ -574,7 +574,10 @@ export class Instrumenter {
           diff = undefined,
           actual = undefined,
           expected = undefined,
-        } = e.name === 'AssertionError' ? processError(e) : e;
+        } = (e.name === 'AssertionError' ? processError(e) : e) as Pick<
+          NonNullable<Call['exception']>,
+          'showDiff' | 'diff' | 'actual' | 'expected'
+        >;
 
         const exception = { name, message, stack, callId, showDiff, diff, actual, expected };
         this.update({ ...info, status: CallStates.ERROR, exception });
@@ -754,23 +757,24 @@ export function instrument<TObj extends Record<string, any>>(
     let forceInstrument = false;
     let skipInstrument = false;
 
-    if (global.window?.location?.search?.includes('instrument=true')) {
+    if (globalThis.window?.location?.search?.includes('instrument=true')) {
       forceInstrument = true;
-    } else if (global.window?.location?.search?.includes('instrument=false')) {
+    } else if (globalThis.window?.location?.search?.includes('instrument=false')) {
       skipInstrument = true;
     }
 
     // Don't do any instrumentation if not loaded in an iframe unless it's forced - instrumentation can also be skipped.
-    if ((global.window?.parent === global.window && !forceInstrument) || skipInstrument) {
+    if ((globalThis.window?.parent === globalThis.window && !forceInstrument) || skipInstrument) {
       return obj;
     }
 
     // Only create an instance if we don't have one (singleton) yet.
-    if (global.window && !global.window.__STORYBOOK_ADDON_INTERACTIONS_INSTRUMENTER__) {
-      global.window.__STORYBOOK_ADDON_INTERACTIONS_INSTRUMENTER__ = new Instrumenter();
+    if (globalThis.window && !globalThis.window.__STORYBOOK_ADDON_INTERACTIONS_INSTRUMENTER__) {
+      globalThis.window.__STORYBOOK_ADDON_INTERACTIONS_INSTRUMENTER__ = new Instrumenter();
     }
 
-    const instrumenter: Instrumenter = global.window?.__STORYBOOK_ADDON_INTERACTIONS_INSTRUMENTER__;
+    const instrumenter: Instrumenter =
+      globalThis.window?.__STORYBOOK_ADDON_INTERACTIONS_INSTRUMENTER__;
     return instrumenter.instrument(obj, options);
   } catch (e) {
     // Access to the parent window might fail due to CORS restrictions.

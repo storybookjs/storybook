@@ -69,7 +69,7 @@ test.describe('storybook tools attach', () => {
     const result = await runTools(['--attach', '--cwd', '/tmp/storybook-tools-attach-no-instance']);
 
     expect(result.exitCode).not.toBe(0);
-    expect(result.output).toContain('npm run storybook');
+    expect(result.output).toContain('Start it first with the Storybook script');
     expect(result.output).toContain('--attach');
     expect(result.output).not.toContain('Falling back');
   });
@@ -170,7 +170,7 @@ test.describe('storybook tools attach', () => {
     expect(result.exitCode, result.output).toBe(0);
     expect(result.output).toContain('example-button');
     expect(result.output).not.toContain('Falling back');
-    expect(result.output).not.toContain('npm run storybook');
+    expect(result.output).not.toContain('Start it first');
   });
 
   test('--no-attach from a different cwd loads via a project-local child host', async () => {

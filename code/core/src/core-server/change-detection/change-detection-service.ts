@@ -2,21 +2,21 @@ import { join, normalize } from 'pathe';
 
 import { dequal } from 'dequal';
 import { logger } from 'storybook/internal/node-logger';
-import type {
-  Status,
-  StatusStoreByTypeId,
-  StatusValue,
-  StoryIndex,
-} from 'storybook/internal/types';
+import type { Status, StatusStoreByTypeId, StoryIndex } from 'storybook/internal/types';
 import { CHANGE_DETECTION_STATUS_TYPE_ID } from 'storybook/internal/types';
 
 import { getService } from '../../shared/open-service/server.ts';
+import {
+  mergeStatusValues,
+  storyFileChangeStatuses,
+} from '../../shared/open-service/services/module-graph/change-statuses.ts';
 import { getStoryIdsByAbsolutePath } from '../../shared/open-service/services/module-graph/story-files.ts';
 import type {
   ErrorLike,
   ModuleGraphStatus,
 } from '../../shared/open-service/services/module-graph/types.ts';
 import { storyIndexPathToAbsolutePath } from '../../shared/open-service/services/module-graph/types.ts';
+import { MultipleIndexingError } from '../utils/IndexingError.ts';
 import type { StoryIndexGenerator } from '../utils/StoryIndexGenerator.ts';
 import { ChangeDetectionFailureError, ChangeDetectionUnavailableError } from './errors.ts';
 import { GitDiffProvider } from './GitDiffProvider.ts';
@@ -52,24 +52,7 @@ function isSameStatus(a: Status | undefined, b: Status): boolean {
   );
 }
 
-export function mergeStatusValues(
-  previousValue: StatusValue | undefined,
-  nextValue: StatusValue
-): StatusValue {
-  if (previousValue === 'status-value:new' || nextValue === 'status-value:new') {
-    return 'status-value:new';
-  }
-
-  if (previousValue === 'status-value:modified' || nextValue === 'status-value:modified') {
-    return 'status-value:modified';
-  }
-
-  if (previousValue === 'status-value:affected' || nextValue === 'status-value:affected') {
-    return 'status-value:affected';
-  }
-
-  return nextValue;
-}
+export { mergeStatusValues };
 
 export function mergeChangeDetectionStatuses(
   existing: Status | undefined,
@@ -352,7 +335,10 @@ export class ChangeDetectionService {
           error instanceof Error ? error.message : String(error),
           { cause: error instanceof Error ? error : undefined }
         );
-        logger.error(`Change detection failed: ${failure.message}`);
+        // The story index generator logs its own errors
+        if (!(error instanceof MultipleIndexingError)) {
+          logger.error(`Change detection failed: ${failure.message}`);
+        }
         this.resolveReadiness({
           status: 'error',
           error: failure,
@@ -394,53 +380,31 @@ export class ChangeDetectionService {
       files: scannedFilesArray,
     });
 
-    for (let i = 0; i < scannedFilesArray.length; i++) {
-      const changedFile = scannedFilesArray[i];
-      const allEntries = new Map<string, number>();
-      for (const { storyFile, depth } of lookupResults[i]) {
-        allEntries.set(storyIndexPathToAbsolutePath(storyFile, this.workingDir), depth);
-      }
-      // Include the changed file as a story-at-distance-0 if it IS a story.
-      if (storyIdsByFile.has(changedFile)) {
-        allEntries.set(changedFile, 0);
-      }
-      if (allEntries.size === 0) {
-        continue;
-      }
-      let lowestDistance = Number.POSITIVE_INFINITY;
-      for (const distance of allEntries.values()) {
-        if (distance < lowestDistance) {
-          lowestDistance = distance;
+    const storyFileStatuses = storyFileChangeStatuses(
+      scannedFilesArray.map((changedFile, i) => {
+        const stories = lookupResults[i].map(({ storyFile, depth }) => ({
+          storyFile: storyIndexPathToAbsolutePath(storyFile, this.workingDir),
+          depth,
+        }));
+        // The index can hold a story file before the graph does.
+        if (storyIdsByFile.has(changedFile)) {
+          stories.push({ storyFile: changedFile, depth: 0 });
         }
-      }
+        return { isNew: newFiles.has(changedFile), stories };
+      })
+    );
 
-      for (const [storyFile, distance] of allEntries.entries()) {
-        const storyIds = storyIdsByFile.get(storyFile);
-        if (!storyIds) {
-          continue;
-        }
-
-        const value: Status['value'] = newFiles.has(storyFile)
-          ? 'status-value:new'
-          : distance === lowestDistance
-            ? 'status-value:modified'
-            : 'status-value:affected';
-
-        storyIds.forEach((storyId) => {
-          const existingStatus = statuses.get(storyId);
-
-          const nextStatus: Status = {
-            storyId,
-            typeId: CHANGE_DETECTION_STATUS_TYPE_ID,
-            value: mergeStatusValues(existingStatus?.value, value),
-            title: '',
-            description: '',
-            sidebarContextMenu: false,
-          };
-
-          statuses.set(storyId, mergeChangeDetectionStatuses(existingStatus, nextStatus));
+    for (const [storyFile, value] of storyFileStatuses) {
+      storyIdsByFile.get(storyFile)?.forEach((storyId) => {
+        statuses.set(storyId, {
+          storyId,
+          typeId: CHANGE_DETECTION_STATUS_TYPE_ID,
+          value,
+          title: '',
+          description: '',
+          sidebarContextMenu: false,
         });
-      }
+      });
     }
 
     baselineStatuses.forEach((status, storyId) => {

@@ -15,6 +15,7 @@ import type { AxeResults } from 'axe-core';
 import * as api from 'storybook/manager-api';
 
 import { EVENTS, UI_STATE_ID } from '../constants.ts';
+import { a11yStore, initialA11yState } from '../store.ts';
 import { RuleType } from '../types.ts';
 import { A11yContextProvider, useA11yContext } from './A11yContext.tsx';
 
@@ -83,7 +84,7 @@ describe('A11yContext', () => {
       onSelect,
       unset,
     } as any);
-    mockedApi.useAddonState.mockImplementation((_, defaultState) => React.useState(defaultState));
+    a11yStore.setState(initialA11yState);
     mockedApi.useChannel.mockReturnValue(vi.fn());
     getCurrentStoryData.mockReturnValue({ id: storyId, type: 'story' });
     getParameters.mockReturnValue({});
@@ -98,7 +99,6 @@ describe('A11yContext', () => {
 
     mockedApi.useChannel.mockClear();
     mockedApi.useStorybookApi.mockClear();
-    mockedApi.useAddonState.mockClear();
     mockedApi.useParameter.mockClear();
     mockedApi.useStorybookState.mockClear();
     mockedApi.useGlobals.mockClear();

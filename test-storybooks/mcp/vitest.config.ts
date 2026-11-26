@@ -9,8 +9,11 @@ import { playwright } from '@vitest/browser-playwright';
 // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
 export default defineConfig({
 	test: {
-		testTimeout: 15_000,
-		hookTimeout: 15_000,
+		// The test-run endpoint spawns a full test run, which on a loaded Windows CI runner can
+		// exceed 15s even though the same tool finishes in ~4s on unloaded hardware. The timeout
+		// only matters when a test would actually exceed it, so a wide ceiling is free.
+		testTimeout: 30_000,
+		hookTimeout: 30_000,
 		projects: [
 			// E2E tests project (for MCP endpoint testing)
 			{

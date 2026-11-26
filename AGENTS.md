@@ -39,7 +39,7 @@ Claude Code does not read `.agents/`, so each skill has a symlink in `.claude/sk
 
 ## Code Review
 
-Before reviewing a pull request or a diff, read [`.agents/guidelines/code-review.md`](.agents/guidelines/code-review.md) and follow it.
+Before reviewing a pull request or a diff, read the [`code-review` skill](.agents/skills/code-review/SKILL.md). Every review follows its [review rules](.agents/skills/code-review/rules.md).
 
 ## Maintaining These Instructions
 

@@ -60,7 +60,7 @@ describe('createFixFiles', () => {
 
   it('rejects config edits that leave mutation diagnostics', async () => {
     const { files } = createFixFiles();
-    fs.writeFileSync(main, 'export default { ...shared };');
+    fs.writeFileSync(main, "export default { ...shared, addons: ['a'] };");
 
     await expect(files.editConfig(main, (config) => config.remove(['addons']))).rejects.toThrow(
       main

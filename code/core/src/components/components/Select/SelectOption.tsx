@@ -74,7 +74,16 @@ export const SelectOption: React.FC<SelectOptionProps> = ({
           {icon && <ActionList.Icon>{icon}</ActionList.Icon>}
           <ActionList.Text>
             <p>{title}</p>
-            {description && <small>{description}</small>}
+            {description && (
+              <small>
+                {description.split('\n').map((line, index, array) => (
+                  <React.Fragment key={index}>
+                    {line}
+                    {index < array.length - 1 && <br />}
+                  </React.Fragment>
+                ))}
+              </small>
+            )}
           </ActionList.Text>
           {aside}
         </>

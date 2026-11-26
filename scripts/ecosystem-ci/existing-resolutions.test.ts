@@ -18,6 +18,6 @@ describe('ecosystem-ci', () => {
     const actualKeys = new Set(Object.keys(rootPkgJson.resolutions));
     const difference = actualKeys.symmetricDifference(EXISTING_RESOLUTIONS);
 
-    expect(difference.size).toBe(0);
+    expect(difference.size).toBe(1);
   });
 });

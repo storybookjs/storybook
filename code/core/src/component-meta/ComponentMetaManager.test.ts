@@ -10,6 +10,8 @@ import {
 import { tmpdir } from 'node:os';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { once } from 'storybook/internal/node-logger';
+
 import { join, normalize } from 'pathe';
 
 import { ComponentMetaManager } from './ComponentMetaManager.ts';
@@ -23,7 +25,7 @@ const createProject = (trackedFile: string) =>
     hasSourceFile: (fileName: string) => fileName === trackedFile,
     ensureFiles: vi.fn(),
     onFilesChanged: vi.fn<(changes: FileChange[]) => void>(),
-    getSourceFilePaths: () => [],
+    getSourceFilePaths: vi.fn(() => []),
     dispose: vi.fn(),
   }) satisfies ComponentMetaProjectBase;
 
@@ -108,5 +110,98 @@ describe('ComponentMetaManager file watching', () => {
       .filter(({ filename }) => filename === 'src/Card.ts')
       .map(({ eventType }) => eventType);
     expect(cardEvents).toContain('rename');
+  });
+});
+
+describe('ComponentMetaManager heap-pressure recycle', () => {
+  type Project = ReturnType<typeof createProject>;
+
+  class RecyclingManager extends ComponentMetaManager<Project> {
+    recycleIfHeapPressured = (batchProjects?: Iterable<Project>) =>
+      this.recycleProjectsIfHeapPressured(batchProjects);
+  }
+
+  const tsconfig = '/project/tsconfig.json';
+  const file = '/project/src/Button.ts';
+
+  const setup = ({ sharesParsedFiles }: { sharesParsedFiles: boolean }) => {
+    const createConfiguredProject = vi.fn(() => createProject(file));
+    const manager = new RecyclingManager(
+      { sys: { fileExists: (path) => normalize(path) === tsconfig, directoryExists: () => true } },
+      {
+        parseCommandLine: () => ({ fileNames: [file] }),
+        createConfiguredProject,
+        createInferredProject: () => createProject(file),
+        sharesParsedFiles,
+      }
+    );
+    return { manager, createConfiguredProject, project: manager.getProjectForFile(file) };
+  };
+
+  const setHeapUsed = (heapUsed: number) =>
+    vi.spyOn(process, 'memoryUsage').mockReturnValue({ heapUsed } as NodeJS.MemoryUsage);
+
+  beforeEach(() => {
+    vi.spyOn(once, 'warn').mockImplementation(() => undefined);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('keeps the projects while the heap is below the threshold', () => {
+    const { manager, project } = setup({ sharesParsedFiles: true });
+    setHeapUsed(0);
+
+    expect(manager.recycleIfHeapPressured([project])).toBe(false);
+    expect(project.dispose).not.toHaveBeenCalled();
+    expect(manager.getProjectForFile(file)).toBe(project);
+  });
+
+  it('builds the replacement of a batch project before it disposes the project', () => {
+    const { manager, project } = setup({ sharesParsedFiles: true });
+    setHeapUsed(Number.POSITIVE_INFINITY);
+
+    expect(manager.recycleIfHeapPressured([project])).toBe(true);
+
+    const replacement = manager.getProjectForFile(file);
+    expect(replacement).not.toBe(project);
+    expect(replacement.getSourceFilePaths.mock.invocationCallOrder[0]).toBeLessThan(
+      project.dispose.mock.invocationCallOrder[0]
+    );
+  });
+
+  it('disposes a batch project whose replacement fails to build', () => {
+    const { manager, project, createConfiguredProject } = setup({ sharesParsedFiles: true });
+    createConfiguredProject.mockImplementationOnce(() => ({
+      ...createProject(file),
+      getSourceFilePaths: vi.fn(() => {
+        throw new Error('The program failed to build');
+      }),
+    }));
+    setHeapUsed(Number.POSITIVE_INFINITY);
+
+    expect(manager.recycleIfHeapPressured([project])).toBe(true);
+    expect(project.dispose).toHaveBeenCalledOnce();
+  });
+
+  it('disposes a project the batch did not use without a replacement', () => {
+    const { manager, project, createConfiguredProject } = setup({ sharesParsedFiles: true });
+    setHeapUsed(Number.POSITIVE_INFINITY);
+
+    manager.recycleIfHeapPressured([]);
+
+    expect(project.dispose).toHaveBeenCalledOnce();
+    expect(createConfiguredProject).toHaveBeenCalledOnce();
+  });
+
+  it('disposes a batch project without a replacement when projects share no parsed files', () => {
+    const { manager, project, createConfiguredProject } = setup({ sharesParsedFiles: false });
+    setHeapUsed(Number.POSITIVE_INFINITY);
+
+    manager.recycleIfHeapPressured([project]);
+
+    expect(project.dispose).toHaveBeenCalledOnce();
+    expect(createConfiguredProject).toHaveBeenCalledOnce();
   });
 });

@@ -9,10 +9,10 @@ import {
   HandledError,
   type JsPackageManager,
   JsPackageManagerFactory,
-  isCI,
   isCorePackage,
   isNpmPeerResolutionError,
   resolveStorybookVersionSpecifier,
+  runStorybookInstallPrecheck,
 } from 'storybook/internal/common';
 import {
   CLI_COLORS,
@@ -23,7 +23,6 @@ import {
 } from 'storybook/internal/node-logger';
 import type { LogLevel } from 'storybook/internal/node-logger';
 import {
-  MinimumReleaseAgeHandledError,
   UpgradeStorybookToLowerVersionError,
   UpgradeStorybookUnknownCurrentVersionError,
 } from 'storybook/internal/server-errors';
@@ -393,21 +392,11 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
     // Update dependencies in package.jsons for all projects
     if (!options.dryRun) {
       for (const project of storybookProjects) {
-        try {
-          await project.packageManager.precheckStorybookPackageInstall({
-            storybookVersion: project.currentCLIVersion,
-            nonInteractive: !!options.yes || !process.stdout.isTTY || !!isCI(),
-            installContext: 'upgrade',
-          });
-        } catch (error) {
-          if (error instanceof MinimumReleaseAgeHandledError) {
-            throw error;
-          }
-
-          logger.debug(
-            `Skipping minimum-release-age precheck for ${project.configDir} after an unexpected failure: ${error}`
-          );
-        }
+        await runStorybookInstallPrecheck(project.packageManager, {
+          storybookVersion: project.currentCLIVersion,
+          installContext: 'upgrade',
+          yes: !!options.yes,
+        });
       }
 
       const task = prompt.taskLog({

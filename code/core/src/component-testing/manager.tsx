@@ -4,14 +4,15 @@ import { AddonPanel } from 'storybook/internal/components';
 
 import { type Combo, Consumer, addons, types } from 'storybook/manager-api';
 
-import { Panel, listenForPlayResults } from './components/Panel.tsx';
+import { Panel } from './components/Panel.tsx';
 import { PanelTitle } from './components/PanelTitle.tsx';
+import { listenForRenderLifecycle } from './components/renderLifecycle.ts';
 import { ADDON_ID, PANEL_ID } from './constants.ts';
 import { isInteractionsDisabled } from './utils.ts';
 
 export default addons.register(ADDON_ID, (api) => {
   if (globalThis?.FEATURES?.interactions) {
-    listenForPlayResults(api);
+    listenForRenderLifecycle(api);
 
     const filter = ({ state }: Combo) => {
       const origin = (state.refId && state.refs[state.refId]?.url) || document.location.origin;

@@ -1,18 +1,10 @@
 import type { Dispatch, SetStateAction } from 'react';
 import React, { Fragment, memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import {
-  FORCE_REMOUNT,
-  PLAY_FUNCTION_THREW_EXCEPTION,
-  STORY_RENDER_PHASE_CHANGED,
-  STORY_THREW_EXCEPTION,
-  UNHANDLED_ERRORS_WHILE_PLAYING,
-} from 'storybook/internal/core-events';
-import { parsePath } from 'storybook/internal/router';
+import { FORCE_REMOUNT, STORY_THREW_EXCEPTION } from 'storybook/internal/core-events';
 import type { StatusValue } from 'storybook/internal/types';
 
 import {
-  type API,
   experimental_useStatusStore,
   useChannel,
   useParameter,
@@ -25,37 +17,24 @@ import {
   STORYBOOK_ADDON_TEST_CHANNEL,
 } from '../../../../addons/vitest/src/constants.ts';
 import { EVENTS } from '../../instrumenter/EVENTS.ts';
-import {
-  type Call,
-  CallStates,
-  type LogItem,
-  type RenderPhase,
-  type SyncPayload,
-} from '../../instrumenter/types.ts';
+import { type Call, CallStates, type LogItem, type SyncPayload } from '../../instrumenter/types.ts';
 import { INTERNAL_RENDER_CALL_ID } from '../constants.ts';
 import { InteractionsPanel } from './InteractionsPanel.tsx';
-import type { PlayStatus } from './StatusBadge.tsx';
 import {
   INITIAL_CONTROL_STATES,
-  INITIAL_PANEL_STATE,
   type Interaction,
   type PanelState,
   panelStore,
   usePanelState,
 } from './panelStore.ts';
-
-const playStatusMap: Record<
-  Extract<RenderPhase, 'rendering' | 'playing' | 'completed' | 'errored' | 'aborted'>,
-  PlayStatus
-> = {
-  rendering: 'rendering',
-  playing: 'playing',
-  completed: 'completed',
-  errored: 'errored',
-  aborted: 'aborted',
-};
-
-const terminalStatuses: PlayStatus[] = ['completed', 'errored', 'aborted'];
+import {
+  getCalls,
+  getInternalRenderCall,
+  getInternalRenderLogItem,
+  getLog,
+  recordCall,
+  setLog,
+} from './renderLifecycle.ts';
 
 const storyStatusMap: Record<CallStates, StatusValue> = {
   [CallStates.DONE]: 'status-value:success',
@@ -163,180 +142,6 @@ export const getPanelState = (
     }
   );
 
-interface RenderPhaseEvent {
-  storyId: string;
-  renderId?: number;
-  newPhase: RenderPhase;
-}
-
-export interface RenderTracker {
-  event?: RenderPhaseEvent;
-  refId?: string;
-  hasRendered?: boolean;
-}
-
-export const trackRenderPhase = (
-  tracker: RenderTracker,
-  event: RenderPhaseEvent,
-  currentStoryId: string | undefined,
-  refId?: string
-): { tracker: RenderTracker; isCurrentRender: boolean; isRerender: boolean } => {
-  // A render torn down by a story switch can still report phases after the new story started.
-  if (event.storyId !== currentStoryId) {
-    return { tracker, isCurrentRender: false, isRerender: false };
-  }
-
-  const sameStory = tracker.refId === refId && tracker.event?.storyId === event.storyId;
-  const previousRenderId = tracker.event?.renderId;
-  // Storybook 9.0 previews send phases without render IDs.
-  const isOlderRender =
-    previousRenderId !== undefined &&
-    event.renderId !== undefined &&
-    event.renderId < previousRenderId;
-  if (sameStory && (isOlderRender || ['preparing', 'loading'].includes(event.newPhase))) {
-    return { tracker, isCurrentRender: false, isRerender: false };
-  }
-
-  const hasRendered = sameStory && previousRenderId === event.renderId && !!tracker.hasRendered;
-  const isRendering = event.newPhase === 'rendering';
-
-  return {
-    tracker: { event, refId, hasRendered: hasRendered || isRendering },
-    isCurrentRender: true,
-    // A re-render or a remount renders the same story render again, unlike a story switch or HMR.
-    isRerender: isRendering && hasRendered,
-  };
-};
-
-// A re-render does not play again, so it keeps the last play's errors until a new play starts.
-export const getRenderPhaseState = (
-  state: PanelState,
-  phase: RenderPhase,
-  isRerender: boolean
-): PanelState => {
-  if (phase === 'rendering') {
-    const { caughtException, unhandledErrors } = isRerender ? state : INITIAL_PANEL_STATE;
-    return { ...INITIAL_PANEL_STATE, revision: state.revision, caughtException, unhandledErrors };
-  }
-
-  const current =
-    phase === 'playing'
-      ? { ...state, caughtException: undefined, unhandledErrors: undefined }
-      : state;
-  const status =
-    phase in playStatusMap && !terminalStatuses.includes(current.status)
-      ? playStatusMap[phase as keyof typeof playStatusMap]
-      : current.status;
-  const hasPlayFailed = !!current.caughtException || !!current.unhandledErrors;
-
-  return {
-    ...current,
-    status: status === 'completed' && hasPlayFailed ? 'errored' : status,
-    pausedAt: undefined,
-  };
-};
-
-const getInternalRenderCall = (storyId: string, exception?: Call['exception']): Call => ({
-  id: INTERNAL_RENDER_CALL_ID,
-  method: 'render',
-  args: [],
-  cursor: 0,
-  storyId,
-  ancestors: [],
-  path: [],
-  interceptable: true,
-  retain: false,
-  exception,
-});
-
-const getInternalRenderLogItem = (status: CallStates): LogItem => ({
-  callId: INTERNAL_RENDER_CALL_ID,
-  status,
-  ancestors: [],
-});
-
-// Module scope: listenForPlayResults updates these while the panel is closed, and starts a new step
-// log when a render starts.
-let renderTracker: RenderTracker = {};
-const log: { current: LogItem[] } = { current: [getInternalRenderLogItem(CallStates.ACTIVE)] };
-const calls: { current: Map<Call['id'], Omit<Call, 'status'>> } = {
-  current: new Map([[INTERNAL_RENDER_CALL_ID, getInternalRenderCall('')]]),
-};
-
-// Registered once with the addon, so render phases and play results reach panelStore while the
-// panel is closed.
-export const listenForPlayResults = (
-  api: Pick<API, 'on'> & { getUrlState: () => { storyId?: string; path: string } }
-) => {
-  // The router reads the selected ref from the path, as it does for the manager state.
-  const getSelection = () => {
-    const { storyId, path } = api.getUrlState();
-    return { storyId, refId: parsePath(path).refId };
-  };
-  const isCurrentPlayError = (senderRefId?: string) => {
-    const { storyId, refId } = getSelection();
-    return (
-      senderRefId === refId &&
-      renderTracker.refId === refId &&
-      renderTracker.event?.newPhase === 'errored' &&
-      renderTracker.event.storyId === storyId
-    );
-  };
-  api.on(STORY_RENDER_PHASE_CHANGED, function (this: { refId?: string }, event: RenderPhaseEvent) {
-    const { storyId, refId } = getSelection();
-    if (this.refId !== refId) {
-      return;
-    }
-    const { tracker, isCurrentRender, isRerender } = trackRenderPhase(
-      renderTracker,
-      event,
-      storyId,
-      refId
-    );
-    renderTracker = tracker;
-    if (isCurrentRender) {
-      if (event.newPhase === 'rendering') {
-        log.current = [getInternalRenderLogItem(CallStates.ACTIVE)];
-        // The new log can only reference this story's calls and retained calls, which the
-        // instrumenter brings back without resending them.
-        calls.current.forEach((call, id) => {
-          if (call.storyId !== event.storyId && !call.retain) {
-            calls.current.delete(id);
-          }
-        });
-        calls.current.set(INTERNAL_RENDER_CALL_ID, getInternalRenderCall(event.storyId));
-      }
-      panelStore.setState((state) => getRenderPhaseState(state, event.newPhase, isRerender));
-    }
-  });
-  api.on(
-    PLAY_FUNCTION_THREW_EXCEPTION,
-    function (this: { refId?: string }, caughtException: PanelState['caughtException']) {
-      if (isCurrentPlayError(this.refId)) {
-        panelStore.setState((state) => ({ ...state, caughtException, hasException: true }));
-      }
-    }
-  );
-  api.on(
-    UNHANDLED_ERRORS_WHILE_PLAYING,
-    function (this: { refId?: string }, unhandledErrors: PanelState['unhandledErrors']) {
-      if (isCurrentPlayError(this.refId)) {
-        panelStore.setState((state) => ({ ...state, unhandledErrors, hasException: true }));
-      }
-    }
-  );
-  api.on(FORCE_REMOUNT, ({ storyId }: { storyId: string }) => {
-    // A remount keeps the last play's errors until it plays, which a failed render skips.
-    if (storyId === api.getUrlState().storyId) {
-      panelStore.setState((state) => ({
-        ...state,
-        caughtException: undefined,
-        unhandledErrors: undefined,
-      }));
-    }
-  });
-};
-
 export const Panel = memo<{ refId?: string; storyId: string; storyUrl: string }>(
   function PanelMemoized({ refId, storyId, storyUrl }) {
     const { statusValue, testRunId } = experimental_useStatusStore((state) => {
@@ -371,7 +176,6 @@ export const Panel = memo<{ refId?: string; storyId: string; storyUrl: string }>
       unhandledErrors = undefined,
     } = panelState;
 
-    const setCall = ({ status, ...call }: Call) => calls.current.set(call.id, call);
     const toggles = useRef(new Map<Call['id'], () => void>()).current;
 
     const endRef = useRef<HTMLDivElement>();
@@ -392,13 +196,14 @@ export const Panel = memo<{ refId?: string; storyId: string; storyUrl: string }>
 
     const emit = useChannel(
       {
-        [EVENTS.CALL]: setCall,
+        [EVENTS.CALL]: recordCall,
         [EVENTS.SYNC]: (payload: SyncPayload) => {
           if (payload.storyId && payload.storyId !== api.getUrlState().storyId) {
             return;
           }
-          log.current = [getInternalRenderLogItem(CallStates.DONE), ...payload.logItems];
-          pruneToggles(toggles, log.current);
+          const log = [getInternalRenderLogItem(CallStates.DONE), ...payload.logItems];
+          setLog(log);
+          pruneToggles(toggles, log);
           set((state) =>
             getPanelState(
               {
@@ -407,26 +212,25 @@ export const Panel = memo<{ refId?: string; storyId: string; storyUrl: string }>
                 pausedAt: payload.pausedAt,
                 revision: state.revision + 1,
               },
-              { log: log.current, calls: calls.current, collapsed, setCollapsed, toggles }
+              { log, calls: getCalls(), collapsed, setCollapsed, toggles }
             )
           );
         },
         [STORY_THREW_EXCEPTION]: (e: { name: string; message: string; stack: string }) => {
-          log.current = [getInternalRenderLogItem(CallStates.ERROR)];
-          calls.current.set(
-            INTERNAL_RENDER_CALL_ID,
-            getInternalRenderCall(storyId, { ...e, callId: INTERNAL_RENDER_CALL_ID })
-          );
+          const log = [getInternalRenderLogItem(CallStates.ERROR)];
+          setLog(log);
+          recordCall(getInternalRenderCall(storyId, { ...e, callId: INTERNAL_RENDER_CALL_ID }));
           set((state) =>
             getPanelState(
               {
                 ...state,
                 hasException: true,
                 caughtException: undefined,
+                unhandledErrors: undefined,
                 controlStates: INITIAL_CONTROL_STATES,
                 pausedAt: undefined,
               },
-              { log: log.current, calls: calls.current, collapsed, setCollapsed, toggles }
+              { log, calls: getCalls(), collapsed, setCollapsed, toggles }
             )
           );
         },
@@ -434,12 +238,12 @@ export const Panel = memo<{ refId?: string; storyId: string; storyUrl: string }>
       [collapsed, storyId]
     );
 
-    // listenForPlayResults sets the status for each render phase; list the steps for that status.
+    // listenForRenderLifecycle sets the status of each render phase; list the steps for it.
     useEffect(() => {
       set((state) =>
         getPanelState(state, {
-          log: log.current,
-          calls: calls.current,
+          log: getLog(),
+          calls: getCalls(),
           collapsed,
           setCollapsed,
           toggles,
@@ -525,7 +329,7 @@ export const Panel = memo<{ refId?: string; storyId: string; storyUrl: string }>
           status={status}
           hasResultMismatch={hasResultMismatch}
           browserTestStatus={browserTestStatus}
-          calls={calls.current}
+          calls={getCalls()}
           controls={controls}
           controlStates={panelControlStates}
           interactions={interactions}

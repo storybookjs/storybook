@@ -1,7 +1,7 @@
 import { UnknownArgTypesError } from 'storybook/internal/preview-errors';
 import type { SBType } from 'storybook/internal/types';
 
-import { parseLiteral } from '../utils.ts';
+import { countOpenStringIdioms, isStringLiteralValue, parseLiteral } from '../utils.ts';
 import type { TSIntersectionType, TSSigType, TSType } from './types.ts';
 
 // Type guards for narrowing TSType discriminant unions
@@ -31,11 +31,9 @@ const convertSig = (type: TSSigType) => {
   }
 };
 
-// `string & {}` is the TypeScript idiom for "literal hints plus any string" (used
-// throughout CSSProperties and similar library types). Docgen emits it either as an
-// `intersection` of `string` and an empty object signature, or as an `unknown`
-// member inside a union. Both shapes mean `string`, so they collapse to a text
-// control instead of an unusable object control.
+// Docgen emits standalone `string & {}` as an `intersection` of `string` and an
+// empty object signature, which collapses to `string` (a text control) instead of
+// an unusable object control.
 const isEmptyObjectSignature = (type: TSType): boolean =>
   type.name === 'signature' && type.type === 'object' && type.signature.properties.length === 0;
 
@@ -44,7 +42,18 @@ const convertIntersection = (type: TSIntersectionType): SBType | void => {
   if (meaningful.length === 1) {
     return convert(meaningful[0]);
   }
-  return { name: 'intersection', value: type.elements.map(convert) };
+  return {
+    name: 'intersection',
+    value: type.elements.map(convert).filter((value): value is SBType => value !== undefined),
+  };
+};
+
+const collapsesToString = (type: TSType): boolean => {
+  if (type.name !== 'intersection') {
+    return false;
+  }
+  const meaningful = type.elements.filter((element) => !isEmptyObjectSignature(element));
+  return meaningful.length === 1 && meaningful[0].name === 'string';
 };
 
 export const convert = (type: TSType): SBType | void => {
@@ -85,27 +94,41 @@ export const convert = (type: TSType): SBType | void => {
           ),
         };
       }
-      // A union of string literals and a `string & {}` member (emitted as
-      // `unknown`) accepts any string, so it is a text control, not a closed
-      // enum. Mixed unions like `'sm' | 42 | (string & {})` keep their type.
-      if (
-        nonUndefinedElements.some((element) => element.name === 'unknown') &&
-        nonUndefinedElements.every(
+      // A union of string literals and a `string & {}` member accepts any string,
+      // so it is a text control, not a closed enum. Docgen emits the idiom in two
+      // shapes: parenthesized members become `{ name: 'unknown' }` (which carries no
+      // raw text, so one `unknown` cannot be told from another), and bare
+      // `string & {}` becomes an intersection of `string` and an empty object
+      // signature. Because an `unknown` member is indistinguishable from other
+      // unresolved types, the union collapses only when the idiom appears at least
+      // as many times in the raw text as there are `unknown` members; otherwise the
+      // union would silently treat types like `(Foo)` as strings. Mixed unions like
+      // `'sm' | 42 | (string & {})` keep their type.
+      if (typeof raw === 'string') {
+        const idiomCount = countOpenStringIdioms(raw);
+        const unknownCount = nonUndefinedElements.filter(
+          (element) => element.name === 'unknown'
+        ).length;
+        const allStringCompatible = nonUndefinedElements.every(
           (element) =>
             element.name === 'unknown' ||
             element.name === 'null' ||
-            (isLiteral(element) && /^['"]/.test(element.value))
-        ) &&
-        typeof raw === 'string' &&
-        /\bstring\s*&\s*\{\s*\}/.test(raw)
-      ) {
-        return { ...base, name: 'string' };
+            (isLiteral(element) && isStringLiteralValue(element.value)) ||
+            collapsesToString(element)
+        );
+        if (
+          idiomCount >= Math.max(unknownCount, 1) &&
+          unknownCount + nonUndefinedElements.filter(collapsesToString).length > 0 &&
+          allStringCompatible
+        ) {
+          return { ...base, name: 'string' };
+        }
       }
       return { ...base, name, value: type.elements.map(convert) };
     }
     case 'intersection': {
       const converted = convertIntersection(type);
-      return converted ? { ...base, ...converted } : converted;
+      return converted ? { ...converted, ...base } : converted;
     }
     default:
       return { ...base, name: 'other', value: name };

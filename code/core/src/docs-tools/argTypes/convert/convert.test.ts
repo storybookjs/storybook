@@ -8,6 +8,8 @@ import { mapValues } from 'es-toolkit/object';
 import requireFromString from 'require-from-string';
 
 import { normalizeNewlines } from '../utils.ts';
+import type { DocgenInfo } from '../docgen/types.ts';
+
 import { convert } from './index.ts';
 
 expect.addSnapshotSerializer({
@@ -275,7 +277,6 @@ describe('storybook type system', () => {
       expect(convertTs(input)).toMatchInlineSnapshot(`
         {
           "intersectionType": {
-            "raw": "ItemInterface & PersonInterface",
             "name": "intersection",
             "value": [
               {
@@ -286,10 +287,10 @@ describe('storybook type system', () => {
                 "name": "other",
                 "value": "PersonInterface"
               }
-            ]
+            ],
+            "raw": "ItemInterface & PersonInterface"
           },
           "intersectionWithInlineType": {
-            "raw": "ItemInterface & { inlineValue: string }",
             "name": "intersection",
             "value": [
               {
@@ -305,7 +306,8 @@ describe('storybook type system', () => {
                   }
                 }
               }
-            ]
+            ],
+            "raw": "ItemInterface & { inlineValue: string }"
           }
         }
       `);
@@ -319,8 +321,42 @@ describe('storybook type system', () => {
             "name": "string"
           },
           "openIntersection": {
-            "raw": "string & {}",
+            "name": "string",
+            "raw": "string & {}"
+          },
+          "openBare": {
+            "raw": "'sm' | (string & {})",
             "name": "string"
+          },
+          "openSpacing": {
+            "raw": "'sm' | (string & {})",
+            "name": "string"
+          },
+          "nullableOpen": {
+            "raw": "'a' | null | (string & {})",
+            "name": "string"
+          },
+          "unresolvedMixed": {
+            "raw": "'a' | Custom | (string & {})",
+            "name": "union",
+            "value": [
+              {
+                "name": "other",
+                "value": "literal"
+              },
+              {
+                "raw": "'x' | 'y'",
+                "name": "enum",
+                "value": [
+                  "x",
+                  "y"
+                ]
+              },
+              {
+                "name": "other",
+                "value": "unknown"
+              }
+            ]
           },
           "closedUnion": {
             "raw": "'a' | 'b'",
@@ -381,15 +417,33 @@ describe('storybook type system', () => {
     // react-docgen-typescript emits `'sm' | 'md' | (string & {})` as an enum
     // with a `string & {}` member; the prop accepts any string.
     it('open string enums from react-docgen-typescript', () => {
-      const converted = convert({
+      const openEnum = {
         type: {
           name: 'enum',
           value: [{ value: '"sm"' }, { value: '"md"' }, { value: 'string & {}' }],
         },
-      } as any);
-      expect(converted).toMatchInlineSnapshot(`
+      } satisfies DocgenInfo;
+      expect(convert(openEnum)).toMatchInlineSnapshot(`
         {
           "name": "string"
+        }
+      `);
+
+      // A numeric member means the prop is not string-only, so the enum is kept.
+      const mixedEnum = {
+        type: {
+          name: 'enum',
+          value: [{ value: '"sm"' }, { value: '42' }, { value: 'string & {}' }],
+        },
+      } satisfies DocgenInfo;
+      expect(convert(mixedEnum)).toMatchInlineSnapshot(`
+        {
+          "name": "enum",
+          "value": [
+            "sm",
+            42,
+            "string & {}"
+          ]
         }
       `);
     });
@@ -562,7 +616,6 @@ describe('storybook type system', () => {
             "name": "string"
           },
           "aliasesIntersection": {
-            "raw": "StringAlias & NumberAlias",
             "name": "intersection",
             "value": [
               {
@@ -571,7 +624,8 @@ describe('storybook type system', () => {
               {
                 "name": "number"
               }
-            ]
+            ],
+            "raw": "StringAlias & NumberAlias"
           },
           "aliasesUnion": {
             "raw": "StringAlias | NumberAlias",

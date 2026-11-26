@@ -7,7 +7,7 @@ interface TSBaseType {
 
 type TSArgType = TSType;
 
-export type TSUnionType = TSBaseType & {
+type TSUnionType = TSBaseType & {
   name: 'union';
   elements: TSType[];
 };

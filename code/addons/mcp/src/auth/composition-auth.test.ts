@@ -873,7 +873,14 @@ describe('CompositionAuth', () => {
       const pending = auth.initialize([
         { id: 'stalled', title: 'Stalled', url: 'https://stalled.example.com' },
       ]);
-      await vi.waitFor(() => expect(timeoutSpy).toHaveBeenCalledWith(30_000));
+      // Abort once the metadata fetch is listening for it
+      await vi.waitFor(() =>
+        expect(fetch).toHaveBeenCalledWith(
+          'https://stalled.example.com/.well-known/oauth-protected-resource',
+          expect.anything()
+        )
+      );
+      expect(timeoutSpy).toHaveBeenCalledWith(30_000);
       controller.abort(new DOMException('timed out', 'TimeoutError'));
       await pending;
 
@@ -1112,6 +1119,22 @@ describe('CompositionAuth', () => {
       await vi.advanceTimersByTimeAsync(1);
       await readAllRefs(auth);
       expect(mockFetch).toHaveBeenCalledTimes(3);
+
+      await vi.advanceTimersByTimeAsync(20_000);
+      await readAllRefs(auth);
+      await vi.advanceTimersByTimeAsync(40_000);
+      await readAllRefs(auth);
+      expect(mockFetch).toHaveBeenCalledTimes(5);
+
+      // The fifth failure would wait 80s; the delay stops at 60s
+      for (const expected of [6, 7]) {
+        await vi.advanceTimersByTimeAsync(59_999);
+        await readAllRefs(auth);
+        expect(mockFetch).toHaveBeenCalledTimes(expected - 1);
+        await vi.advanceTimersByTimeAsync(1);
+        await readAllRefs(auth);
+        expect(mockFetch).toHaveBeenCalledTimes(expected);
+      }
       // Warned once, not on every failed retry.
       expect(logger.warn).toHaveBeenCalledTimes(1);
     });

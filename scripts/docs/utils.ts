@@ -9,6 +9,16 @@ export async function getMdxFiles(docsDir: string): Promise<string[]> {
 }
 
 /**
+ * Compares two absolute paths across platforms: unifies separators and drops a
+ * win32 drive prefix, so a glob-resolved path (`C:/docs/...`) matches a
+ * docsDir-relative one (`/docs/...`).
+ */
+export function isSamePath(a: string, b: string): boolean {
+  const normalize = (p: string) => p.replace(/\\/g, '/').replace(/^[A-Za-z]:/, '');
+  return normalize(a) === normalize(b);
+}
+
+/**
  * Reads a file and returns an array of its lines.
  */
 export async function readFileLines(filePath: string): Promise<string[]> {

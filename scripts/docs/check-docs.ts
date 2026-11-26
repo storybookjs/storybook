@@ -7,6 +7,7 @@ import {
   readFileLines,
   getHeadingSlugs,
   getLineContexts,
+  isSamePath,
   getMisorderedCsfSegments,
   getLegacyCsfTitleSegments,
   getCsf3SegmentsWithoutDeprecation,
@@ -416,7 +417,7 @@ export async function checkResourcesSkillsIndex(docsDir: string): Promise<DocLin
       const linkRegex = /\]\((\.\.?\/[^)#]+)(#[^)]*)?\)/g;
       let match;
       while ((match = linkRegex.exec(line))) {
-        if (path.resolve(path.dirname(file), match[1]) === skillsIndex) {
+        if (isSamePath(path.resolve(path.dirname(file), match[1]), skillsIndex)) {
           errors.push({
             file,
             line: i + 1,

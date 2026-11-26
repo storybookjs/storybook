@@ -393,6 +393,18 @@ describe('check-docs', () => {
       expect((await checkResourcesSkillsIndex(docsDir)).length).toBe(1);
     });
 
+    it('errors when glob returns a drive-qualified path (Windows)', async () => {
+      const content =
+        '**More AI resources**\n\n- [Setup](./skills/setup.mdx)\n- [Skills](./skills/index.mdx)';
+      await writeFile(page, content);
+      // On Windows, tinyglobby resolves the cwd against the process drive, so getMdxFiles
+      // yields drive-qualified paths even for a drive-less docsDir. memfs unifies the
+      // drive-qualified and POSIX addresses on Windows but not on Linux, so write both.
+      vi.mocked(glob).mockResolvedValue(['C:/docs/ai/connect.mdx']);
+      await writeFile('C:/docs/ai/connect.mdx', content);
+      expect((await checkResourcesSkillsIndex('/docs')).length).toBe(1);
+    });
+
     it('ignores a resources list inside a code block', async () => {
       await writeFile(page, '```md\n**More AI resources**\n\n- [Skills](./skills/index.mdx)\n```');
       expect(await checkResourcesSkillsIndex(docsDir)).toEqual([]);

@@ -22,6 +22,7 @@ describe('getDeprecatedPackagesWarning', () => {
 
     expect(warning).toContain('@storybook/nextjs@11.0.0');
     expect(warning).toContain('MIGRATION.md#nextjs-storybooknextjs-is-deprecated');
+    expect(warning).toContain('storybook automigrate nextjs-to-nextjs-vite');
   });
 
   it('lists @storybook/nextjs on a Storybook 11 prerelease', () => {

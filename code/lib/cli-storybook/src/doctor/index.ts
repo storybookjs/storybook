@@ -340,6 +340,7 @@ export async function getDoctorDiagnostics({
     'storybook',
   ]);
 
+  // Deliberately outside the incompatible-packages gate below: a deprecation does not depend on version alignment.
   const deprecatedPackagesWarning = getDeprecatedPackagesWarning(
     installationMetadata,
     storybookVersion,

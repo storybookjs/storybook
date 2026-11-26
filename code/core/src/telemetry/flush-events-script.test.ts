@@ -6,7 +6,8 @@ import { existsSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { type IncomingMessage, type Server, type ServerResponse, createServer } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+
+import { join } from 'pathe';
 
 import { set as saveToCache } from './event-cache.ts';
 import { flushEventsScript } from './flush-events-script.ts';
@@ -55,7 +56,10 @@ afterEach(() => {
 const flush = async (contents: string) => {
   const file = join(directory, 'events.json');
   writeFileSync(file, contents);
-  const child = spawn(process.execPath, ['--eval', flushEventsScript, file], { stdio: 'ignore' });
+  const child = spawn(process.execPath, ['--eval', flushEventsScript, file], {
+    env: { ...process.env, NODE_OPTIONS: '' },
+    stdio: 'ignore',
+  });
   const [exitCode] = await once(child, 'exit');
   return { exitCode, file };
 };

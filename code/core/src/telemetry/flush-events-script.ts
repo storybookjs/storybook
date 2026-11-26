@@ -7,7 +7,7 @@ const { setTimeout: sleep } = require('node:timers/promises');
 const url = process.env.STORYBOOK_TELEMETRY_URL || 'https://storybook.js.org/event-log';
 const file = process.argv.at(-1);
 const contents = readFileSync(file, 'utf8');
-// Removed before anything can fail, so a file is never left behind or read twice.
+// Removed before anything can fail, so a file is never left behind.
 rmSync(file, { force: true });
 const signal = AbortSignal.timeout(30_000);
 
@@ -24,7 +24,7 @@ async function post(event) {
       await response.text();
       status = response.status;
     } catch {}
-    // A request can fail after the server stored the event; it drops the retry by its eventId.
+    // A request can fail after the server stored the event; the eventId lets it drop the retry.
     const retry = status === undefined || status === 503 || status === 504;
     if (!retry || attempt === 3 || signal.aborted) {
       return;

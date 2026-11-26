@@ -2,7 +2,7 @@
 import { spawn } from 'node:child_process';
 import { readFileSync, rmSync, writeFileSync } from 'node:fs';
 import * as os from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 
 import { isCI } from 'storybook/internal/common';
 
@@ -92,7 +92,7 @@ export async function sendTelemetry(data: TelemetryData, options: Partial<Option
       context,
     };
     pending.push(JSON.stringify(body));
-    // A long-running process may be killed without an exit event, so it does not keep its events.
+    // A long-running process may be killed without an exit event, so it hands over while it runs.
     handOverTimer ??= setTimeout(handOverPendingEvents, HAND_OVER_AFTER).unref();
 
     await saveToCache(eventType, body);
@@ -116,8 +116,9 @@ export function handOverPendingEvents() {
     // and an existing path, such as a planted symlink, is never written through.
     writeFileSync(file, events, { mode: 0o600, flag: 'wx' });
     const child = spawn(process.execPath, ['--eval', flushEventsScript, file], {
-      // A process inside the project directory would block deleting it on Windows.
-      cwd: os.tmpdir(),
+      // Not the project, which a process inside it keeps from being deleted on Windows, and not
+      // the temp directory, where another user could plant a bunfig.toml for a Bun child to load.
+      cwd: dirname(process.execPath),
       // Its preloads may point into an install that is gone, and --inspect-brk would hang the child.
       env: { ...process.env, NODE_OPTIONS: '' },
       detached: true,

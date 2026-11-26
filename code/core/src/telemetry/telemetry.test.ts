@@ -4,6 +4,7 @@ import { spawn } from 'node:child_process';
 import { EventEmitter } from 'node:events';
 import * as fs from 'node:fs';
 import * as os from 'node:os';
+import { dirname } from 'node:path';
 
 import * as memfs from 'memfs';
 import { vol } from 'memfs';
@@ -34,7 +35,6 @@ beforeEach(() => {
 afterEach(() => {
   handOverPendingEvents();
   vi.useRealTimers();
-  vi.clearAllMocks();
   vi.unstubAllEnvs();
 });
 
@@ -67,6 +67,7 @@ it('hands the events to one detached process, with their data and context', asyn
   expect(command).toBe(process.execPath);
   expect(args).toEqual(['--eval', flushEventsScript, handedOverFile()]);
   expect(options).toMatchObject({ detached: true, stdio: 'ignore', windowsHide: true });
+  expect(vi.mocked(spawn).mock.results[0].value.unref).toHaveBeenCalled();
 });
 
 it('saves the event it hands over to the local event cache', async () => {
@@ -120,7 +121,7 @@ it('writes the events to a file only its owner can read', async () => {
   expect(vi.mocked(fs.writeFileSync).mock.calls[0][2]).toMatchObject({ flag: 'wx' });
 });
 
-it('starts the detached process outside the project and without the Node options of this one', async () => {
+it('starts the detached process next to its runtime and without the Node options of this one', async () => {
   vi.stubEnv('NODE_OPTIONS', '--require ./.pnp.cjs --inspect-brk');
   vi.stubEnv('STORYBOOK_TELEMETRY_URL', 'http://localhost:6007/event-log');
   await sendTelemetry({ eventType: 'dev', payload: {} });
@@ -128,7 +129,7 @@ it('starts the detached process outside the project and without the Node options
   handOverPendingEvents();
 
   const [, , options] = vi.mocked(spawn).mock.calls[0];
-  expect(options.cwd).toBe(os.tmpdir());
+  expect(options.cwd).toBe(dirname(process.execPath));
   expect(options.env).toMatchObject({
     NODE_OPTIONS: '',
     STORYBOOK_TELEMETRY_URL: 'http://localhost:6007/event-log',

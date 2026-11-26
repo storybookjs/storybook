@@ -64,7 +64,7 @@ export const getProjectSince = () => {
 
     const dateBuffer = executeCommandSync({
       command: 'git',
-      args: ['log', '--reverse', '--format=%cd', '--date=iso'],
+      args: ['log', '--max-parents=0', '--reverse', '--format=%cd', '--date=iso'],
       timeout: 1000,
     });
 

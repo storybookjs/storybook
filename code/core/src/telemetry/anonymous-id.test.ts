@@ -141,6 +141,20 @@ describe('getProjectSince', () => {
     expect(getProjectSince()).toEqual(new Date('2025-12-11T10:54:01.000Z'));
   });
 
+  it('asks git for the root commits only, oldest first', async () => {
+    vi.mocked(executeCommandSync).mockReturnValue('2015-12-11 16:24:01 +0530');
+
+    const { getProjectSince: getProjSince } = await import('./anonymous-id.ts');
+    getProjSince();
+
+    expect(executeCommandSync).toHaveBeenCalledWith(
+      expect.objectContaining({
+        command: 'git',
+        args: expect.arrayContaining(['log', '--max-parents=0', '--reverse']),
+      })
+    );
+  });
+
   it('returns undefined if git log output is empty', async () => {
     vi.mocked(executeCommandSync).mockReturnValue('');
 

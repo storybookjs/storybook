@@ -102,6 +102,7 @@ Start the `Ecosystem QA` workflow by hand and pick the repos, version, engines a
 `repo` takes catalog ids separated by commas, and `owned` or `tier1` for every repo of that class, so `owned,tier1` with `linux,windows` is a whole static sweep in one run.
 `plan.ts` turns the inputs into one job for each repo, operating system and engine, and a repo runs on Windows only when the catalog marks it `windows`.
 Linux runs the agent in `docker()`; Windows runs it with `noSandbox()`, and the API key is the only secret in that job.
+Screenshots on Windows come from the runner's Google Chrome, not from the Chromium that Playwright pins, so a Windows screenshot can differ from a Linux one in how the browser renders.
 The agent keys live in the `ecosystem-qa` environment, and the push token in `ecosystem-qa-file`, which only the filing job enters.
 Each runner uploads `qa-result-<id>-<os>-<engine>` with `result.json`, the run log, the raw agent stream, the session, the evidence and the cycle branch bundle.
 `run.ts` writes the status, wall time, tokens, dollars, free disk and every check to the Step Summary.

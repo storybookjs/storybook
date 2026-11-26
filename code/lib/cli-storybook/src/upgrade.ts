@@ -10,7 +10,6 @@ import {
   type JsPackageManager,
   JsPackageManagerFactory,
   isCI,
-  isCorePackage,
   isNpmPeerResolutionError,
   resolveStorybookVersionSpecifier,
 } from 'storybook/internal/common';
@@ -29,9 +28,8 @@ import {
 } from 'storybook/internal/server-errors';
 import { telemetry } from 'storybook/internal/telemetry';
 
-import { sync as spawnSync } from 'cross-spawn';
 import picocolors from 'picocolors';
-import semver, { clean, lt } from 'semver';
+import { lt } from 'semver';
 import { dedent } from 'ts-dedent';
 
 import { processAutoblockerResults } from './autoblock/utils.ts';
@@ -50,90 +48,6 @@ import {
   shortenPath,
   upgradeStorybookDependencies,
 } from './util.ts';
-
-type Package = {
-  package: string;
-  version: string;
-};
-
-const versionRegex = /(@storybook\/[^@]+)@(\S+)/;
-export const getStorybookVersion = (line: string) => {
-  if (line.startsWith('npm ')) {
-    return null;
-  }
-  const match = versionRegex.exec(line);
-
-  if (!match || !clean(match[2])) {
-    return null;
-  }
-  return {
-    package: match[1],
-    version: match[2],
-  };
-};
-
-const deprecatedPackages = [
-  {
-    minVersion: '6.0.0-alpha.0',
-    url: 'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#60-deprecations',
-    deprecations: [
-      '@storybook/addon-notes',
-      '@storybook/addon-info',
-      '@storybook/addon-contexts',
-      '@storybook/addon-options',
-      '@storybook/addon-centered',
-    ],
-  },
-  {
-    minVersion: '11.0.0',
-    url: 'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#nextjs-storybooknextjs-is-deprecated',
-    deprecations: ['@storybook/nextjs'],
-  },
-];
-
-const formatPackage = (pkg: Package) => `${pkg.package}@${pkg.version}`;
-
-const warnPackages = (pkgs: Package[]) => pkgs.map((pkg) => `- ${formatPackage(pkg)}`).join('\n');
-
-export const checkVersionConsistency = () => {
-  const lines = spawnSync('npm', ['ls'], { stdio: 'pipe' }).output.toString().split('\n');
-  const storybookPackages = lines
-    .map(getStorybookVersion)
-    .filter((item): item is NonNullable<typeof item> => !!item)
-    .filter((pkg) => isCorePackage(pkg.package));
-  if (!storybookPackages.length) {
-    logger.warn('No storybook core packages found.');
-    logger.warn(`'npm ls | grep storybook' can show if multiple versions are installed.`);
-    return;
-  }
-  storybookPackages.sort((a, b) => semver.rcompare(a.version, b.version));
-  const latestVersion = storybookPackages[0].version;
-  const outdated = storybookPackages.filter((pkg) => pkg.version !== latestVersion);
-  if (outdated.length > 0) {
-    logger.warn(
-      dedent`Found ${outdated.length} outdated packages (relative to '${formatPackage(
-        storybookPackages[0]
-      )}')
-      Please make sure your packages are updated to ensure a consistent experience:
-
-      ${warnPackages(outdated)}`
-    );
-  }
-
-  deprecatedPackages.forEach(({ minVersion, url, deprecations }) => {
-    if (semver.gte(latestVersion, minVersion)) {
-      const deprecated = storybookPackages.filter((pkg) => deprecations.includes(pkg.package));
-      if (deprecated.length > 0) {
-        logger.warn(
-          dedent`Found ${deprecated.length} deprecated packages since ${minVersion}
-          See ${url}
-          ${warnPackages(deprecated)}`
-        );
-      }
-    }
-  });
-  logger.debug('End of version consistency check');
-};
 
 export type UpgradeOptions = {
   skipCheck: boolean;

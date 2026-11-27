@@ -277,6 +277,333 @@ export const Primary = {
   });
 });
 
+describe('args that read story-file constants', () => {
+  const VIEWER_CATEGORIES = { html: 'props', lines: 'props', selectedLines: 'props' };
+  const viewerStory = (storySource: string) =>
+    primaryStory(storySource, undefined, VIEWER_CATEGORIES);
+
+  it('declares the constants the args of a meta and of a story read', async () => {
+    vol.fromJSON({
+      [STORY_PATH]: `
+import preview from '#.storybook/preview';
+import MyButton from './MyButton.vue';
+
+const lines = ['a', 'b', 'c'];
+const html = \`<pre>\${lines.join('\\n')}</pre>\`;
+
+const meta = preview.meta({
+  component: MyButton,
+  title: 'Example/MyButton',
+  args: { html, lines: lines.length, selectedLines: null },
+});
+
+export const Primary = meta.story({ args: { selectedLines: [lines[0]] } });
+`,
+    });
+    const payload = await buildStoryDocsPayload(
+      { entry: ENTRY },
+      { readDocgen: async (id) => docgen(id, VIEWER_CATEGORIES) }
+    );
+    expectTemplatesStripToSnippets(payload!);
+    const story = payload?.stories[STORY_ID];
+    expect(story?.snippet).toMatchInlineSnapshot(`
+      "<script lang="ts" setup>
+      import MyButton from './MyButton.vue';
+
+      const lines = ['a', 'b', 'c'];
+
+      const html = \`<pre>\${lines.join('\\n')}</pre>\`;
+
+      const lines2 = lines.length;
+
+      const selectedLines = [lines[0]];
+      </script>
+
+      <template>
+        <MyButton :html="html" :lines="lines2" :selectedLines="selectedLines" />
+      </template>"
+    `);
+    expect(story?.warning).toBeUndefined();
+  });
+
+  it('binds an arg written as the name of a constant to it, until a control sets the arg', async () => {
+    const story = await viewerStory(`
+const items = ['a', 'b'];
+export const Primary = { args: { lines: items, selectedLines: [items[0]] } };
+`);
+    expect(story?.snippet).toMatchInlineSnapshot(`
+      "<script lang="ts" setup>
+      import MyButton from './MyButton.vue';
+
+      const items = ['a', 'b'];
+
+      const selectedLines = [items[0]];
+      </script>
+
+      <template>
+        <MyButton :lines="items" :selectedLines="selectedLines" />
+      </template>"
+    `);
+    expect(
+      fillTemplate(
+        story!.template! as SnippetTemplate<VueHolePlace>,
+        {
+          initialArgs: { lines: ['a', 'b'], selectedLines: ['a'] },
+          unmappedArgs: { lines: ['c'], selectedLines: ['a'] },
+        },
+        printHole
+      )
+    ).toContain(`<MyButton :lines="['c']" :selectedLines="selectedLines" />`);
+  });
+
+  it.each([
+    ['a method changes', `const lines = ['a'];\nlines.push('b');`],
+    [
+      'an assignment changes',
+      `const lines = ['a', 'b'];\n[lines[0], lines[1]] = [lines[1], lines[0]];`,
+    ],
+    ['another name can change', `const lines = ['a'];\nconst alias = lines;`],
+    [
+      'a function is handed',
+      `const lines = ['a'];\nconst grow = (list) => list.push('b');\ngrow(lines);`,
+    ],
+    ['holds objects', `const lines = [{ id: 1 }];`],
+    ['is declared with var', `var lines = ['a'];`],
+  ])('names an arg that reads a constant that %s', async (_how, source) => {
+    const story = await viewerStory(`
+${source}
+export const Primary = { args: { html: 'Hi', lines: lines.length } };
+`);
+    expect(story?.snippet).not.toContain('lines');
+    expect(story?.warning).toBe(
+      'Incomplete snippet: `lines: lines.length`, `lines` could not be resolved statically.'
+    );
+  });
+
+  it('declares a constant the story file reads in a type, a play function and another story', async () => {
+    const story = await viewerStory(`
+const lines = ['a', 'b'] as const;
+type Line = (typeof lines)[number];
+export const Other = {
+  args: { lines },
+  argTypes: { lines: { options: lines } },
+  play: async () => {
+    await expect(lines.map((line) => line.trim())).toHaveLength(2);
+  },
+};
+export const Primary = { args: { selectedLines: [lines[0]] } };
+`);
+    expect(story?.snippet).toContain(`const lines = ['a', 'b'] as const;`);
+    expect(story?.warning).toBeUndefined();
+  });
+
+  it('names an arg another module reads its own constant with', async () => {
+    const story = await primaryStory(
+      `
+import { sharedArgs } from './shared';
+const lines = ['story'];
+export const Primary = { args: { ...sharedArgs, html: lines.join('') } };
+`,
+      {
+        './shared': `const lines = ['x', 'y'];\nexport const sharedArgs = { lines: lines.length };`,
+      },
+      VIEWER_CATEGORIES
+    );
+    expect(story?.snippet).toContain(`<MyButton :html="html" />`);
+    expect(story?.warning).toBe(
+      'Incomplete snippet: `lines: lines.length` could not be resolved statically.'
+    );
+  });
+
+  it('names an arg that reads a constant, or is itself, written with a type of the story file', async () => {
+    const story = await viewerStory(`
+interface Item { name: string }
+const format = (item: Item): string => item.name;
+const sizes = { large: 'L' } as const;
+export const Primary = {
+  args: { html: format({ name: 'x' }), lines: sizes.large, selectedLines: [sizes.large as Item] },
+};
+`);
+    expect(story?.snippet).toContain(`const sizes = { large: 'L' } as const;`);
+    expect(story?.snippet).toContain(`<MyButton :lines="lines" />`);
+    expect(story?.warning).toBe(
+      "Incomplete snippet: `html: format({ name: 'x' })`, `selectedLines: [sizes.large as Item]`, `format` could not be resolved statically."
+    );
+  });
+
+  it.each([
+    [
+      'its setup',
+      `setup() {\n      const lines = ref(0);\n      return { args, lines };\n    }`,
+      ':active="lines"',
+    ],
+    ['a scope of its template', 'setup: () => ({ args })', 'v-for="lines in 2" :key="lines"'],
+  ])(
+    'names an arg that reads a constant whose name the render declares in %s',
+    async (_where, setup, attributes) => {
+      const story = await primaryStory(`
+import { ref } from 'vue';
+const lines = ['a', 'b', 'c'];
+export const Primary = {
+  args: { count: lines.length, label: 'Hi' },
+  render: (args) => ({
+    components: { MyButton },
+    ${setup},
+    template: '<MyButton v-bind="args" ${attributes} />',
+  }),
+};
+`);
+      expect(story?.snippet).toContain('label="Hi"');
+      expect(story?.snippet).not.toContain("['a', 'b', 'c']");
+      expect(story?.warning).toBe(
+        'Incomplete snippet: `count: lines.length`, `lines` could not be resolved statically.'
+      );
+    }
+  );
+
+  it.each([
+    ['a kebab-case tag resolves to', 'myButton', '<my-button v-bind="args" />'],
+    [
+      'a function in the template takes as a parameter',
+      'items',
+      '<MyButton :lines="[1].map((items) => args.lines)" :label="args.label" />',
+    ],
+    [
+      'a block in the template declares',
+      'items',
+      '<MyButton :lines="(() => { const items = [1]; return args.lines })()" :label="args.label" />',
+    ],
+    [
+      'the template reads without the render defining it',
+      'title',
+      '<MyButton v-bind="args" :title="title" />',
+    ],
+    ['a custom directive binds', 'vFocus', '<MyButton v-bind="args" v-focus />'],
+    ['a same-name shorthand binds', 'title', '<MyButton v-bind="args" :title />'],
+    ['a lowercase component tag resolves to', 'panel', '<panel v-bind="args" />'],
+  ])('names an arg that reads a constant whose name %s', async (_what, name, template) => {
+    const story = await primaryStory(
+      `
+const ${name} = ['a', 'b'];
+export const Primary = {
+  args: { lines: ${name}.length, label: 'Hi' },
+  render: (args) => ({ components: { MyButton }, setup: () => ({ args }), template: '${template}' }),
+};
+`,
+      undefined,
+      { ...VIEWER_CATEGORIES, label: 'props' }
+    );
+    expect(story?.snippet ?? '').not.toContain(`const ${name} = ['a', 'b'];`);
+    expect(story?.warning).toBeDefined();
+  });
+
+  it('names an arg that reads a constant a nested scope of forwarded setup declares', async () => {
+    const story = await primaryStory(`
+import { computed } from 'vue';
+const items = ['a', 'b'];
+export const Primary = {
+  args: { label: items.join(''), count: items.length },
+  render: (args) => ({
+    components: { MyButton },
+    setup() {
+      const t = computed(() => [1].map((items) => args.count));
+      return { args, t };
+    },
+    template: '<MyButton v-bind="args" :active="t" />',
+  }),
+};
+`);
+    expect(story?.snippet ?? '').not.toContain("const items = ['a', 'b'];");
+    expect(story?.warning).toBeDefined();
+  });
+
+  it('keeps the template of an h() render with a function constant equal to its snippet', async () => {
+    const story = await primaryStory(
+      `
+import { h } from 'vue';
+const fmt = (value) => value.toUpperCase();
+export const Primary = {
+  args: { formatter: fmt, label: fmt.name },
+  render: (args) => ({
+    components: { MyButton },
+    setup: () => () => h(MyButton, { formatter: (value) => value, ...args }),
+  }),
+};
+`,
+      undefined,
+      { formatter: 'props', label: 'props' }
+    );
+    expect(story?.snippet).toContain('const fmt = (value) => value.toUpperCase();');
+  });
+
+  it('declares a constant named like a native tag the template writes', async () => {
+    const story = await primaryStory(`
+const label = 'Hi';
+export const Primary = {
+  args: { label: label + '!' },
+  render: (args) => ({ components: { MyButton }, setup: () => ({ args }), template: '<label><MyButton v-bind="args" /></label>' }),
+};
+`);
+    expect(story?.warning).toBeUndefined();
+  });
+
+  it('declares a constant named like a component the snippet writes in PascalCase', async () => {
+    const story = await viewerStory(`
+const myButton = ['One', 'Two'];
+export const Primary = { args: { lines: myButton.length, html: myButton.join(',') } };
+`);
+    expect(story?.snippet).toContain("const myButton = ['One', 'Two'];");
+    expect(story?.warning).toBeUndefined();
+  });
+
+  it('keeps the name of a hoisted arg a template function only takes as a parameter', async () => {
+    const story = await primaryStory(
+      `
+export const Primary = {
+  args: { lines: [{ id: 1 }], label: 'Hi' },
+  render: (args) => ({
+    components: { MyButton },
+    setup: () => ({ args }),
+    template: '<MyButton :lines="args.lines" :label="args.label" @pick="(lines) => console.log(lines)" />',
+  }),
+};
+`,
+      undefined,
+      { lines: 'props', label: 'props', pick: 'events' }
+    );
+    expect(story?.snippet).toContain('const lines = [{ id: 1 }];');
+  });
+
+  it('follows a control that clears a listener another arg reads the constant of', async () => {
+    const story = await primaryStory(
+      `
+const handler = () => console.log('clicked');
+export const Primary = {
+  args: { onClick: handler, label: handler.name },
+  render: (args) => ({
+    components: { MyButton },
+    setup: () => ({ args }),
+    template: '<MyButton @click="args.onClick" :label="args.label" />',
+  }),
+};
+`,
+      undefined,
+      { label: 'props', click: 'events' }
+    );
+    expect(story?.warning).toBeUndefined();
+    expect(
+      fillTemplate(
+        story!.template! as SnippetTemplate<VueHolePlace>,
+        {
+          initialArgs: { onClick: () => {}, label: 'handler' },
+          unmappedArgs: { onClick: undefined, label: 'handler' },
+        },
+        printHole
+      )
+    ).toContain('const onClick = undefined;');
+  });
+});
+
 // This provider writes the payload's templates, so their holes stand in Vue places.
 const vueTemplate = (template: SnippetTemplate) => template as SnippetTemplate<VueHolePlace>;
 

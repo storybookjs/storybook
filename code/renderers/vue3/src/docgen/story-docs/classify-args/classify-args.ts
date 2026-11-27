@@ -96,17 +96,21 @@ export interface ClassifyArgsResult {
  *   render-tree-aware renderer can realize; rendering bails back to runtime source otherwise
  *
  * Function args matching a declared event render as listeners, and declared function props hoist.
+ *
+ * `declaredFor` names the story-file constants the snippet declares for a value, so a value reading
+ * one is hoisted next to it instead of being reported.
  */
 export function classifyArgs(
   args: Record<string, Node>,
-  docgen: VueDocgenArgInfo
+  docgen: VueDocgenArgInfo,
+  declaredFor?: (value: Node) => ReadonlySet<string>
 ): ClassifyArgsResult {
   const classified: ClassifiedArg[] = [];
   const unset = new Set<string>();
   const unresolved: string[] = [];
 
   for (const [name, value] of Object.entries(args)) {
-    const result = classifyArg(name, value, docgen);
+    const result = classifyArg(name, value, docgen, declaredFor?.(value));
 
     if (result.kind === 'classified') {
       classified.push(result.arg);
@@ -129,14 +133,15 @@ export function classifyArgs(
 export function classifyArg(
   name: string,
   value: Node,
-  docgen: VueDocgenArgInfo
+  docgen: VueDocgenArgInfo,
+  declared?: ReadonlySet<string>
 ): ArgClassification {
   const isSlot = docgen.slots.has(name);
 
   if (isSlot && isFunctionExpression(value)) {
     const returned = returnedExpression(unwrapExpression(value));
     if (returned) {
-      const plan = classifyValue(returned);
+      const plan = classifyValue(returned, declared);
 
       if (plan.kind === 'inline' || plan.kind === 'hoist') {
         return {
@@ -160,7 +165,7 @@ export function classifyArg(
 
   const eventName = declaredEventName(name, docgen.events);
   if (eventName !== undefined && isFunctionExpression(value)) {
-    return isSelfContainedFunction(value)
+    return isSelfContainedFunction(value, declared)
       ? {
           kind: 'classified',
           arg: { name, value, role: 'event', eventName, plan: { kind: 'hoist' } },
@@ -172,12 +177,12 @@ export function classifyArg(
     if (!docgen.props.has(name)) {
       return { kind: 'omit' };
     }
-    return isSelfContainedFunction(value)
+    return isSelfContainedFunction(value, declared)
       ? { kind: 'classified', arg: { name, value, role: 'prop', plan: { kind: 'hoist' } } }
       : { kind: 'unrepresentable' };
   }
 
-  const plan = classifyValue(value);
+  const plan = classifyValue(value, declared);
 
   if (plan.kind === 'omit' || plan.kind === 'unrepresentable') {
     return { kind: plan.kind };

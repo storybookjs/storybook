@@ -3,6 +3,8 @@ import {
   type ImportBinding,
   buildImportStatements,
   unwrapExpression,
+  type StoryConstants,
+  NO_STORY_CONSTANTS,
 } from 'storybook/internal/csf-tools';
 
 import type { HoleMarks, HoleRef } from 'storybook/internal/docs-tools';
@@ -22,7 +24,7 @@ import {
   slotOrder,
   wrapSlotContent,
 } from '../../snippet-values.ts';
-import { printValue, snippetValueOf } from './classify-value.ts';
+import { isFunctionExpression, printValue, snippetValueOf } from './classify-value.ts';
 
 export interface RenderSfcMarkupInput {
   /** Rendered Vue template markup without the wrapping `<template>` block. */
@@ -44,6 +46,11 @@ export interface RenderContext {
   bindings: Set<string>;
   /** Const declarations hoisted into `<script setup>`. */
   variables: Map<string, string>;
+  constants: StoryConstants;
+  // Already declared in `<script setup>`.
+  declaredConstants: Set<string>;
+  // Named like something the render declares, so the snippet cannot declare them.
+  shadowedConstants: Set<string>;
   /** Value-identical arg hoists already declared in `<script setup>`. */
   hoistedArgs: Map<string, { binding: string; source: string }>;
   /** Import statements for components the rendered markup references. */
@@ -91,12 +98,19 @@ function partitionArgsByRole(args: ClassifiedArg[]): {
 }
 
 // Create an isolated hoist context for one generated snippet, or with `mark` for its template.
-export function createRenderContext(mark?: HoleMarks<VueHolePlace>['mark']): RenderContext {
+export function createRenderContext(
+  mark?: HoleMarks<VueHolePlace>['mark'],
+  constants: StoryConstants = NO_STORY_CONSTANTS
+): RenderContext {
   return {
     imports: {},
     // `ref` is reserved up front so no hoisted arg can shadow the Vue import a v-model may need.
-    bindings: new Set(['ref']),
+    // So are story-file constants, as in `lines: lines.length`.
+    bindings: new Set(['ref', ...constants.names]),
     variables: new Map(),
+    constants,
+    declaredConstants: new Set(),
+    shadowedConstants: new Set(),
     hoistedArgs: new Map(),
     componentImports: new Set(),
     statements: [],
@@ -121,12 +135,55 @@ export const attributeHole = (name: string, arg: string): HoleRef<VueHolePlace> 
 
 // An arg's value as code in `<script setup>`.
 export function scriptValue(name: string, value: Node, ctx: RenderContext): string {
-  return marked(
-    ctx,
-    { kind: 'value', in: 'script', arg: name },
-    printValue(unwrapExpression(value))
-  );
+  return marked(ctx, { kind: 'value', in: 'script', arg: name }, scriptCode(value, ctx));
 }
+
+function scriptCode(value: Node, ctx: RenderContext): string {
+  const unwrapped = unwrapExpression(value);
+  const constant = declaredConstantOf(unwrapped, ctx);
+  if (constant !== undefined) {
+    return constant;
+  }
+  ctx.constants.readBy(unwrapped).forEach((name) => declareConstant(name, ctx));
+  return printValue(unwrapped);
+}
+
+function declaredConstantOf(value: Node, ctx: RenderContext): string | undefined {
+  const constant = ctx.constants.declaredAs(value);
+  if (constant !== undefined) {
+    declareConstant(constant, ctx);
+  }
+  return constant;
+}
+
+function declareConstant(name: string, ctx: RenderContext): void {
+  const constant = ctx.constants.declarations.get(name);
+  if (constant && !ctx.declaredConstants.has(name)) {
+    ctx.declaredConstants.add(name);
+    constant.uses.forEach((used) => declareConstant(used, ctx));
+  }
+}
+
+export function reserveBindings(names: Iterable<string>, ctx: RenderContext): void {
+  for (const name of names) {
+    ctx.bindings.add(name);
+    if (ctx.constants.names.has(name)) {
+      ctx.shadowedConstants.add(name);
+    }
+  }
+}
+
+// Unlike `reserveBindings`, hoisted args may still use these names.
+export function shadowConstants(names: Iterable<string>, ctx: RenderContext): void {
+  for (const name of names) {
+    if (ctx.constants.names.has(name)) {
+      ctx.shadowedConstants.add(name);
+    }
+  }
+}
+
+export const shadowedDeclarations = (ctx: RenderContext): string[] =>
+  [...ctx.declaredConstants].filter((name) => ctx.shadowedConstants.has(name));
 
 /** Wrap prepared template markup with the shared SFC block assembly. */
 export function renderPreparedSfcSnippet(input: RenderSfcMarkupInput): string {
@@ -231,8 +288,13 @@ function renderScript(ctx: RenderContext): string | undefined {
     })
     .concat(Array.from(ctx.componentImports).sort())
     .join('\n');
-  const variablesCode = Array.from(ctx.variables.entries())
-    .map(([name, value]) => `const ${name} = ${value};`)
+  // Story-file constants come first, in file order, since the hoisted consts read them.
+  const constantsCode = Array.from(ctx.declaredConstants)
+    .map((name) => [name, ctx.constants.declarations.get(name)!] as const)
+    .sort(([, a], [, b]) => a.start - b.start)
+    .map(([name, constant]) => `const ${name} = ${printValue(constant.value)};`);
+  const variablesCode = constantsCode
+    .concat(Array.from(ctx.variables.entries()).map(([name, value]) => `const ${name} = ${value};`))
     .join('\n\n');
   const statementsCode = ctx.statements.join('\n');
 
@@ -351,6 +413,12 @@ export function renderBoundArgAttribute(
  * share one const per arg name and value, so every reference keeps the same identity.
  */
 export function hoistArgValue(name: string, value: Node, ctx: RenderContext): string {
+  // An arg written as a declared constant's name needs no const of its own, unless a function.
+  const constant = isFunctionExpression(value) ? undefined : declaredConstantOf(value, ctx);
+  if (constant !== undefined) {
+    return constant;
+  }
+
   const source = scriptValue(name, value, ctx);
   const existing = ctx.hoistedArgs.get(name);
   if (existing && (existing.source === source || sharesWrittenConst(name, value, ctx))) {
@@ -368,7 +436,8 @@ export function hoistArgValue(name: string, value: Node, ctx: RenderContext): st
 export function sharesWrittenConst(name: string, value: Node, ctx: RenderContext): boolean {
   return (
     ctx.mark !== undefined &&
-    ctx.hoistedArgs.get(name)?.source === printValue(unwrapExpression(value))
+    ((!isFunctionExpression(value) && ctx.constants.declaredAs(value) !== undefined) ||
+      ctx.hoistedArgs.get(name)?.source === printValue(unwrapExpression(value)))
   );
 }
 
@@ -376,7 +445,7 @@ export function sharesWrittenConst(name: string, value: Node, ctx: RenderContext
 export function hoistModelRef(name: string, value: Node | undefined, ctx: RenderContext): string {
   (ctx.imports[VUE_PACKAGE] ??= new Set()).add('ref');
   const bindingName = allocateBindingName(name, ctx);
-  const initial = value ? printValue(unwrapExpression(value)) : '';
+  const initial = value ? scriptCode(value, ctx) : '';
   ctx.variables.set(
     bindingName,
     `ref(${marked(ctx, { kind: 'value', in: 'script', arg: name }, initial)})`

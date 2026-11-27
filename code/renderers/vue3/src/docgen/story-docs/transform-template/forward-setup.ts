@@ -2,6 +2,7 @@ import {
   type ESTree as E,
   type ESTreeNode as Node,
   type ImportBinding,
+  parseModule,
   staticKey,
   unwrapExpression,
   walk,
@@ -35,6 +36,8 @@ export interface ForwardableStatement {
   column: number;
   /** Args member reads to substitute, with offsets relative to the source slice. */
   argsReads: ArgsRead[];
+  /** Names the statement declares at any depth. */
+  declares: string[];
 }
 
 export interface ArgsRead {
@@ -174,11 +177,16 @@ export function readForwardableSetup(
     if (key === value.name) {
       continue;
     }
-    if (bindings.has(key)) {
+    if (bindings.has(key) || !isBindingName(key)) {
       return bail(SETUP_RETURN_WARNING);
     }
     bindings.add(key);
-    aliasStatements.push({ source: `const ${key} = ${value.name};`, column: 0, argsReads: [] });
+    aliasStatements.push({
+      source: `const ${key} = ${value.name};`,
+      column: 0,
+      argsReads: [],
+      declares: [key],
+    });
   }
 
   const imports: ForwardedImport[] = [];
@@ -214,6 +222,7 @@ export function readForwardableSetup(
         end: read.end - start,
         name: read.name,
       })),
+      declares: [...declaredNamesIn(statement)],
     });
   }
 
@@ -318,8 +327,18 @@ function rootIdentifierName(node: Node): string | undefined {
   return current.type === 'Identifier' ? current.name : undefined;
 }
 
+// `{ class: cls }` and `{ 'my-label': label }` have no `const` form.
+function isBindingName(name: string): boolean {
+  try {
+    parseModule(`let ${name};`);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 // args.label -> 'label' and { label: 1 } -> 'label' are name positions, not references
-function isNamePosition(node: Node, parent: Node | null): boolean {
+export function isNamePosition(node: Node, parent: Node | null): boolean {
   if (parent?.type === 'MemberExpression') {
     return parent.property === node && !parent.computed;
   }
@@ -371,6 +390,7 @@ function collectFreeExpression(node: Node, scope: ReadonlySet<string>, free: Set
       return true;
 
     case 'TemplateLiteral':
+    case 'SequenceExpression':
       return value.expressions.every(collect);
 
     case 'ArrayExpression':
@@ -406,19 +426,12 @@ function collectFreeExpression(node: Node, scope: ReadonlySet<string>, free: Set
       return collect(value.argument);
 
     case 'BinaryExpression':
-      return collect(value.left) && collect(value.right);
-
     case 'LogicalExpression':
+    case 'AssignmentExpression':
       return collect(value.left) && collect(value.right);
 
     case 'ConditionalExpression':
       return collect(value.test) && collect(value.consequent) && collect(value.alternate);
-
-    case 'AssignmentExpression':
-      return collect(value.left) && collect(value.right);
-
-    case 'SequenceExpression':
-      return value.expressions.every(collect);
 
     default:
       return false;
@@ -458,4 +471,56 @@ function collectFreeFunction(
     }
   }
   return body.body.every((statement) => collectFreeIdentifiers(statement, childScope, free));
+}
+
+export function declaredNamesIn(code: Node): Set<string> {
+  const names = new Set<string>();
+  walk(code, (node) => {
+    if (
+      node.type === 'ArrowFunctionExpression' ||
+      node.type === 'FunctionExpression' ||
+      node.type === 'FunctionDeclaration'
+    ) {
+      node.params.forEach((param) => addBindingNames(param, names));
+      if (node.id) {
+        names.add(node.id.name);
+      }
+    } else if (node.type === 'VariableDeclarator') {
+      addBindingNames(node.id, names);
+    } else if (node.type === 'CatchClause' && node.param) {
+      addBindingNames(node.param, names);
+    } else if (node.type === 'ClassExpression' || node.type === 'ClassDeclaration') {
+      if (node.id) {
+        names.add(node.id.name);
+      }
+    }
+  });
+  return names;
+}
+
+// ({ a, b: [c] }, ...rest) -> a, c, rest
+export function addBindingNames(pattern: Node, into: Set<string>): void {
+  switch (pattern.type) {
+    case 'Identifier':
+      into.add(pattern.name);
+      break;
+    case 'AssignmentPattern':
+      addBindingNames(pattern.left, into);
+      break;
+    case 'RestElement':
+      addBindingNames(pattern.argument, into);
+      break;
+    case 'ObjectPattern':
+      for (const property of pattern.properties) {
+        addBindingNames(property.type === 'RestElement' ? property.argument : property.value, into);
+      }
+      break;
+    case 'ArrayPattern':
+      for (const element of pattern.elements) {
+        if (element) {
+          addBindingNames(element, into);
+        }
+      }
+      break;
+  }
 }

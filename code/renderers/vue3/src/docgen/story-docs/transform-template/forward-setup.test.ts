@@ -270,6 +270,30 @@ export const Primary = {
     `);
   });
 
+  it.each(['class', "'my-label'"])(
+    'bails when a renamed return key %s cannot be a const',
+    async (key) => {
+      const story = await primaryStory(`
+export const Primary = {
+  args: { label: 'Hi' },
+  render: (args) => ({
+    components: { MyButton },
+    setup() {
+      const heading = 'Welcome';
+      return { args, ${key}: heading };
+    },
+    template: '<MyButton :label="args.label" />',
+  }),
+};
+`);
+
+      expect(story?.snippet).toBeUndefined();
+      expect(story?.warning).toBe(
+        'No static snippet: the `setup` return value could not be read statically.'
+      );
+    }
+  );
+
   it('drops the args return property under a renamed render parameter', async () => {
     const story = await primaryStory(`
 export const Primary = {

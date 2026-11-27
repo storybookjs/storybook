@@ -95,6 +95,12 @@ function docgenForFixture(
       count: argType('count', 'props'),
       label: argType('label', 'props'),
     },
+    'module-level-constants': {
+      heading: argType('heading', 'props'),
+      html: argType('html', 'props'),
+      lines: argType('lines', 'props'),
+      selectedLine: argType('selectedLine', 'props'),
+    },
     'prop-slot-collision': {
       default: argType('default', 'props'),
       icon: argType('icon', 'props'),

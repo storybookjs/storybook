@@ -113,7 +113,14 @@ afterEach(() => {
   rmSync(root, { recursive: true, force: true });
 });
 
-it('changes the project only through effects, and lists every change a run would make', async () => {
+const versionChanges = [
+  'update package.json',
+  expect.stringMatching(/^↳ devDependencies\.storybook: 10\.3\.0 → \^?\d+\.\d+\.\d+/),
+  expect.stringMatching(/^↳ devDependencies\.@storybook\/react-vite: 10\.3\.0 → \^?\d+\.\d+\.\d+/),
+];
+const doctor = 'run pnpm exec storybook doctor to verify the upgrade went well';
+
+const dryRunUpgrade = async () => {
   const before = files();
 
   await upgrade({ skipCheck: true, yes: true, force: false, disableTelemetry: true });
@@ -127,16 +134,28 @@ it('changes the project only through effects, and lists every change a run would
   expect(runMultiProjectDoctor).not.toHaveBeenCalled();
   expect(files()).toEqual(before);
 
-  const changes = effects.describeDryRunChanges().map((line) => stripVTControlCharacters(line));
-  expect(changes).toEqual([
-    'update package.json',
-    expect.stringMatching(/^↳ devDependencies\.storybook: 10\.3\.0 → \^?\d+\.\d+\.\d+/),
-    expect.stringMatching(
-      /^↳ devDependencies\.@storybook\/react-vite: 10\.3\.0 → \^?\d+\.\d+\.\d+/
-    ),
+  return effects.describeDryRunChanges().map((line) => stripVTControlCharacters(line));
+};
+
+it('changes the project only through effects, and lists every change a run would make', async () => {
+  vi.stubEnv('CI', 'false');
+
+  expect(await dryRunUpgrade()).toEqual([
+    ...versionChanges,
     'run pnpm install',
     'run pnpm dedupe',
     expect.stringMatching(/^run pnpm dlx skills@latest add storybookjs\/skills#v/),
-    'run pnpm exec storybook doctor to verify the upgrade went well',
+    doctor,
+  ]);
+});
+
+it('leaves the skills out of the list in CI, where a run skips them', async () => {
+  vi.stubEnv('CI', 'true');
+
+  expect(await dryRunUpgrade()).toEqual([
+    ...versionChanges,
+    'run pnpm install',
+    'run pnpm dedupe',
+    doctor,
   ]);
 });

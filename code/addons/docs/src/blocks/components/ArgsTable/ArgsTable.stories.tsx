@@ -124,6 +124,47 @@ export const AllControls = {
   },
 };
 
+/** Setting an empty Object control opens its raw editor with the caret inside the brackets. */
+export const AllControlsObjectSet: Story = {
+  args: AllControls.args,
+  play: async ({ canvas, canvasElement, userEvent }) => {
+    // Several rows have a "Set object" button, so the one of interest is looked up by its id.
+    await userEvent.click(canvasElement.querySelector('#set-someObject')!);
+
+    const rawInput = canvas.getByRole<HTMLTextAreaElement>('textbox', {
+      name: 'Edit someObject as JSON',
+    });
+    await expect(rawInput).toHaveValue('{}');
+    await expect(rawInput).toHaveFocus();
+    await expect([rawInput.selectionStart, rawInput.selectionEnd]).toEqual([1, 1]);
+  },
+};
+
+export const AllControlsFilled: Story = {
+  args: {
+    ...AllControls.args,
+    args: {
+      someArray: [1, 2, 3],
+      someBoolean: true,
+      someColor: '#ff4785',
+      someDate: new Date('2020-10-20T09:30:02'),
+      someObject: {
+        name: 'Storybook',
+        nested: { enabled: true, count: 2 },
+      },
+      someString: 'Filled string control',
+      number: 42,
+      range: 24,
+      radio: 'b',
+      inlineRadio: 'c',
+      check: ['a'],
+      inlineCheck: ['b', 'c'],
+      select: 'b',
+      multiSelect: ['a', 'c'],
+    },
+  },
+};
+
 const AddonPanelLayout = styled.div(({ theme }) => ({
   fontSize: theme.typography.size.s2 - 1,
   background: theme.background.content,

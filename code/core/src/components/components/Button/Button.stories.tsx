@@ -403,6 +403,57 @@ export const AriaDescription = meta.story({
     ariaDescription: 'Clicking this button allegedly makes you happy.',
     children: <FaceHappyIcon />,
   },
+  play: async ({ args, canvas, canvasElement, userEvent }) => {
+    const button = canvas.getByRole('button', { name: 'Button' });
+    await expect(button).toHaveAccessibleDescription(args.ariaDescription!);
+
+    await userEvent.keyboard('{Escape}');
+    // React Aria requires pointer modality before the trigger's pointerenter event.
+    await userEvent.hover(canvasElement);
+    await userEvent.hover(button);
+    await expect(await screen.findByRole('tooltip')).toHaveTextContent('Button');
+    // The open tooltip neither replaces the description nor adds its text to it.
+    await expect(button).toHaveAccessibleDescription(args.ariaDescription!);
+    await userEvent.unhover(button);
+    await waitFor(() => expect(screen.queryByRole('tooltip')).not.toBeInTheDocument());
+  },
+});
+
+export const AriaDescriptionWithoutTooltip = meta.story({
+  args: {
+    ariaLabel: false,
+    ariaDescription: 'Clicking this button allegedly makes you happy.',
+    children: 'Button',
+  },
+  play: async ({ args, canvas }) => {
+    await expect(canvas.getByRole('button', { name: 'Button' })).toHaveAccessibleDescription(
+      args.ariaDescription!
+    );
+  },
+});
+
+/** Buttons that share a description text each get their own description element. */
+export const SharedAriaDescription = meta.story({
+  render: () => (
+    <Row>
+      <Button ariaLabel="First button" ariaDescription="Shared description">
+        <FaceHappyIcon />
+      </Button>
+      <Button ariaLabel="Second button" ariaDescription="Shared description">
+        <FaceHappyIcon />
+      </Button>
+    </Row>
+  ),
+  play: async ({ canvas }) => {
+    const first = canvas.getByRole('button', { name: 'First button' });
+    const second = canvas.getByRole('button', { name: 'Second button' });
+
+    await expect(first).toHaveAccessibleDescription('Shared description');
+    await expect(second).toHaveAccessibleDescription('Shared description');
+    await expect(first.getAttribute('aria-describedby')).not.toBe(
+      second.getAttribute('aria-describedby')
+    );
+  },
 });
 
 export const Shortcut = meta.story({

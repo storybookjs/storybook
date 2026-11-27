@@ -41,9 +41,11 @@ export {
   type ExportReader,
   followBinding,
   followExport,
+  resolveFileOrUndefined,
 } from './utils/follow-export.ts';
 export * from './utils/component-path-from-story.ts';
 export * from './utils/resolve-meta-component.ts';
+export * from './utils/declaration-docs.ts';
 export * from './utils/subcomponents.ts';
 export * from './utils/remove.ts';
 export * from './utils/resolve-path-in-sb-cache.ts';

@@ -85,7 +85,10 @@ export function followExport(
         : { kind: 'declaration', filePath, exportName, localName: exportName };
     }
 
-    if (statement.type !== 'ExportNamedDeclaration' || statement.exportKind === 'type') {
+    if (
+      statement.type !== 'ExportNamedDeclaration' ||
+      (statement.exportKind === 'type' && !isAmbientValue(statement.declaration))
+    ) {
       continue;
     }
     // A declared export also shadows any `export *` of the same name.
@@ -213,7 +216,18 @@ export function findImport(program: E.Program, localName: string): ImportBinding
   return { kind: 'local' };
 }
 
-function declares(module: ReferenceModule, declaration: Node, name: string): boolean {
+// `export declare const`, as a declaration file writes a value: a type-only export to a parser, but
+// the declaration of the value to whoever reads its docs.
+function isAmbientValue(declaration: Node | null | undefined): boolean {
+  return (
+    !!declaration &&
+    'declare' in declaration &&
+    declaration.declare === true &&
+    ['VariableDeclaration', 'ClassDeclaration', 'TSDeclareFunction'].includes(declaration.type)
+  );
+}
+
+export function declares(module: ReferenceModule, declaration: Node, name: string): boolean {
   if (declaration.type === 'VariableDeclaration') {
     // A destructuring pattern can bind the name anywhere inside it, so the scope says where.
     const identifier = module.editor.scopes.program.bindings.get(name)?.identifier;
@@ -228,6 +242,6 @@ function declares(module: ReferenceModule, declaration: Node, name: string): boo
 }
 
 // A specifier can write the name as a string, as in `export { a as 'b' }`.
-function moduleExportName(node: E.ModuleExportName): string {
+export function moduleExportName(node: E.ModuleExportName): string {
   return node.type === 'Identifier' ? node.name : (node as E.StringLiteral).value;
 }

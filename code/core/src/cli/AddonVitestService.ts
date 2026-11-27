@@ -118,8 +118,8 @@ export class AddonVitestService {
       dependencies.push('@vitest/coverage-v8');
     }
 
-    // we use node:path in the vitest template.
-    // this can be removed the day the Vitest template no longer uses `node:path`.
+    // The Vitest config template uses `node:path` and `import.meta.dirname`, both typed by
+    // `@types/node`. Remove this once the template no longer relies on Node.js APIs.
     if (allDeps.typescript && !allDeps['@types/node']) {
       const minNodeMajor = Math.min(...MIN_SUPPORTED_NODE_VERSIONS.map((v) => v.major));
       dependencies.push(`@types/node@^${minNodeMajor}`);

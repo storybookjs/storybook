@@ -969,21 +969,5 @@ describe('prop extraction', () => {
         },
       });
     });
-
-    it('extracts component-level description', async () => {
-      const entry = await extract(
-        'Button',
-        dedent`
-          import React from 'react';
-          interface Props { label: string }
-          /** Primary UI component for user interaction */
-          export const Button = (props: Props) => <button />;
-        `
-      );
-
-      expect(entry.component?.reactComponentMeta).toMatchObject({
-        description: 'Primary UI component for user interaction',
-      });
-    });
   });
 });

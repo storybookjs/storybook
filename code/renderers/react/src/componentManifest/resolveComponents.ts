@@ -1,8 +1,8 @@
 import {
-  createMetaComponentResolver,
-  createModuleResolver,
+  type ResolvedMetaComponent,
   extractDeclaredSubcomponents,
-  supportedExtensions,
+  readDeclarationDocs,
+  resolveFileOrUndefined,
 } from 'storybook/internal/common';
 import { storyNameFromExport } from 'storybook/internal/csf/csf-utils';
 import {
@@ -24,31 +24,14 @@ import {
   type DocgenEngine,
   type DocgenTarget,
   type TypescriptOptions,
+  followers,
   getComponents,
+  readExportDocs,
 } from './getComponentImports.ts';
 import { findExactComponentMatch } from './subcomponents.ts';
 import { cachedReadTextFileSync } from './utils.ts';
 
 export type ParsedCsf = ReturnType<ReturnType<typeof loadCsf>['parse']>;
-
-// One instance per process: the resolver caches its module resolutions. It tries extensions in the
-// order React's own lookup does, `.js` first as Vite does, so when `ui.js` sits next to `ui.tsx`
-// both pick the same file.
-const resolveMetaComponent = createMetaComponentResolver({
-  reader: {
-    resolver: createModuleResolver({
-      extensions: [...supportedExtensions],
-      extensionAlias: {
-        '.js': ['.js', '.ts', '.tsx'],
-        '.jsx': ['.jsx', '.tsx'],
-        '.mjs': ['.mjs', '.mts'],
-        '.cjs': ['.cjs', '.cts'],
-      },
-      mainFields: ['module', 'main'],
-      tsconfig: 'auto',
-    }),
-  },
-});
 
 /** A declared subcomponent paired with the component ref it resolved to (if any). */
 export interface ResolvedSubcomponent {
@@ -139,6 +122,10 @@ export async function resolveStoryFileComponents(options: {
 }): Promise<ResolvedStoryFile> {
   const { storyPath, title, typescriptOptions, docgenEngine } = options;
 
+  const { reader, resolveMetaComponent } =
+    docgenEngine === 'react-component-meta' ? followers.types : followers.source;
+  const { resolver } = reader;
+
   const storyFile = cachedReadTextFileSync(storyPath);
   const csf = loadCsf(storyFile, { makeTitle: () => title, fileName: storyPath }).parse();
   const componentName = csf._meta?.component;
@@ -147,7 +134,10 @@ export async function resolveStoryFileComponents(options: {
 
   // The meta's component and subcomponents resolve as in every other renderer, so a name the story
   // file's import cannot reach, such as a barrel's `export * as UI`, still finds its declaration.
+  // `declarations` has where each is declared, by the name the story file refers to it by.
+  // `docgenTargets` has those that their module exports, for the engines that parse that module.
   // react-component-meta gets no targets: it follows such names through the TypeScript checker.
+  const declarations = new Map<string, ResolvedMetaComponent>();
   const docgenTargets = new Map<string, DocgenTarget>();
   const storyImports = collectImportBindings(csf.editor.program);
   // The name the story file refers to the component by. `parts.Button` after
@@ -170,6 +160,7 @@ export async function resolveStoryFileComponents(options: {
       storyImports.get(localName)?.importId === importId &&
       !storyImports.has(name.split('.')[0]);
     const ownName = throughLocalObject ? localName : name;
+    declarations.set(ownName, resolved.component);
     if (importId && path) {
       docgenTargets.set(ownName, { path, exportName });
     }
@@ -198,6 +189,35 @@ export async function resolveStoryFileComponents(options: {
     name: subcomponent.name,
     component: findExactComponentMatch(allComponents, subcomponent.componentName),
   }));
+
+  // react-component-meta reads the props through the type checker. The docs come from the docblock
+  // on the declaration: where the meta's expression leads, or else where the import of the story
+  // file leads, as for a component picked by the title.
+  if (docgenEngine === 'react-component-meta') {
+    const readImportDocs = (ref: ComponentRef) => {
+      const filePath = ref.importId && resolveFileOrUndefined(resolver, storyPath, ref.importId);
+      return filePath && ref.importName
+        ? readExportDocs(reader, filePath, ref.importName)
+        : undefined;
+    };
+    for (const ref of new Set([component, ...subcomponents.map((sub) => sub.component)])) {
+      if (!ref) {
+        continue;
+      }
+      // `Tabs.Root` of an imported `Tabs` is declared somewhere that the import does not say.
+      const isMemberOfImport = !!ref.member && !ref.namespace;
+      const declaration = declarations.get(ref.componentName);
+      if (declaration?.path) {
+        ref.jsDoc = readDeclarationDocs(declaration);
+      } else if (!declaration && !isMemberOfImport) {
+        ref.jsDoc = readImportDocs(ref);
+      }
+      // A member of a compound component is imported as the component itself is.
+      const importTag =
+        ref.jsDoc?.tags.import ?? (ref.member ? readImportDocs(ref)?.tags.import : undefined);
+      ref.importOverride = importTag?.[0]?.trim();
+    }
+  }
 
   return { storyPath, storyFile, csf, componentName, allComponents, component, subcomponents };
 }

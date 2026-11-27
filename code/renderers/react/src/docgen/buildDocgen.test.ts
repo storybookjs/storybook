@@ -267,7 +267,6 @@ describe('buildDocgenPayload', () => {
     const argType = extractArgTypesFromComponentMeta({
       exportName: 'List',
       filePath: '/List.tsx',
-      description: '',
       props: {
         items: { name: 'items', required: false, description: '', defaultValue: null, type: input },
       },

@@ -9,7 +9,16 @@ import {
   resolveComponentImport,
   walk,
 } from 'storybook/internal/csf-tools';
-import { isModuleNotFoundError } from 'storybook/internal/common';
+import {
+  type ExportReader,
+  createDocsModuleResolver,
+  createMetaComponentResolver,
+  createModuleResolver,
+  followExport,
+  isModuleNotFoundError,
+  readDeclarationDocs,
+  supportedExtensions,
+} from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 import type { TypescriptOptions as TypescriptOptionsBase } from 'storybook/internal/types';
 
@@ -59,6 +68,43 @@ export type StoryRef = {
 
 const baseIdentifier = (component: string) => component.split('.')[0] ?? component;
 
+const followWith = (resolver: ExportReader['resolver']) => {
+  const reader: ExportReader = { resolver };
+  return { reader, resolveMetaComponent: createMetaComponentResolver({ reader }) };
+};
+
+// How a component is followed to its declaration, by what the engine documents. One instance of
+// each per process: a resolver caches its module resolutions.
+export const followers = {
+  // react-docgen and react-docgen-typescript document the source. Extensions are tried in the order
+  // React's own lookup does, `.js` first as Vite does, so when `ui.js` sits next to `ui.tsx` both
+  // pick the same file.
+  source: followWith(
+    createModuleResolver({
+      extensions: [...supportedExtensions],
+      extensionAlias: {
+        '.js': ['.js', '.ts', '.tsx'],
+        '.jsx': ['.jsx', '.tsx'],
+        '.mjs': ['.mjs', '.mts'],
+        '.cjs': ['.cjs', '.cts'],
+      },
+      mainFields: ['module', 'main'],
+      tsconfig: 'auto',
+    })
+  ),
+  // react-component-meta documents what TypeScript does: the declaration file of a package.
+  types: followWith(createDocsModuleResolver()),
+};
+
+// The docs on the declaration of what the module at `filePath` exports as `exportName`, which it
+// can re-export from the module that declares it.
+export function readExportDocs(reader: ExportReader, filePath: string, exportName: string) {
+  const origin = followExport(reader, filePath, exportName);
+  return origin?.kind === 'declaration'
+    ? readDeclarationDocs({ path: origin.filePath, exportName: origin.exportName })
+    : undefined;
+}
+
 /**
  * Collects all React component references used by a CSF story file and resolves as much import and
  * docgen information as possible.
@@ -74,8 +120,9 @@ const baseIdentifier = (component: string) => component.split('.')[0] ?? compone
  * Notes:
  *
  * - Member expressions like Foo.Bar are supported; namespace imports are represented accordingly.
- * - Other docgen engines may populate `importOverride` eagerly; react-component-meta provides it
- *   later in ComponentMetaProject from TypeScript JSDoc tag data.
+ * - react-docgen and react-docgen-typescript populate `importOverride` for every component, from
+ *   its `@import` tag. For react-component-meta, `resolveStoryFileComponents` reads it from the
+ *   docblock of the components the story file documents.
  */
 export const getComponents = async ({
   csf,
@@ -216,12 +263,22 @@ export const getComponents = async ({
           if (docgenEngine === 'react-docgen-typescript') {
             let reactDocgenTypescript: ComponentDocWithExportName | undefined;
             let reactDocgenTypescriptError: { name: string; message: string } | undefined;
+            let jsDoc: ComponentRef['jsDoc'];
             try {
               const docs = await parseWithReactDocgenTypescript(
                 docgenPath,
                 reactDocgenTypescriptOptions
               );
               reactDocgenTypescript = matchComponentDoc(docs, docgenRef);
+              // The engine reports the props. The docs come from the docblock on the declaration
+              // of the export it matched.
+              jsDoc =
+                reactDocgenTypescript &&
+                readExportDocs(
+                  followers.source.reader,
+                  docgenPath,
+                  reactDocgenTypescript.exportName
+                );
               if (!reactDocgenTypescript) {
                 reactDocgenTypescriptError = getReactDocgenTypescriptError(
                   docgenPath,
@@ -241,23 +298,13 @@ export const getComponents = async ({
                       message: `File: ${docgenPath}\n${message}`,
                     };
             }
-            let reactDocgenTypescriptDoc: ComponentDocWithExportName | undefined;
-            let componentJsDocTags = reactDocgenTypescript?.componentJsDocTags;
-            if (reactDocgenTypescript) {
-              const { componentJsDocTags: _tags, ...doc } = reactDocgenTypescript;
-              reactDocgenTypescriptDoc = doc;
-              componentJsDocTags = _tags;
-            }
-
             return {
               ...componentWithPackage,
               path,
-              ...(reactDocgenTypescriptDoc
-                ? { reactDocgenTypescript: reactDocgenTypescriptDoc }
-                : {}),
+              ...(reactDocgenTypescript ? { reactDocgenTypescript } : {}),
               ...(reactDocgenTypescriptError ? { reactDocgenTypescriptError } : {}),
-              ...(componentJsDocTags ? { componentJsDocTags } : {}),
-              importOverride: componentJsDocTags?.import?.[0]?.trim(),
+              ...(jsDoc ? { jsDoc } : {}),
+              importOverride: jsDoc?.tags.import?.[0]?.trim(),
             };
           }
 
@@ -276,8 +323,6 @@ export const getComponents = async ({
           }
 
           if (docgenEngine === 'react-component-meta') {
-            // RCM fills importOverride later in ComponentMetaProject, where the TypeScript checker
-            // is available and we can read the official JSDoc tag data from the resolved symbol.
             return {
               ...componentWithPackage,
               path,

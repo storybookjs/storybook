@@ -15,15 +15,16 @@
  */
 import {
   type TypeScriptSpecifierForDocgen,
+  createDocgenSummaryProvider,
   createLazyDocgenMiddleware,
 } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
-import type { DocgenMiddleware } from 'storybook/internal/types';
+import type { DocgenMiddleware, DocgenSummaryProvider } from 'storybook/internal/types';
 
 import { loadDocgenTypeScript } from '@storybook/component-meta-typescript';
 
 import { ComponentMetaManager } from '../componentManifest/componentMeta/ComponentMetaManager.ts';
-import { buildDocgenPayloads } from './buildDocgen.ts';
+import { buildDocgenPayloads, buildDocgenSummary } from './buildDocgen.ts';
 
 export interface ReactDocgenOptions {
   typeScriptSpecifier?: TypeScriptSpecifierForDocgen;
@@ -54,3 +55,6 @@ export const createDocgenProvider = ({
     extractBatch: (componentMetaManager, inputs) =>
       buildDocgenPayloads(inputs, { componentMetaManager }),
   });
+
+export const createSummaryProvider = (): DocgenSummaryProvider =>
+  createDocgenSummaryProvider({ summarize: (input) => buildDocgenSummary(input) });

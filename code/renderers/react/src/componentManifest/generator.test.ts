@@ -746,7 +746,6 @@ test('includes aliased member-expression subcomponents', async () => {
             displayName: 'ComboBox.Root',
             exportName: 'Root',
             filePath: '/app/src/stories/ComboBox.tsx',
-            description: 'Root docs',
             props: {
               open: {
                 name: 'open',
@@ -765,7 +764,6 @@ test('includes aliased member-expression subcomponents', async () => {
             displayName: 'ComboBox.Item',
             exportName: 'Item',
             filePath: '/app/src/stories/ComboBox.tsx',
-            description: 'Item docs',
             props: {
               textValue: {
                 name: 'textValue',
@@ -881,7 +879,6 @@ test('generator uses reactComponentMeta displayName from batch extraction', asyn
             displayName: 'Header',
             exportName: 'default',
             filePath: '/app/src/stories/Header.tsx',
-            description: '',
             props: {},
           };
         }
@@ -909,57 +906,6 @@ test('generator uses reactComponentMeta displayName from batch extraction', asyn
       ? (header as any).reactComponentMeta?.displayName
       : undefined
   ).toBe('Header');
-  expect(batchExtract).toHaveBeenCalled();
-});
-
-test('generator preserves @import override when reactComponentMeta is enabled', async () => {
-  const batchExtract = vi
-    .spyOn(ComponentMetaManager.prototype, 'batchExtract')
-    .mockImplementation((entries) => {
-      for (const entry of entries) {
-        if (entry.component) {
-          entry.component.reactComponentMeta = {
-            displayName: 'Button',
-            exportName: 'Button',
-            filePath: '/app/src/stories/Button.tsx',
-            description: 'Primary UI component for user interaction',
-            props: {},
-          };
-          entry.component.componentJsDocTags = {
-            import: ["import { Button } from '@design-system/components/override';"],
-            summary: ['Fast summary'],
-          };
-          entry.component.importOverride =
-            "import { Button } from '@design-system/components/override';";
-        }
-      }
-    });
-
-  const presets = {
-    apply: async (extension: string, config?: unknown) => {
-      if (extension === 'typescript') {
-        return {};
-      }
-      if (extension === 'features') {
-        return { experimentalReactComponentMeta: true };
-      }
-      return config;
-    },
-  } as NonNullable<ManifestOptions['presets']>;
-
-  const manifestEntries: ManifestEntries = [indexJson.entries['example-button--primary']];
-  const result = await runManifestsWithOptions(manifestEntries, { presets });
-  const button = result?.components?.components?.['example-button'];
-
-  // `fn` joins the block because the story's args call it, so the snippet compiles as pasted.
-  expect(button?.import).toBe(
-    "import { Button } from '@design-system/components/override';\nimport { fn } from 'storybook/test';"
-  );
-  expect(button?.jsDocTags.import).toEqual([
-    "import { Button } from '@design-system/components/override';",
-  ]);
-  expect(button?.description).toBe('Primary UI component for user interaction');
-  expect(button?.summary).toBe('Fast summary');
   expect(batchExtract).toHaveBeenCalled();
 });
 
@@ -1006,7 +952,6 @@ test('generator falls back to title-based matching when meta.component aliases a
             displayName: 'Accordion.Root',
             exportName: 'Root',
             filePath: '/app/src/stories/accordion.tsx',
-            description: '',
             props: {},
           };
         }

@@ -335,3 +335,77 @@ describe('resolveStoryFileComponents', () => {
     }
   );
 });
+
+describe('the docs of a component with react-component-meta', () => {
+  const resolve = (files: Record<string, string>) => {
+    tempDir = createTempDir('resolve-components-docs');
+    const written = writeFiles(tempDir, { 'tsconfig.json': tsconfigJSON(), ...files });
+    return resolveStoryFileComponents({
+      storyPath: written['Tabs.stories.tsx'],
+      title: 'Example/Tabs',
+      docgenEngine: 'react-component-meta',
+    });
+  };
+
+  it('reads the docblock on the declaration of the component and of each subcomponent', async () => {
+    const { component, subcomponents } = await resolve({
+      'Tabs.tsx': dedent`
+        import React from 'react';
+        /**
+         * Tabs that switch between views.
+         *
+         * @summary for views
+         * @import import { Tabs } from '@acme/tabs';
+         */
+        export const Tabs = (_props: { label: string }) => <div />;
+        /** One tab. */
+        export const Tab = (_props: { label: string }) => <button />;
+      `,
+      'Tabs.stories.tsx': dedent`
+        import { Tabs, Tab } from './Tabs';
+        export default { component: Tabs, subcomponents: { Tab } };
+        export const Default = {};
+      `,
+    });
+
+    expect(component).toMatchObject({
+      jsDoc: {
+        description: 'Tabs that switch between views.',
+        tags: { summary: ['for views'], import: ["import { Tabs } from '@acme/tabs';"] },
+      },
+      importOverride: "import { Tabs } from '@acme/tabs';",
+    });
+    expect(subcomponents[0].component?.jsDoc).toEqual({
+      name: 'Tab',
+      description: 'One tab.',
+      tags: {},
+    });
+  });
+
+  it('reads the docblock on a member of a compound component, and imports it as the component', async () => {
+    const { component } = await resolve({
+      'Tabs.tsx': dedent`
+        import React from 'react';
+        /** The root of the tabs. */
+        const Root = (_props: { label: string }) => <div />;
+        /**
+         * Tabs, as a compound component.
+         *
+         * @import import { Tabs } from '@acme/tabs';
+         */
+        export const Tabs = { Root };
+      `,
+      'Tabs.stories.tsx': dedent`
+        import { Tabs } from './Tabs';
+        export default { component: Tabs.Root };
+        export const Default = {};
+      `,
+    });
+
+    expect(component).toMatchObject({
+      componentName: 'Tabs.Root',
+      jsDoc: { description: 'The root of the tabs.', tags: {} },
+      importOverride: "import { Tabs } from '@acme/tabs';",
+    });
+  });
+});

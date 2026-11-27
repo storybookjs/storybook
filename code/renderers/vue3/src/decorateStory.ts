@@ -44,6 +44,32 @@ function prepare(
   };
 }
 
+/*
+  The `story` component a decorator template renders. It must be a stateful component, not a
+  functional one: `<KeepAlive>` only caches stateful components, so with a functional wrapper the
+  decorated story was never kept alive and its `onActivated`/`onDeactivated` hooks never ran.
+
+  `inheritAttrs: false` and the filter keep the attribute fallthrough the functional wrapper had:
+  only `class`, `style` and `on*` listeners reach the story.
+
+  `getStory` is read on every render, so a decorator that calls `storyFn` again (for example in
+  `setup()` with new args) renders the story that call returned.
+ */
+function wrapInnerStory(getStory: () => VueRenderer['storyResult']): ConcreteComponent {
+  return {
+    name: 'Story',
+    inheritAttrs: false,
+    render() {
+      const fallthrough = Object.fromEntries(
+        Object.entries(this.$attrs).filter(
+          ([key]) => key === 'class' || key === 'style' || /^on[^a-z]/.test(key)
+        )
+      );
+      return h(getStory(), fallthrough);
+    },
+  };
+}
+
 export function decorateStory(
   storyFn: LegacyStoryFn<VueRenderer>,
   decorators: DecoratorFunction<VueRenderer>[]
@@ -69,8 +95,10 @@ export function decorateStory(
         return story;
       }
 
-      const innerStory = () => h(story!);
-      return prepare(decoratedStory, innerStory) as VueRenderer['storyResult'];
+      return prepare(
+        decoratedStory,
+        wrapInnerStory(() => story!)
+      ) as VueRenderer['storyResult'];
     },
     (context) => prepare(storyFn(context)) as LegacyStoryFn<VueRenderer>
   );

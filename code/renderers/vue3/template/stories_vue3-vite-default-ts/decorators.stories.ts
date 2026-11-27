@@ -3,8 +3,8 @@ import type { DecoratorFunction } from 'storybook/internal/types';
 import type { Meta, StoryObj, VueRenderer } from '@storybook/vue3';
 
 import { useArgs } from 'storybook/preview-api';
-import { h } from 'vue';
-import { computed } from 'vue';
+import { expect, within } from 'storybook/test';
+import { computed, h, onActivated, ref } from 'vue';
 
 const { Button, Pre } = (globalThis as any).__TEMPLATE_COMPONENTS__;
 
@@ -150,4 +150,27 @@ export const UpdateArgs = {
 export const ReactiveGlobalDecorator = {
   args: { label: 'With reactive global decorator' },
   decorators: [localeDecorator],
+};
+
+const KeepAliveWrapper = () => ({
+  template: `<KeepAlive><story /></KeepAlive>`,
+});
+
+// A decorator that wraps the story in <KeepAlive> must keep the story alive, so the story's
+// onActivated hook runs (https://github.com/storybookjs/storybook/issues/27149).
+export const KeepAliveDecorator: Story = {
+  render: () => ({
+    setup() {
+      const activated = ref(false);
+      onActivated(() => {
+        activated.value = true;
+      });
+      return () => h('p', activated.value ? 'activated' : 'not activated');
+    },
+  }),
+  decorators: [KeepAliveWrapper],
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(await canvas.findByText('activated')).toBeInTheDocument();
+  },
 };

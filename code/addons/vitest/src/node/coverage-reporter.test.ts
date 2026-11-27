@@ -1,38 +1,72 @@
 import { execFile } from 'node:child_process';
-import { existsSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
+import { cpSync, existsSync, mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { promisify } from 'node:util';
 
 import { expect, it, vi } from 'vitest';
 
 import type { ReportNode } from 'istanbul-lib-report';
+import { dirname, join, relative } from 'pathe';
 
 import StorybookCoverageReporter from './coverage-reporter.ts';
 import type { TestManager } from './test-manager.ts';
+import { getCoverageReporterId } from './vitest-manager.ts';
 
 const BUILT = existsSync(new URL('../../dist/node/coverage-reporter.js', import.meta.url));
+const BARE_REPORTER_ID = '@storybook/addon-vitest/internal/coverage-reporter';
 
 it.runIf(process.env.CI)('is built before the loader tests run', () => {
   expect(BUILT).toBe(true);
 });
 
 it.runIf(BUILT).each([
-  ['Vitest 4', "require('istanbul-reports').create"],
-  ['Vitest 5', "(await import('@vitest/istanbul-lib-report')).createAsync"],
-])('loads the built coverage reporter through the %s loader', async (_version, loader) => {
-  await expect(
-    promisify(execFile)(
-      process.execPath,
-      [
-        '--input-type=module',
-        '--eval',
-        `
+  ['Vitest 4', ['istanbul-reports'], 'require'],
+  ['Vitest 5', ['@vitest/istanbul-lib-report', '@vitest/istanbul-lib-coverage'], 'import'],
+])(
+  'loads the built coverage reporter through the %s loader',
+  async (_version, packages, moduleSystem) => {
+    // The copy sits outside this package, so a bare specifier cannot resolve the addon.
+    const directory = mkdtempSync(join(tmpdir(), 'sb-coverage-reporter-'));
+    try {
+      let loaderFile = '';
+      for (const packageName of packages) {
+        const entryFile = fileURLToPath(import.meta.resolve(packageName));
+        let packageDirectory = dirname(entryFile);
+        while (!packageDirectory.endsWith(packageName)) {
+          packageDirectory = dirname(packageDirectory);
+        }
+        cpSync(packageDirectory, join(directory, 'node_modules', packageName), {
+          recursive: true,
+          dereference: true,
+        });
+        if (loaderFile === '') {
+          loaderFile = join(
+            directory,
+            'node_modules',
+            packageName,
+            relative(packageDirectory, entryFile)
+          );
+        }
+      }
+      const loader =
+        moduleSystem === 'import'
+          ? `(await import(${JSON.stringify(pathToFileURL(loaderFile).href)})).createAsync`
+          : `require(${JSON.stringify(loaderFile)}).create`;
+
+      await expect(
+        promisify(execFile)(
+          process.execPath,
+          [
+            '--input-type=module',
+            '--eval',
+            `
           import { strict as assert } from 'node:assert';
           import { createRequire } from 'node:module';
-          const require = createRequire(import.meta.url);
+          const require = createRequire(${JSON.stringify(loaderFile)});
           const summaries = [];
           const reporter = await (${loader})(
-            '@storybook/addon-vitest/internal/coverage-reporter',
+            ${JSON.stringify(getCoverageReporterId())},
             {
               getTestManager: () => ({
                 onCoverageCollected: (summary) => summaries.push(summary),
@@ -45,12 +79,20 @@ it.runIf(BUILT).each([
             getCoverageSummary: () => ({ data: { statements: { pct: 87.4 } } }),
           });
           assert.deepEqual(summaries, [{ percentage: 87, status: 'warning' }]);
+          await assert.rejects(
+            async () => (${loader})(${JSON.stringify(BARE_REPORTER_ID)}, {}),
+            /@storybook\\/addon-vitest/
+          );
         `,
-      ],
-      { cwd: fileURLToPath(new URL('../../', import.meta.url)) }
-    )
-  ).resolves.toMatchObject({ stdout: '' });
-});
+          ],
+          { cwd: directory }
+        )
+      ).resolves.toMatchObject({ stdout: '' });
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
+  }
+);
 
 it.each([
   { percentage: 49, watermarks: [50, 90], expected: { percentage: 49, status: 'negative' } },

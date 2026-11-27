@@ -75,6 +75,8 @@
       "code": "./src/export-mocks/router/index.ts",
       "default": "./dist/export-mocks/router/index.js"
     },
+    "./rsc/jsx-dev-runtime": "./dist/rsc/jsx-dev-runtime.js",
+    "./rsc/jsx-runtime": "./dist/rsc/jsx-runtime.js",
     "./rsc/server-only": "./dist/rsc/server-only.js",
     "./storybook-nextjs-font-loader": "./dist/font/webpack/loader/storybook-nextjs-font-loader.js"
   },

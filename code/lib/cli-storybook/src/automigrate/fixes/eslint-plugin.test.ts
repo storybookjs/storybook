@@ -1,8 +1,13 @@
+import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import * as cliImports from 'storybook/internal/cli';
-import type { PackageJson } from 'storybook/internal/common';
+import type { JsPackageManager, PackageJson } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
+
+import { join } from 'pathe';
 
 import { checkFix } from '../helpers/fix-test-utils.ts';
 import { makePackageManager } from '../helpers/testing-helpers.ts';
@@ -79,6 +84,49 @@ describe('eslint-plugin fix', () => {
         expect(result).toBeFalsy();
         loggerSpy.mockRestore();
       });
+    });
+  });
+
+  describe('run', () => {
+    it('adds the plugin to the package that owns the eslint config', async () => {
+      const root = mkdtempSync(join(tmpdir(), 'sb-eslint-plugin-'));
+      const eslintConfigFile = join(root, 'eslint.config.mjs');
+      writeFileSync(join(root, 'package.json'), JSON.stringify({ devDependencies: {} }));
+      writeFileSync(eslintConfigFile, 'export default [];');
+      mkdirSync(join(root, 'storybook'));
+      writeFileSync(
+        join(root, 'storybook', 'package.json'),
+        JSON.stringify({ devDependencies: {} })
+      );
+
+      const addDependencies = vi.fn().mockResolvedValue(undefined);
+      const packageManager = {
+        ...makePackageManager({ devDependencies: {} }),
+        addDependencies,
+      } as unknown as JsPackageManager;
+
+      vi.spyOn(cliImports, 'configureEslintPlugin').mockResolvedValue(undefined);
+
+      await eslintPlugin.run!({
+        packageManager,
+        result: { eslintConfigFile, isFlatConfig: true },
+        mainConfig: {} as any,
+        configDir: join(root, 'storybook'),
+        storybookVersion: '7.0.0',
+        storiesPaths: [],
+        files: {} as any,
+      } as any);
+
+      expect(addDependencies).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'devDependencies',
+          skipInstall: true,
+          packageJsonInfo: expect.objectContaining({
+            packageJsonPath: join(root, 'package.json'),
+          }),
+        }),
+        ['eslint-plugin-storybook@7.0.0']
+      );
     });
   });
 });

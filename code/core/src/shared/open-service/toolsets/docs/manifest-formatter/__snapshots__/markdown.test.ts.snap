@@ -15,6 +15,8 @@ Buttons should be used for actions that affect the current page or trigger opera
 
 ## Props
 
+This list may be incomplete: \`react-docgen\` leaves out props from type helpers such as \`Pick<…>\` or \`ComponentProps<typeof X>\`, required ones too. Check the props type in the component source; props you find there are valid.
+
 \`\`\`
 export type Props = {
   /** The visual style variant of the button */
@@ -113,6 +115,8 @@ The Card component provides a consistent way to present information in a contain
 - Keep content hierarchy clear with proper use of typography
 
 ## Props
+
+This list may be incomplete: \`react-docgen\` leaves out props from type helpers such as \`Pick<…>\` or \`ComponentProps<typeof X>\`, required ones too. Check the props type in the component source; props you find there are valid.
 
 \`\`\`
 export type Props = {
@@ -220,6 +224,8 @@ The Input component is a foundational form element that wraps the native HTML in
 The Input component automatically manages ARIA attributes for labels, descriptions, and error messages to ensure screen reader compatibility.
 
 ## Props
+
+This list may be incomplete: \`react-docgen\` leaves out props from type helpers such as \`Pick<…>\` or \`ComponentProps<typeof X>\`, required ones too. Check the props type in the component source; props you find there are valid.
 
 \`\`\`
 export type Props = {

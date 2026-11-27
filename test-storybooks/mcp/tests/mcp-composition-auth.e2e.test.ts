@@ -142,6 +142,8 @@ describe('MCP Composition Auth E2E Tests', () => {
 
 				## Props
 
+				This list may be incomplete: \`react-docgen\` leaves out props from type helpers such as \`Pick<…>\` or \`ComponentProps<typeof X>\`, required ones too. Check the props type in the component source; props you find there are valid.
+
 				\`\`\`
 				export type Props = {
 				  /** Is this the principal call to action on the page? */

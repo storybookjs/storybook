@@ -205,11 +205,12 @@ describe('components-ref-manifest', () => {
     };
     vol.fromNestedJSON({
       '/output/services/core/story-docs/button.json': JSON.stringify({
+        nonManifestStories: {},
         components: { button: payload },
       }),
     });
 
-    await expect(loadStoryDocsPayloadsFromDisk('/output', ['button'])).resolves.toEqual({
+    await expect(loadStoryDocsPayloadsFromDisk('/output', ['button'], 'all')).resolves.toEqual({
       button: payload,
     });
   });
@@ -255,9 +256,11 @@ describe('components-ref-manifest', () => {
     await expect(loadDocgenPayloadsFromDisk('/output', ['constructor'])).resolves.toEqual({
       constructor: docgen,
     });
-    await expect(loadStoryDocsPayloadsFromDisk('/output', ['constructor'])).resolves.toEqual({
-      constructor: storyDocs,
-    });
+    await expect(loadStoryDocsPayloadsFromDisk('/output', ['constructor'], 'all')).resolves.toEqual(
+      {
+        constructor: storyDocs,
+      }
+    );
   });
 
   it('builds index entries with a nested docgen ref when a payload exists', () => {

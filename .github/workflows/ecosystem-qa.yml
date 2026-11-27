@@ -65,8 +65,7 @@ jobs:
   smoke:
     name: Smoke-test the harness
     if: ${{ github.event_name == 'pull_request' }}
-    # Not ubuntu-latest: the pinned Playwright has no Chromium build for Ubuntu 26.04.
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
       issues: read # list the internal-qa issues
@@ -101,9 +100,6 @@ jobs:
 
       - name: Plan a whole sweep from the catalog
         run: node ecosystem-qa/plan.ts --repos owned,tier1 --os linux,windows --engines claude,codex
-
-      - name: Install Chromium for the evidence tools
-        run: cd ecosystem-qa && npx playwright install --with-deps chromium
 
       - name: Run a fake Claude run
         env:
@@ -274,10 +270,6 @@ jobs:
           docker build --build-arg AGENT_UID="$(id -u)" --build-arg AGENT_GID="$(id -g)"
           --build-arg CLAUDE_CODE_VERSION="$CLAUDE_CODE_VERSION" --build-arg CODEX_VERSION="$CODEX_VERSION"
           -t sb-ecosystem-qa ecosystem-qa
-
-      - name: Install Chromium for the evidence tools on the host
-        if: ${{ matrix.sandbox == 'none' }}
-        run: cd ecosystem-qa && npx playwright install --with-deps chromium
 
       - name: Install the agent CLIs on the host
         if: ${{ matrix.sandbox == 'none' }}

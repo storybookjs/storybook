@@ -1,20 +1,15 @@
-import { isEqual } from 'es-toolkit/predicate';
+import { isPlainObject } from 'es-toolkit/predicate';
 
 import { logger } from 'storybook/internal/client-logger';
-import { type PrintHole, fillTemplate } from '../../../../docs-tools/snippetTemplate.ts';
-import type { Args, Parameters } from 'storybook/internal/types';
+import {
+  type ArgChanges,
+  type PrintHole,
+  fillTemplate,
+} from '../../../../docs-tools/snippetTemplate.ts';
+import type { Args } from 'storybook/internal/types';
 
 import { prependImportToSnippet, selectSnippetForStory, selectWarningForStory } from './snippet.ts';
 import type { StoryDocsPayload } from './types.ts';
-
-// The preview side of story snippets, which fills a story's template with its current args. Kept
-// apart from `snippet.ts`, which the server imports too.
-
-// The renderer's hole printer, which it sets as `parameters.docs.source.printHole`.
-export function getPrintHole(parameters: Parameters | undefined): PrintHole | undefined {
-  const print = parameters?.docs?.source?.printHole;
-  return typeof print === 'function' ? print : undefined;
-}
 
 // Story ids whose renderer failed; filling runs on every args change, so each warns once.
 const storiesWarnedAbout = new Set<string>();
@@ -24,13 +19,64 @@ const storiesWarnedAbout = new Set<string>();
 export type StoryArgs = { unmappedArgs: Args; initialArgs: Args };
 
 /**
- * Whether a story renders with other args than those it is written with, so its template fills.
- * Never while `features.experimentalLiveServerSnippets` is off: the snippet then stays static, as before
- * live snippets.
+ * Whether a story's args changed, so its template fills. Never while
+ * `features.experimentalLiveServerSnippets` is off: the snippet then stays static, as before live
+ * snippets.
  */
-export const storyArgsChanged = ({ unmappedArgs, initialArgs }: StoryArgs) =>
+export const storyArgsChanged = ({ args, unset = [] }: ArgChanges) =>
   Boolean(globalThis.FEATURES?.experimentalLiveServerSnippets) &&
-  !isEqual(unmappedArgs, initialArgs);
+  (Object.keys(args).length > 0 || unset.length > 0);
+
+// Whether the manager reads the args the preview renders with. The channel drops a function and
+// the entries of a Map or Set, also inside an object or array, so the manager cannot see one the
+// preview sets in place of the story's own: two Sets arrive as the same empty object.
+export function argsReachManager({ unmappedArgs, initialArgs }: StoryArgs): boolean {
+  return Object.keys({ ...initialArgs, ...unmappedArgs }).every(
+    (key) =>
+      unmappedArgs[key] === initialArgs[key] ||
+      !(holdsLostValue(unmappedArgs[key]) || holdsLostValue(initialArgs[key]))
+  );
+}
+
+function holdsLostValue(value: unknown, seen = new WeakSet<object>()): boolean {
+  if (typeof value === 'function' || value instanceof Map || value instanceof Set) {
+    return true;
+  }
+  if (typeof value !== 'object' || value === null || seen.has(value)) {
+    return false;
+  }
+  seen.add(value);
+  return Object.values(value).some((item) => holdsLostValue(item, seen));
+}
+
+// The channel sends a class instance, a Map or a Set as a plain object marked
+// `__isClassInstance__`. As an instance of this class instead, it prints as the preview prints the
+// original: a printer that prints no class instance fails, and `JSON.stringify` writes its fields.
+class SentInstance {}
+
+// Returns `value` itself unless it holds a marked object.
+function restoreSentInstances(value: unknown, seen = new Set<object>()): unknown {
+  if (
+    typeof value !== 'object' ||
+    value === null ||
+    seen.has(value) ||
+    !(Array.isArray(value) || isPlainObject(value))
+  ) {
+    return value;
+  }
+  seen.add(value);
+  const marked = !Array.isArray(value) && value.__isClassInstance__ === true;
+  const entries = Object.entries(value)
+    .filter(([key]) => !marked || (key !== '__isClassInstance__' && key !== '__className__'))
+    .map(([key, item]) => [key, restoreSentInstances(item, seen)] as const);
+  if (!marked && entries.every(([key, item]) => item === (value as Args)[key])) {
+    return value;
+  }
+  return Object.assign(
+    Array.isArray(value) ? new Array(value.length) : marked ? new SentInstance() : {},
+    Object.fromEntries(entries)
+  );
+}
 
 // Resolves the display snippet for one story with its args filled into its template. While the
 // story still has the args it is written with, it is the static snippet. Either comes with the
@@ -39,7 +85,7 @@ export const storyArgsChanged = ({ unmappedArgs, initialArgs }: StoryArgs) =>
 export function selectLiveSnippetForStory(
   payload: StoryDocsPayload | undefined,
   storyId: string,
-  args: StoryArgs,
+  changes: ArgChanges,
   printHole: PrintHole | undefined
 ): { snippet?: string; warning?: string } {
   const staticSnippet = (reason?: string) => ({
@@ -47,7 +93,7 @@ export function selectLiveSnippetForStory(
     warning:
       [selectWarningForStory(payload, storyId), reason].filter(Boolean).join(' ') || undefined,
   });
-  if (!storyArgsChanged(args)) {
+  if (!storyArgsChanged(changes)) {
     return staticSnippet();
   }
   const story = payload?.stories[storyId];
@@ -56,9 +102,10 @@ export function selectLiveSnippetForStory(
   if (template === undefined || printHole === undefined) {
     return staticSnippet(stale);
   }
+  const restored = { ...changes, args: restoreSentInstances(changes.args) as Args };
   try {
     return {
-      snippet: prependImportToSnippet(payload?.import, fillTemplate(template, args, printHole)),
+      snippet: prependImportToSnippet(payload?.import, fillTemplate(template, restored, printHole)),
       warning: story?.warning,
     };
   } catch (error) {

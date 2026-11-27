@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type {
   ArgsEnhancer,
@@ -21,8 +21,6 @@ import { UNTARGETED } from '../args.ts';
 import { composeConfigs } from './composeConfigs.ts';
 import { normalizeProjectAnnotations } from './normalizeProjectAnnotations.ts';
 import { prepareContext, prepareMeta, prepareStory as realPrepareStory } from './prepareStory.ts';
-
-vi.mock('@storybook/global', { spy: true });
 
 const id = 'id';
 const name = 'name';
@@ -164,6 +162,18 @@ describe('prepareStory', () => {
       );
 
       expect(parameters).toEqual(expect.objectContaining({ __isArgsStory: false }));
+    });
+
+    it('sets `__hasSourceTransform` only for a story with a `docs.source.transform`', () => {
+      const withTransform = prepareStory(
+        { id, name, moduleExport, parameters: { docs: { source: { transform: () => '' } } } },
+        { id, title },
+        { render: () => {} }
+      );
+      const without = prepareStory({ id, name, moduleExport }, { id, title }, { render: () => {} });
+
+      expect(withTransform.parameters.__hasSourceTransform).toBe(true);
+      expect(without.parameters).not.toHaveProperty('__hasSourceTransform');
     });
   });
 
@@ -839,10 +849,6 @@ describe('prepareStory', () => {
   describe('with `FEATURES.docgenServer`', () => {
     beforeEach(() => {
       vi.stubGlobal('FEATURES', { docgenServer: true });
-    });
-
-    afterEach(() => {
-      vi.unstubAllGlobals();
     });
 
     it('skips second-pass argTypes enhancers so args are not inferred in prepareStory', () => {

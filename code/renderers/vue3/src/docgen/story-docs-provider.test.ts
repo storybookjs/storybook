@@ -26,7 +26,7 @@ function makeInput(importPath: string): StoryDocsProviderInput {
 
 describe('vue3 experimental_storyDocsProvider', () => {
   it('passes through unchanged when the Vue docgen descriptor is absent', async (): Promise<void> => {
-    const nextStoryDocs = vi.fn(async (): Promise<StoryDocsPayload> => NEXT_PAYLOAD);
+    const nextStoryDocs = { extract: vi.fn(async (): Promise<StoryDocsPayload> => NEXT_PAYLOAD) };
     const options = {
       presets: {
         apply: vi.fn(async () => []),
@@ -36,6 +36,6 @@ describe('vue3 experimental_storyDocsProvider', () => {
     const provider = await experimental_storyDocsProvider(nextStoryDocs, options);
 
     expect(provider).toBe(nextStoryDocs);
-    expect(await provider(makeInput('./Button.stories.ts'))).toBe(NEXT_PAYLOAD);
+    expect(await provider.extract(makeInput('./Button.stories.ts'))).toBe(NEXT_PAYLOAD);
   });
 });

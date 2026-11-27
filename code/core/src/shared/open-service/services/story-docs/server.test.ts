@@ -5,7 +5,7 @@ import { STORY_INDEX_INVALIDATED } from 'storybook/internal/core-events';
 import { getChannel } from '../../../../channels/channel-slot.ts';
 import { createTestChannel, type SpiedTestChannel } from '../../../../channels/test-channel.ts';
 import type { IndexEntry, StoryIndex } from '../../../../types/modules/indexer.ts';
-import { clearRegistry, getService } from '../../server.ts';
+import { buildStaticFiles, clearRegistry, getService } from '../../server.ts';
 import { SERVICE_ENTRY, type EntryPayload } from '../../service-channel.ts';
 import { serviceRegistryApi } from '../../service-registry.ts';
 import { createServiceRuntime } from '../../service-runtime.ts';
@@ -14,8 +14,9 @@ import { readAllComponents } from '../component-state-key.ts';
 import { registerTestModuleGraphService } from '../module-graph/module-graph.test-helpers.ts';
 import { storyDocsServiceDef } from './definition.ts';
 import { registerStoryDocsService, subscribeStoryDocsToModuleGraphChanges } from './server.ts';
-import type { SnippetTemplate } from '../../../../docs-tools/snippetTemplate.ts';
+import { type SnippetTemplate, registerPrintHole } from '../../../../docs-tools/snippetTemplate.ts';
 import type { StoryDocsPayload, StoryDocsProvider } from './types.ts';
+import { Tag } from '../../../constants/tags.ts';
 
 // `<Button label="…" />` with its label in a hole.
 const buttonTemplate = (
@@ -30,6 +31,7 @@ const vegaTemplate: SnippetTemplate = ['<Vega', { kind: 'attrs', spread: true, t
 
 afterEach(() => {
   clearRegistry();
+  vi.unstubAllGlobals();
 });
 
 function makeStoryEntry(id: string, title = 'Comp'): IndexEntry {
@@ -40,6 +42,7 @@ function makeStoryEntry(id: string, title = 'Comp'): IndexEntry {
     type: 'story',
     subtype: 'story',
     importPath: `./${title.toLowerCase()}.stories.tsx`,
+    tags: [Tag.MANIFEST],
   };
 }
 
@@ -69,7 +72,7 @@ describe('story-docs open service', () => {
         'button--primary': { id: 'button--primary', name: 'Primary', snippet: '<Button />' },
       },
     });
-    const provider = vi.fn<StoryDocsProvider>(async () => payload);
+    const provider = vi.fn<StoryDocsProvider['extract']>(async () => payload);
 
     const service = registerStoryDocsService({
       getIndex: makeGetIndex([entry]),
@@ -77,8 +80,60 @@ describe('story-docs open service', () => {
     });
 
     await expect(service.commands.extractStoryDocs({ id: 'button' })).resolves.toEqual(payload);
-    expect(service.queries.storyDocs.get({ id: 'button' })).toEqual(payload);
+    expect(service.queries.storyDocs.get({ id: 'button', scope: 'all' })).toEqual(payload);
     expect(provider).toHaveBeenCalledWith({ entry });
+  });
+
+  it('extracts a component once for the calls that arrive while its extraction runs', async () => {
+    const entry = makeStoryEntry('button--primary', 'Button');
+    const payload = makeStoryDocsPayload();
+    let finish = (_: StoryDocsPayload) => {};
+    const provider = vi.fn<StoryDocsProvider['extract']>(
+      () => new Promise<StoryDocsPayload>((resolve) => (finish = resolve))
+    );
+    const service = registerStoryDocsService({
+      getIndex: makeGetIndex([entry]),
+      storyDocsProvider: provider,
+    });
+
+    const first = service.commands.extractStoryDocs({ id: 'button' });
+    const second = service.commands.extractStoryDocs({ id: 'button' });
+    await vi.waitFor(() => expect(provider).toHaveBeenCalled());
+    finish(payload);
+
+    await expect(Promise.all([first, second])).resolves.toEqual([payload, payload]);
+    expect(provider).toHaveBeenCalledOnce();
+  });
+
+  it('fills a story template with the given args through the registered hole printer', async () => {
+    vi.stubGlobal('FEATURES', { docgenServer: true, experimentalLiveServerSnippets: true });
+    vi.stubGlobal(Symbol.for('storybook/docs-tools/print-hole'), undefined);
+    registerPrintHole((_, value) => `label="${String(value)}"`);
+    const service = registerStoryDocsService({
+      getIndex: makeGetIndex([makeStoryEntry('button--primary', 'Button')]),
+      storyDocsProvider: async () =>
+        makeStoryDocsPayload({
+          stories: {
+            'button--primary': {
+              id: 'button--primary',
+              name: 'Primary',
+              snippet: '<Button label="Hi" />',
+              template: buttonTemplate(),
+            },
+          },
+        }),
+      liveSnippets: true,
+    });
+
+    await expect(
+      service.queries.liveSnippet.loaded({ storyId: 'button--primary', args: { label: 'Go' } })
+    ).resolves.toEqual({ snippet: '<Button label="Go" />' });
+    expect(
+      service.queries.liveSnippet.get({ storyId: 'button--primary', args: {}, unset: ['label'] })
+    ).toEqual({ snippet: '<Button label="undefined" />' });
+    expect(service.queries.liveSnippet.get({ storyId: 'button--primary', args: {} })).toEqual({
+      snippet: '<Button label="Hi" />',
+    });
   });
 
   it('keeps a template only while it prints the snippet and has the shape of one', async () => {
@@ -143,7 +198,7 @@ describe('story-docs open service', () => {
     await service.commands.extractStoryDocs({ id: 'button' });
     const selected: unknown[] = [];
     const unsubscribe = service.queries.storyDocs.subscribe(
-      { id: 'button' },
+      { id: 'button', scope: 'all' },
       (payload) => payload?.stories['button--primary']?.template,
       (state) => selected.push(state.data)
     );
@@ -166,8 +221,9 @@ describe('story-docs open service', () => {
       });
       const emitted: Array<StoryDocsPayload | undefined> = [];
 
-      const unsubscribe = service.queries.storyDocs.subscribe({ id: 'button' }, (state) =>
-        emitted.push(state.data)
+      const unsubscribe = service.queries.storyDocs.subscribe(
+        { id: 'button', scope: 'all' },
+        (state) => emitted.push(state.data)
       );
       extracted.resolve(payload);
 
@@ -181,7 +237,7 @@ describe('story-docs open service', () => {
         storyDocsProvider: async () => undefined,
       });
 
-      expect(service.queries.storyDocs.get({ id: 'constructor' })).toBeUndefined();
+      expect(service.queries.storyDocs.get({ id: 'constructor', scope: 'all' })).toBeUndefined();
     });
 
     it.each(['Constructor', 'Prototype'])(
@@ -195,7 +251,7 @@ describe('story-docs open service', () => {
         });
         const emitted: Array<StoryDocsPayload | undefined> = [];
 
-        const unsubscribe = service.queries.storyDocs.subscribe({ id }, (state) =>
+        const unsubscribe = service.queries.storyDocs.subscribe({ id, scope: 'all' }, (state) =>
           emitted.push(state.data)
         );
 
@@ -228,7 +284,62 @@ describe('story-docs open service', () => {
         }
       }
 
-      expect(peer.queries.storyDocs.get({ id: 'constructor' })).toEqual(payload);
+      expect(peer.queries.storyDocs.get({ id: 'constructor', scope: 'all' })).toEqual(payload);
+    });
+  });
+
+  describe('a story without the manifest tag', () => {
+    const primary = { id: 'button--primary', name: 'Primary', snippet: '<Button />' };
+    const dark = { id: 'button--dark', name: 'Dark', snippet: '<Button dark />' };
+    const entries = [
+      makeStoryEntry('button--primary', 'Button'),
+      { ...makeStoryEntry('button--dark', 'Button'), tags: ['dev', 'test'] },
+    ];
+    const register = () =>
+      registerStoryDocsService({
+        getIndex: makeGetIndex(entries),
+        storyDocsProvider: async () =>
+          makeStoryDocsPayload({ stories: { [primary.id]: primary, [dark.id]: dark } }),
+      });
+
+    it('is read with the scope all, and left out with the scope manifest', async () => {
+      const service = register();
+      await service.commands.extractStoryDocs({ id: 'button' });
+
+      expect(service.queries.storyDocs.get({ id: 'button', scope: 'all' })?.stories).toEqual({
+        [primary.id]: primary,
+        [dark.id]: dark,
+      });
+      expect(service.queries.storyDocs.get({ id: 'button', scope: 'manifest' })?.stories).toEqual({
+        [primary.id]: primary,
+      });
+      expect(
+        readAllComponents(service.queries.storyDocsForAllComponents.get()).button?.stories
+      ).toEqual({ [primary.id]: primary });
+    });
+
+    it('is written once in the static build, apart from the manifest stories the components manifest points at', async () => {
+      register();
+
+      expect(await buildStaticFiles()).toEqual({
+        'core/story-docs/button.json': {
+          components: { button: makeStoryDocsPayload({ stories: { [primary.id]: primary } }) },
+          nonManifestStories: { button: { [dark.id]: dark } },
+        },
+      });
+    });
+
+    it('gives the scope manifest no story docs, so no import either, when no story has the tag', async () => {
+      const service = registerStoryDocsService({
+        getIndex: makeGetIndex([{ ...makeStoryEntry('button--dark', 'Button'), tags: ['dev'] }]),
+        storyDocsProvider: async () => makeStoryDocsPayload({ stories: { [dark.id]: dark } }),
+      });
+      await service.commands.extractStoryDocs({ id: 'button' });
+
+      expect(service.queries.storyDocs.get({ id: 'button', scope: 'manifest' })).toBeUndefined();
+      expect(service.queries.storyDocs.get({ id: 'button', scope: 'all' })?.stories).toEqual({
+        [dark.id]: dark,
+      });
     });
   });
 
@@ -241,7 +352,7 @@ describe('story-docs open service', () => {
       { ...makeStoryEntry('vega--bar', 'Vega'), importPath: chart },
     ];
 
-    const extractFile: StoryDocsProvider = async ({ entry }) => ({
+    const extractFile: StoryDocsProvider['extract'] = async ({ entry }) => ({
       id: 'vega',
       name: 'Vega',
       path: entry.importPath,
@@ -352,7 +463,7 @@ describe('story-docs open service', () => {
       makeStoryEntry('button--ghost', 'Button'),
     ];
     const payload = makeStoryDocsPayload({ import: "import { Button } from './button';" });
-    const provider = vi.fn<StoryDocsProvider>(async () => payload);
+    const provider = vi.fn<StoryDocsProvider['extract']>(async () => payload);
     const service = registerStoryDocsService({
       getIndex: makeGetIndex(entries),
       storyDocsProvider: provider,
@@ -383,17 +494,41 @@ describe('story-docs open service', () => {
       channel.emitExternal(STORY_INDEX_INVALIDATED);
     };
 
+    it('re-extracts a component when only the manifest tag of a story changes, with no story file change', async () => {
+      let entries = [makeStoryEntry('button--primary', 'Button')];
+      const getIndex = () => makeGetIndex(entries)();
+      const service = registerStoryDocsService({
+        getIndex,
+        storyDocsProvider: async () =>
+          makeStoryDocsPayload({
+            stories: { 'button--primary': { id: 'button--primary', name: 'Primary' } },
+          }),
+      });
+      subscribeStoryDocsToModuleGraphChanges({ channel, getIndex, workingDir: process.cwd() });
+      await service.queries.storyDocs.loaded({ id: 'button', scope: 'manifest' });
+
+      entries = [{ ...makeStoryEntry('button--primary', 'Button'), tags: ['dev'] }];
+      channel.emitExternal(STORY_INDEX_INVALIDATED);
+
+      await vi.waitFor(() =>
+        expect(service.queries.storyDocs.get({ id: 'button', scope: 'manifest' })).toBeUndefined()
+      );
+      expect(service.queries.storyDocs.get({ id: 'button', scope: 'all' })?.stories).toHaveProperty(
+        'button--primary'
+      );
+    });
+
     it('re-extracts a component when any of its story files changes', async () => {
       const entries = [
         { ...makeStoryEntry('vega--bar', 'Vega'), importPath: './chart.stories.tsx' },
         { ...makeStoryEntry('vega--heatmap', 'Vega'), importPath: './ranges.stories.tsx' },
       ];
-      const provider = vi.fn<StoryDocsProvider>(async () => makeStoryDocsPayload());
+      const provider = vi.fn<StoryDocsProvider['extract']>(async () => makeStoryDocsPayload());
       const getIndex = makeGetIndex(entries);
       const service = registerStoryDocsService({ getIndex, storyDocsProvider: provider });
       subscribeStoryDocsToModuleGraphChanges({ channel, getIndex, workingDir: process.cwd() });
 
-      await service.queries.storyDocs.loaded({ id: 'vega' });
+      await service.queries.storyDocs.loaded({ id: 'vega', scope: 'all' });
       expect(provider).toHaveBeenCalledTimes(2);
 
       const moduleGraph = getService('core/module-graph', { internal: true });
@@ -408,12 +543,12 @@ describe('story-docs open service', () => {
     // when their story file changes so snippets stay fresh after the edit.
     it('re-extracts already-extracted components when their story file changes', async () => {
       const entry = makeStoryEntry('button--primary', 'Button');
-      const provider = vi.fn<StoryDocsProvider>(async () => makeStoryDocsPayload());
+      const provider = vi.fn<StoryDocsProvider['extract']>(async () => makeStoryDocsPayload());
       const getIndex = makeGetIndex([entry]);
       const service = registerStoryDocsService({ getIndex, storyDocsProvider: provider });
       subscribeStoryDocsToModuleGraphChanges({ channel, getIndex, workingDir: process.cwd() });
 
-      await service.queries.storyDocs.loaded({ id: 'button' });
+      await service.queries.storyDocs.loaded({ id: 'button', scope: 'all' });
       expect(provider).toHaveBeenCalledTimes(1);
 
       const moduleGraph = getService('core/module-graph', { internal: true });
@@ -424,8 +559,100 @@ describe('story-docs open service', () => {
       await vi.waitFor(() => expect(provider).toHaveBeenCalledTimes(2));
     });
 
+    it('re-extracts a component whose story file changes while it is being extracted', async () => {
+      const entry = makeStoryEntry('button--primary', 'Button');
+      const provider = vi.fn<StoryDocsProvider['extract']>(async () => makeStoryDocsPayload());
+      const getIndex = makeGetIndex([entry]);
+      const service = registerStoryDocsService({ getIndex, storyDocsProvider: provider });
+      subscribeStoryDocsToModuleGraphChanges({ channel, getIndex, workingDir: process.cwd() });
+      await service.queries.storyDocs.loaded({ id: 'button', scope: 'all' });
+      provider.mockImplementationOnce(() => new Promise(() => {}));
+      void service.commands.extractStoryDocs({ id: 'button' });
+      await vi.waitFor(() => expect(provider).toHaveBeenCalledTimes(2));
+
+      const moduleGraph = getService('core/module-graph', { internal: true });
+      await moduleGraph.commands._applyGraphUpdate({
+        bumpedStoryFiles: ['./button.stories.tsx'],
+      });
+
+      await vi.waitFor(() => expect(provider).toHaveBeenCalledTimes(3));
+    });
+
+    it('extracts again for a call after a story file changes during its first extraction', async () => {
+      const entry = makeStoryEntry('button--primary', 'Button');
+      let finishFirst = (_: StoryDocsPayload) => {};
+      const provider = vi
+        .fn<StoryDocsProvider['extract']>()
+        .mockImplementationOnce(() => new Promise((resolve) => (finishFirst = resolve)))
+        .mockImplementation(async () => makeStoryDocsPayload({ name: 'New' }));
+      const getIndex = makeGetIndex([entry]);
+      const service = registerStoryDocsService({ getIndex, storyDocsProvider: provider });
+      subscribeStoryDocsToModuleGraphChanges({ channel, getIndex, workingDir: process.cwd() });
+      const firstLoad = service.commands.extractStoryDocs({ id: 'button' });
+      await vi.waitFor(() => expect(provider).toHaveBeenCalledOnce());
+
+      const moduleGraph = getService('core/module-graph', { internal: true });
+      await moduleGraph.commands._applyGraphUpdate({
+        bumpedStoryFiles: ['./button.stories.tsx'],
+      });
+      const afterChange = service.commands.extractStoryDocs({ id: 'button' });
+      finishFirst(makeStoryDocsPayload({ name: 'Old' }));
+      await firstLoad;
+
+      await expect(afterChange).resolves.toMatchObject({ name: 'New' });
+      expect(service.queries.storyDocs.get({ id: 'button', scope: 'all' })?.name).toBe('New');
+    });
+
+    it('keeps the refreshed story docs when the extraction a file change replaced finishes later', async () => {
+      const entry = makeStoryEntry('button--primary', 'Button');
+      let finishReplaced = (_: StoryDocsPayload) => {};
+      const provider = vi
+        .fn<StoryDocsProvider['extract']>()
+        .mockImplementationOnce(async () => makeStoryDocsPayload({ name: 'Start' }))
+        .mockImplementationOnce(() => new Promise((resolve) => (finishReplaced = resolve)))
+        .mockImplementation(async () => makeStoryDocsPayload({ name: 'New' }));
+      const getIndex = makeGetIndex([entry]);
+      const service = registerStoryDocsService({ getIndex, storyDocsProvider: provider });
+      subscribeStoryDocsToModuleGraphChanges({ channel, getIndex, workingDir: process.cwd() });
+      await service.queries.storyDocs.loaded({ id: 'button', scope: 'all' });
+      const replaced = service.commands.extractStoryDocs({ id: 'button' });
+      await vi.waitFor(() => expect(provider).toHaveBeenCalledTimes(2));
+
+      const moduleGraph = getService('core/module-graph', { internal: true });
+      await moduleGraph.commands._applyGraphUpdate({
+        bumpedStoryFiles: ['./button.stories.tsx'],
+      });
+      await vi.waitFor(() =>
+        expect(service.queries.storyDocs.get({ id: 'button', scope: 'all' })?.name).toBe('New')
+      );
+      finishReplaced(makeStoryDocsPayload({ name: 'Old' }));
+      await replaced;
+
+      expect(service.queries.storyDocs.get({ id: 'button', scope: 'all' })?.name).toBe('New');
+    });
+
+    it('re-extracts a component whose story file changes while it is being extracted, after a repeated registration', async () => {
+      const entry = makeStoryEntry('button--primary', 'Button');
+      const provider = vi.fn<StoryDocsProvider['extract']>(async () => makeStoryDocsPayload());
+      const getIndex = makeGetIndex([entry]);
+      const service = registerStoryDocsService({ getIndex, storyDocsProvider: provider });
+      registerStoryDocsService({ getIndex, storyDocsProvider: provider });
+      subscribeStoryDocsToModuleGraphChanges({ channel, getIndex, workingDir: process.cwd() });
+      await service.queries.storyDocs.loaded({ id: 'button', scope: 'all' });
+      provider.mockImplementationOnce(() => new Promise(() => {}));
+      void service.commands.extractStoryDocs({ id: 'button' });
+      await vi.waitFor(() => expect(provider).toHaveBeenCalledTimes(2));
+
+      const moduleGraph = getService('core/module-graph', { internal: true });
+      await moduleGraph.commands._applyGraphUpdate({
+        bumpedStoryFiles: ['./button.stories.tsx'],
+      });
+
+      await vi.waitFor(() => expect(provider).toHaveBeenCalledTimes(3));
+    });
+
     it('does not re-extract components that were never extracted', async () => {
-      const provider = vi.fn<StoryDocsProvider>(async () => makeStoryDocsPayload());
+      const provider = vi.fn<StoryDocsProvider['extract']>(async () => makeStoryDocsPayload());
       const getIndex = makeGetIndex([makeStoryEntry('button--primary', 'Button')]);
       registerStoryDocsService({ getIndex, storyDocsProvider: provider });
       subscribeStoryDocsToModuleGraphChanges({ channel, getIndex, workingDir: process.cwd() });
@@ -464,8 +691,9 @@ describe('story-docs open service', () => {
       });
       subscribeStoryDocsToModuleGraphChanges({ channel, getIndex, workingDir: process.cwd() });
       const emitted: Array<StoryDocsPayload | undefined> = [];
-      const unsubscribe = service.queries.storyDocs.subscribe({ id: 'button' }, (state) =>
-        emitted.push(state.data)
+      const unsubscribe = service.queries.storyDocs.subscribe(
+        { id: 'button', scope: 'all' },
+        (state) => emitted.push(state.data)
       );
       await vi.waitFor(() =>
         expect(emitted.at(-1)).toEqual(makeStoryDocsPayload({ id: 'button' }))
@@ -489,7 +717,7 @@ describe('story-docs open service', () => {
         ];
         const getIndex = () => makeGetIndex(entries)();
         const extraction = Promise.withResolvers<StoryDocsPayload>();
-        const provider = vi.fn<StoryDocsProvider>(() => extraction.promise);
+        const provider = vi.fn<StoryDocsProvider['extract']>(() => extraction.promise);
         const service = registerStoryDocsService({ getIndex, storyDocsProvider: provider });
         subscribeStoryDocsToModuleGraphChanges({ channel, getIndex, workingDir: process.cwd() });
         if (stored) {
@@ -505,7 +733,7 @@ describe('story-docs open service', () => {
         extraction.resolve(makeStoryDocsPayload());
         await extracting;
 
-        expect(service.queries.storyDocs.get({ id: 'button' })).toBeUndefined();
+        expect(service.queries.storyDocs.get({ id: 'button', scope: 'all' })).toBeUndefined();
       }
     );
 
@@ -516,7 +744,7 @@ describe('story-docs open service', () => {
       ];
       const getIndex = () => makeGetIndex(entries)();
       const buttonExtraction = Promise.withResolvers<StoryDocsPayload>();
-      const provider = vi.fn<StoryDocsProvider>(({ entry }) =>
+      const provider = vi.fn<StoryDocsProvider['extract']>(({ entry }) =>
         entry.title === 'Button'
           ? buttonExtraction.promise
           : Promise.resolve(makeStoryDocsPayload({ id: 'card' }))
@@ -563,9 +791,9 @@ describe('story-docs open service', () => {
       }, './more.stories.tsx');
 
       await vi.waitFor(() =>
-        expect(Object.keys(service.queries.storyDocs.get({ id: 'button' })!.stories)).toEqual([
-          'button--primary',
-        ])
+        expect(
+          Object.keys(service.queries.storyDocs.get({ id: 'button', scope: 'all' })!.stories)
+        ).toEqual(['button--primary'])
       );
     });
 
@@ -606,28 +834,29 @@ describe('story-docs open service', () => {
         ];
       }, './more.stories.tsx');
       await vi.waitFor(() =>
-        expect(Object.keys(service.queries.storyDocs.get({ id: 'button' })!.stories)).toEqual([
-          'button--primary',
-        ])
+        expect(
+          Object.keys(service.queries.storyDocs.get({ id: 'button', scope: 'all' })!.stories)
+        ).toEqual(['button--primary'])
       );
       olderExtraction.resolve(makeStoryDocsPayload());
       await new Promise((resolve) => setTimeout(resolve, 20));
 
-      expect(Object.keys(service.queries.storyDocs.get({ id: 'button' })!.stories)).toEqual([
-        'button--primary',
-      ]);
+      expect(
+        Object.keys(service.queries.storyDocs.get({ id: 'button', scope: 'all' })!.stories)
+      ).toEqual(['button--primary']);
     });
 
     it('retries a restore whose extraction failed on the next index change', async () => {
       const original = [makeStoryEntry('button--primary', 'Button')];
       let entries = original;
       const getIndex = () => makeGetIndex(entries)();
-      const provider = vi.fn<StoryDocsProvider>(async () => makeStoryDocsPayload());
+      const provider = vi.fn<StoryDocsProvider['extract']>(async () => makeStoryDocsPayload());
       const service = registerStoryDocsService({ getIndex, storyDocsProvider: provider });
       subscribeStoryDocsToModuleGraphChanges({ channel, getIndex, workingDir: process.cwd() });
       const emitted: Array<StoryDocsPayload | undefined> = [];
-      const unsubscribe = service.queries.storyDocs.subscribe({ id: 'button' }, (state) =>
-        emitted.push(state.data)
+      const unsubscribe = service.queries.storyDocs.subscribe(
+        { id: 'button', scope: 'all' },
+        (state) => emitted.push(state.data)
       );
       await vi.waitFor(() => expect(emitted.at(-1)).toEqual(makeStoryDocsPayload()));
       await changeButtonStoryFile(() => {
@@ -653,13 +882,14 @@ describe('story-docs open service', () => {
       const getIndex = () => makeGetIndex(entries)();
       const firstExtraction = Promise.withResolvers<StoryDocsPayload>();
       const provider = vi
-        .fn<StoryDocsProvider>(async () => makeStoryDocsPayload())
+        .fn<StoryDocsProvider['extract']>(async () => makeStoryDocsPayload())
         .mockReturnValueOnce(firstExtraction.promise);
       const service = registerStoryDocsService({ getIndex, storyDocsProvider: provider });
       subscribeStoryDocsToModuleGraphChanges({ channel, getIndex, workingDir: process.cwd() });
       const emitted: Array<StoryDocsPayload | undefined> = [];
-      const unsubscribe = service.queries.storyDocs.subscribe({ id: 'button' }, (state) =>
-        emitted.push(state.data)
+      const unsubscribe = service.queries.storyDocs.subscribe(
+        { id: 'button', scope: 'all' },
+        (state) => emitted.push(state.data)
       );
       await vi.waitFor(() => expect(provider).toHaveBeenCalledTimes(1));
 
@@ -668,7 +898,7 @@ describe('story-docs open service', () => {
       });
       firstExtraction.resolve(makeStoryDocsPayload());
       await new Promise((resolve) => setTimeout(resolve, 20));
-      expect(service.queries.storyDocs.get({ id: 'button' })).toBeUndefined();
+      expect(service.queries.storyDocs.get({ id: 'button', scope: 'all' })).toBeUndefined();
       await changeButtonStoryFile(() => {
         entries = original;
       });
@@ -696,8 +926,9 @@ describe('story-docs open service', () => {
       });
       subscribeStoryDocsToModuleGraphChanges({ channel, getIndex, workingDir: process.cwd() });
       const emitted: Array<StoryDocsPayload | undefined> = [];
-      const unsubscribe = service.queries.storyDocs.subscribe({ id: 'button' }, (state) =>
-        emitted.push(state.data)
+      const unsubscribe = service.queries.storyDocs.subscribe(
+        { id: 'button', scope: 'all' },
+        (state) => emitted.push(state.data)
       );
       await vi.waitFor(() =>
         expect(emitted.at(-1)).toEqual(makeStoryDocsPayload({ id: 'button' }))
@@ -730,7 +961,7 @@ describe('story-docs open service', () => {
 
     await service.commands.extractAllStoryDocs(undefined);
 
-    expect(service.queries.storyDocs.get({ id: 'constructor' })).toEqual(
+    expect(service.queries.storyDocs.get({ id: 'constructor', scope: 'all' })).toEqual(
       makeStoryDocsPayload({ id: 'constructor' })
     );
     expect(readAllComponents(service.queries.storyDocsForAllComponents.get())).toEqual({

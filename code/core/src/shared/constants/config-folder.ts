@@ -5,6 +5,8 @@ import { storybookConfigExtensions } from './extensions.ts';
 /** Default React Native on-device Storybook config directory name. */
 export const RN_STORYBOOK_DIR = '.rnstorybook';
 
+export const RN_FRAMEWORK_PACKAGE = '@storybook/react-native';
+
 export const DOCUMENTED_PREVIEW_IMPORT = '#.storybook/preview';
 
 export function isReactNativeStorybookPath(fileOrDir?: string): boolean {

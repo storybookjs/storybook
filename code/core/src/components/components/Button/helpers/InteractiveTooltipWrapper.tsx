@@ -1,4 +1,4 @@
-import React, { type DOMAttributes, type ReactElement, useMemo } from 'react';
+import React, { type AriaAttributes, type DOMAttributes, type ReactElement, useMemo } from 'react';
 
 import { type API_KeyCollection, shortcutToHumanString } from 'storybook/manager-api';
 
@@ -7,7 +7,7 @@ import { TooltipNote } from '../../tooltip/TooltipNote.tsx';
 import { TooltipProvider } from '../../tooltip/TooltipProvider.tsx';
 
 export const InteractiveTooltipWrapper: React.FC<{
-  children: ReactElement<DOMAttributes<Element>, string>;
+  children: ReactElement<DOMAttributes<Element> & AriaAttributes, string>;
   shortcut?: API_KeyCollection;
   disableAllTooltips?: boolean;
   tooltip?: string;
@@ -31,6 +31,8 @@ export const InteractiveTooltipWrapper: React.FC<{
     return shortcutToHumanString(shortcut);
   }, [shortcut]);
 
+  const ownDescription = children.props['aria-describedby'];
+
   // A shortcut alone still warrants a tooltip: buttons with visible text pass no `tooltip`
   // but their shortcut is only discoverable here.
   return tooltip || shortcutLabel ? (
@@ -40,7 +42,7 @@ export const InteractiveTooltipWrapper: React.FC<{
       disabled={disableAllTooltips}
     >
       {/* @ts-expect-error: Only null prevents React Aria from describing the button with redundant tooltip text. */}
-      {React.cloneElement(children, { 'aria-describedby': null })}
+      {React.cloneElement(children, { 'aria-describedby': ownDescription ?? null })}
     </TooltipProvider>
   ) : (
     <>{children}</>

@@ -1,6 +1,6 @@
 {
   "name": "@storybook/react",
-  "version": "11.0.0-rc.0",
+  "version": "11.0.0-rc.1",
   "description": "Storybook React renderer",
   "keywords": [
     "storybook"
@@ -36,6 +36,7 @@
       "default": "./dist/builder-docgen.js"
     },
     "./internal/docgen-worker": "./dist/docgen/docgen-worker.js",
+    "./internal/register-print-hole": "./dist/docs/register-print-hole.js",
     "./package.json": "./package.json",
     "./preset": "./dist/preset.js",
     "./preview": {
@@ -52,9 +53,6 @@
     "*.d.ts",
     "!src/**/*"
   ],
-  "dependencies": {
-    "@storybook/global": "^5.0.0"
-  },
   "devDependencies": {
     "@storybook/component-meta-typescript": "workspace:*",
     "@types/babel-plugin-react-docgen": "^4.2.3",

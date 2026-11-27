@@ -16,9 +16,6 @@ vi.mock('node:url', () => ({
   fileURLToPath: vi.fn(() => '/fake/mocker-runtime.js'),
 }));
 
-// Mock import.meta.resolve
-vi.stubGlobal('import', { meta: { resolve: () => 'file:///fake/mocker-runtime.js' } });
-
 // Dynamic import after mocks are set up
 const { viteInjectMockerRuntime } = await import('./plugin.js');
 

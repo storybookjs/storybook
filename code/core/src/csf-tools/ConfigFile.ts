@@ -259,7 +259,7 @@ export class ConfigFile implements CsfObject {
    * ```
    */
   set(path: CsfPath, value: CsfValue<CsfExpression>): CsfMutationResult {
-    return this._mutate((object) => object.set(path, value));
+    return this._mutate([path], (object) => object.set(path, value));
   }
 
   /**
@@ -279,7 +279,7 @@ export class ConfigFile implements CsfObject {
     path: CsfPath,
     derive: (value: CsfExpression) => CsfExpression | undefined
   ): CsfMutationResult {
-    return this._mutate((object) => object.transform(path, derive));
+    return this._mutate([path], (object) => object.transform(path, derive));
   }
 
   /**
@@ -300,7 +300,7 @@ export class ConfigFile implements CsfObject {
    * ```
    */
   remove(path: CsfPattern): CsfMutationResult {
-    return this._mutate((object) => object.remove(path));
+    return this._mutate([path], (object) => object.remove(path));
   }
 
   /**
@@ -315,7 +315,9 @@ export class ConfigFile implements CsfObject {
    * ```
    */
   rename(path: CsfPath, name: string): CsfMutationResult {
-    return this._mutate((object) => object.rename(path, name));
+    return this._mutate([path, [...path.slice(0, -1), name]], (object) =>
+      object.rename(path, name)
+    );
   }
 
   /**
@@ -332,7 +334,7 @@ export class ConfigFile implements CsfObject {
    * ```
    */
   move(from: CsfPath, to: CsfPath): CsfMutationResult {
-    return this._mutate((object) => object.move(from, to));
+    return this._mutate([from, to], (object) => object.move(from, to));
   }
 
   /**
@@ -348,7 +350,9 @@ export class ConfigFile implements CsfObject {
    * ```
    */
   group(path: CsfPath, names: readonly string[]): CsfMutationResult {
-    return this._mutate((object) => object.group(path, names));
+    return this._mutate([path, ...names.map((name) => [...path.slice(0, -1), name])], (object) =>
+      object.group(path, names)
+    );
   }
 
   /**
@@ -396,7 +400,7 @@ export class ConfigFile implements CsfObject {
    * ```
    */
   append(path: CsfPath, value: CsfValue<CsfExpression>): CsfMutationResult {
-    return this._mutate((object) => object.append(path, value));
+    return this._mutate([path], (object) => object.append(path, value));
   }
 
   /**
@@ -412,7 +416,7 @@ export class ConfigFile implements CsfObject {
    * ```
    */
   prepend(path: CsfPath, value: CsfValue<CsfExpression>): CsfMutationResult {
-    return this._mutate((object) => object.prepend(path, value));
+    return this._mutate([path], (object) => object.prepend(path, value));
   }
 
   /**
@@ -435,21 +439,26 @@ export class ConfigFile implements CsfObject {
       this,
       'mutate',
       () => {},
-      () => {}
+      () => {},
+      [path]
     );
     return editor.ok === true
       ? editor.object.inspectList(path)
       : { kind: 'refused', diagnostic: editor.diagnostic };
   }
 
-  _mutate(operation: (object: CsfObject) => CsfMutationResult): CsfMutationResult {
+  _mutate(
+    paths: readonly CsfPattern[],
+    operation: (object: CsfObject) => CsfMutationResult
+  ): CsfMutationResult {
     const editor = createConfigObject(
       this,
       'mutate',
       (diagnostic) => this._mutationDiagnostics.push(diagnostic),
       () => {
         this._markChanged();
-      }
+      },
+      paths
     );
     return editor.ok === true ? operation(editor.object) : this._reject(editor.diagnostic);
   }
@@ -826,7 +835,7 @@ export class ConfigFile implements CsfObject {
    * Remove the first entry of the array literal at a path that names `value`: a string, a
    * `{ name }` object, or a call like `getAbsolutePath(value)`. A missing field or entry is a no-op
    * when the array can be edited; an array in a constant that other code refers to as well, or in a
-   * config that mixes a default export with named exports, is refused like `append` refuses it.
+   * field the config also exports by name, is refused like `append` refuses it.
    *
    * @deprecated Find the entry's index in the list `inspectList(path)` returns, and
    * `remove([...path, index])` it.

@@ -1,27 +1,21 @@
 /// <reference types="node" />
+import { spawn } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import * as os from 'node:os';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import { isCI } from 'storybook/internal/common';
 
-import retry from 'fetch-retry';
 import { nanoid } from 'nanoid';
 
 import { version } from '../../package.json';
-import { resolvePackageDir } from '../shared/utils/module.ts';
+import { importMetaResolve, resolvePackageDir } from '../shared/utils/module.ts';
 import { getAnonymousProjectId, getProjectSince } from './anonymous-id.ts';
 import { detectAgent } from './detect-agent.ts';
 import { set as saveToCache } from './event-cache.ts';
-import { fetch } from './fetch.ts';
 import { getSessionId } from './session-id.ts';
-import type { Options, TelemetryData } from './types.ts';
-
-const retryingFetch = retry(fetch);
-
-const URL = process.env.STORYBOOK_TELEMETRY_URL || 'https://storybook.js.org/event-log';
-
-let tasks: Promise<any>[] = [];
+import type { Options, TelemetryData, TelemetryEvent } from './types.ts';
 
 export const addToGlobalContext = (key: string, value: any) => {
   globalContext[key] = value;
@@ -61,36 +55,6 @@ const globalContext = {
   storybookVersion: getVersionNumber(),
 } as Record<string, any>;
 
-const prepareRequest = async (data: TelemetryData, context: Record<string, any>, options: any) => {
-  const { eventType, payload, metadata, ...rest } = data;
-  const sessionId = await getSessionId();
-  const eventId = nanoid();
-  const body = { ...rest, eventType, eventId, sessionId, metadata, payload, context };
-  const signal = AbortSignal.timeout(30_000);
-  const maxRetries = 3;
-
-  return retryingFetch(URL, {
-    method: 'post',
-    body: JSON.stringify(body),
-    headers: { 'Content-Type': 'application/json' },
-    retryDelay: (attempt: number) =>
-      2 ** attempt *
-      (typeof options?.retryDelay === 'number' && !Number.isNaN(options?.retryDelay)
-        ? options.retryDelay
-        : 1000),
-    retryOn: (attempt, error, response) => {
-      // If explicitly aborted (e.g. by the timeout above), or if we've exhausted our retries, give up.
-      if (signal.aborted || attempt >= maxRetries) {
-        return false;
-      }
-
-      // Retry transient network errors and server-overload responses.
-      return Boolean(error) || response?.status === 503 || response?.status === 504;
-    },
-    signal,
-  });
-};
-
 function getVersionNumber() {
   try {
     return JSON.parse(readFileSync(join(resolvePackageDir('storybook'), 'package.json'), 'utf8'))
@@ -100,17 +64,8 @@ function getVersionNumber() {
   }
 }
 
-export async function sendTelemetry(
-  data: TelemetryData,
-  options: Partial<Options> = { retryDelay: 1000, immediate: false }
-) {
+export async function sendTelemetry(data: TelemetryData, options: Partial<Options> = {}) {
   const { eventType, payload, metadata, ...rest } = data;
-
-  // We use this id so we can de-dupe events that arrive at the index multiple times due to the
-  // use of retries. There are situations in which the request "5xx"s (or times-out), but
-  // the server actually gets the request and stores it anyway.
-
-  // flatten the data before we send it
 
   const context = options.stripMetadata
     ? globalContext
@@ -120,20 +75,82 @@ export async function sendTelemetry(
         projectSince: getProjectSince()?.getTime(),
       };
 
-  let request: any;
   try {
-    request = prepareRequest(data, context, options);
-    tasks.push(request);
-
-    const sessionId = await getSessionId();
-    const eventId = nanoid();
-    const body = { ...rest, eventType, eventId, sessionId, metadata, payload, context };
-
-    const waitFor = options.immediate ? tasks : [request];
-    await Promise.all([...waitFor, saveToCache(eventType, body)]);
+    const body: TelemetryEvent = {
+      ...rest,
+      eventType,
+      eventId: nanoid(),
+      sessionId: getSessionId(),
+      metadata,
+      payload,
+      context,
+    };
+    // Not Promise.all: a cache that cannot be written must not end the wait for the hand-over.
+    await Promise.allSettled([handOver(body), saveToCache(eventType, body)]);
   } catch (err) {
     //
-  } finally {
-    tasks = tasks.filter((task) => task !== request);
   }
+}
+
+// Resolves when the event is written. That is asynchronous on Windows, and elsewhere for an event
+// larger than the pipe buffer, so an exit right after the call would lose the event.
+async function handOver(event: TelemetryEvent) {
+  let limit: ReturnType<typeof setTimeout> | undefined;
+  try {
+    // On globalThis, because this module can load more than once in one process. Every copy sends
+    // an unchanged TelemetryEvent, which the child posts as it is.
+    const sender = globalThis.SB_TELEMETRY_SENDER?.connected
+      ? globalThis.SB_TELEMETRY_SENDER
+      : (globalThis.SB_TELEMETRY_SENDER = startSender());
+    await new Promise<void>((resolve) => {
+      // A child that does not read must not keep this process waiting, and the unfinished write
+      // would keep this process from exiting. So that child is stopped.
+      limit = setTimeout(() => {
+        sender.kill();
+        resolve();
+      }, 2000);
+      sender.send(event, () => resolve());
+    });
+  } catch {
+    //
+  } finally {
+    clearTimeout(limit);
+  }
+}
+
+// A detached child posts the events, so this process never waits for the endpoint. The child
+// exits by itself once this process is gone and its requests are done.
+function startSender() {
+  const script = fileURLToPath(importMetaResolve('storybook/internal/telemetry/sender'));
+  const child = spawn(process.execPath, [script], {
+    env: {
+      ...process.env,
+      NODE_OPTIONS: withoutPausingOptions(process.env.NODE_OPTIONS),
+      BUN_OPTIONS: withoutPausingOptions(process.env.BUN_OPTIONS),
+    },
+    detached: true,
+    stdio: ['ignore', 'ignore', 'ignore', 'ipc'],
+    windowsHide: true,
+  });
+  // Without a listener, a spawn that fails later would crash this process. Node still calls such
+  // a child connected, so it is forgotten here and the next event starts another.
+  child.on('error', () => {
+    if (globalThis.SB_TELEMETRY_SENDER === child) {
+      globalThis.SB_TELEMETRY_SENDER = undefined;
+    }
+  });
+  // Neither the child nor its channel may keep this process from exiting. Bun has no channel.unref.
+  child.unref();
+  child.channel?.unref?.();
+  return child;
+}
+
+// Removes the options that make a process wait for a debugger or never exit, which the child
+// would inherit. An option can be quoted, in whole ("--inspect-brk") or in part
+// (--require "/a path/preload.js"). Options that only take effect with those, such as
+// --inspect-port, stay: their value can be a separate word.
+function withoutPausingOptions(options: string | undefined) {
+  return options?.replace(/(?:"(?:\\.|[^"])*"|'[^']*'|[^\s"'])+/g, (option) =>
+    /^--(inspect([-_](brk|wait))?|watch|hot)(=|$)/.test(option.replace(/["']/g, '')) ? '' : option
+  );
 }

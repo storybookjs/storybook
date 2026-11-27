@@ -1,5 +1,8 @@
 import type { ChannelLike } from 'storybook/internal/channels';
-import { getStoryImportPathFromEntry } from '../../../../common/utils/select-component-entry.ts';
+import {
+  getStoryImportPathFromEntry,
+  isManifestEntry,
+} from '../../../../common/utils/select-component-entry.ts';
 import type { IndexEntry, StoryIndex } from '../../../../types/modules/indexer.ts';
 import {
   type ExtractionInput,
@@ -7,14 +10,14 @@ import {
   subscribeExtractionServiceToModuleGraphChanges,
   toExtractionError,
 } from '../extraction-service.server.ts';
-import { storyDocsServiceDef } from './definition.ts';
+import { type StoryDocsServiceState, storyDocsServiceDef } from './definition.ts';
 import {
   isSnippetTemplate,
   prependToTemplate,
   stripHoles,
 } from '../../../../docs-tools/snippetTemplate.ts';
 import { importPrefix } from './snippet.ts';
-import type { StoryDoc, StoryDocsPayload, StoryDocsProvider } from './types.ts';
+import type { StoryDoc, StoryDocsById, StoryDocsPayload, StoryDocsProvider } from './types.ts';
 
 export type RegisterStoryDocsServiceOptions = {
   /**
@@ -23,10 +26,10 @@ export type RegisterStoryDocsServiceOptions = {
    */
   getIndex: () => Promise<StoryIndex>;
   /**
-   * Fully composed story-docs provider chain from
+   * `extract` of the fully composed story-docs provider chain from
    * `presets.apply('experimental_storyDocsProvider', ...)`.
    */
-  storyDocsProvider: StoryDocsProvider;
+  storyDocsProvider: StoryDocsProvider['extract'];
   /**
    * `features.experimentalLiveServerSnippets`. Without it the story docs carry no templates, so
    * agents and the components manifest read what they read before live snippets.
@@ -74,7 +77,7 @@ function storyDocFromFile(entry: IndexEntry, result: FileResult): StoryDoc | und
 }
 
 // CSF files that share a title share a component id, but `entry` stands for only one of them.
-function withStoriesFromEveryFile(provider: StoryDocsProvider, liveSnippets: boolean) {
+function withStoriesFromEveryFile(provider: StoryDocsProvider['extract'], liveSnippets: boolean) {
   return async ({ entry, storyEntries }: ExtractionInput) => {
     const fileEntries = [
       ...new Map(storyEntries.map((storyEntry) => [storyEntry.importPath, storyEntry])).values(),
@@ -114,6 +117,32 @@ function withStoriesFromEveryFile(provider: StoryDocsProvider, liveSnippets: boo
   };
 }
 
+function writeComponent(
+  state: StoryDocsServiceState,
+  key: string,
+  extracted: { payload: StoryDocsPayload; input: ExtractionInput } | undefined
+) {
+  if (!extracted) {
+    delete state.components[key];
+    delete state.nonManifestStories[key];
+    return;
+  }
+  const { payload, input } = extracted;
+  const manifestStoryIds = new Set(input.storyEntries.filter(isManifestEntry).map(({ id }) => id));
+  const manifestStories: StoryDocsById = {};
+  const nonManifestStories: StoryDocsById = {};
+  for (const [id, story] of Object.entries(payload.stories)) {
+    const target = manifestStoryIds.has(id) ? manifestStories : nonManifestStories;
+    target[id] = story;
+  }
+  state.components[key] = { ...payload, stories: manifestStories };
+  if (Object.keys(nonManifestStories).length > 0) {
+    state.nonManifestStories[key] = nonManifestStories;
+  } else {
+    delete state.nonManifestStories[key];
+  }
+}
+
 /** Registers the `core/story-docs` open service against the process-global registry. */
 export function registerStoryDocsService(options: RegisterStoryDocsServiceOptions) {
   return registerExtractionService(storyDocsServiceDef, {
@@ -129,6 +158,9 @@ export function registerStoryDocsService(options: RegisterStoryDocsServiceOption
     queryName: 'storyDocs',
     extractCommand: 'extractStoryDocs',
     extractAllCommand: 'extractAllStoryDocs',
+    toQueryInput: (id) => ({ id, scope: 'all' as const }),
+    writeComponent,
+    storySignature: (entry) => `${entry.id} manifest=${isManifestEntry(entry)}`,
   });
 }
 
@@ -139,7 +171,6 @@ export function subscribeStoryDocsToModuleGraphChanges(options: {
 }) {
   subscribeExtractionServiceToModuleGraphChanges(storyDocsServiceDef, {
     ...options,
-    queryName: 'storyDocs',
     allQueryName: 'storyDocsForAllComponents',
     extractCommand: 'extractStoryDocs',
   });

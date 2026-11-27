@@ -1,6 +1,6 @@
 {
   "name": "@storybook/web-components",
-  "version": "11.0.0-rc.0",
+  "version": "11.0.0-rc.1",
   "description": "Storybook Web Components renderer: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -41,6 +41,7 @@
       "default": "./dist/docgen/index.js"
     },
     "./internal/docgen-worker": "./dist/docgen/docgen-worker.js",
+    "./internal/register-print-hole": "./dist/docs/register-print-hole.js",
     "./package.json": "./package.json",
     "./preset": "./dist/preset.js"
   },
@@ -53,7 +54,6 @@
     "!src/**/*"
   ],
   "dependencies": {
-    "@storybook/global": "^5.0.0",
     "@wc-toolkit/cem-generator": "^0.2.1",
     "@wc-toolkit/cem-generator-lit": "^0.1.16",
     "custom-elements-manifest": "^2.1.0",

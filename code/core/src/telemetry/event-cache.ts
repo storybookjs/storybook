@@ -100,7 +100,7 @@ export async function isWithinInitialSession(events: EventType | EventType[]): P
     }
 
     const { getSessionId } = await import('./session-id.ts');
-    const sessionId = await getSessionId();
+    const sessionId = getSessionId();
 
     // If the stored event carries a sessionId that differs from the current one the 2h window
     // has expired and a new session was started.

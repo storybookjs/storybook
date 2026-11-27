@@ -2360,46 +2360,26 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@clack/core@npm:1.0.0-alpha.7":
-  version: 1.0.0-alpha.7
-  resolution: "@clack/core@npm:1.0.0-alpha.7"
+"@clack/core@npm:1.6.0":
+  version: 1.6.0
+  resolution: "@clack/core@npm:1.6.0"
   dependencies:
-    picocolors: "npm:^1.0.0"
-    sisteransi: "npm:^1.0.5"
-  checksum: 10c0/e3d706101c57252d41c77abfb16d1f163bc9e4b81cacbc70c022a859c500ceb7024049d8ff907c8869dcaa9e141e4ef6bb57b83c46027fcdc188072f7b0cc728
-  languageName: node
-  linkType: hard
-
-"@clack/core@npm:1.5.1":
-  version: 1.5.1
-  resolution: "@clack/core@npm:1.5.1"
-  dependencies:
-    fast-wrap-ansi: "npm:^0.2.0"
-    sisteransi: "npm:^1.0.5"
-  checksum: 10c0/6dca93ff5a34bfe8c150367519bc40a847e9172cb1a78b18c88da0507cb6ad899debe1ad5cfcb9796e439108f12f003cf06fd002e2293bc85ff500975e45ff13
-  languageName: node
-  linkType: hard
-
-"@clack/prompts@npm:1.0.0-alpha.7":
-  version: 1.0.0-alpha.7
-  resolution: "@clack/prompts@npm:1.0.0-alpha.7"
-  dependencies:
-    "@clack/core": "npm:1.0.0-alpha.7"
-    picocolors: "npm:^1.0.0"
-    sisteransi: "npm:^1.0.5"
-  checksum: 10c0/21f657868fe538e260f0c79026cca909b51013ad8017a6951869c976dded786383b604db616fed2a799b40c300f7df672fa3e7f4c2e1484819c7fc482b2bd9bb
-  languageName: node
-  linkType: hard
-
-"@clack/prompts@npm:^1.1.0":
-  version: 1.8.1
-  resolution: "@clack/prompts@npm:1.8.1"
-  dependencies:
-    "@clack/core": "npm:1.5.1"
     fast-string-width: "npm:^3.0.2"
     fast-wrap-ansi: "npm:^0.2.0"
-    sisteransi: "npm:^1.0.5"
-  checksum: 10c0/ed38748acde0cb1e7ebdac1242470c78bd90380cbdde1e5560e0828881e3c74e2676de666086cf8183c8d4d3f1fc6e489f15a004f0d9f8ee294a3aa744de2093
+    sisteransi: "npm:^2.0.0"
+  checksum: 10c0/57fdd41fa409d191f02fec667c98f34ea17e9bab5bbeadeb20de67077ec430d6800d8efd0b4e49bcaa1c2e8d78298751457da8586a2934aac81d1e7b6fe989f3
+  languageName: node
+  linkType: hard
+
+"@clack/prompts@npm:1.9.0, @clack/prompts@npm:^1.1.0":
+  version: 1.9.0
+  resolution: "@clack/prompts@npm:1.9.0"
+  dependencies:
+    "@clack/core": "npm:1.6.0"
+    fast-string-width: "npm:^3.0.2"
+    fast-wrap-ansi: "npm:^0.2.0"
+    sisteransi: "npm:^2.0.0"
+  checksum: 10c0/3dd75b8a20bd77c10cbbc81d6d4bde3e386e6630b9e74b607560236b127af7c64490efe6270369999cdda2d05a68ab946704416ee7e106eb5a560378680bd4f1
   languageName: node
   linkType: hard
 
@@ -9921,7 +9901,6 @@ __metadata:
   resolution: "@storybook/addon-a11y@workspace:code/addons/a11y"
   dependencies:
     "@radix-ui/react-tabs": "npm:1.0.4"
-    "@storybook/global": "npm:^5.0.0"
     "@storybook/icons": "npm:^2.0.2"
     "@testing-library/react": "npm:^14.0.0"
     axe-core: "npm:^4.2.0"
@@ -9963,6 +9942,7 @@ __metadata:
   dependencies:
     "@mdx-js/mdx": "npm:^3.0.0"
     "@mdx-js/react": "npm:^3.0.0"
+    "@react-aria/live-announcer": "npm:^3.5.1"
     "@rollup/pluginutils": "npm:^5.0.2"
     "@storybook/icons": "npm:^2.0.2"
     "@types/color-convert": "npm:^2.0.0"
@@ -9998,7 +9978,6 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@storybook/addon-links@workspace:code/addons/links"
   dependencies:
-    "@storybook/global": "npm:^5.0.0"
     typescript: "npm:^6.0.3"
   peerDependencies:
     "@types/react": ^18.0.0 || ^19.0.0
@@ -10068,7 +10047,6 @@ __metadata:
   dependencies:
     "@storybook/addon-a11y": "workspace:*"
     "@storybook/builder-vite": "workspace:*"
-    "@storybook/global": "npm:^5.0.0"
     "@storybook/icons": "npm:^2.0.2"
     "@types/istanbul-lib-report": "npm:^3.0.3"
     "@types/micromatch": "npm:^4.0.0"
@@ -10125,7 +10103,6 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@storybook/angular-compodoc@workspace:code/lib/angular-compodoc"
   dependencies:
-    "@storybook/global": "npm:^5.0.0"
     entities: "npm:^4.5.0"
   peerDependencies:
     storybook: "workspace:^"
@@ -10151,7 +10128,6 @@ __metadata:
     "@storybook/angular-compodoc": "workspace:*"
     "@storybook/builder-vite": "workspace:*"
     "@storybook/component-meta-typescript": "workspace:*"
-    "@storybook/global": "npm:^5.0.0"
     "@types/node": "npm:^22.19.1"
     empathic: "npm:^2.0.0"
     memfs: "npm:^4.11.1"
@@ -10213,7 +10189,6 @@ __metadata:
     "@storybook/angular-compodoc": "workspace:*"
     "@storybook/builder-webpack5": "workspace:*"
     "@storybook/core-webpack": "workspace:*"
-    "@storybook/global": "npm:^5.0.0"
     "@types/node": "npm:^22.19.1"
     empathic: "npm:^2.0.0"
     rimraf: "npm:^6.0.1"
@@ -10364,7 +10339,6 @@ __metadata:
     "@storybook/builder-webpack5": "workspace:*"
     "@storybook/core-webpack": "workspace:*"
     "@storybook/ember": "workspace:*"
-    "@storybook/global": "npm:^5.0.0"
     "@storybook/html": "workspace:*"
     "@storybook/html-vite": "workspace:*"
     "@storybook/nextjs": "workspace:*"
@@ -10526,7 +10500,6 @@ __metadata:
   resolution: "@storybook/ember@workspace:code/frameworks/ember"
   dependencies:
     "@storybook/builder-webpack5": "workspace:*"
-    "@storybook/global": "npm:^5.0.0"
     babel-loader: "npm:9.1.3"
     ember-source: "npm:~3.28.1"
     empathic: "npm:2.0.0"
@@ -10567,7 +10540,6 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@storybook/html@workspace:code/renderers/html"
   dependencies:
-    "@storybook/global": "npm:^5.0.0"
     ts-dedent: "npm:^2.2.0"
     typescript: "npm:^6.0.3"
   peerDependencies:
@@ -10746,7 +10718,6 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@storybook/preact@workspace:code/renderers/preact"
   dependencies:
-    "@storybook/global": "npm:^5.0.0"
     preact: "npm:^11.0.0"
     ts-dedent: "npm:^2.2.0"
     typescript: "npm:^6.0.3"
@@ -10920,7 +10891,6 @@ __metadata:
   resolution: "@storybook/react@workspace:code/renderers/react"
   dependencies:
     "@storybook/component-meta-typescript": "workspace:*"
-    "@storybook/global": "npm:^5.0.0"
     "@types/babel-plugin-react-docgen": "npm:^4.2.3"
     "@types/escodegen": "npm:^0.0.6"
     "@types/estree": "npm:^1.0.6"
@@ -11133,7 +11103,6 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@storybook/server@workspace:code/renderers/server"
   dependencies:
-    "@storybook/global": "npm:^5.0.0"
     ts-dedent: "npm:^2.2.0"
     typescript: "npm:^6.0.3"
     yaml: "npm:^2.8.1"
@@ -11277,7 +11246,6 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@storybook/vue3@workspace:code/renderers/vue3"
   dependencies:
-    "@storybook/global": "npm:^5.0.0"
     "@testing-library/vue": "npm:^8.0.0"
     "@types/pug": "npm:2.0.10"
     "@vitejs/plugin-vue": "npm:^4.6.2"
@@ -11316,7 +11284,6 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@storybook/web-components@workspace:code/renderers/web-components"
   dependencies:
-    "@storybook/global": "npm:^5.0.0"
     "@types/cross-spawn": "npm:^6.0.6"
     "@types/node": "npm:^22.19.1"
     "@types/tmp": "npm:^0.2.6"
@@ -33038,6 +33005,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"sisteransi@npm:^2.0.0":
+  version: 2.0.0
+  resolution: "sisteransi@npm:2.0.0"
+  checksum: 10c0/f33e4aa6418d2e3d66820f1fa8422c18bf7c66843cb41a891bee6a9e9821ff9179dfdfc249a34a3fae2999a030aa1c2a0ab70803130e8c46228751c3899fade3
+  languageName: node
+  linkType: hard
+
 "slash@npm:^1.0.0":
   version: 1.0.0
   resolution: "slash@npm:1.0.0"
@@ -33566,7 +33540,7 @@ __metadata:
   dependencies:
     "@aw-web-design/x-default-browser": "npm:1.4.126"
     "@babel/core": "npm:^7.28.5"
-    "@clack/prompts": "npm:1.0.0-alpha.7"
+    "@clack/prompts": "npm:1.9.0"
     "@devtools-ds/object-inspector": "npm:^1.1.2"
     "@discoveryjs/json-ext": "npm:^0.5.3"
     "@emotion/cache": "npm:^11.14.0"

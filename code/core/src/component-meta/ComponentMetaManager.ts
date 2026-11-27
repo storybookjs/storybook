@@ -131,8 +131,10 @@ export class ComponentMetaManager<
    * Reclaim the shared program(s)' resident type-resolution cache when heap usage approaches the V8
    * limit, preventing the next extraction's spike from OOMing the dev server. Callers with a
    * batch-extraction surface invoke this after each batch.
+   *
+   * A factory that shares parsed files keeps those of `batchProjects`, the projects the batch used.
    */
-  protected recycleProjectsIfHeapPressured(): boolean {
+  protected recycleProjectsIfHeapPressured(batchProjects: Iterable<P> = []): boolean {
     if (this.configProjects.size === 0 && !this.inferredProject) {
       return false;
     }
@@ -151,13 +153,28 @@ export class ComponentMetaManager<
         NODE_OPTIONS="--max-old-space-size=${heapLimitMb * 2}"
     `);
 
-    for (const project of this.configProjects.values()) {
-      project.dispose();
-    }
-    this.inferredProject?.dispose();
+    const recycledProjects = [...this.configProjects];
+    const projectsToRebuild = new Set(this.factory.sharesParsedFiles ? batchProjects : []);
     this.configProjects.clear();
     this.referencedTsConfigs.clear();
+    this.inferredProject?.dispose();
     this.inferredProject = undefined;
+    for (const [, project] of recycledProjects) {
+      if (!projectsToRebuild.has(project)) {
+        project.dispose();
+      }
+    }
+    for (const [tsconfig, project] of recycledProjects) {
+      if (projectsToRebuild.has(project)) {
+        try {
+          // Listing the source files builds the program, which takes over the parsed files.
+          this.getOrCreateConfiguredProject(tsconfig)?.getSourceFilePaths();
+        } catch (err) {
+          logger.debug(`[component-meta] Failed to rebuild the project of ${tsconfig}: ${err}`);
+        }
+        project.dispose();
+      }
+    }
     this.factory.recycle?.();
     return true;
   }

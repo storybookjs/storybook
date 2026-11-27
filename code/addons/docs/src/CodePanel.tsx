@@ -12,6 +12,7 @@ import {
   type StoryDocsCodePanelParameters,
 } from 'storybook/internal/docs-tools';
 import type { StoryId } from 'storybook/internal/types';
+import type { StoryDocsService } from 'storybook/open-service';
 import { useChannel, useParameter } from 'storybook/manager-api';
 import { ignoreSsrWarning, styled, useTheme } from 'storybook/theming/emotion';
 
@@ -25,7 +26,10 @@ type SnippetRenderedEvent = {
   format?: SyntaxHighlighterFormatTypes;
   language?: SupportedLanguage;
   warning?: string;
+  previewOnly?: boolean;
 };
+
+type LiveSnippet = ReturnType<StoryDocsService['queries']['liveSnippet']['get']>;
 
 export const CodePanel = ({
   active,
@@ -33,12 +37,14 @@ export const CodePanel = ({
   currentStoryId,
   storyParameters,
   storyPrepared,
+  liveSnippet,
 }: {
   active: boolean | undefined;
   lastEvent: SnippetRenderedEvent | undefined;
   currentStoryId: string | undefined;
   storyParameters: StoryDocsCodePanelParameters | undefined;
   storyPrepared: boolean | undefined;
+  liveSnippet?: LiveSnippet;
 }) => {
   const [codeSnippet, setSourceCode] = useState<SnippetRenderedEvent>(
     lastEvent?.id === currentStoryId ? (lastEvent ?? {}) : {}
@@ -55,7 +61,7 @@ export const CodePanel = ({
 
   useChannel(
     {
-      [SNIPPET_RENDERED]: ({ id, source, format, language, warning }) => {
+      [SNIPPET_RENDERED]: ({ id, source, format, language, warning, previewOnly }) => {
         // Ignore snippets emitted for other stories: a slow extraction for the previously selected
         // story can resolve after navigation and would otherwise overwrite the current panel.
         // `useChannel` captures this handler per `deps`, so it must list `currentStoryId` to compare
@@ -63,7 +69,7 @@ export const CodePanel = ({
         if (id !== undefined && id !== currentStoryId) {
           return;
         }
-        setSourceCode({ source, format, language, warning });
+        setSourceCode({ source, format, language, warning, previewOnly });
       },
     },
     [currentStoryId]
@@ -72,17 +78,24 @@ export const CodePanel = ({
   const theme = useTheme();
   const isDark = theme.base !== 'light';
 
+  // An emit marked `previewOnly` depends on what only the preview has: a
+  // `parameters.docs.source.transform` function, or args the channel cannot carry.
+  const shown =
+    liveSnippet?.snippet !== undefined && !codeSnippet.previewOnly
+      ? { source: liveSnippet.snippet, warning: liveSnippet.warning }
+      : codeSnippet;
+
   const awaitingServiceSnippet = shouldWaitForServiceSnippet(storyParameters, storyPrepared);
   const code =
     parameter.source?.code ||
-    codeSnippet.source ||
+    shown.source ||
     (awaitingServiceSnippet ? '' : parameter.source?.originalSource);
-  // The warning describes the emitted snippet, so a `docs.source.code` override retires it.
-  const warning = parameter.source?.code ? undefined : codeSnippet.warning;
+  // The warning describes the shown snippet, so a `docs.source.code` override retires it.
+  const warning = parameter.source?.code ? undefined : shown.warning;
 
   const language =
     parameter.source?.language ??
-    (!parameter.source?.code && codeSnippet.source ? codeSnippet.language : undefined);
+    (!parameter.source?.code && shown.source ? codeSnippet.language : undefined);
 
   return (
     <AddonPanel active={!!active}>

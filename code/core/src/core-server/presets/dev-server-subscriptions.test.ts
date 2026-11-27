@@ -60,7 +60,6 @@ beforeEach(async () => {
 afterEach(() => {
   clearRegistry();
   clearToolsetRegistry();
-  vi.unstubAllGlobals();
   vi.restoreAllMocks();
 });
 

@@ -48,13 +48,17 @@ const expectMoved = async (main: string, preview: string, storySort: unknown) =>
   return migrated;
 };
 
-const expectUntouched = async (main: string, preview: string) => {
+const expectUntouched = async (
+  main: string,
+  preview: string,
+  message = 'Cannot automigrate storySort'
+) => {
   const migrated = await migrate(main, preview);
   expect(migrated.failures).toEqual([
     {
       file: mainConfigPath,
       kind: 'main',
-      message: expect.stringContaining('Cannot automigrate storySort'),
+      message: expect.stringContaining(message),
     },
   ]);
   expect(migrated.main).toBe(main);
@@ -393,6 +397,24 @@ describe('story-sort-to-main', () => {
     ],
   ])('leaves both files untouched for a main with %s', async (_name, main) => {
     await expectUntouched(main, legacy);
+  });
+
+  it('moves storySort from a preview that also has unrelated named exports', async () => {
+    const { preview } = await expectMoved(
+      'export default { stories: [] }',
+      `export const loaders = []; export const decorators = []; export default { parameters: { options: { storySort: { order: ['Intro'] } } } }`,
+      { order: ['Intro'] }
+    );
+
+    expect(preview).toContain('export const loaders = []; export const decorators = [];');
+  });
+
+  it('names the preview file when the preview cannot be edited', async () => {
+    await expectUntouched(
+      'export default { stories: [] }',
+      `export const parameters = {}; export default { parameters: { options: { storySort: { order: ['Intro'] } } } }`,
+      `${previewConfigPath} cannot be edited: Cannot edit 'parameters' because the config also exports it by name.`
+    );
   });
 
   it('does not apply again once storySort lives in the main storySorts', async () => {

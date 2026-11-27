@@ -7,6 +7,7 @@ import { logger } from '../../node-logger/index.ts';
 import { executeCommand } from '../utils/command.ts';
 import { JsPackageManager } from './JsPackageManager.ts';
 import { Yarn2Proxy } from './Yarn2Proxy.ts';
+import { STORYBOOK_PACKAGE_PATTERNS } from './util.ts';
 
 vi.mock('storybook/internal/node-logger', () => ({
   prompt: {
@@ -333,7 +334,6 @@ describe('Yarn 2 Proxy', () => {
 
     afterEach(() => {
       vi.useRealTimers();
-      vi.unstubAllGlobals();
     });
 
     it('should update npmPreapprovedPackages in non-interactive mode when npmMinimalAgeGate blocks Storybook', async () => {
@@ -377,13 +377,7 @@ describe('Yarn 2 Proxy', () => {
             'set',
             'npmPreapprovedPackages',
             '--json',
-            JSON.stringify([
-              'storybook',
-              '@storybook/*',
-              'eslint-plugin-storybook',
-              '@chromatic-com/storybook',
-              'chromatic',
-            ]),
+            JSON.stringify(STORYBOOK_PACKAGE_PATTERNS),
           ],
         })
       );
@@ -457,11 +451,7 @@ describe('Yarn 2 Proxy', () => {
             JSON.stringify([
               'foo',
               '@storybook/preset-react-webpack',
-              'storybook',
-              '@storybook/*',
-              'eslint-plugin-storybook',
-              '@chromatic-com/storybook',
-              'chromatic',
+              ...STORYBOOK_PACKAGE_PATTERNS,
             ]),
           ],
         })
@@ -592,8 +582,7 @@ describe('Yarn 2 Proxy', () => {
       mockedExecuteCommand
         .mockResolvedValueOnce({ stdout: '1440\n' } as any)
         .mockResolvedValueOnce({
-          stdout:
-            "[\n  'storybook',\n  '@storybook/*',\n  'eslint-plugin-storybook',\n  '@chromatic-com/storybook',\n  'chromatic',\n]\n",
+          stdout: `[\n${STORYBOOK_PACKAGE_PATTERNS.map((pattern) => `  '${pattern}',`).join('\n')}\n]\n`,
         } as any);
 
       await expect(

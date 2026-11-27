@@ -59,8 +59,8 @@ function createCompilerApiBackend(
    * private copy of lib.d.ts, React's types and node_modules.
    *
    * Needs no cleanup of its own: disposing a LanguageService releases every SourceFile it holds, and
-   * the registry drops an entry once its last reference goes, so a heap-pressure recycle empties it
-   * as a side effect of disposing the projects.
+   * the registry drops an entry once its last reference goes. A heap-pressure recycle therefore
+   * keeps only the files of the projects it rebuilds (`sharesParsedFiles`).
    *
    * `useCaseSensitiveFileNames` defaults to `false`, which would lowercase the registry's path keys
    * on case-sensitive filesystems, so pass the host's value explicitly.
@@ -100,6 +100,7 @@ function createCompilerApiBackend(
         undefined,
         documentRegistry
       ),
+    sharesParsedFiles: true,
     dispose: () => fsFileSnapshots.clear(),
   };
 
@@ -113,12 +114,23 @@ export class ComponentMetaManager extends BaseComponentMetaManager<
   // Shared mtime-cached file snapshots of the compiler API, exposed for tests; the factory clears them.
   readonly fsFileSnapshots: FsFileSnapshots;
 
+  private readonly keepParsedFilesOnRecycle: boolean;
+
   /**
    * `recycleHeapPressureRatio` is the fraction of the V8 heap limit at which the shared program(s)
    * are recycled; the memory regression gate passes `Infinity` to disable recycling and assert the
    * OOM still happens without the fix.
+   *
+   * `keepParsedFilesOnRecycle` is for a manager that serves one request after another, like the
+   * docgen worker. A recycle then keeps the parsed files of the projects the batch used, so the next
+   * request does not parse them again. Without it a recycle frees them, which suits a caller that
+   * extracts everything in one batch and needs the heap for other work afterwards.
    */
-  constructor(typescript: LoadedDocgenTypeScript, recycleHeapPressureRatio?: number) {
+  constructor(
+    typescript: LoadedDocgenTypeScript,
+    recycleHeapPressureRatio?: number,
+    { keepParsedFilesOnRecycle = false }: { keepParsedFilesOnRecycle?: boolean } = {}
+  ) {
     // Adapted from:
     // https://github.com/volarjs/volar.js/blob/882cd56d46a13d272f34e451f495d3d62251969a/packages/kit/lib/createChecker.ts#L83
     const fsFileSnapshots: FsFileSnapshots = new Map();
@@ -135,6 +147,7 @@ export class ComponentMetaManager extends BaseComponentMetaManager<
     });
     super(fileSystem, factory, recycleHeapPressureRatio);
     this.fsFileSnapshots = fsFileSnapshots;
+    this.keepParsedFilesOnRecycle = keepParsedFilesOnRecycle;
   }
 
   /**
@@ -155,7 +168,9 @@ export class ComponentMetaManager extends BaseComponentMetaManager<
       }
     }
 
-    if (this.recycleProjectsIfHeapPressured()) {
+    if (
+      this.recycleProjectsIfHeapPressured(this.keepParsedFilesOnRecycle ? byProject.keys() : [])
+    ) {
       batchFiles?.clear();
     }
   }

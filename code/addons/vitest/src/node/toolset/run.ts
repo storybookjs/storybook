@@ -1,6 +1,11 @@
 import type { ChannelLike } from 'storybook/internal/channels';
 import {
-  filterStoryFiles,
+  type BlockedNetwork,
+  detectBlockedNetwork,
+  formatBlockedNetwork,
+  RERUN_OUTSIDE_SANDBOX,
+} from 'storybook/internal/common';
+import {
   findStoryIds,
   type FoundStory,
   type NotFoundStory,
@@ -60,6 +65,8 @@ export type TriggerTestRunParams = {
   requestEvent: string;
   responseEvent: string;
   storyIds?: string[];
+  fileFilters?: string[];
+  storyFiles?: string[];
   config?: Record<string, unknown>;
   actor: string;
   /** Max wait for a matching response. Defaults to {@link DEFAULT_TEST_RUN_TIMEOUT_MS}. */
@@ -76,6 +83,8 @@ export function triggerTestRun({
   requestEvent,
   responseEvent,
   storyIds,
+  fileFilters,
+  storyFiles,
   config,
   actor,
   timeoutMs = DEFAULT_TEST_RUN_TIMEOUT_MS,
@@ -133,6 +142,8 @@ export function triggerTestRun({
         requestId,
         actor,
         storyIds,
+        fileFilters,
+        storyFiles,
         config,
       });
     } catch (error) {
@@ -141,9 +152,29 @@ export function triggerTestRun({
   });
 }
 
+function blockedRunResult(blocked: BlockedNetwork) {
+  return {
+    status: 'error' as const,
+    error: {
+      message: `The tests did not run: ${formatBlockedNetwork(blocked)}. This is not a problem in the code. ${RERUN_OUTSIDE_SANDBOX}`,
+    },
+  };
+}
+
+// A system that refuses ports stops Vitest before any test runs, which the run reports as an
+// unhandled error, not as a test failure.
+function blockedBeforeAnyTest(result: TestRunResult) {
+  const ran = result.componentTestCount.success + result.componentTestCount.error;
+  return ran === 0
+    ? result.unhandledErrors.map((error) => detectBlockedNetwork(error)).find(Boolean)
+    : undefined;
+}
+
 /** What `stories changed` reports, as far as a test run needs it. */
 export type ChangedStories = {
   storyIds: string[];
+  /** The story files of those stories, as story index import paths. */
+  storyFiles: string[];
   /** Changed files in the config directory, which can affect every story. */
   changedConfigFiles: string[];
   /** Changed files change detection has not caught up with, so their stories may be missing. */
@@ -154,7 +185,7 @@ export type RunStoryTestsParams = {
   channel: TestChannel;
   getIndex: () => Promise<StoryIndex>;
   stories?: StoryInput[];
-  /** Story-file filters, matched the way Vitest matches its file filters. */
+  /** Story-file filters, which Vitest matches as it matches the file filters of `vitest Button`. */
   files?: string[];
   /**
    * Run the stories `stories changed` lists: `true` for the uncommitted changes, or a git ref to
@@ -189,6 +220,7 @@ export async function runStoryTests({
   timeoutMs = DEFAULT_TEST_RUN_TIMEOUT_MS,
 }: RunStoryTestsParams): Promise<TestRunOutput> {
   let storyIds: string[] | undefined;
+  let storyFiles: string[] | undefined;
   let selection: TestRunSelection | undefined;
   const notFoundMessages: string[] = [];
 
@@ -210,16 +242,8 @@ export async function runStoryTests({
     selection = {};
 
     if (filters) {
-      const matched = filterStoryFiles({ index, filters });
-      selection.files = { filters, storyFileCount: matched.storyFiles.length };
-      // Vitest: "No test files found, exiting with code 1", or code 0 with `--changed`, which
-      // turns on `passWithNoTests`. The ref and the story ids below are still checked.
-      if (matched.storyFiles.length === 0 && !changed) {
-        notFoundMessages.push(
-          `No story files found for ${filters.map((file) => `\`${displayPath(file)}\``).join(', ')}.`
-        );
-      }
-      narrow(matched.storyIds);
+      // Vitest matches the filters, so what they match is known after the run.
+      selection.files = { filters };
     }
 
     if (changedStories) {
@@ -230,7 +254,13 @@ export async function runStoryTests({
         pendingFiles,
         ...(since === undefined ? {} : { since }),
       };
-      narrow(changedIds);
+      // Stories asked for by id are narrowed to the changed ones here; otherwise the changed story
+      // files run as they are.
+      if (stories) {
+        narrow(changedIds);
+      } else {
+        storyFiles = changedStories.storyFiles;
+      }
     }
 
     if (stories) {
@@ -250,7 +280,7 @@ export async function runStoryTests({
 
     // Nothing to run. An unknown story id fails the call; `--changed` that finds nothing passes, as
     // Vitest's `--changed` does ("No affected test files found, exiting with code 0").
-    if (candidates?.size === 0) {
+    if (candidates?.size === 0 || storyFiles?.length === 0) {
       return { status: 'no-stories', notFoundMessages, selection };
     }
 
@@ -265,6 +295,8 @@ export async function runStoryTests({
       requestEvent,
       responseEvent,
       storyIds,
+      fileFilters: filters,
+      storyFiles,
       config: { a11y },
       actor,
       timeoutMs,
@@ -279,20 +311,50 @@ export async function runStoryTests({
   }
 
   switch (response.status) {
-    case 'completed':
+    case 'completed': {
       if (!response.result) {
         return {
           status: 'error',
           error: { message: 'Test run completed but no result was returned' },
         };
       }
+      const { result } = response;
+      const blocked = blockedBeforeAnyTest(result);
+      if (blocked) {
+        return blockedRunResult(blocked);
+      }
+      if (selection?.files) {
+        selection.files.storyFileCount = result.matchedFileCount ?? 0;
+        // Vitest: "No test files found, exiting with code 1", or code 0 with `--changed`, which
+        // turns on `passWithNoTests`.
+        if (selection.files.storyFileCount === 0 && !changed) {
+          notFoundMessages.push(
+            `No story files found for ${selection.files.filters.map((file) => `\`${displayPath(file)}\``).join(', ')}.`
+          );
+        }
+      }
+      // A run of story files learns its stories from the files Vitest matched.
+      if (selection && (filters || storyFiles)) {
+        selection.storyCount = result.storyIds?.length;
+        // A matched story file runs, so nothing to run means the filters selected no changed or
+        // requested story. Changed story files that Vitest excludes run nothing, as on next.
+        if (filters && result.storyIds?.length === 0) {
+          return { status: 'no-stories', notFoundMessages, selection };
+        }
+      }
       return {
         status: 'completed',
-        result: response.result,
+        result,
         ...(selection ? { selection } : {}),
         ...(notFoundMessages.length > 0 ? { notFoundMessages } : {}),
       };
-    case 'error':
+    }
+    case 'error': {
+      const blocked =
+        detectBlockedNetwork(response.error) ?? detectBlockedNetwork(response.error?.error);
+      if (blocked) {
+        return blockedRunResult(blocked);
+      }
       return {
         status: 'error',
         error: {
@@ -302,6 +364,7 @@ export async function runStoryTests({
             : {}),
         },
       };
+    }
     case 'cancelled':
       return { status: 'cancelled' };
     default: {

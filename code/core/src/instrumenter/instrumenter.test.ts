@@ -3,8 +3,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { SET_CURRENT_STORY, STORY_RENDER_PHASE_CHANGED } from 'storybook/internal/core-events';
 
-import { global } from '@storybook/global';
-
 import { EVENTS } from './EVENTS.ts';
 import { Instrumenter, isClass } from './instrumenter.ts';
 import { addons } from './preview-api.ts';
@@ -58,14 +56,14 @@ class HTMLElement {
 }
 
 // @ts-expect-error (global scope type conflicts)
-delete global.location;
+delete globalThis.location;
 // @ts-expect-error (global scope type conflicts)
-global.location = { reload: vi.fn() };
+globalThis.location = { reload: vi.fn() };
 // @ts-expect-error (global scope type conflicts)
-global.HTMLElement = HTMLElement;
+globalThis.HTMLElement = HTMLElement;
 
 const storyId = 'kind--story';
-global.window.__STORYBOOK_PREVIEW__ = {
+globalThis.window.__STORYBOOK_PREVIEW__ = {
   selectionStore: { selection: { storyId, viewMode: 'story' } },
 } as any;
 
@@ -80,7 +78,7 @@ const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
 
 beforeEach(async () => {
   vi.useRealTimers();
-  global.window.parent.__STORYBOOK_ADDON_INTERACTIONS_INSTRUMENTER_STATE__ = {};
+  globalThis.window.parent.__STORYBOOK_ADDON_INTERACTIONS_INSTRUMENTER_STATE__ = {};
   mocks.callSpy.mockClear();
   mocks.syncSpy.mockClear();
   mocks.forceRemountSpy.mockClear();
@@ -792,8 +790,8 @@ describe('Instrumenter', () => {
 
   describe('while detached from parent window', () => {
     beforeEach(() => {
-      global.window.parent = {
-        ...global.window.parent,
+      globalThis.window.parent = {
+        ...globalThis.window.parent,
         get __STORYBOOK_ADDON_INTERACTIONS_INSTRUMENTER_STATE__() {
           throw new Error('Blocked');
         },

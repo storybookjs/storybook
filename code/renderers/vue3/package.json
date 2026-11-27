@@ -1,6 +1,6 @@
 {
   "name": "@storybook/vue3",
-  "version": "11.0.0-rc.0",
+  "version": "11.0.0-rc.1",
   "description": "Storybook Vue 3 renderer: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -38,6 +38,7 @@
       "default": "./dist/docgen/index.js"
     },
     "./internal/docgen-worker": "./dist/docgen/docgen-worker.js",
+    "./internal/register-print-hole": "./dist/docs/register-print-hole.js",
     "./package.json": "./package.json",
     "./preset": {
       "types": "./dist/preset.d.ts",
@@ -54,7 +55,6 @@
     "!src/**/*"
   ],
   "dependencies": {
-    "@storybook/global": "^5.0.0",
     "@types/pug": "2.0.10",
     "@vue/compiler-dom": "^3.2.47",
     "@vue/language-core": "^3.2.7",

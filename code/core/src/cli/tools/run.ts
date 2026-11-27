@@ -4,6 +4,7 @@ import { logger } from 'storybook/internal/node-logger';
 import type { ToolsetMethodReport } from '../../shared/open-service/toolset-definition.ts';
 import { parseToolsetMethodId, toCliMethodName } from '../../shared/open-service/toolset-names.ts';
 import type { StorybookInstanceRecord } from './instances/types.ts';
+import { formatRequiresAttach } from './sdk/attach-messages.ts';
 import {
   attachGateReasonFromError,
   createTools,
@@ -246,7 +247,8 @@ export async function runToolsCommand(
       requestedMode: tools.requestedMode,
       attachMode: tools.mode,
       host: tools.host,
-      fallbackNotice: tools.fallbackNotice,
+      // The dev-server intercept states the attach failure itself, and nothing fell back.
+      ...(requiresDevServerIntercept(dispatched) ? {} : { fallbackNotice: tools.fallbackNotice }),
       fallbackReason: tools.fallbackReason,
       ...(tools.storybook.siblings?.length
         ? { multiInstanceNotice: formatMultiInstanceNotice(tools.storybook), multipleMatches: true }
@@ -255,6 +257,10 @@ export async function runToolsCommand(
   } finally {
     await tools.close();
   }
+}
+
+function requiresDevServerIntercept({ outcome }: Pick<ToolsRunResult, 'outcome'>): boolean {
+  return outcome.kind === 'intercept' && outcome.reason === 'requires-dev-server';
 }
 
 async function dispatchTools(
@@ -341,10 +347,16 @@ async function dispatchTools(
   }
 
   if (tools.mode === 'local' && method.requiresDevServer) {
-    const discovery = await (deps.discoverInstance ?? discoverRunningInstance)(invocation.target);
+    const output = tools.attachFailure
+      ? formatRequiresAttach(commandPath, tools.attachFailure)
+      : formatRequiresDevServer(
+          commandPath,
+          await (deps.discoverInstance ?? discoverRunningInstance)(invocation.target),
+          requestedMode
+        );
     return result({
       exitCode: 1,
-      output: formatRequiresDevServer(commandPath, discovery, requestedMode),
+      output,
       outcome: { kind: 'intercept', reason: 'requires-dev-server' },
     });
   }
@@ -428,12 +440,8 @@ function formatRequiresDevServer(
   if (discovery.currentRecord && requestedMode === 'local') {
     return `Found your Storybook running at ${discovery.currentRecord.url}, but \`${commandPath}\` cannot run from a local tools host. Re-run without \`--no-attach\` to attach to that instance.`;
   }
-  if (discovery.currentRecord) {
-    return `Found your Storybook running at ${discovery.currentRecord.url}, but \`${commandPath}\` could not attach to it. Start or restart that Storybook, then re-run this command.`;
-  }
-
   const lines = [
-    `\`${commandPath}\` requires a running Storybook dev server, and none was found for this project. Start it first (for example \`npm run storybook\`), then re-run this command.`,
+    `\`${commandPath}\` requires a running Storybook dev server, and none was found for this project. Start it first with the Storybook script in its \`package.json\`, then re-run this command.`,
   ];
   if (discovery.records.length > 0) {
     const candidates = discovery.records

@@ -517,6 +517,7 @@ export const defineAffectedCheck = (changedFiles: readonly string[]) =>
 
 const LINT_CONFIG = /(^|\/)\.oxlintrc\.json$/;
 const FORMAT_CONFIG = /(^|\/)\.oxfmtrc\.json$/;
+const DOCS_CHECK_INPUTS = /^(docs|scripts\/docs)\//;
 
 /**
  * Run `command` with the changed files under `dir` as arguments, relative to `dir`, because oxlint
@@ -551,7 +552,7 @@ const runOnChangedFiles = (
 /**
  * Format-check and lint only the changed files. Both tools work per file, and the lint rules that
  * read other files are warnings, which `--quiet` drops. A config or global input change checks
- * everything.
+ * everything. A docs or docs checker change also runs `yarn docs:check`.
  */
 export const defineAffectedLintAndFormat = (changedFiles: readonly string[]) => {
   const checkAll = (config: RegExp) =>
@@ -587,6 +588,9 @@ export const defineAffectedLintAndFormat = (changedFiles: readonly string[]) => 
                 'yarn lint:js:cmd --quiet'
               )
             )),
+        ...(checkAll(DOCS_CHECK_INPUTS)
+          ? [{ run: { name: 'Docs check', command: 'yarn docs:check' } }]
+          : []),
         ...workflow.cancelOnFailure(),
       ],
     }),

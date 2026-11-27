@@ -38,11 +38,11 @@ describe('virtual module mapping', () => {
     expect(csfImportPath).toMatch(/^(?:[A-Za-z]:)?[/\\]/);
     expect(csfImportPath).toMatch(/[/\\]dist[/\\]csf[/\\]index\.js$/);
 
-    // The four externalized imports stay bare — webpack externalizes them via
+    // The three externalized imports stay bare — webpack externalizes them via
     // globalsNameReferenceMap, so they inherit the version of the sb-preview globals runtime.
     expect(entry).toContain("from 'storybook/internal/channels';");
     expect(entry).toContain("from 'storybook/internal/core-events';");
-    expect(entry).toContain("from '@storybook/global';");
     expect(entry).toContain("from 'storybook/preview-api';");
+    expect(entry).not.toContain('@storybook/global');
   });
 });

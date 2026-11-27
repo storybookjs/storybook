@@ -8,6 +8,7 @@ import { logging } from '@angular-devkit/core';
 import * as find from 'empathic/find';
 import type webpack from 'webpack';
 
+import type { StandaloneOptions } from '../builders/utils/standalone-options.ts';
 import type { PresetOptions } from './preset-options.ts';
 import { getProjectRoot, resolvePackageDir } from 'storybook/internal/common';
 import { relative } from 'pathe';
@@ -53,6 +54,14 @@ export async function webpackFinal(baseConfig: webpack.Configuration, options: P
       STORYBOOK_ANGULAR_OPTIONS: JSON.stringify({
         experimentalZoneless: builderOptions.experimentalZoneless,
       }),
+      // Define it only when enableProdMode is on: that call already sets
+      // ngDevMode to false at runtime, so the bundler can drop the branches.
+      // https://github.com/angular/angular/blob/main/packages/compiler-cli/private/tooling.ts
+      ...(options.configType === 'PRODUCTION' &&
+      !options.test &&
+      (options as any as StandaloneOptions).enableProdMode
+        ? { ngDevMode: 'false' }
+        : {}),
     })
   );
 

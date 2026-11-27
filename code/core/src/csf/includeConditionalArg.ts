@@ -1,7 +1,7 @@
 /* @ts-expect-error (has no typings) */
 import { isEqual } from '@ngard/tiny-isequal';
 
-import type { Args, Conditional, Globals, InputType } from './story.ts';
+import type { Args, ConditionalFunction, Conditional, Globals, InputType } from './story.ts';
 
 const count = (vals: any[]) => vals.map((v) => typeof v !== 'undefined').filter(Boolean).length;
 
@@ -25,20 +25,23 @@ export const testValue = (cond: Omit<Conditional, 'arg' | 'global'>, value: any)
 };
 
 /**
- * Helper function to include/exclude an arg based on the value of other other args aka "conditional
- * args"
+ * Helper function to include/exclude an arg based on the value of other args aka "conditional
+ * args". Supports both object-based conditions and function-based conditions.
  */
 export const includeConditionalArg = (argType: InputType, args: Args, globals: Globals) => {
   if (!argType.if) {
     return true;
   }
 
+  // Support function-based conditions
+  if (typeof argType.if === 'function') {
+    return (argType.if as ConditionalFunction)(args, globals);
+  }
+
   const { arg, global } = argType.if as any;
   if (count([arg, global]) !== 1) {
     throw new Error(`Invalid conditional value ${JSON.stringify({ arg, global })}`);
   }
-
   const value = arg ? args[arg] : globals[global];
-
   return testValue(argType.if!, value);
 };

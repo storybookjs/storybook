@@ -8,7 +8,7 @@ import {
   supportsAiSetup,
 } from 'storybook/internal/cli';
 import {
-  HandledError,
+  isHandledError,
   PackageManagerName,
   cache,
   executeCommand,
@@ -274,12 +274,18 @@ export async function doInitiate(options: CommandOptions): Promise<
   };
 }
 
-const handleCommandFailure = async (logFilePath: string | boolean | undefined): Promise<never> => {
+const handleCommandFailure = async (
+  error: unknown,
+  logFilePath: string | boolean | undefined
+): Promise<never> => {
+  const handled = isHandledError(error);
   const logFile = await logTracker.writeToFile(logFilePath);
-  logger.error('Storybook encountered an error during initialization');
+  if (!handled) {
+    logger.error('Storybook encountered an error during initialization');
+  }
 
   logger.log(`Debug logs are written to: ${logFile}`);
-  logger.outro('Storybook exited with an error');
+  logger.outro(handled ? '' : 'Storybook exited with an error');
   process.exit(1);
 };
 
@@ -293,7 +299,6 @@ export async function initiate(options: CommandOptions): Promise<void> {
     'init',
     {
       cliOptions: options,
-      printError: (err) => !err.handled && logger.error(err),
       // enable telemetry if nothing else specified in env var or CLI options
       fallbackTelemetryState: true,
     },
@@ -302,8 +307,8 @@ export async function initiate(options: CommandOptions): Promise<void> {
       logger.outro('');
       return result;
     }
-  ).catch(() => {
-    return handleCommandFailure(options.logfile);
+  ).catch((error: unknown) => {
+    return handleCommandFailure(error, options.logfile);
   });
 
   // Launch dev server only if --dev was explicitly passed

@@ -4,6 +4,7 @@ import type { PackageJsonWithDepsAndDevDeps } from 'storybook/internal/common';
 import {
   HandledError,
   JsPackageManager,
+  isHandledError,
   getPkgPrNewPackageSpecifier,
   getProjectRoot,
   isPkgPrNewVersionSpecifier,
@@ -736,7 +737,9 @@ export const getProjects = async (
     if (detectedConfigDirs.length === 0) {
       task.stop('No .storybook directory found');
       if (options.yes) {
-        throw new UpgradeStorybookConfigDirNotFoundError();
+        const error = new UpgradeStorybookConfigDirNotFoundError();
+        logger.error(error.message);
+        throw error;
       }
       const configDir = await prompt.text({
         message:
@@ -799,9 +802,7 @@ export const getProjects = async (
       ? { allProjects: validProjects, selectedProjects, unreadProjects: errorProjects.length }
       : undefined;
   } catch (error) {
-    if (
-      !(error instanceof HandledError || error instanceof UpgradeStorybookConfigDirNotFoundError)
-    ) {
+    if (!isHandledError(error)) {
       logger.error('Failed to get projects');
     }
 

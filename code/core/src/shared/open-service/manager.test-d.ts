@@ -10,6 +10,12 @@ describe('typed core getService (manager)', () => {
       .toEqualTypeOf<{
         id: string;
       }>();
+    expectTypeOf(getService('core/story-docs', { internal: true }).queries.storyDocs.get)
+      .parameter(0)
+      .toEqualTypeOf<{
+        id: string;
+        scope: 'all' | 'manifest';
+      }>();
   });
 
   it('falls back to RuntimeService for unknown ids', () => {

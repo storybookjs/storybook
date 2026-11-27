@@ -6,6 +6,8 @@ export interface AutoblockOptions {
   mainConfig: StorybookConfig;
   mainConfigPath: string;
   configDir: string;
+  previewConfigPath?: string;
+  storiesPaths: string[];
 }
 
 export type BlockerCheckResult<T> = T | false;

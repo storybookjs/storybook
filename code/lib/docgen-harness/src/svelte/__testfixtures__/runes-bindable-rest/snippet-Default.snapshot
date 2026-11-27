@@ -1,0 +1,6 @@
+<BindableRest 
+  value="Accepted"
+  checked
+  disabled
+  placeholder="ignored"
+ />

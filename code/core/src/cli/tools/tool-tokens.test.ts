@@ -1,0 +1,169 @@
+import { describe, expect, it } from 'vitest';
+
+import { keepTypedText, parsePort, parseToolsTokens } from './tool-tokens.ts';
+
+describe('parseToolsTokens', () => {
+  it('parses --key value pairs with JSON coercion', () => {
+    const result = parseToolsTokens(['--maxDistance', '2', '--name', 'button']);
+
+    expect(result).toEqual({
+      ok: true,
+      help: false,
+      json: false,
+      output: undefined,
+      attach: undefined,
+      args: { maxDistance: 2, name: 'button' },
+      flagText: { maxDistance: '2', name: 'button' },
+      positionals: [],
+    });
+  });
+
+  it('parses --key=value and bare flags as true', () => {
+    const result = parseToolsTokens(['--id=button-docs', '--withStoryIds']);
+
+    expect(result).toMatchObject({ ok: true, args: { id: 'button-docs', withStoryIds: true } });
+  });
+
+  it('parses JSON values for arrays and objects', () => {
+    const result = parseToolsTokens(['--stories', '[{"storyId":"button--primary"}]']);
+
+    expect(result).toMatchObject({ ok: true, args: { stories: [{ storyId: 'button--primary' }] } });
+  });
+
+  it('merges --input with flags, flags winning', () => {
+    const result = parseToolsTokens(['--input', '{"a":1,"b":1}', '--b', '2']);
+
+    expect(result).toMatchObject({ ok: true, args: { a: 1, b: 2 } });
+  });
+
+  it('accepts the commander-side flag values as defaults, overridden by tokens', () => {
+    const result = parseToolsTokens(['--output', 'later.md'], {
+      input: '{"a":1}',
+      json: true,
+      output: 'early.md',
+    });
+
+    expect(result).toMatchObject({ ok: true, json: true, output: 'later.md', args: { a: 1 } });
+  });
+
+  it('treats --json, --help, --attach, and --no-attach as bare CLI flags, never tool arguments', () => {
+    const result = parseToolsTokens(['--json', '--help', '--attach']);
+
+    expect(result).toMatchObject({ ok: true, json: true, help: true, attach: true, args: {} });
+    expect(parseToolsTokens(['--no-attach'])).toMatchObject({
+      ok: true,
+      attach: false,
+      args: {},
+    });
+  });
+
+  it('consumes -o and --output with a path', () => {
+    expect(parseToolsTokens(['-o', 'out.md'])).toMatchObject({ ok: true, output: 'out.md' });
+    expect(parseToolsTokens(['--output=out.md'])).toMatchObject({ ok: true, output: 'out.md' });
+    expect(parseToolsTokens(['-o'])).toMatchObject({ ok: false });
+    expect(parseToolsTokens(['--output='])).toMatchObject({ ok: false });
+  });
+
+  it('collects bare tokens as positionals, in order, around flags', () => {
+    const result = parseToolsTokens(['a.stories.tsx', '--a11y', 'false', 'b.tsx', '--json']);
+
+    expect(result).toMatchObject({
+      ok: true,
+      json: true,
+      args: { a11y: false },
+      positionals: ['a.stories.tsx', 'b.tsx'],
+    });
+  });
+
+  it('rejects short options after the tool name instead of taking them as files', () => {
+    const result = parseToolsTokens(['-c', '.storybook', 'a.stories.tsx']);
+
+    expect(result).toMatchObject({ ok: false });
+    expect(result.ok === false && result.error).toContain('Unexpected option `-c`');
+  });
+
+  it('takes every token after `--` as a positional, flag-like ones too', () => {
+    expect(parseToolsTokens(['--json', '--', '--weird.tsx', 'b.tsx'])).toMatchObject({
+      ok: true,
+      json: true,
+      args: {},
+      positionals: ['--weird.tsx', 'b.tsx'],
+    });
+  });
+
+  it('rejects invalid --input JSON and non-object --input values', () => {
+    expect(parseToolsTokens(['--input', '{nope'])).toMatchObject({ ok: false });
+    expect(parseToolsTokens(['--input', '[1]'])).toMatchObject({ ok: false });
+    expect(parseToolsTokens(['--input'])).toMatchObject({ ok: false });
+  });
+
+  it('rejects values on the bare flags', () => {
+    expect(parseToolsTokens(['--json=data'])).toMatchObject({ ok: false });
+    expect(parseToolsTokens(['--help=me'])).toMatchObject({ ok: false });
+    expect(parseToolsTokens(['--attach=yes'])).toMatchObject({ ok: false });
+    expect(parseToolsTokens(['--no-attach=yes'])).toMatchObject({ ok: false });
+    expect(parseToolsTokens(['--attach', '--no-attach'])).toMatchObject({ ok: false });
+  });
+});
+
+describe('keepTypedText', () => {
+  const schema = {
+    type: 'object',
+    properties: {
+      since: { type: 'string' },
+      changed: { anyOf: [{ type: 'boolean' }, { type: 'string' }] },
+      files: { type: 'array', items: { type: 'string' } },
+      a11y: { type: 'boolean' },
+      maxDistance: { type: 'number' },
+      stories: { type: 'array', items: { type: 'object' } },
+    },
+  };
+  const args = (tokens: string[]) => {
+    const parsed = parseToolsTokens(tokens);
+    return parsed.ok ? keepTypedText(parsed, schema).args : undefined;
+  };
+
+  it('keeps a value as typed where the argument takes a string, not the JSON type', () => {
+    expect(args(['--since', '1234567'])).toEqual({ since: '1234567' });
+    expect(args(['--changed', '1234e56'])).toEqual({ changed: '1234e56' });
+    expect(args(['--changed=1.0'])).toEqual({ changed: '1.0' });
+    expect(args(['--since', 'null'])).toEqual({ since: 'null' });
+    expect(args(['--files', '2024'])).toEqual({ files: '2024' });
+  });
+
+  it('keeps the JSON value where the argument takes that type', () => {
+    expect(args(['--changed', 'true'])).toEqual({ changed: true });
+    expect(args(['--changed'])).toEqual({ changed: true });
+    expect(args(['--a11y', 'false', '--maxDistance', '2'])).toEqual({
+      a11y: false,
+      maxDistance: 2,
+    });
+    expect(args(['--stories', '[{"storyId":"a"}]', '--files', '["a.tsx"]'])).toEqual({
+      stories: [{ storyId: 'a' }],
+      files: ['a.tsx'],
+    });
+  });
+
+  it('leaves a value that no reading fits to validation, and --input untouched', () => {
+    expect(args(['--a11y', '1'])).toEqual({ a11y: 1 });
+    expect(args(['--input', '{"since":123}'])).toEqual({ since: 123 });
+    expect(args(['--unknown', '5'])).toEqual({ unknown: 5 });
+  });
+});
+
+describe('parsePort', () => {
+  it('returns undefined when no port is provided', () => {
+    expect(parsePort(undefined)).toEqual({ ok: true, port: undefined });
+  });
+
+  it('parses valid port values', () => {
+    expect(parsePort('6006')).toEqual({ ok: true, port: 6006 });
+  });
+
+  it('rejects non-numeric or out-of-range ports', () => {
+    expect(parsePort('abc')).toMatchObject({ ok: false });
+    expect(parsePort('0')).toMatchObject({ ok: false });
+    expect(parsePort('65536')).toMatchObject({ ok: false });
+    expect(parsePort('6006.5')).toMatchObject({ ok: false });
+  });
+});

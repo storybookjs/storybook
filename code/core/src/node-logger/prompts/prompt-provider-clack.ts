@@ -1,10 +1,14 @@
+import type { Writable } from 'node:stream';
+import { stripVTControlCharacters, styleText } from 'node:util';
+
 import * as clack from '@clack/prompts';
 
 import { logTracker } from '../logger/log-tracker.ts';
-import { wrapTextForClackHint } from '../wrap-utils.ts';
+import { getTerminalWidth, protectUrls } from '../wrap-utils.ts';
 import type {
   ConfirmPromptOptions,
   MultiSelectPromptOptions,
+  PromptCancelReason,
   PromptOptions,
   SelectPromptOptions,
   SpinnerInstance,
@@ -15,77 +19,178 @@ import type {
 } from './prompt-provider-base.ts';
 import { PromptProvider } from './prompt-provider-base.ts';
 
-export const getCurrentTaskLog = (): ReturnType<typeof clack.taskLog> | null => {
-  if (globalThis.STORYBOOK_CURRENT_TASK_LOG) {
-    return globalThis.STORYBOOK_CURRENT_TASK_LOG[globalThis.STORYBOOK_CURRENT_TASK_LOG.length - 1];
+/** The open task log, as logger.ts and nested taskLog() calls see it. */
+export type TaskLogSession = {
+  /** Renders a line without tracking it; logger.ts has already tracked its own entries. */
+  message: (text: string) => void;
+  /** Closes the task log; a second call is ignored. */
+  finish: (
+    status: 'success' | 'error',
+    message: string,
+    successOptions?: { showLog?: boolean }
+  ) => void;
+  group: TaskLogInstance['group'];
+};
+
+export const getCurrentTaskLog = (): TaskLogSession | null =>
+  globalThis.STORYBOOK_CURRENT_TASK_LOG_SESSION ?? null;
+
+// Clack counts the terminal rows of a task log line by its length including color codes, and erases
+// that many rows on the next update. Drop the colors of a line whose codes push it onto an extra row,
+// or the erase reaches into the output above the log.
+const formatTaskLogMessage = (message: string) => {
+  const columns = process.stdout.columns || 80;
+  const rows = (length: number) => Math.ceil((length + 3) / columns);
+  return message
+    .split('\n')
+    .map((line) => {
+      const plain = stripVTControlCharacters(line);
+      return rows(line.length) === rows(plain.length) ? line : plain;
+    })
+    .join('\n');
+};
+
+// Clack wraps option lines short of the terminal by the length of its guide bar prefix, color codes
+// included. Fitting a hint link to that width, minus the hint's closing parenthesis, keeps a link
+// that starts its own hint line on that line.
+const getClackOptionLineInset = (): number => `${styleText('cyan', clack.S_BAR)}  `.length;
+
+// One reason→message mapping, shared by the terminal cancel message and PromptAbortedError, so
+// the two cannot drift apart.
+const CANCEL_MESSAGES: Record<PromptCancelReason, string> = {
+  cancel: 'Operation canceled.',
+  'stdin-ended': 'Prompt aborted: stdin ended before an answer was received.',
+};
+
+// Thrown when a prompt is aborted (user cancel or stdin end) and the onCancel handler returns
+// without terminating the process itself, so the abort can never resolve as the prompt's answer.
+class PromptAbortedError extends Error {
+  readonly reason: PromptCancelReason;
+
+  constructor(reason: PromptCancelReason) {
+    super(CANCEL_MESSAGES[reason]);
+    this.name = 'PromptAbortedError';
+    this.reason = reason;
+  }
+}
+
+// Clack never settles a prompt when stdin ends without input (piped runs with stdin closed at
+// EOF, the common CI condition): the promise stays pending and Node exits 0 once the event loop
+// drains, reporting success for an incomplete init. Hand each prompt clack's own signal support
+// instead — an aborted signal settles the prompt as cancelled and releases its readline — driven
+// by stdin ending, so the cancel path exits non-zero rather than reporting success.
+const stdinEndAbort = (): {
+  signal: AbortSignal;
+  isStdinEnded: () => boolean;
+  dispose: () => void;
+} => {
+  const controller = new AbortController();
+  let stdinEnded = process.stdin.readableEnded;
+  const onStdinEnd = () => {
+    stdinEnded = true;
+    controller.abort();
+  };
+  if (stdinEnded) {
+    controller.abort();
   } else {
-    return null;
+    process.stdin.once('end', onStdinEnd);
   }
-};
-
-const setCurrentTaskLog = (taskLog: any) => {
-  globalThis.STORYBOOK_CURRENT_TASK_LOG = [
-    ...(globalThis.STORYBOOK_CURRENT_TASK_LOG || []),
-    taskLog,
-  ];
-};
-
-const clearCurrentTaskLog = () => {
-  if (globalThis.STORYBOOK_CURRENT_TASK_LOG) {
-    globalThis.STORYBOOK_CURRENT_TASK_LOG.pop();
-  }
+  return {
+    signal: controller.signal,
+    isStdinEnded: () => stdinEnded,
+    dispose: () => process.stdin.off('end', onStdinEnd),
+  };
 };
 
 export class ClackPromptProvider extends PromptProvider {
-  private async handleCancel(result: unknown | symbol, promptOptions?: PromptOptions) {
-    if (clack.isCancel(result)) {
-      if (promptOptions?.onCancel) {
-        await promptOptions.onCancel();
-      } else {
-        clack.cancel('Operation canceled.');
-        process.exit(0);
-      }
+  private async handleAbort(
+    result: unknown,
+    promptOptions: PromptOptions | undefined,
+    stdinEnded: boolean
+  ): Promise<void> {
+    // Decide the abort from the prompt result: with the signal design every stdin abort already
+    // settles as clack's cancel symbol, and a stream that pushes data and ends in the same tick
+    // must not turn a real answer into an abort. stdinEnded only picks the reason.
+    if (!clack.isCancel(result)) {
+      return;
     }
+    const reason: PromptCancelReason = stdinEnded ? 'stdin-ended' : 'cancel';
+    if (promptOptions?.onCancel) {
+      await promptOptions.onCancel(reason);
+      // Every current onCancel exits or throws; if one ever returns, still refuse to hand the
+      // aborted prompt's sentinel back as the answer — reject so the CLI exits non-zero.
+      throw new PromptAbortedError(reason);
+    }
+    clack.cancel(CANCEL_MESSAGES[reason]);
+    process.exit(1);
   }
 
   async text(options: TextPromptOptions, promptOptions?: PromptOptions): Promise<string> {
-    const result = await clack.text(options);
-    await this.handleCancel(result, promptOptions);
-    logTracker.addLog('prompt', options.message, { choice: result });
-    return result.toString();
+    const { signal, isStdinEnded, dispose } = stdinEndAbort();
+    try {
+      const result = await clack.text({ ...options, signal });
+      await this.handleAbort(result, promptOptions, isStdinEnded());
+      logTracker.addLog('prompt', options.message, { choice: result });
+      return result.toString();
+    } finally {
+      dispose();
+    }
   }
 
   async confirm(options: ConfirmPromptOptions, promptOptions?: PromptOptions): Promise<boolean> {
-    const result = await clack.confirm({
-      ...options,
-      message: wrapTextForClackHint(options.message, undefined, undefined, 2),
-    });
-    await this.handleCancel(result, promptOptions);
-    logTracker.addLog('prompt', options.message, { choice: result });
-    return Boolean(result);
+    const { signal, isStdinEnded, dispose } = stdinEndAbort();
+    try {
+      const result = await clack.confirm({
+        ...options,
+        message: protectUrls(options.message),
+        signal,
+      });
+      await this.handleAbort(result, promptOptions, isStdinEnded());
+      logTracker.addLog('prompt', options.message, { choice: result });
+      return Boolean(result);
+    } finally {
+      dispose();
+    }
   }
 
   async select<T>(options: SelectPromptOptions<T>, promptOptions?: PromptOptions): Promise<T> {
-    const result = await clack.select<T>({
-      ...options,
-      message: wrapTextForClackHint(options.message, undefined, undefined, 2),
-    });
-    await this.handleCancel(result, promptOptions);
-    logTracker.addLog('prompt', options.message, { choice: result });
-    return result as T;
+    const { signal, isStdinEnded, dispose } = stdinEndAbort();
+    try {
+      const result = await clack.select<T>({
+        ...options,
+        message: protectUrls(options.message),
+        signal,
+      });
+      await this.handleAbort(result, promptOptions, isStdinEnded());
+      logTracker.addLog('prompt', options.message, { choice: result });
+      return result as T;
+    } finally {
+      dispose();
+    }
   }
 
   async multiselect<T>(
     options: MultiSelectPromptOptions<T>,
     promptOptions?: PromptOptions
   ): Promise<T[]> {
-    const result = await clack.multiselect<T>({
-      ...options,
-      required: options.required,
-    });
-    await this.handleCancel(result, promptOptions);
-    logTracker.addLog('prompt', options.message, { choice: result });
-    return result as T[];
+    const maxLineWidth = getTerminalWidth() - getClackOptionLineInset() - 1;
+    const { signal, isStdinEnded, dispose } = stdinEndAbort();
+    try {
+      const result = await clack.multiselect<T>({
+        ...options,
+        options: options.options.map((option) => ({
+          ...option,
+          hint: option.hint ? protectUrls(option.hint, { maxLineWidth }) : undefined,
+        })),
+        required: options.required,
+        signal,
+      });
+      await this.handleAbort(result, promptOptions, isStdinEnded());
+      logTracker.addLog('prompt', options.message, { choice: result });
+      return result as T[];
+    } finally {
+      dispose();
+    }
   }
 
   spinner(options: SpinnerOptions): SpinnerInstance {
@@ -117,52 +222,127 @@ export class ClackPromptProvider extends PromptProvider {
   }
 
   taskLog(options: TaskLogOptions): TaskLogInstance {
-    const isCurrentTaskActive = !!getCurrentTaskLog();
-    const task = getCurrentTaskLog() || clack.taskLog(options);
+    const active = getCurrentTaskLog();
+    const session = active ?? createTaskLogSession(options);
+    const isRoot = !active;
     const taskId = `${options.id}-task`;
     logTracker.addLog('info', `${taskId}-start: ${options.title}`);
 
-    if (!isCurrentTaskActive) {
-      setCurrentTaskLog(task);
-    }
-
     return {
-      message: (message) => {
+      message: (message): void => {
         logTracker.addLog('info', `${taskId}: ${message}`);
-        task.message(message);
+        session.message(message);
       },
-      error: (message) => {
+      error: (message): void => {
         logTracker.addLog('error', `${taskId}-error: ${message}`);
-        task.error(message, { showLog: true });
-        clearCurrentTaskLog();
-      },
-      success: (message, options) => {
-        logTracker.addLog('info', `${taskId}-success: ${message}`);
-        if (!isCurrentTaskActive) {
-          task.success(message, options);
+        // Only the root closes the task; a nested error is shown as a line.
+        if (isRoot) {
+          session.finish('error', message);
+        } else {
+          session.message(message);
         }
-        clearCurrentTaskLog();
       },
-      group(title) {
+      success: (message, successOptions): void => {
+        logTracker.addLog('info', `${taskId}-success: ${message}`);
+        if (isRoot) {
+          session.finish('success', message, successOptions);
+        }
+      },
+      group: (title): ReturnType<TaskLogInstance['group']> => {
         logTracker.addLog('info', `${taskId}-group: ${title}`);
-        const group = task.group(title);
-
-        setCurrentTaskLog(group);
-
-        return {
-          message: (message) => {
-            group.message(message);
-          },
-          success: (message) => {
-            group.success(message);
-            clearCurrentTaskLog();
-          },
-          error: (message) => {
-            group.error(message);
-            clearCurrentTaskLog();
-          },
-        };
+        return session.group(title);
       },
     };
   }
 }
+
+// Clack erases rows before each task log redraw, counting only the lines it wrote itself. A
+// direct stdout write in between (logBox, a prompt) shifts the cursor, so the erase eats it.
+// The task log writes through its own output, so any call to process.stdout.write is an outside
+// write and switches the session to plain clack.log lines. Writes that bypass it (stderr, a child
+// process with inherited stdio) are not detected.
+const createTaskLogSession = (options: TaskLogOptions): TaskLogSession => {
+  // live: Clack redraws in place. plain: an outside write moved the cursor, so no more erasing. closed: finished.
+  let mode: 'live' | 'plain' | 'closed' = 'live';
+  const { output, restore } = interceptStdout(() => {
+    if (mode === 'live') mode = 'plain';
+  });
+  const createTask = (): ReturnType<typeof clack.taskLog> => {
+    try {
+      // A log taller than the terminal is redrawn into the scrollback on every update; the trimmed
+      // lines are retained for a log shown on error.
+      return clack.taskLog({ limit: 10, retainLog: true, ...options, output });
+    } catch (error) {
+      restore();
+      throw error;
+    }
+  };
+  const task = createTask();
+  // Outside live mode, Clack's own task would erase rows it no longer owns, so print plain lines.
+  const render = (kind: 'message' | 'success' | 'error', text: string, live: () => void): void => {
+    if (mode === 'live') {
+      live();
+    } else {
+      clack.log[kind](text);
+    }
+  };
+  const session: TaskLogSession = {
+    message: (text): void =>
+      render('message', text, () => task.message(formatTaskLogMessage(text))),
+    finish: (status, message, successOptions): void => {
+      if (mode === 'closed') {
+        return;
+      }
+      try {
+        // Plain lines cannot replay the retained log: lines trimmed before the outside write are lost.
+        render(status, message, () =>
+          status === 'error'
+            ? task.error(message, { showLog: true })
+            : task.success(message, successOptions)
+        );
+      } finally {
+        mode = 'closed';
+        restore();
+        globalThis.STORYBOOK_CURRENT_TASK_LOG_SESSION = null;
+      }
+    },
+    group: (title): ReturnType<TaskLogInstance['group']> => {
+      const group = task.group(title);
+      return {
+        message: (text): void =>
+          render('message', text, () => group.message(formatTaskLogMessage(text))),
+        success: (message): void => render('success', message, () => group.success(message)),
+        error: (message): void => render('error', message, () => group.error(message)),
+      };
+    },
+  };
+  globalThis.STORYBOOK_CURRENT_TASK_LOG_SESSION = session;
+  return session;
+};
+
+const interceptStdout = (onOutsideWrite: () => void): { output: Writable; restore: () => void } => {
+  const previous = process.stdout.write;
+  const original = previous.bind(process.stdout);
+  // Clack only reads write, columns, and isTTY from the output stream.
+  const output = {
+    write: original,
+    columns: process.stdout.columns,
+    isTTY: process.stdout.isTTY,
+  } as unknown as Writable;
+  const hook = ((...args: Parameters<typeof original>): boolean => {
+    if (args[0].length > 0) {
+      onOutsideWrite();
+    }
+    return original(...args);
+  }) as typeof process.stdout.write;
+  process.stdout.write = hook;
+  return {
+    output,
+    restore: (): void => {
+      // Preserve any stdout patch installed after this session's hook.
+      if (process.stdout.write === hook) {
+        process.stdout.write = previous;
+      }
+    },
+  };
+};

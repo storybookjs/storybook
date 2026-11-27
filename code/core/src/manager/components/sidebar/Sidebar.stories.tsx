@@ -7,8 +7,6 @@ import {
   type StatusesByStoryIdAndTypeId,
 } from 'storybook/internal/types';
 
-import { global } from '@storybook/global';
-
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import type { IndexHash } from 'storybook/manager-api';
@@ -67,9 +65,10 @@ const managerContext: any = (
     getChannel: fn().mockName('api::getChannel'),
     getElements: fn(() => ({})),
     navigate: fn().mockName('api::navigate'),
+    resolveLeafEntry: fn().mockName('api::resolveLeafEntry'),
     selectStory: fn().mockName('api::selectStory'),
-    experimental_setFilter: fn().mockName('api::experimental_setFilter'),
-    experimental_setFilters: fn().mockName('api::experimental_setFilters'),
+    setFilter: fn().mockName('api::setFilter'),
+    setFilters: fn().mockName('api::setFilters'),
     getDocsUrl: () => 'https://storybook.js.org/docs/',
     getIsNavShown: () => true,
     getUrlState: () => ({
@@ -111,7 +110,6 @@ const meta = {
     refId: DEFAULT_REF_ID,
     refs: {},
     allStatuses: {},
-    showCreateStoryButton: true,
     isDevelopment: true,
   },
   decorators: [
@@ -208,30 +206,24 @@ export const Simple: Story = {
 };
 
 export const SimpleInProduction: Story = {
-  args: {
-    showCreateStoryButton: false,
-  },
   beforeEach: () => {
-    const configType = global.CONFIG_TYPE;
-    global.CONFIG_TYPE = 'PRODUCTION';
+    const configType = globalThis.CONFIG_TYPE;
+    globalThis.CONFIG_TYPE = 'PRODUCTION';
     return () => {
-      global.CONFIG_TYPE = configType;
+      globalThis.CONFIG_TYPE = configType;
     };
   },
 };
 
 export const SimpleNoChecklist: Story = {
-  args: {
-    showCreateStoryButton: false,
-  },
   beforeEach: () => {
-    const features = global.FEATURES;
-    global.FEATURES = {
+    const features = globalThis.FEATURES;
+    globalThis.FEATURES = {
       ...features,
       sidebarOnboardingChecklist: false,
     };
     return () => {
-      global.FEATURES = features;
+      globalThis.FEATURES = features;
     };
   },
 };
@@ -528,17 +520,11 @@ export const Bottom: Story = {
  *    the bottom
  */
 export const Scrolled: Story = {
-  parameters: {
-    // we need a very short viewport
-    viewport: {
-      defaultViewport: 'mobile1',
-      defaultOrientation: 'landscape',
-    },
-  },
+  // we need a very short viewport
+  globals: { sb_theme: 'light', viewport: { value: 'mobile1', isRotated: true } },
   args: {
     storyId: 'group-1--child-b1',
   },
-  globals: { sb_theme: 'light' },
   decorators: [
     (StoryFn) => (
       <div style={{ width: '100vw', height: '100vh', position: 'relative' }}>
@@ -564,7 +550,8 @@ export const Scrolled: Story = {
   play: async ({ canvasElement, step }) => {
     await waitForChecklistWidget();
     const canvas = await within(canvasElement);
-    const scrollable = await canvasElement.querySelector('[data-radix-scroll-area-viewport]');
+    // The tree is the scroll container. The sidebar has no outer scroll container.
+    const scrollable = await canvasElement.querySelector('[role="treegrid"]');
     await step('expand component', async () => {
       const componentNode = await canvas.queryAllByText('Child A2')[1];
       await userEvent.click(componentNode);

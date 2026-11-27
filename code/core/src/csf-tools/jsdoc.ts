@@ -1,4 +1,4 @@
-import type { Spec } from 'comment-parser';
+import type { BlockMarkers, Spec } from 'comment-parser';
 import { parse } from 'comment-parser';
 
 /** Compact JSDoc tag map: tag name → list of tag values (e.g. `@example a` → `{ example: ['a'] }`). */
@@ -17,31 +17,53 @@ function groupByTag(specs: Spec[]): Map<string, Spec[]> {
   return groups;
 }
 
+function hasTags(tags: JsDocTagMap | undefined): tags is JsDocTagMap {
+  return !!tags && Object.keys(tags).length > 0;
+}
+
+function mergeTags(
+  docgenJsDocTags: JsDocTagMap | undefined,
+  extractedTags: JsDocTagMap | undefined
+): JsDocTagMap {
+  if (!hasTags(docgenJsDocTags)) {
+    return extractedTags ?? {};
+  }
+  return { ...(extractedTags ?? {}), ...docgenJsDocTags };
+}
+
 /**
  * Splits a bare docblock body (no `/**` markers) into its description and a compact tag map.
  *
- * Shared by the server-side docgen providers so component descriptions and `@summary` / `@import`
- * style tags read the same across renderers.
+ * For docblocks that only exist as raw text — CSF story/meta docblocks and TS-less docgen engines.
+ * When a TS checker and symbol are available, `extractComponentJsDocInfo` in
+ * `core/src/component-meta/jsdoc-info.ts` is the canonical extractor instead; the two differ on
+ * malformed input (this one only treats line-leading `@tags` as tags).
  */
 export function extractJSDocInfo(jsdocComment: string) {
   const lines = jsdocComment.split('\n');
-  const jsDoc = ['/**', ...lines.map((line) => ` * ${line}`), ' */'].join('\n');
+  // The text does not always come from a JS comment. The HTML comment above a Svelte story is one
+  // example, and a line in it can end in `*/`. comment-parser closes the block at the first line that
+  // ends in its end marker, so only the closing line that we add carries it: a line of source text
+  // never ends in a NUL (`\u0000`) followed by `*/`. comment-parser checks the start marker only
+  // before the block opens, so the default is safe.
+  const markers: BlockMarkers = { start: '/**', nostart: '/***', delim: '*', end: '\u0000*/' };
+  const jsDoc = ['/**', ...lines.map((line) => ` * ${line}`), ` ${markers.end}`].join('\n');
 
   // `comment-parser` applies one `spacing` mode to the whole block, so we parse twice on purpose.
   // `preserve` keeps blank lines and line breaks in the block description so multi-paragraph
   // component comments still render as Markdown (matching react-docgen's legacy `__docgenInfo`).
   // `compact` collapses each tag value onto a single line, which is the shape tag consumers and
   // snapshots already expect — using `preserve` for both would change multi-line tag values too.
-  const description = parse(jsDoc, { spacing: 'preserve' })[0].description;
-  const parsed = parse(jsDoc, { spacing: 'compact' });
+  const description = parse(jsDoc, { spacing: 'preserve', markers })[0].description;
+  const parsed = parse(jsDoc, { spacing: 'compact', markers });
 
   return {
     description,
     tags: Object.fromEntries(
       Array.from(groupByTag(parsed[0].tags), ([tag, specs]) => [
         tag,
-        specs.map(
-          (spec) => (spec.type ? `{${spec.type}} ` : '') + `${spec.name} ${spec.description}`
+        specs.map((spec) =>
+          ((spec.type ? `{${spec.type}} ` : '') + `${spec.name} ${spec.description}`).trim()
         ),
       ])
     ) as JsDocTagMap,
@@ -49,10 +71,12 @@ export function extractJSDocInfo(jsdocComment: string) {
 }
 
 /**
- * Resolves the component-level description, summary, and tag map a docgen payload reports.
+ * Resolves the description, summary, and tag map a docgen payload reports.
  *
  * The CSF `meta` docblock wins over the docgen engine's own component description, and an explicit
- * `@describe` / `@desc` tag wins over the block description.
+ * `@describe` / `@desc` tag wins over the block description. Docgen/provider tags win over same
+ * named docblock tags, but a provider that found no tags must not suppress the docblock's own.
+ * `extractStoryJSDocInfo` reuses this for story docblocks, so both resolve tags identically.
  */
 export function extractComponentDescription(
   metaJsDoc: string | undefined,
@@ -61,7 +85,7 @@ export function extractComponentDescription(
 ) {
   const jsdocComment = metaJsDoc || docgenDescription;
   const extracted = jsdocComment ? extractJSDocInfo(jsdocComment) : undefined;
-  const tags = docgenJsDocTags ?? extracted?.tags ?? {};
+  const tags = mergeTags(docgenJsDocTags, extracted?.tags);
   const description = extracted?.description;
 
   return {

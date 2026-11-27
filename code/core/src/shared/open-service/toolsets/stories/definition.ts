@@ -1,22 +1,40 @@
 import type { StoryIndex } from 'storybook/internal/types';
 
-import { resolve as resolvePath } from 'pathe';
 import * as v from 'valibot';
 
-import { OpenServiceMissingOriginError } from '../../../../server-errors.ts';
-import type { ModuleGraphService } from '../../services/module-graph/definition.ts';
-import { defineToolset } from '../../toolset-definition.ts';
+import {
+  OpenServiceGitRefError,
+  OpenServiceMissingOriginError,
+  OpenServiceModuleGraphUnavailableError,
+} from '../../../../server-errors.ts';
+import type {
+  ChangeDetectionReadinessResult,
+  ModuleGraphService,
+} from '../../services/module-graph/definition.ts';
+import { defineToolset, type ToolsetCtx, type ToolsetOutcome } from '../../toolset-definition.ts';
+import { getToolName } from '../../toolset-names.ts';
 import type { StatusesByStoryIdAndTypeId } from '../../../status-store/index.ts';
-import { getChangedStories } from './changed.ts';
-import { findStoriesByComponent } from './find-by-component.ts';
-import { formatChangedStories, formatFindByComponent, formatPreviewStories } from './format.ts';
+import { getChangedStories, getChangedStoriesSince } from './changed.ts';
+import {
+  detectChangedFilesOutsideStories,
+  type GitChanges,
+} from './changed-files-outside-stories.ts';
+import { DEFAULT_MAX_DISTANCE, findStoriesByComponent } from './find-by-component.ts';
+import type { ModuleGraphAccess, ModuleGraphStatus } from './resolve-component-stories.ts';
+import { reasonForStatus } from './resolve-component-stories.ts';
+import {
+  formatChangedStories,
+  formatFindByComponent,
+  formatPreviewStories,
+  previewInstructions,
+} from './format.ts';
 import { previewStories } from './preview-stories.ts';
 import { storyInputArraySchema, storyInputSchema } from './story-input.ts';
 
 const previewSuccessSchema = v.object({
   title: v.string(),
   name: v.string(),
-  previewUrl: v.pipe(v.string(), v.description('Direct URL for the story preview.')),
+  previewUrl: v.pipe(v.string(), v.description('Direct URL to open the story preview.')),
 });
 
 const previewFailureSchema = v.object({
@@ -26,6 +44,10 @@ const previewFailureSchema = v.object({
 
 const previewOutputSchema = v.object({
   stories: v.array(v.union([previewSuccessSchema, previewFailureSchema])),
+  instructions: v.pipe(
+    v.optional(v.string()),
+    v.description('What to do with these preview URLs next. Follow it.')
+  ),
 });
 
 export type PreviewStoriesOutput = v.InferOutput<typeof previewOutputSchema>;
@@ -54,6 +76,24 @@ const changedOutputSchema = v.object({
     affected: v.number(),
   }),
   unreachableFiles: v.array(v.string()),
+  unreachableFilesTruncated: v.boolean(),
+  pendingFiles: v.pipe(
+    v.array(v.string()),
+    v.description(
+      'Changed files that stories render but change detection has not processed yet, so their stories are missing.'
+    )
+  ),
+  unindexedStoryFiles: v.pipe(
+    v.array(v.string()),
+    v.description(
+      'Changed story files that are not in the story index yet, such as one written a moment ago.'
+    )
+  ),
+  changedConfigFiles: v.array(v.string()),
+  since: v.pipe(
+    v.optional(v.string()),
+    v.description('The git ref the changes are listed since, when one was passed.')
+  ),
 });
 
 export type ChangedStoriesOutput = v.InferOutput<typeof changedOutputSchema>;
@@ -66,24 +106,38 @@ const storyMatchSchema = v.object({
   distance: v.pipe(
     v.number(),
     v.description(
-      'Import-graph depth from the story file to the component. 0 = path is a story file; 1 = direct import; 2+ = transitive.'
+      'Import-graph depth from the story file to the component (lower = stronger). 0: the path you passed is itself a story file (self-match). 1: story file directly imports the component. 2+: reached through N hops.'
     )
   ),
 });
+
+const clippedByMaxDistanceSchema = v.pipe(
+  v.object({
+    count: v.number(),
+    distances: v.array(v.number()),
+  }),
+  v.description(
+    'Present only when `maxDistance` filtered out one or more matches. `count` is how many were dropped; `distances` lists the (sorted, distinct) distances those dropped matches sat at — widen `maxDistance` to include them.'
+  )
+);
 
 const findByComponentOutputSchema = v.object({
   results: v.array(
     v.object({
       componentPath: v.string(),
       matches: v.array(storyMatchSchema),
-      clipped: v.optional(
-        v.object({
-          count: v.number(),
-          distances: v.array(v.number()),
-        })
+      clipped: v.optional(clippedByMaxDistanceSchema),
+      pathNotFound: v.pipe(
+        v.optional(v.boolean()),
+        v.description(
+          '`true` when no file exists at the resolved absolute path. Distinguishes a typo from "this component has no stories yet". The agent should re-check the path it sent.'
+        )
       ),
-      pathNotFound: v.optional(v.boolean()),
     })
+  ),
+  maxDistance: v.pipe(
+    v.number(),
+    v.description('The `maxDistance` ceiling this lookup applied, whether passed or defaulted.')
   ),
 });
 
@@ -95,10 +149,23 @@ export type StoryIndexAccess = {
 
 export type StoriesGitAccess = {
   getRepoRoot: () => Promise<string>;
-  getChangedFiles: () => Promise<{
+  /**
+   * The uncommitted changes; with `since`, also what this branch committed since it forked from
+   * that ref. Repo-root-relative paths.
+   */
+  getChangedFiles: (since?: string) => Promise<{
     changed: Set<string>;
     new: Set<string>;
   }>;
+};
+
+export type StorybookDirsAccess = {
+  /** Absolute path of the Storybook config directory. */
+  configDir: string;
+  /** Absolute paths of the configured static directories. */
+  getStaticDirs: () => Promise<string[]>;
+  /** Whether the `stories` globs of the main config match an absolute path. */
+  getStoriesMatcher: () => Promise<(file: string) => boolean>;
 };
 
 export type StoriesChangeStatusesAccess = {
@@ -110,99 +177,369 @@ export type CreateStoriesToolsetOptions = {
   git: StoriesGitAccess;
   /** Change-detection status snapshot; wired by the server host, not imported from core-server. */
   changeStatuses: StoriesChangeStatusesAccess;
+  storybookDirs: StorybookDirsAccess;
 };
+
+const GIT_UNUSABLE_REASONS = new Set(['not a git repository', 'git is not available']);
+
+function emptyChangedStories(): ChangedStoriesOutput {
+  return {
+    stories: [],
+    counts: { new: 0, modified: 0, affected: 0 },
+    unreachableFiles: [],
+    unreachableFilesTruncated: false,
+    pendingFiles: [],
+    unindexedStoryFiles: [],
+    changedConfigFiles: [],
+  };
+}
+
+// How long `stories.changed` waits for the latest edit to reach the index and the statuses.
+const PENDING_SCAN_POLL_MS = 250;
+const PENDING_SCAN_MAX_POLLS = 12;
+
+function reasonForChangeDetectionReadiness(
+  readiness: Exclude<ChangeDetectionReadinessResult, { status: 'ready' }>
+): string {
+  switch (readiness.status) {
+    case 'unavailable':
+      return `Storybook change detection is unavailable: ${readiness.reason}.`;
+    case 'error':
+      return `Storybook change detection failed: ${readiness.error.message}`;
+    case 'pending':
+      return 'Storybook change detection has not finished its initial scan.';
+    default: {
+      const exhaustive: never = readiness;
+      throw exhaustive;
+    }
+  }
+}
+
+function isGitUnusableReadiness(readiness: ChangeDetectionReadinessResult): boolean {
+  return readiness.status === 'unavailable' && GIT_UNUSABLE_REASONS.has(readiness.reason);
+}
+
+function describePreview(ctx: ToolsetCtx): string {
+  // No "include the URLs in your final response" and no "when available" hedge: both let agents
+  // end a browse request or an asked-for review at preview links.
+  return `Use this tool to get Storybook preview URLs while iterating on a specific story, or when the user asks for a direct link to one.
+Do not end browse requests or a review that was asked for with these links — create a curated review with ${getToolName(ctx)('review.create')} instead (passing changedFiles: [] when no code changed) and link that.`;
+}
+
+function describeChanged(ctx: ToolsetCtx): string {
+  return `Get Storybook stories marked as new, modified, or related. Returns story metadata only (no URLs).
+
+By default the result covers the uncommitted changes. Pass since with a git ref, such as the branch this one forked from, to also cover what is committed since then.
+
+The result reflects the cumulative working-tree diff, not just your latest edit — after multiple edits in one session, a non-empty result may cover an earlier sub-change and miss your most recent one. Check that every file you touched is represented; for any that isn't, find its consumer components and pass their paths to ${getToolName(ctx)('stories.findByComponent')} instead. The response surfaces this gap with a "coverage sanity check" hint when it detects unreachable working-tree files.`;
+}
+
+function describeFindByComponent(ctx: ToolsetCtx): string {
+  const ref = getToolName(ctx);
+
+  return `Map component source files to the stories that render them, returning grounded storyId values from the live Storybook index; hand these to ${ref('stories.preview')} or ${ref('review.create')} instead of guessing. When the result says a component has no stories found, it has none yet: say so, never fabricate IDs.
+
+Use it whenever you need story IDs: files you just edited, a feature/domain/topic the user named, a query like "all consumers of X", or a review of a UI change. First resolve the input to absolute component file paths yourself (grep / Glob / find, code reading); this tool starts there. Shared infrastructure (theme or design token, util, hook, CSS module) is not a component: grep for its consumers and pass their paths. If the symbol is one of a related group (sibling tokens, neighboring exports), widen to the whole group; a too-narrow grep silently drops stories. For "I just edited X", try ${ref('stories.changed')} first; for any touched file missing from its response, treat it as shared infrastructure and pass its consumers here.
+
+Results are sorted by distance (0 = the path is itself a story file, 1 = direct importer, 2+ = transitive; lower = stronger). Shared primitives are usually consumed through wrappers, so distance 1 is often empty; the default maxDistance: ${DEFAULT_MAX_DISTANCE} keeps the cascade visible while capping noise from wide decorators. Raise it for recall, lower it for precision. For ${ref('review.create')}, the distance buckets map onto the visual cascade (component → direct importers → page context), one collection per layer. Among a component's stories at one distance, prefer the variant whose name signals it renders the changed surface.
+
+Only IDs returned by discovery tools resolve: never derive them from file names, feature names, titles (authors can override them) or memory.
+
+Needs a dev server builder with change detection (e.g. Vite); otherwise returns a typed error.`;
+}
+
+function moduleGraphAccessFromCtx(
+  ctx: ToolsetCtx,
+  moduleGraph: ModuleGraphService = ctx.getService<ModuleGraphService>('core/module-graph', {
+    internal: true,
+  })
+): ModuleGraphAccess {
+  return {
+    queries: {
+      status: {
+        loaded: () => moduleGraph.queries.status.loaded(undefined) as Promise<ModuleGraphStatus>,
+      },
+      storiesForFiles: {
+        loaded: (files) => moduleGraph.commands.storiesForFiles(files),
+      },
+    },
+  };
+}
+
+/** Looks each file up in the graph once, however often it is asked for. */
+function withLookupCache(moduleGraph: ModuleGraphAccess): ModuleGraphAccess {
+  type Hits = Awaited<
+    ReturnType<ModuleGraphAccess['queries']['storiesForFiles']['loaded']>
+  >[number];
+  const cache = new Map<string, Promise<Hits>>();
+  return {
+    queries: {
+      ...moduleGraph.queries,
+      storiesForFiles: {
+        loaded: ({ files }) => {
+          const missing = [...new Set(files)].filter((file) => !cache.has(file));
+          if (missing.length > 0) {
+            const lookup = moduleGraph.queries.storiesForFiles.loaded({ files: missing });
+            missing.forEach((file, position) =>
+              cache.set(
+                file,
+                lookup.then((hits) => hits[position])
+              )
+            );
+          }
+          return Promise.all(files.map((file) => cache.get(file)!));
+        },
+      },
+    },
+  };
+}
 
 /** Creates the public stories API with request-local access to Storybook runtime dependencies. */
 export function createStoriesToolset({
   storyIndex,
   git,
   changeStatuses,
+  storybookDirs,
 }: CreateStoriesToolsetOptions) {
   return defineToolset({
     id: 'stories',
     description: 'Story discovery, change detection, and preview URL generation.',
     methods: {
       preview: {
-        schema: v.object({
+        input: v.strictObject({
           stories: v.pipe(
             storyInputArraySchema,
-            v.description('Stories to preview. Prefer { storyId } when available.')
+            v.description(
+              `Stories to preview.
+Prefer { storyId } when you don't already have story file context, since this avoids filesystem discovery.
+Use { storyId } when IDs were discovered from documentation tools.
+Use { absoluteStoryPath + exportName } only when you're already working in a specific .stories.* file and already have that context.`
+            )
           ),
         }),
-        description: 'Resolves story selectors to preview URLs.',
-        handler: async (input, ctx) => {
-          const origin = ctx.origin;
-          if (!origin) {
+        output: previewOutputSchema,
+        title: 'Get story preview URLs',
+        // Preview URLs only work when they point at a live origin.
+        requiresDevServer: true,
+        description: describePreview,
+        handler: async (input, ctx): Promise<ToolsetOutcome<PreviewStoriesOutput, never>> => {
+          if (!ctx.origin) {
             throw new OpenServiceMissingOriginError({
               toolsetId: 'stories',
               methodName: 'preview',
             });
           }
-          const data = previewStories({
-            origin,
+          const { stories } = previewStories({
+            origin: ctx.origin,
             index: await storyIndex.getIndex(),
             stories: input.stories,
           });
-          return ctx.format === 'json' ? data : formatPreviewStories(data);
+          const data = {
+            stories,
+            instructions: previewInstructions(stories, ctx),
+          };
+
+          return {
+            ok: true,
+            data,
+            markdown: formatPreviewStories(data),
+            telemetry: {
+              payload: {
+                inputStoryCount: input.stories.length,
+                outputStoryCount: data.stories.length,
+              },
+            },
+          };
         },
       },
       changed: {
-        schema: v.object({}),
-        description:
-          'Returns new, modified, and related stories from change detection, plus unreachable working-tree files.',
-        handler: async (input, ctx) => {
-          const moduleGraph = ctx.getService<ModuleGraphService>('core/module-graph', {
+        input: v.strictObject({
+          since: v.optional(
+            v.pipe(
+              v.string(),
+              v.minLength(1),
+              v.description(
+                'A git ref: a branch, tag or commit. Lists the stories for what this branch committed since it forked from that ref, plus the uncommitted changes. Leave it out for the uncommitted changes only.'
+              )
+            )
+          ),
+        }),
+        title: 'Get changed stories metadata',
+        description: describeChanged,
+        handler: async ({ since }, ctx): Promise<ToolsetOutcome<ChangedStoriesOutput, never>> => {
+          const graphService = ctx.getService<ModuleGraphService>('core/module-graph', {
             internal: true,
           });
-          const [statuses, index, changedFiles, repoRoot] = await Promise.all([
-            Promise.resolve(changeStatuses.getAll()),
-            storyIndex.getIndex(),
-            git.getChangedFiles(),
-            git.getRepoRoot(),
-          ]);
-          const files = [...new Set([...changedFiles.changed, ...changedFiles.new])].map((file) =>
-            resolvePath(repoRoot, file)
-          );
-          let unreachableFiles: string[] = [];
-          const status = await moduleGraph.queries.status.loaded(undefined);
-          if (status.value === 'ready') {
-            const storiesForFiles = await moduleGraph.queries.storiesForFiles.loaded({ files });
-            unreachableFiles = files.filter(
-              (_file, fileIndex) => storiesForFiles[fileIndex]?.length === 0
-            );
+          const moduleGraph = moduleGraphAccessFromCtx(ctx, graphService);
+          // Same readiness gate as findByComponent: an empty status store is not "no changes", so
+          // fail before reading statuses when the graph has not settled.
+          const graphStatus = await moduleGraph.queries.status.loaded(undefined);
+          if (graphStatus.value !== 'ready') {
+            throw new OpenServiceModuleGraphUnavailableError({
+              reason: reasonForStatus(graphStatus),
+            });
           }
-          const data = {
-            ...getChangedStories({ statuses, index }),
-            unreachableFiles,
+
+          // Without git there are no changes to list.
+          const noChanges = (): ToolsetOutcome<ChangedStoriesOutput, never> => {
+            const data = emptyChangedStories();
+            return {
+              ok: true,
+              data,
+              markdown: formatChangedStories(data, ctx),
+              telemetry: {
+                payload: {
+                  storyCount: 0,
+                  newStoryCount: 0,
+                  modifiedStoryCount: 0,
+                  affectedStoryCount: 0,
+                },
+              },
+            };
           };
-          return ctx.format === 'json' ? data : formatChangedStories(data);
+
+          // The statuses of change detection cover the uncommitted changes only. With a ref, the
+          // stories are computed here from git and the graph; change detection is not involved.
+          let changesSince: GitChanges | undefined;
+          if (since === undefined) {
+            const changeDetection =
+              await graphService.queries.changeDetectionReadiness.loaded(undefined);
+            if (changeDetection.status !== 'ready') {
+              if (isGitUnusableReadiness(changeDetection)) {
+                return noChanges();
+              }
+              throw new OpenServiceModuleGraphUnavailableError({
+                reason: reasonForChangeDetectionReadiness(changeDetection),
+              });
+            }
+          } else {
+            try {
+              const [changedFiles, repoRoot] = await Promise.all([
+                git.getChangedFiles(since),
+                git.getRepoRoot(),
+              ]);
+              changesSince = { changedFiles, repoRoot };
+            } catch (error) {
+              // Without a ref, no git means no changes to list. A ref that cannot be compared is
+              // not "nothing changed".
+              if (error instanceof Error && GIT_UNUSABLE_REASONS.has(error.message)) {
+                throw new OpenServiceGitRefError({ ref: since, reason: 'no-git' });
+              }
+              throw error;
+            }
+          }
+
+          // Files outside the story graph are why an empty or partial result can still be wrong,
+          // so they are part of the answer rather than a separate lookup.
+          const read = async () => {
+            // With a ref, the notes and the statuses ask the graph about the same files.
+            const graph = changesSince ? withLookupCache(moduleGraph) : moduleGraph;
+            const { reachableFiles, ...filesOutsideStories } =
+              await detectChangedFilesOutsideStories({
+                git,
+                moduleGraph: graph,
+                storybookDirs,
+                changes: changesSince,
+              });
+            const index = await storyIndex.getIndex();
+            const changed = changesSince
+              ? await getChangedStoriesSince({ ...changesSince, moduleGraph: graph, index })
+              : getChangedStories({ statuses: await changeStatuses.getAll(), index });
+            return { changed, filesOutsideStories, reachableFiles };
+          };
+          // A new story file reaches the index, and an edit the statuses, only after a debounced
+          // scan: wait for it rather than answer from the state before the edit.
+          const isPending = ({ changed, filesOutsideStories, reachableFiles }: typeof result) =>
+            filesOutsideStories.unindexedStoryFiles.length > 0 ||
+            (changed.stories.length === 0 && reachableFiles.length > 0);
+          let result = await read();
+          for (let poll = 0; isPending(result) && poll < PENDING_SCAN_MAX_POLLS; poll++) {
+            await new Promise((resolve) => setTimeout(resolve, PENDING_SCAN_POLL_MS));
+            result = await read();
+          }
+          const { changed, filesOutsideStories, reachableFiles } = result;
+
+          const data = {
+            ...changed,
+            ...filesOutsideStories,
+            pendingFiles: changed.stories.length === 0 ? reachableFiles : [],
+            ...(since === undefined ? {} : { since }),
+          };
+
+          return {
+            ok: true,
+            data,
+            markdown: formatChangedStories(data, ctx),
+            telemetry: {
+              payload: {
+                storyCount: data.stories.length,
+                newStoryCount: data.counts.new,
+                modifiedStoryCount: data.counts.modified,
+                affectedStoryCount: data.counts.affected,
+                ...(since === undefined ? {} : { since: true }),
+              },
+            },
+          };
         },
       },
       findByComponent: {
-        schema: v.object({
+        input: v.strictObject({
           componentPaths: v.pipe(
             v.array(v.string()),
             v.minLength(1),
-            v.description('Component file paths (absolute preferred).')
+            v.description(
+              `Absolute paths to component source files (e.g. "/repo/src/Button.tsx").
+Pass the components you actually want stories for — typically files you just read, edited, or that the user mentioned.
+Relative paths are also accepted and resolved against the Storybook working directory, but absolute paths are preferred for unambiguous results.
+Story files (\`*.stories.*\`) are accepted too: they appear at distance 0 as self-matches, plus any reverse-graph hits (other stories that import them).`
+            )
           ),
           maxDistance: v.pipe(
             v.optional(v.pipe(v.number(), v.minValue(1), v.integer())),
-            v.description('Maximum import-graph distance to include. Defaults to 3.')
+            v.description(
+              `Ceiling on the import depth to include in results. Must be a positive integer.
+- 1: only stories that directly import the component.
+- 2+: also include stories that reach the component through N hops.
+Defaults to ${DEFAULT_MAX_DISTANCE}; raise it to widen recall, lower it to tighten precision. Shared components (Button, Icon, …) accumulate noisy indirect matches at distance ≥ 3, so the default cap protects against runaway results.`
+            )
           ),
         }),
-        description: 'Finds stories that import the given component paths via the module graph.',
-        handler: async (input, ctx) => {
-          const moduleGraph = ctx.getService<ModuleGraphService>('core/module-graph', {
-            internal: true,
-          });
-          const index = await storyIndex.getIndex();
-          const data = await findStoriesByComponent({
+        output: findByComponentOutputSchema,
+        title: 'Get stories for component files',
+        description: describeFindByComponent,
+        handler: async (input, ctx): Promise<ToolsetOutcome<FindByComponentOutput, never>> => {
+          const maxDistance = input.maxDistance ?? DEFAULT_MAX_DISTANCE;
+          const lookup = await findStoriesByComponent({
             componentPaths: input.componentPaths,
-            maxDistance: input.maxDistance,
-            index,
-            moduleGraph,
+            maxDistance,
+            index: await storyIndex.getIndex(),
+            moduleGraph: moduleGraphAccessFromCtx(ctx),
           });
-          return ctx.format === 'json' ? data : formatFindByComponent(data);
+
+          if (!lookup.available) {
+            throw new OpenServiceModuleGraphUnavailableError({ reason: lookup.reason });
+          }
+
+          const unmatchedCount = lookup.results.filter(
+            (result) => !result.pathNotFound && result.matches.length === 0
+          ).length;
+          const data: FindByComponentOutput = { results: lookup.results, maxDistance };
+          return {
+            ok: true,
+            data,
+            markdown: formatFindByComponent(data),
+            telemetry: {
+              payload: {
+                componentCount: input.componentPaths.length,
+                matchedComponentCount: input.componentPaths.length - unmatchedCount,
+                totalMatchCount: lookup.results.reduce(
+                  (total, result) => total + result.matches.length,
+                  0
+                ),
+                maxDistance,
+              },
+            },
+          };
         },
       },
     },

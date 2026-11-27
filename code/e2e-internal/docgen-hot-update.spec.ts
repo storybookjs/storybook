@@ -20,8 +20,6 @@ const hotUpdatePropSource = `
   ${hotUpdatePropName}?: 'before' | 'after';
 `;
 
-// Start the internal dev server with STORYBOOK_EXPERIMENTAL_DOCGEN_SERVER=true before running this
-// spec. CI sets that env var in the internal Storybook e2e job.
 let originalButtonSource: string | undefined;
 
 async function restoreFile(path: string, contents: string) {
@@ -73,9 +71,9 @@ test.describe('docgen open service hot updates', () => {
             Boolean(
               (
                 globalThis as {
-                  FEATURES?: { experimentalDocgenServer?: boolean };
+                  FEATURES?: { docgenServer?: boolean };
                 }
-              ).FEATURES?.experimentalDocgenServer
+              ).FEATURES?.docgenServer
             )
           ),
         { timeout: PREVIEW_STORY_TIMEOUT }

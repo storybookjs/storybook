@@ -1,0 +1,12 @@
+## Props
+
+```
+export type CallbacksProps = {
+  /** Click callback. */
+  onclick?: (event: MouseEvent) => void;
+  /** Change callback. */
+  onchange?: (value: string) => void;
+  /** Number formatter. */
+  format?: (n: number) => string = function;
+}
+```

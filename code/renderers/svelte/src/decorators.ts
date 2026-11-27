@@ -47,7 +47,8 @@ function prepareStory(
 
   let preparedStory;
 
-  if (!story || Object.keys(story).length === 0) {
+  // A Svelte 5 component is a function, which has no keys of its own.
+  if (!story || (typeof story === 'object' && Object.keys(story).length === 0)) {
     // story is empty or an empty object, use the component from the context
     preparedStory = {
       Component: context.component,
@@ -75,8 +76,7 @@ function prepareStory(
     };
   }
 
-  // no innerStory means this is the last story in the decorator chain, so it should create events from argTypes
-  return { ...preparedStory, argTypes: context.argTypes };
+  return preparedStory;
 }
 
 export function decorateStory(storyFn: any, decorators: any[]) {

@@ -13,7 +13,7 @@ import { FailedIcon, PassedIcon } from '@storybook/icons';
 
 import { dequal as deepEqual } from 'dequal';
 import { addons, experimental_requestResponse, getService, types } from 'storybook/manager-api';
-import { color } from 'storybook/theming';
+import { color } from 'storybook/theming/emotion';
 
 import { ControlsPanel } from './components/ControlsPanel.tsx';
 import { Title } from './components/Title.tsx';
@@ -24,7 +24,7 @@ import { stringifyArgs } from './stringifyArgs.tsx';
 export default addons.register(ADDON_ID, (api) => {
   if (globalThis?.FEATURES?.controls) {
     const channel = addons.getChannel();
-    const docgenService = globalThis.FEATURES?.experimentalDocgenServer
+    const docgenService = globalThis.FEATURES?.docgenServer
       ? getService('core/docgen', { internal: true })
       : undefined;
 

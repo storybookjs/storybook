@@ -1,0 +1,34 @@
+{
+  "argTypes": {
+    "bgColor": {
+      "name": "bgColor",
+      "table": {
+        "category": "inputs",
+        "defaultValue": {},
+        "type": {
+          "summary": "string"
+        }
+      },
+      "type": {
+        "name": "string"
+      }
+    },
+    "word": {
+      "name": "word",
+      "table": {
+        "category": "inputs",
+        "defaultValue": {},
+        "type": {
+          "summary": "string"
+        }
+      },
+      "type": {
+        "name": "string"
+      }
+    }
+  },
+  "id": "stories-frameworks-angular-vite-basics-component-with-on-push-on-push",
+  "jsDocTags": {},
+  "name": "OnPushBoxComponent",
+  "path": "./src/stories/frameworks/angular-vite/basics/component-with-on-push/on-push.stories.ts"
+}

@@ -4,8 +4,6 @@ import { STORY_FINISHED, STORY_PREPARED } from 'storybook/internal/core-events';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { global } from '@storybook/global';
-
 import { ManagerContext } from 'storybook/manager-api';
 import { expect, fn, waitFor, within } from 'storybook/test';
 
@@ -194,10 +192,10 @@ export const ServiceDocgenControlsLoad: Story = {
   args: { docgenService },
   // Build mode (no dev render gate), so docgen loads and merges into the table immediately.
   beforeEach: () => {
-    const original = global.CONFIG_TYPE;
-    global.CONFIG_TYPE = 'PRODUCTION';
+    const original = globalThis.CONFIG_TYPE;
+    globalThis.CONFIG_TYPE = 'PRODUCTION';
     return () => {
-      global.CONFIG_TYPE = original;
+      globalThis.CONFIG_TYPE = original;
     };
   },
   decorators: [
@@ -224,10 +222,10 @@ export const ServiceDocgenWaitsForStoryFinishedInDev: Story = {
     serviceGetDocgen.mockClear();
     serviceGetDocgen.get.mockClear();
     serviceGetDocgen.subscribe.mockClear();
-    const original = global.CONFIG_TYPE;
-    global.CONFIG_TYPE = 'DEVELOPMENT';
+    const original = globalThis.CONFIG_TYPE;
+    globalThis.CONFIG_TYPE = 'DEVELOPMENT';
     return () => {
-      global.CONFIG_TYPE = original;
+      globalThis.CONFIG_TYPE = original;
     };
   },
   decorators: [
@@ -257,10 +255,10 @@ export const ServiceDocgenSkeletonWhileGatedWithoutControls: Story = {
     serviceGetDocgen.mockClear();
     serviceGetDocgen.get.mockClear();
     serviceGetDocgen.subscribe.mockClear();
-    const original = global.CONFIG_TYPE;
-    global.CONFIG_TYPE = 'DEVELOPMENT';
+    const original = globalThis.CONFIG_TYPE;
+    globalThis.CONFIG_TYPE = 'DEVELOPMENT';
     return () => {
-      global.CONFIG_TYPE = original;
+      globalThis.CONFIG_TYPE = original;
     };
   },
   decorators: [
@@ -289,10 +287,10 @@ export const ServiceDocgenLoadsAfterStoryFinishedInDev: Story = {
     serviceGetDocgen.mockClear();
     serviceGetDocgen.get.mockClear();
     serviceGetDocgen.subscribe.mockClear();
-    const original = global.CONFIG_TYPE;
-    global.CONFIG_TYPE = 'DEVELOPMENT';
+    const original = globalThis.CONFIG_TYPE;
+    globalThis.CONFIG_TYPE = 'DEVELOPMENT';
     return () => {
-      global.CONFIG_TYPE = original;
+      globalThis.CONFIG_TYPE = original;
     };
   },
   decorators: [
@@ -315,6 +313,38 @@ export const ServiceDocgenLoadsAfterStoryFinishedInDev: Story = {
 };
 
 /**
+ * Regression test: opening the dev gate must keep the table mounted. The panel used to swap its
+ * annotation-only table for a new docgen-backed one, so every control lost its local state (an open
+ * color picker, a focused input) the moment docgen arrived.
+ */
+export const ServiceDocgenKeepsControlsMountedWhenGateOpens: Story = {
+  args: { docgenService },
+  beforeEach: () => {
+    serviceGetDocgen.mockClear();
+    serviceGetDocgen.get.mockClear();
+    serviceGetDocgen.subscribe.mockClear();
+    const original = globalThis.CONFIG_TYPE;
+    globalThis.CONFIG_TYPE = 'DEVELOPMENT';
+    return () => {
+      globalThis.CONFIG_TYPE = original;
+    };
+  },
+  decorators: [
+    (storyFn) => (
+      <ManagerContext.Provider value={serviceRenderManagerContext}>
+        {storyFn()}
+      </ManagerContext.Provider>
+    ),
+  ],
+  play: async ({ canvas }) => {
+    const rowBeforeDocgen = await canvas.findByText('variant', { selector: 'span' });
+    serviceRenderChannel.emit(STORY_FINISHED, { storyId: serviceStoryData.id });
+    await expect(await canvas.findByRole('radio', { name: 'primary' })).toBeInTheDocument();
+    await expect(canvas.getByText('variant', { selector: 'span' })).toBe(rowBeforeDocgen);
+  },
+};
+
+/**
  * With STORYBOOK_DOCGEN_STORY_PREPARED="true" the dev gate opens earlier, at STORY_PREPARED instead of
  * STORY_FINISHED, so the panel subscribes to docgen as soon as the story module is delivered.
  */
@@ -324,13 +354,13 @@ export const ServiceDocgenLoadsAfterStoryPreparedInDev: Story = {
     serviceGetDocgen.mockClear();
     serviceGetDocgen.get.mockClear();
     serviceGetDocgen.subscribe.mockClear();
-    const originalConfig = global.CONFIG_TYPE;
-    const originalFlag = global.DOCGEN_STORY_PREPARED;
-    global.CONFIG_TYPE = 'DEVELOPMENT';
-    global.DOCGEN_STORY_PREPARED = true;
+    const originalConfig = globalThis.CONFIG_TYPE;
+    const originalFlag = globalThis.DOCGEN_STORY_PREPARED;
+    globalThis.CONFIG_TYPE = 'DEVELOPMENT';
+    globalThis.DOCGEN_STORY_PREPARED = true;
     return () => {
-      global.CONFIG_TYPE = originalConfig;
-      global.DOCGEN_STORY_PREPARED = originalFlag;
+      globalThis.CONFIG_TYPE = originalConfig;
+      globalThis.DOCGEN_STORY_PREPARED = originalFlag;
     };
   },
   decorators: [
@@ -367,10 +397,10 @@ export const ServiceDocgenLoadsImmediatelyInBuild: Story = {
     serviceGetDocgen.mockClear();
     serviceGetDocgen.get.mockClear();
     serviceGetDocgen.subscribe.mockClear();
-    const original = global.CONFIG_TYPE;
-    global.CONFIG_TYPE = 'PRODUCTION';
+    const original = globalThis.CONFIG_TYPE;
+    globalThis.CONFIG_TYPE = 'PRODUCTION';
     return () => {
-      global.CONFIG_TYPE = original;
+      globalThis.CONFIG_TYPE = original;
     };
   },
   decorators: [
@@ -426,10 +456,10 @@ export const SaveBarDoesNotCoverLastControl: Story = {
   // The save bar only renders in development builds; set it for this story and restore after,
   // so the mutation can't leak into other stories.
   beforeEach: () => {
-    const original = global.CONFIG_TYPE;
-    global.CONFIG_TYPE = 'DEVELOPMENT';
+    const original = globalThis.CONFIG_TYPE;
+    globalThis.CONFIG_TYPE = 'DEVELOPMENT';
     return () => {
-      global.CONFIG_TYPE = original;
+      globalThis.CONFIG_TYPE = original;
     };
   },
   decorators: [

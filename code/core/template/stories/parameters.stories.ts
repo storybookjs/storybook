@@ -1,6 +1,4 @@
-import type { PartialStoryFn, PlayFunctionContext, StoryContext } from 'storybook/internal/types';
-
-import { global as globalThis } from '@storybook/global';
+import type { PartialStoryFn, StoryContext } from 'storybook/internal/types';
 
 import { expect, within } from 'storybook/test';
 
@@ -32,7 +30,7 @@ export const Inheritance = {
       a: 'story',
     },
   },
-  play: async ({ canvasElement }: PlayFunctionContext<any>) => {
+  play: async ({ canvasElement }: StoryContext<any>) => {
     const canvas = within(canvasElement);
     await expect(JSON.parse(canvas.getByTestId('pre').innerText)).toEqual({
       projectParameter: 'projectParameter',

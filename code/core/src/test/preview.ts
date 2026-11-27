@@ -86,7 +86,29 @@ const nameSpiesAndWrapActionsInSpies: LoaderFunction = ({ initialArgs }) => {
   traverseArgs(initialArgs);
 };
 
-let patchedFocus = false;
+let focusGuarded = false;
+
+// userEvent.setup() replaces HTMLElement.prototype.focus for the whole page, so every story runs
+// on user-event's focus instead of the browser's. Any change here must keep two goals:
+// 1. Focus-management libraries (react-aria, Zag, Fluent's keyborg, web components) behave as they
+//    do outside Storybook. They read, wrap and reassign `focus` on the prototype and on single
+//    elements, so it stays a plain writable data property. focus.stories.ts tests this.
+// 2. Focusing a node whose iframe was removed does not throw. user-event's focus throws "Could not
+//    determine window of node" there, and inside React's commit phase that freezes the UI (the
+//    Review UI hit this, #35398). Focus means nothing without a window, so it does nothing.
+const guardFocusWithoutBrowsingContext = () => {
+  if (focusGuarded) {
+    return;
+  }
+  const focus = HTMLElement.prototype.focus;
+  HTMLElement.prototype.focus = function (this: HTMLElement, options?: FocusOptions) {
+    if (!this.ownerDocument?.defaultView) {
+      return;
+    }
+    return focus.call(this, options);
+  };
+  focusGuarded = true;
+};
 
 export const enhanceContext: LoaderFunction = async (context) => {
   if (globalThis.HTMLElement && context.canvasElement instanceof globalThis.HTMLElement) {
@@ -94,10 +116,12 @@ export const enhanceContext: LoaderFunction = async (context) => {
   }
 
   try {
-    // userEvent.setup() cannot be called in non browser environment and will attempt to access window.navigator.clipboard
-    // which will throw an error in react native for example.
-    const clipboard = globalThis.window?.navigator?.clipboard;
-    if (clipboard) {
+    // userEvent.setup() needs a DOM, so skip it where there is none, such as React Native.
+    // `navigator.clipboard` does not tell: browsers expose it only in secure contexts.
+    if (globalThis.document && globalThis.HTMLElement) {
+      const { navigator } = globalThis.window;
+      const clipboardDescriptor = Object.getOwnPropertyDescriptor(navigator, 'clipboard');
+
       context.userEvent = instrument(
         { userEvent: uninstrumentedUserEvent.setup() },
         {
@@ -106,65 +130,15 @@ export const enhanceContext: LoaderFunction = async (context) => {
         }
       ).userEvent;
 
-      // Restore original clipboard, which was replaced with a stub by userEvent.setup()
-      Object.defineProperty(globalThis.window.navigator, 'clipboard', {
-        get: () => clipboard,
-        configurable: true,
-      });
-
-      if (!patchedFocus) {
-        const originalFocus = HTMLElement.prototype.focus;
-        let currentFocus = HTMLElement.prototype.focus;
-        const noopFocus = () => {};
-        const focusingElements = new Set<HTMLElement>();
-
-        Object.defineProperties(HTMLElement.prototype, {
-          focus: {
-            configurable: true,
-            set: (newFocus: () => void) => {
-              currentFocus = newFocus;
-            },
-            get() {
-              /*
-               * Focus libraries (react-aria, Zag) read `HTMLElement.prototype.focus` to capture
-               * and wrap it. That invokes this getter with the prototype as `this`, so DOM
-               * brand-checked properties must not be read until the receiver is validated.
-               *
-               * Nodes in a removed iframe have no browsing context; the instrumented focus would
-               * throw during React commit, so those get a no-op instead.
-               *
-               * During reentrancy, return the native method to break loops from wrappers that
-               * call back into focus on the same element synchronously. The marker is cleared on
-               * the next task so it covers the full synchronous call chain.
-               */
-              if (this === HTMLElement.prototype) {
-                return currentFocus;
-              }
-
-              let browsingContext;
-              try {
-                browsingContext = this.ownerDocument?.defaultView;
-              } catch {
-                return currentFocus;
-              }
-              if (!browsingContext) {
-                return noopFocus;
-              }
-
-              if (focusingElements.has(this)) {
-                return originalFocus;
-              }
-
-              focusingElements.add(this);
-              setTimeout(() => focusingElements.delete(this), 0);
-
-              return currentFocus;
-            },
-          },
-        });
-
-        patchedFocus = true;
+      // userEvent.setup() replaces `navigator.clipboard` with a stub. Put back what was there,
+      // so stories keep the browser clipboard, or keep no clipboard in an insecure context.
+      if (clipboardDescriptor) {
+        Object.defineProperty(navigator, 'clipboard', clipboardDescriptor);
+      } else {
+        Reflect.deleteProperty(navigator, 'clipboard');
       }
+
+      guardFocusWithoutBrowsingContext();
     }
   } catch {}
 };

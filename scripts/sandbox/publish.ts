@@ -11,6 +11,10 @@ import { dirname, join, relative } from 'path';
 import { temporaryDirectory } from '../../code/core/src/common/utils/cli.ts';
 import { REPROS_DIRECTORY } from '../utils/constants.ts';
 import { commitAllToGit } from './utils/git.ts';
+import {
+  ensureLockfilePublishRules,
+  sanitizePublishedSandboxes,
+} from './utils/sanitize-published-sandbox.ts';
 import { getTemplatesData, renderTemplate } from './utils/template.ts';
 
 export const logger = console;
@@ -23,7 +27,7 @@ const emptyDir = async (dir: string): Promise<void> => {
 };
 
 interface PublishOptions {
-  remote?: string;
+  remote: string;
   push?: boolean;
   branch?: string;
 }
@@ -70,6 +74,20 @@ const publish = async (options: PublishOptions & { tmpFolder: string }) => {
   logger.log(`🚛 Moving all the repros into the repository`);
   await cp(REPROS_DIRECTORY, tmpFolder, { recursive: true });
 
+  logger.log(`🧼 Sanitizing published sandboxes (after-storybook .yarnrc.yml + install artifacts)`);
+  const sanitizeResult = await sanitizePublishedSandboxes(tmpFolder);
+  logger.log(
+    `🧼 Sanitize summary: stripped ${sanitizeResult.strippedKeyCount} key(s) from ` +
+      `${sanitizeResult.filteredYarnrcCount} .yarnrc.yml file(s); removed ${sanitizeResult.removedPaths} excluded path(s)`
+  );
+
+  const gitignoreUpdated = await ensureLockfilePublishRules(tmpFolder);
+  logger.log(
+    gitignoreUpdated
+      ? `🧼 Added the before-storybook lockfile exception to .gitignore`
+      : `🧼 .gitignore already publishes the before-storybook lockfile`
+  );
+
   await commitAllToGit({ cwd: tmpFolder, branch });
 
   logger.info(`
@@ -97,7 +115,7 @@ const publish = async (options: PublishOptions & { tmpFolder: string }) => {
 
 program
   .description('Create a sandbox from a set of possible templates')
-  .option('--remote <remote>', 'Choose the remote to push the contents to')
+  .requiredOption('--remote <remote>', 'Choose the remote to push the contents to')
   .option('--branch <branch>', 'Choose which branch on the remote')
   .option('--push', 'Whether to push the contents to the remote', false)
   .option('--force-push', 'Whether to force push the changes into the repros repository', false);

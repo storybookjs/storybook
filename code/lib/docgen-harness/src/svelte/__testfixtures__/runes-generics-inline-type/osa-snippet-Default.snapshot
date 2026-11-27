@@ -1,0 +1,14 @@
+<script>
+  import RadioGroup from './RadioGroup.svelte';
+  import { fn } from 'storybook/test';
+</script>
+
+<RadioGroup
+  label="Choice"
+  onchange={fn()}
+  values={[
+      ['a', 'Alpha'],
+      ['b', 'Beta', 'icon'],
+    ]}
+  value="a"
+ />

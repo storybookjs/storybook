@@ -1,18 +1,54 @@
-import { recast } from 'storybook/internal/babel';
-import { storyNameFromExport } from 'storybook/internal/csf';
-import { extractDescription, extractJSDocInfo, loadCsf } from 'storybook/internal/csf-tools';
+import {
+  createMetaComponentResolver,
+  createModuleResolver,
+  extractDeclaredSubcomponents,
+  supportedExtensions,
+} from 'storybook/internal/common';
+import { storyNameFromExport } from 'storybook/internal/csf/csf-utils';
+import {
+  type ESTreeNode,
+  type ImportRef,
+  type StoryReferences,
+  collectImportBindings,
+  createStoryArgsResolver,
+  extractStoryJSDocInfo,
+  loadCsf,
+  unresolvedWarning,
+} from 'storybook/internal/csf-tools';
+
+import type { StoryDoc } from 'storybook/internal/types';
 
 import { getCodeSnippet } from './generateCodeSnippet.ts';
 import {
   type ComponentRef,
   type DocgenEngine,
+  type DocgenTarget,
   type TypescriptOptions,
   getComponents,
 } from './getComponentImports.ts';
-import { extractDeclaredSubcomponents, findExactComponentMatch } from './subcomponents.ts';
+import { findExactComponentMatch } from './subcomponents.ts';
 import { cachedReadTextFileSync } from './utils.ts';
 
 export type ParsedCsf = ReturnType<ReturnType<typeof loadCsf>['parse']>;
+
+// One instance per process: the resolver caches its module resolutions. It tries extensions in the
+// order React's own lookup does, `.js` first as Vite does, so when `ui.js` sits next to `ui.tsx`
+// both pick the same file.
+const resolveMetaComponent = createMetaComponentResolver({
+  reader: {
+    resolver: createModuleResolver({
+      extensions: [...supportedExtensions],
+      extensionAlias: {
+        '.js': ['.js', '.ts', '.tsx'],
+        '.jsx': ['.jsx', '.tsx'],
+        '.mjs': ['.mjs', '.mts'],
+        '.cjs': ['.cjs', '.cts'],
+      },
+      mainFields: ['module', 'main'],
+      tsconfig: 'auto',
+    }),
+  },
+});
 
 /** A declared subcomponent paired with the component ref it resolved to (if any). */
 export interface ResolvedSubcomponent {
@@ -104,37 +140,72 @@ export async function resolveStoryFileComponents(options: {
   const { storyPath, title, typescriptOptions, docgenEngine } = options;
 
   const storyFile = cachedReadTextFileSync(storyPath);
-  const csf = loadCsf(storyFile, { makeTitle: () => title }).parse();
+  const csf = loadCsf(storyFile, { makeTitle: () => title, fileName: storyPath }).parse();
   const componentName = csf._meta?.component;
 
   const declaredSubcomponents = extractDeclaredSubcomponents(csf);
+
+  // The meta's component and subcomponents resolve as in every other renderer, so a name the story
+  // file's import cannot reach, such as a barrel's `export * as UI`, still finds its declaration.
+  // react-component-meta gets no targets: it follows such names through the TypeScript checker.
+  const docgenTargets = new Map<string, DocgenTarget>();
+  const storyImports = collectImportBindings(csf.editor.program);
+  // The name the story file refers to the component by. `parts.Button` after
+  // `const parts = { Button }` is the file's own `Button` import, so the ref, the snippets and the
+  // import lines all use `Button`.
+  const resolveName = (name: string, node?: ESTreeNode) => {
+    const resolved = resolveMetaComponent(csf, storyPath, node);
+    if ('reason' in resolved) {
+      if (resolved.reason === 'missing-export') {
+        docgenTargets.set(name, {
+          missing: `"${resolved.importId}" has no export "${resolved.exportName}", which ${resolved.expression} reads.`,
+        });
+      }
+      return name;
+    }
+    const { localName, importId, importer, path, exportName } = resolved.component;
+    // Core landed on a binding the story file imports itself, through an object the file declares.
+    const throughLocalObject =
+      importer === storyPath &&
+      storyImports.get(localName)?.importId === importId &&
+      !storyImports.has(name.split('.')[0]);
+    const ownName = throughLocalObject ? localName : name;
+    if (importId && path) {
+      docgenTargets.set(ownName, { path, exportName });
+    }
+    return ownName;
+  };
+  const metaComponentName = componentName && resolveName(componentName);
+  const declared = declaredSubcomponents.map((subcomponent) => ({
+    name: subcomponent.name,
+    componentName: resolveName(subcomponent.componentName, subcomponent.node),
+  }));
+
   const allComponents = await getComponents({
-    additionalComponentNames: declaredSubcomponents.map(
-      (subcomponent) => subcomponent.componentName
-    ),
+    additionalComponentNames: [
+      ...(metaComponentName ? [metaComponentName] : []),
+      ...declared.map((subcomponent) => subcomponent.componentName),
+    ],
     csf,
     storyFilePath: storyPath,
     typescriptOptions,
     docgenEngine,
+    docgenTargets: docgenEngine === 'react-component-meta' ? undefined : docgenTargets,
   });
 
-  const component = findMatchingComponent(allComponents, componentName, title);
-  const subcomponents = declaredSubcomponents.map((declared) => ({
-    name: declared.name,
-    component: findExactComponentMatch(allComponents, declared.componentName),
+  const component = findMatchingComponent(allComponents, metaComponentName, title);
+  const subcomponents = declared.map((subcomponent) => ({
+    name: subcomponent.name,
+    component: findExactComponentMatch(allComponents, subcomponent.componentName),
   }));
 
   return { storyPath, storyFile, csf, componentName, allComponents, component, subcomponents };
 }
 
-/** Snippet + metadata for one story, before output-specific shaping. */
-export interface ResolvedStory {
-  id: string;
-  name: string;
-  snippet?: string;
-  description?: string;
-  summary?: string;
-  error?: { name: string; message: string };
+/** Every story's snippet, plus the imports they need beyond the components in the file. */
+export interface ExtractedStorySnippets {
+  stories: StoryDoc[];
+  imports: ImportRef[];
 }
 
 /**
@@ -142,31 +213,51 @@ export interface ResolvedStory {
  *
  * Pass `filterStoryIds` to limit the result to a subset (the manifest generator only emits stories
  * carrying the manifest tag); omit it to include every story in the file (the docgen provider).
+ * Pass `references` to let a story's args resolve names other modules own; without it only the story
+ * file itself is read, and anything it reaches for elsewhere is reported as unresolved.
+ * Pass `withTemplate` to give each story the `template` the preview fills with its changed args.
  */
 export function extractStorySnippets(
   csf: ParsedCsf,
   componentName: string | undefined,
-  filterStoryIds?: ReadonlySet<string>
-): ResolvedStory[] {
-  return Object.entries(csf._stories)
+  filterStoryIds?: ReadonlySet<string>,
+  references?: StoryReferences,
+  withTemplate = false
+): ExtractedStorySnippets {
+  const imports: ImportRef[] = [];
+  const resolver = createStoryArgsResolver(csf, references);
+  const stories = Object.entries(csf._stories)
     .filter(([, story]) => !filterStoryIds || filterStoryIds.has(story.id))
-    .map(([storyExport, story]): ResolvedStory => {
+    .map(([storyExport, story]): StoryDoc => {
       const name = story.name ?? storyNameFromExport(storyExport);
       try {
-        const jsdocComment = extractDescription(csf._storyStatements[storyExport]);
-        const { tags = {}, description } = jsdocComment ? extractJSDocInfo(jsdocComment) : {};
-        const finalDescription = (tags?.describe?.[0] || tags?.desc?.[0]) ?? description;
+        const { description, summary } = extractStoryJSDocInfo(
+          csf._storyStatements[storyExport],
+          csf.editor
+        );
+        const {
+          snippet,
+          template,
+          imports: needs,
+          unresolved,
+        } = getCodeSnippet(csf, storyExport, componentName, resolver);
+        imports.push(...needs);
+        const warning = unresolvedWarning(unresolved);
 
         return {
           id: story.id,
           name,
-          snippet: recast.print(getCodeSnippet(csf, storyExport, componentName)).code,
-          description: finalDescription?.trim(),
-          summary: tags.summary?.[0],
+          snippet,
+          ...(withTemplate && { template }),
+          description,
+          summary,
+          ...(warning ? { warning } : {}),
         };
       } catch (e) {
         const err = e instanceof Error ? e : new Error(String(e));
         return { id: story.id, name, error: { name: err.name, message: err.message } };
       }
     });
+
+  return { stories, imports };
 }

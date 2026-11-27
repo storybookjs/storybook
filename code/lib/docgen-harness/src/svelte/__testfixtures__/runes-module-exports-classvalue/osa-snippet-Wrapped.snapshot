@@ -1,0 +1,7 @@
+<script>
+  import Avatar from './Avatar.svelte';
+</script>
+
+<div class="wrap">
+  <Avatar name="Wrapped" />
+</div>

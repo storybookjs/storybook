@@ -15,7 +15,7 @@ const state = shallowReactive<{ header: any; default: any; footer: any }>({
 const meta = {
   ...ReactiveDecorators.default,
   component: Reactivity,
-  render: (args, { argTypes }) => {
+  render: (args) => {
     state.header = args.header;
     state.default = args.default;
     state.footer = args.footer;

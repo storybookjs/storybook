@@ -1,0 +1,5 @@
+<style>
+  csf-shapes::part(panel) { color: red; }
+  csf-shapes:state(active) { outline: 1px solid; }
+</style>
+<csf-shapes label="Meta" style="--csf-shapes-accent: teal;"></csf-shapes>

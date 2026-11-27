@@ -120,7 +120,6 @@ const managerApi: API = {
 const reviewState: ReviewState = {
   title: 'Manager settings polish',
   description: 'Updated settings views and spacing.',
-  // A minute in the past so the service's staleness grace window has already passed.
   createdAt: new Date().getTime() - 60_000,
   collections: [
     {
@@ -435,7 +434,7 @@ export const PendingUpdateSupersedesStale = meta.story({
     const canvas = within(canvasElement);
 
     await applyReviewState();
-    await reviewService.commands.markStale(undefined);
+    await reviewService.commands.markStale({ changedAt: Date.now() });
     await expect(await canvas.findByText(/Code changes detected/)).toBeInTheDocument();
 
     await reviewService.commands.setReview(updatedReviewState);

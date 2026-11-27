@@ -2,8 +2,6 @@ import React, { type FC, Fragment, useEffect } from 'react';
 
 import type { Channel } from 'storybook/internal/channels';
 
-import { global } from '@storybook/global';
-
 import type { Decorator, Loader, ReactRenderer } from '@storybook/react-vite';
 import { definePreview } from '@storybook/react-vite';
 
@@ -27,15 +25,14 @@ import {
   styled,
   themes,
   useTheme,
-} from 'storybook/theming';
+} from 'storybook/theming/emotion';
 
 import { DocsPageWrapper } from '../addons/docs/src/blocks/components/index.ts';
 import { toHaveLiveRegion } from '../core/src/shared/utils/toHaveLiveRegion.ts';
 import * as templatePreview from '../core/template/stories/preview.ts';
 import '../renderers/react/template/components/index.js';
 import { isChromatic } from './isChromatic.ts';
-
-sb.mock(import('@storybook/global'), { spy: true });
+import * as vitestPreview from './vitest.preview.ts';
 
 // Register custom matchers on storybook/test's expect so play functions can use them
 expect.extend({ toHaveLiveRegion });
@@ -53,8 +50,6 @@ sb.mock(import('uuid'));
 
 import '../core/src/shared/open-service/sync-test/preview.ts';
 
-const { document } = global;
-
 // The internal Storybook's manager stories (sidebar context menu, onboarding guide, …) demonstrate
 // DEVELOPMENT-only UI, so they must render as if in development even though this Storybook is itself
 // built and served statically (`yarn storybook:ui`, Chromatic, Vitest portable stories). In Vitest the
@@ -62,12 +57,16 @@ const { document } = global;
 // The one exception is the open-service static-load E2E, which serves a plain production build to
 // exercise the real static-loading path — there CONFIG_TYPE is PRODUCTION and Chromatic is not driving
 // the browser, so we leave the injected value untouched.
+// This runs as the project's `beforeAll`, after the addons' `beforeAll` hooks, so open services such
+// as `core/docgen` register while CONFIG_TYPE still reflects the build and load their static snapshots.
 // TODO(open-service): #29743 added an unconditional `CONFIG_TYPE = 'DEVELOPMENT'` here with no rationale.
 // Ask Norbert why the internal Storybook needs to force development mode rather than the stories opting
 // in per-story; if it can be removed, this gate should go with it.
-if (isChromatic() || globalThis.CONFIG_TYPE !== 'PRODUCTION') {
-  globalThis.CONFIG_TYPE = 'DEVELOPMENT';
-}
+const renderAsDevelopment = () => {
+  if (isChromatic() || globalThis.CONFIG_TYPE !== 'PRODUCTION') {
+    globalThis.CONFIG_TYPE = 'DEVELOPMENT';
+  }
+};
 
 const ThemeBlock = styled.div<{ side: 'left' | 'right'; layout: string }>(
   {
@@ -362,7 +361,6 @@ const parameters = {
     // Redundant but useful for testing lang parameter propagation in docs.
     lang: 'en-US',
     theme: themes.light,
-    codePanel: true,
     source: {
       transform: async (source) => {
         try {
@@ -433,7 +431,9 @@ export default definePreview({
     addonTest(),
     addonPseudoStates(),
     templatePreview,
+    ...((import.meta as { env?: { VITEST?: unknown } }).env?.VITEST ? [vitestPreview] : []),
   ],
+  beforeAll: renderAsDevelopment,
   decorators,
   loaders,
   tags: ['test', 'vitest'],

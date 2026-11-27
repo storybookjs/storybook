@@ -4,8 +4,7 @@ import type { Meta, StoryFn, StoryObj } from '@storybook/react-vite';
 
 import { action } from 'storybook/actions';
 import { screen } from 'storybook/test';
-import { ThemeProvider, useTheme } from 'storybook/theming';
-import type { Theme } from 'storybook/theming';
+import { type Theme, ThemeProvider, useTheme } from 'storybook/theming/emotion';
 
 import { Heading } from './Heading.tsx';
 
@@ -20,7 +19,7 @@ export default {
   decorators: [
     (storyFn) => <div style={{ padding: '0 20px', maxWidth: '230px' }}>{storyFn()}</div>,
   ],
-} as Meta<typeof Heading>;
+} satisfies Meta<typeof Heading>;
 
 const menuItems = [
   [

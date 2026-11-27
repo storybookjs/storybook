@@ -5,8 +5,6 @@ import { BREAKPOINT } from '../../constants.ts';
 import { useMediaQuery } from '../../hooks/useMedia.tsx';
 
 type LayoutContextType = {
-  isMobileMenuOpen: boolean;
-  setMobileMenuOpen: React.Dispatch<React.SetStateAction<boolean>>;
   isMobileAboutOpen: boolean;
   setMobileAboutOpen: React.Dispatch<React.SetStateAction<boolean>>;
   isMobilePanelOpen: boolean;
@@ -16,8 +14,6 @@ type LayoutContextType = {
 };
 
 const LayoutContext = createContext<LayoutContextType>({
-  isMobileMenuOpen: false,
-  setMobileMenuOpen: () => {},
   isMobileAboutOpen: false,
   setMobileAboutOpen: () => {},
   isMobilePanelOpen: false,
@@ -31,7 +27,6 @@ export const LayoutProvider: FC<
     forceDesktop?: boolean;
   }
 > = ({ children, forceDesktop }) => {
-  const [isMobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isMobileAboutOpen, setMobileAboutOpen] = useState(false);
   const [isMobilePanelOpen, setMobilePanelOpen] = useState(false);
   const isDesktop = forceDesktop ?? useMediaQuery(`(min-width: ${BREAKPOINT}px)`);
@@ -39,8 +34,6 @@ export const LayoutProvider: FC<
 
   const contextValue = useMemo(
     () => ({
-      isMobileMenuOpen,
-      setMobileMenuOpen,
       isMobileAboutOpen,
       setMobileAboutOpen,
       isMobilePanelOpen,
@@ -48,16 +41,7 @@ export const LayoutProvider: FC<
       isDesktop,
       isMobile,
     }),
-    [
-      isMobileMenuOpen,
-      setMobileMenuOpen,
-      isMobileAboutOpen,
-      setMobileAboutOpen,
-      isMobilePanelOpen,
-      setMobilePanelOpen,
-      isDesktop,
-      isMobile,
-    ]
+    [isMobileAboutOpen, isMobilePanelOpen, isDesktop, isMobile]
   );
   return <LayoutContext.Provider value={contextValue}>{children}</LayoutContext.Provider>;
 };

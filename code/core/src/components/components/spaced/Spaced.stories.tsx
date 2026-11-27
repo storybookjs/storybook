@@ -1,7 +1,7 @@
 import type { ComponentProps } from 'react';
 import React from 'react';
 
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/emotion';
 
 import { Spaced } from './Spaced.tsx';
 
@@ -56,9 +56,4 @@ export const Row = {
       <PlaceholderInline color="silver" />
     </div>
   ),
-  argTypes: {
-    col: {
-      defaultValue: 1,
-    },
-  },
 };

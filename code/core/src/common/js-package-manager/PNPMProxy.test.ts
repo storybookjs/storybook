@@ -1,14 +1,23 @@
+import { readFileSync, writeFileSync } from 'node:fs';
+import { dirname, join, resolve } from 'pathe';
+
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { logger, prompt } from 'storybook/internal/node-logger';
 import { MinimumReleaseAgeHandledError } from 'storybook/internal/server-errors';
 
-import { executeCommand } from '../utils/command.ts';
+import * as find from 'empathic/find';
+import { fs as memfs, vol } from 'memfs';
+
+import { executeCommand, executeCommandSync } from '../utils/command.ts';
+import { getProjectRoot } from '../utils/paths.ts';
 import { JsPackageManager } from './JsPackageManager.ts';
 import { PNPMProxy } from './PNPMProxy.ts';
+import { STORYBOOK_PACKAGE_PATTERNS } from './util.ts';
 
 vi.mock('storybook/internal/node-logger', () => ({
   prompt: {
+    executeTask: vi.fn(),
     executeTaskWithSpinner: vi.fn(),
     getPreferredStdio: vi.fn(() => 'inherit'),
     select: vi.fn(),
@@ -22,58 +31,230 @@ vi.mock('storybook/internal/node-logger', () => ({
 }));
 
 vi.mock(import('../utils/command.ts'), { spy: true });
+vi.mock('node:fs', { spy: true });
+vi.mock('empathic/find', { spy: true });
+vi.mock('../utils/paths.ts', { spy: true });
 const mockedExecuteCommand = vi.mocked(executeCommand);
+const mockedExecuteCommandSync = vi.mocked(executeCommandSync);
+
+const mockPnpmVersion = (version: string) => {
+  mockedExecuteCommandSync.mockImplementation((options) => {
+    if (options.command === 'pnpm' && options.args?.[0] === '--version') {
+      return version;
+    }
+    return '';
+  });
+};
 const expectedMinimumReleaseAgeExcludePackages = [
   'react',
   'webpack',
-  'storybook',
-  '@storybook/*',
-  'eslint-plugin-storybook',
-  '@chromatic-com/storybook',
+  ...STORYBOOK_PACKAGE_PATTERNS,
 ];
 
 describe('PNPM Proxy', () => {
   let pnpmProxy: PNPMProxy;
 
+  const PROJECT_DIR = '/project';
+  const WORKSPACE_YAML = `${PROJECT_DIR}/pnpm-workspace.yaml`;
+  const workspaceYaml = () => vol.toJSON()[WORKSPACE_YAML];
+
+  const useMemfsProject = (
+    proxy: PNPMProxy,
+    packageJson: Record<string, unknown> = {},
+    projectRoot = PROJECT_DIR
+  ) => {
+    vi.mocked(getProjectRoot).mockReturnValue(projectRoot);
+    vi.mocked(find.up).mockImplementation((name, options) => {
+      for (let dir = options?.cwd ?? projectRoot; ; dir = dirname(dir)) {
+        const file = join(dir, name);
+        if (vol.existsSync(file)) {
+          return file;
+        }
+        if (dir === options?.last || dir === dirname(dir)) {
+          return undefined;
+        }
+      }
+    });
+    vi.spyOn(proxy, 'primaryPackageJson', 'get').mockReturnValue({
+      operationDir: projectRoot,
+      packageJson: { dependencies: {}, devDependencies: {}, peerDependencies: {}, ...packageJson },
+    } as any);
+  };
+
   beforeEach(() => {
+    vi.mocked(readFileSync).mockReset();
+    vi.mocked(writeFileSync).mockReset();
+    mockPnpmVersion('11.18.0');
     pnpmProxy = new PNPMProxy();
+    vol.reset();
+    vol.mkdirSync(PROJECT_DIR, { recursive: true });
+    vi.mocked(readFileSync).mockImplementation(memfs.readFileSync as typeof readFileSync);
+    vi.mocked(writeFileSync).mockImplementation(memfs.writeFileSync as typeof writeFileSync);
+    useMemfsProject(pnpmProxy);
     JsPackageManager.clearLatestVersionCache();
     vi.spyOn(pnpmProxy, 'writePackageJson').mockImplementation(vi.fn());
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
   });
 
   it('type should be pnpm', () => {
     expect(pnpmProxy.type).toEqual('pnpm');
   });
 
+  describe('installed packages in a workspace whose root declares storybook', () => {
+    const CHILD_DIR = `${PROJECT_DIR}/packages/child`;
+
+    beforeEach(() => {
+      JsPackageManager.installedVersionCache.clear();
+      vol.fromJSON({
+        [`${PROJECT_DIR}/node_modules/vitest/package.json`]: JSON.stringify({
+          name: '@voidzero-dev/vite-plus-test',
+          version: '0.1.16',
+          bundledVersions: { vitest: '4.1.2' },
+        }),
+        [`${CHILD_DIR}/node_modules/vitest/package.json`]: JSON.stringify({
+          name: 'vitest',
+          version: '5.0.5',
+        }),
+      });
+      // `empathic/find` reads the real file system, so this walks the memfs tree the same way.
+      vi.mocked(find.up).mockImplementation((name, { cwd = PROJECT_DIR, last } = {}) => {
+        for (let dir = cwd; ; dir = dirname(dir)) {
+          const candidate = join(dir, name);
+          if (vol.existsSync(candidate)) {
+            return candidate;
+          }
+          if (dir === last || dir === dirname(dir)) {
+            return undefined;
+          }
+        }
+      });
+    });
+
+    it('reads a package from the given directory before its parents', async () => {
+      await expect(pnpmProxy.getModulePackageJSON('vitest', CHILD_DIR)).resolves.toMatchObject({
+        name: 'vitest',
+        version: '5.0.5',
+      });
+    });
+
+    it('reads a package from the directory that declares storybook by default', async () => {
+      await expect(pnpmProxy.getModulePackageJSON('vitest')).resolves.toMatchObject({
+        name: '@voidzero-dev/vite-plus-test',
+        version: '0.1.16',
+      });
+    });
+
+    it('reports the version installed in the Storybook project over a root alias', async () => {
+      const childProxy = new PNPMProxy({ configDir: `${CHILD_DIR}/.storybook` });
+      vi.spyOn(childProxy, 'primaryPackageJson', 'get').mockReturnValue({
+        operationDir: PROJECT_DIR,
+        packageJson: { dependencies: {}, devDependencies: { storybook: '11.0.0' } },
+      } as any);
+      childProxy.findInstallations = vi.fn().mockResolvedValue({
+        dependencies: { vitest: [{ version: '5.0.5', location: '' }] },
+        duplicatedDependencies: {},
+        infoCommand: '',
+        dedupeCommand: '',
+      });
+
+      await expect(childProxy.getInstalledVersion('vitest')).resolves.toBe('5.0.5');
+    });
+  });
+
   describe('getRegistryURL', () => {
-    it('uses npm 12-compatible workspace flags', async () => {
+    it('should return the configured registry URL', async () => {
+      const cwd = resolve('fixtures', 'pnpm-project');
+      pnpmProxy = new PNPMProxy({ cwd });
       const executeCommandSpy = mockedExecuteCommand.mockResolvedValueOnce({
-        stdout: 'https://registry.npmjs.org/',
+        stdout: 'https://registry.npmjs.org/\n',
       } as Awaited<ReturnType<typeof executeCommand>>);
 
       await expect(pnpmProxy.getRegistryURL()).resolves.toBe('https://registry.npmjs.org/');
 
       expect(executeCommandSpy).toHaveBeenCalledWith(
         expect.objectContaining({
-          command: 'npm',
-          args: ['config', 'get', 'registry', '--workspaces=false', '--include-workspace-root'],
+          command: 'pnpm',
+          cwd,
+          args: ['config', 'get', 'registry', '--location=project'],
         })
       );
+    });
+
+    it('should return undefined when pnpm reports no registry', async () => {
+      mockedExecuteCommand.mockResolvedValueOnce({
+        stdout: 'undefined\n',
+      } as Awaited<ReturnType<typeof executeCommand>>);
+
+      await expect(pnpmProxy.getRegistryURL()).resolves.toBeUndefined();
     });
   });
 
   describe('installDependencies', () => {
-    it('should run `pnpm install`', async () => {
-      // sort of un-mock part of the function so executeCommand (also mocked) is called
+    it('gives pnpm control of the terminal when a purge confirmation can be shown', async () => {
+      vi.stubGlobal('process', {
+        ...process,
+        stdin: { ...process.stdin, isTTY: true },
+      });
+      vi.mocked(prompt.executeTask).mockImplementationOnce(async (fn) => {
+        if (Array.isArray(fn)) {
+          await Promise.all(fn.map((factory) => factory()));
+        } else {
+          await fn();
+        }
+      });
+      mockedExecuteCommand.mockResolvedValueOnce({
+        stdout: '',
+      } as Awaited<ReturnType<typeof executeCommand>>);
+
+      await pnpmProxy.installDependencies();
+
+      expect(prompt.executeTask).toHaveBeenCalledOnce();
+      expect(mockedExecuteCommand).toHaveBeenCalledWith(
+        expect.objectContaining({
+          command: 'pnpm',
+          args: ['install', '--no-frozen-lockfile'],
+          stdio: 'inherit',
+        })
+      );
+    });
+
+    it.each([
+      ['set', 'true'],
+      ['unset', undefined],
+    ])(
+      'runs `pnpm install --no-frozen-lockfile` when CI is %s, so the lockfile can change',
+      async (_, ci) => {
+        vi.stubEnv('CI', ci);
+        // sort of un-mock part of the function so executeCommand (also mocked) is called
+        vi.mocked(prompt.executeTaskWithSpinner).mockImplementationOnce(async (fn: any) => {
+          await Promise.resolve(fn());
+        });
+        const executeCommandSpy = mockedExecuteCommand.mockResolvedValue({
+          stdout: '7.1.0',
+        } as any);
+
+        await pnpmProxy.installDependencies();
+
+        expect(executeCommandSpy).toHaveBeenCalledWith(
+          expect.objectContaining({ command: 'pnpm', args: ['install', '--no-frozen-lockfile'] })
+        );
+      }
+    );
+
+    it('installs every workspace project from the workspace root', async () => {
       vi.mocked(prompt.executeTaskWithSpinner).mockImplementationOnce(async (fn: any) => {
         await Promise.resolve(fn());
       });
-      const executeCommandSpy = mockedExecuteCommand.mockResolvedValue({ stdout: '7.1.0' } as any);
+      vi.spyOn(pnpmProxy, 'detectWorkspaceRoot').mockReturnValue(true);
+      const executeCommandSpy = mockedExecuteCommand.mockResolvedValue({ stdout: '12.4.2' } as any);
 
       await pnpmProxy.installDependencies();
 
       expect(executeCommandSpy).toHaveBeenCalledWith(
-        expect.objectContaining({ command: 'pnpm', args: ['install'] })
+        expect.objectContaining({ command: 'pnpm', args: ['install', '--no-frozen-lockfile'] })
       );
     });
 
@@ -98,6 +279,273 @@ describe('PNPM Proxy', () => {
     });
   });
 
+  describe('allowBuilds for Storybook build scripts', () => {
+    const unmockSpinner = () => {
+      vi.mocked(prompt.executeTaskWithSpinner).mockImplementationOnce(async (fn: any) => {
+        await Promise.resolve(fn());
+      });
+    };
+    const install = async () => {
+      unmockSpinner();
+      mockedExecuteCommand.mockResolvedValue({ stdout: '' } as any);
+      await pnpmProxy.installDependencies();
+    };
+
+    it('creates pnpm-workspace.yaml next to package.json, allowing esbuild, before `pnpm install`', async () => {
+      await install();
+
+      expect(workspaceYaml()).toBe('allowBuilds:\n  esbuild: true\n');
+      expect(logger.info).toHaveBeenCalledWith(
+        'Approved build scripts for esbuild in /project/pnpm-workspace.yaml'
+      );
+      expect(mockedExecuteCommand).toHaveBeenCalledWith(
+        expect.objectContaining({ command: 'pnpm', args: ['install', '--no-frozen-lockfile'] })
+      );
+    });
+
+    it('also allows esbuild before `pnpm add`', async () => {
+      mockedExecuteCommand.mockResolvedValue({ stdout: '' } as any);
+
+      await pnpmProxy.addDependencies({ type: 'devDependencies' }, ['storybook']);
+
+      expect(workspaceYaml()).toBe('allowBuilds:\n  esbuild: true\n');
+    });
+
+    it('adds esbuild to an existing pnpm-workspace.yaml without disturbing its content', async () => {
+      vol.fromJSON({
+        [WORKSPACE_YAML]:
+          '# my workspace\npackages:\n  - "packages/*"\n\ncatalog:\n  react: ^19 # pinned\n',
+      });
+
+      await install();
+
+      expect(workspaceYaml()).toBe(
+        '# my workspace\npackages:\n  - "packages/*"\n\ncatalog:\n  react: ^19 # pinned\nallowBuilds:\n  esbuild: true\n'
+      );
+    });
+
+    it('allows esbuild at the workspace root when the Storybook project root is a workspace package', async () => {
+      const packageJsonPath = `${PROJECT_DIR}/packages/app/package.json`;
+      vol.fromJSON({
+        [WORKSPACE_YAML]: 'packages:\n  - "packages/*"\n',
+        [packageJsonPath]: '{}',
+      });
+      useMemfsProject(pnpmProxy, {}, dirname(packageJsonPath));
+
+      await install();
+
+      expect(vol.toJSON()).toEqual({
+        [WORKSPACE_YAML]: 'packages:\n  - "packages/*"\nallowBuilds:\n  esbuild: true\n',
+        [packageJsonPath]: '{}',
+      });
+    });
+
+    it('leaves a decision the user already recorded alone', async () => {
+      vol.fromJSON({ [WORKSPACE_YAML]: 'allowBuilds:\n  esbuild: false\n' });
+
+      await install();
+
+      expect(workspaceYaml()).toBe('allowBuilds:\n  esbuild: false\n');
+      expect(writeFileSync).not.toHaveBeenCalled();
+      expect(logger.info).not.toHaveBeenCalled();
+    });
+
+    it('resolves the placeholder pnpm 12 writes for unreviewed packages', async () => {
+      vol.fromJSON({ [WORKSPACE_YAML]: 'allowBuilds:\n  esbuild: set this to true or false\n' });
+
+      await install();
+
+      expect(workspaceYaml()).toBe('allowBuilds:\n  esbuild: true\n');
+    });
+
+    it.each([
+      ['a version-pinned allowBuilds matcher', 'allowBuilds:\n  esbuild@0.25.0 || 0.25.1: false\n'],
+      [
+        'a git-pinned allowBuilds matcher',
+        "allowBuilds:\n  'esbuild@git+ssh://git@example.com/esbuild.git': true\n",
+      ],
+      ['dangerouslyAllowAllBuilds', 'dangerouslyAllowAllBuilds: true\n'],
+    ])('does not add a bare esbuild key when %s already covers it', async (_, yaml) => {
+      vol.fromJSON({ [WORKSPACE_YAML]: yaml });
+
+      await install();
+
+      expect(workspaceYaml()).toBe(yaml);
+      expect(writeFileSync).not.toHaveBeenCalled();
+    });
+
+    it('still adds esbuild when the existing allowBuilds decisions concern other packages', async () => {
+      vol.fromJSON({
+        [WORKSPACE_YAML]: 'allowBuilds:\n  sharp: true\n  esbuild-wasm@1.0.0: true\n',
+      });
+
+      await install();
+
+      expect(workspaceYaml()).toBe(
+        'allowBuilds:\n  sharp: true\n  esbuild-wasm@1.0.0: true\n  esbuild: true\n'
+      );
+    });
+
+    it.each([
+      ['onlyBuiltDependencies names esbuild', 'onlyBuiltDependencies:\n  - esbuild\n'],
+      ['ignoredBuiltDependencies names esbuild', 'ignoredBuiltDependencies:\n  - esbuild\n'],
+      ['neverBuiltDependencies names esbuild', 'neverBuiltDependencies:\n  - esbuild\n'],
+      ['neverBuiltDependencies lists other packages', 'neverBuiltDependencies:\n  - fsevents\n'],
+    ])('still allows esbuild on pnpm 11 when a leftover pnpm 10 %s', async (_, yaml) => {
+      vol.fromJSON({ [WORKSPACE_YAML]: yaml });
+
+      await install();
+
+      expect(workspaceYaml()).toBe(`${yaml}allowBuilds:\n  esbuild: true\n`);
+    });
+
+    it('still allows esbuild on pnpm 11 when a leftover onlyBuiltDependenciesFile names it', async () => {
+      vol.fromJSON({
+        [WORKSPACE_YAML]: 'onlyBuiltDependenciesFile: trusted/allow.json\n',
+        [`${PROJECT_DIR}/trusted/allow.json`]: '["esbuild"]',
+      });
+
+      await install();
+
+      expect(workspaceYaml()).toBe(
+        'onlyBuiltDependenciesFile: trusted/allow.json\nallowBuilds:\n  esbuild: true\n'
+      );
+    });
+
+    it('still allows esbuild on pnpm 11 when only the ignored `pnpm` field of package.json names it', async () => {
+      useMemfsProject(pnpmProxy, { pnpm: { allowBuilds: { esbuild: false } } });
+
+      await install();
+
+      expect(workspaceYaml()).toBe('allowBuilds:\n  esbuild: true\n');
+    });
+
+    describe('on pnpm 10', () => {
+      beforeEach(() => {
+        mockPnpmVersion('10.28.0');
+        pnpmProxy = new PNPMProxy();
+        useMemfsProject(pnpmProxy);
+      });
+
+      it.each([
+        ['onlyBuiltDependencies', 'onlyBuiltDependencies:\n  - esbuild\n'],
+        [
+          'a version-pinned onlyBuiltDependencies entry',
+          'onlyBuiltDependencies:\n  - esbuild@0.28.2\n',
+        ],
+        ['ignoredBuiltDependencies', 'ignoredBuiltDependencies:\n  - esbuild\n'],
+        ['neverBuiltDependencies', 'neverBuiltDependencies:\n  - esbuild\n'],
+      ])('does not add a bare esbuild key when %s already covers it', async (_, yaml) => {
+        vol.fromJSON({ [WORKSPACE_YAML]: yaml });
+
+        await install();
+
+        expect(workspaceYaml()).toBe(yaml);
+        expect(writeFileSync).not.toHaveBeenCalled();
+      });
+
+      it('honors a decision recorded in the `pnpm` field of package.json', async () => {
+        useMemfsProject(pnpmProxy, { pnpm: { ignoredBuiltDependencies: ['esbuild'] } });
+
+        await install();
+
+        expect(workspaceYaml()).toBeUndefined();
+        expect(writeFileSync).not.toHaveBeenCalled();
+      });
+
+      it('honors a trusted-dependencies file named by onlyBuiltDependenciesFile', async () => {
+        vol.fromJSON({
+          [WORKSPACE_YAML]: 'onlyBuiltDependenciesFile: trusted/allow.json\n',
+          [`${PROJECT_DIR}/trusted/allow.json`]: '["@swc/core", "esbuild"]',
+        });
+
+        await install();
+
+        expect(workspaceYaml()).toBe('onlyBuiltDependenciesFile: trusted/allow.json\n');
+        expect(writeFileSync).not.toHaveBeenCalled();
+      });
+
+      it.each([
+        ['neverBuiltDependencies lists another package', 'neverBuiltDependencies:\n  - fsevents\n'],
+        ['neverBuiltDependencies is an empty list', 'neverBuiltDependencies: []\n'],
+      ])('does not write allowBuilds when %s', async (_, yaml) => {
+        vol.fromJSON({ [WORKSPACE_YAML]: yaml });
+
+        await install();
+
+        expect(workspaceYaml()).toBe(yaml);
+        expect(writeFileSync).not.toHaveBeenCalled();
+      });
+
+      it('does not write allowBuilds when package.json neverBuiltDependencies lists other packages', async () => {
+        useMemfsProject(pnpmProxy, { pnpm: { neverBuiltDependencies: ['fsevents'] } });
+
+        await install();
+
+        expect(workspaceYaml()).toBeUndefined();
+        expect(writeFileSync).not.toHaveBeenCalled();
+      });
+
+      it('preserves an explicit esbuild denial', async () => {
+        vol.fromJSON({ [WORKSPACE_YAML]: 'allowBuilds:\n  esbuild: false\n' });
+
+        await install();
+
+        expect(workspaceYaml()).toBe('allowBuilds:\n  esbuild: false\n');
+        expect(writeFileSync).not.toHaveBeenCalled();
+      });
+
+      it('preserves a version-pinned esbuild approval', async () => {
+        vol.fromJSON({ [WORKSPACE_YAML]: 'allowBuilds:\n  esbuild@0.25.0: true\n' });
+
+        await install();
+
+        expect(workspaceYaml()).toBe('allowBuilds:\n  esbuild@0.25.0: true\n');
+        expect(writeFileSync).not.toHaveBeenCalled();
+      });
+
+      it('still allows esbuild when onlyBuiltDependencies lists other packages', async () => {
+        vol.fromJSON({ [WORKSPACE_YAML]: 'onlyBuiltDependencies:\n  - fsevents\n' });
+
+        await install();
+
+        expect(workspaceYaml()).toBe(
+          'onlyBuiltDependencies:\n  - fsevents\nallowBuilds:\n  esbuild: true\n'
+        );
+      });
+    });
+
+    it('still runs the install, with a warning, when pnpm-workspace.yaml is malformed', async () => {
+      vol.fromJSON({ [WORKSPACE_YAML]: 'packages: [\n' });
+
+      await install();
+
+      expect(workspaceYaml()).toBe('packages: [\n');
+      expect(vi.mocked(logger.warn)).toHaveBeenCalledWith(
+        expect.stringContaining('Could not allow build scripts of esbuild')
+      );
+      expect(mockedExecuteCommand).toHaveBeenCalledWith(
+        expect.objectContaining({ command: 'pnpm', args: ['install', '--no-frozen-lockfile'] })
+      );
+    });
+
+    it.each([
+      ['pnpm 9, which runs build scripts without approval', '9.15.9'],
+      ['pnpm < 10.26, which has no allowBuilds setting', '10.25.0'],
+    ])('neither reads nor writes the workspace file on %s', async (_, version) => {
+      mockPnpmVersion(version);
+      pnpmProxy = new PNPMProxy();
+      useMemfsProject(pnpmProxy);
+      vol.fromJSON({ [WORKSPACE_YAML]: 'packages:\n  - "packages/*"\n' });
+
+      await install();
+
+      expect(readFileSync).not.toHaveBeenCalledWith(WORKSPACE_YAML, expect.anything());
+      expect(writeFileSync).not.toHaveBeenCalled();
+      expect(workspaceYaml()).toBe('packages:\n  - "packages/*"\n');
+    });
+  });
+
   describe('runScript', () => {
     it('should execute script `pnpm exec compodoc -- -e json -d .`', () => {
       const executeCommandSpy = mockedExecuteCommand.mockResolvedValue({ stdout: '7.1.0' } as any);
@@ -111,6 +559,66 @@ describe('PNPM Proxy', () => {
         })
       );
     });
+
+    describe('useRemotePkg (dlx)', () => {
+      describe('on pnpm >= 10.2', () => {
+        beforeEach(() => {
+          mockPnpmVersion('10.2.0');
+          pnpmProxy = new PNPMProxy();
+        });
+
+        it('should pass --allow-build=esbuild before dlx', () => {
+          const executeCommandSpy = mockedExecuteCommand.mockResolvedValue({ stdout: '' } as any);
+
+          pnpmProxy.runPackageCommand({
+            args: ['create-storybook@10.5.5', '-y'],
+            useRemotePkg: true,
+          });
+
+          expect(executeCommandSpy).toHaveBeenCalledWith(
+            expect.objectContaining({
+              command: 'pnpm',
+              args: ['--allow-build=esbuild', 'dlx', 'create-storybook@10.5.5', '-y'],
+            })
+          );
+        });
+
+        it('should print --allow-build=esbuild before dlx', () => {
+          expect(pnpmProxy.getRemoteRunCommand(['create-storybook@10.5.5', '-y'])).toBe(
+            'pnpm --allow-build=esbuild dlx create-storybook@10.5.5 -y'
+          );
+        });
+      });
+
+      describe('on pnpm < 10.2', () => {
+        beforeEach(() => {
+          mockPnpmVersion('9.15.9');
+          pnpmProxy = new PNPMProxy();
+        });
+
+        it('should not pass --allow-build on dlx', () => {
+          const executeCommandSpy = mockedExecuteCommand.mockResolvedValue({ stdout: '' } as any);
+
+          pnpmProxy.runPackageCommand({
+            args: ['create-storybook@10.5.5', '-y'],
+            useRemotePkg: true,
+          });
+
+          expect(executeCommandSpy).toHaveBeenCalledWith(
+            expect.objectContaining({
+              command: 'pnpm',
+              args: ['dlx', 'create-storybook@10.5.5', '-y'],
+            })
+          );
+        });
+
+        it('should not print --allow-build on dlx', () => {
+          expect(pnpmProxy.getRemoteRunCommand(['create-storybook@10.5.5', '-y'])).toBe(
+            'pnpm dlx create-storybook@10.5.5 -y'
+          );
+        });
+      });
+    });
   });
 
   describe('addDependencies', () => {
@@ -123,6 +631,20 @@ describe('PNPM Proxy', () => {
         expect.objectContaining({
           command: 'pnpm',
           args: ['add', '-D', 'storybook'],
+        })
+      );
+    });
+
+    it('adds to the root project from the workspace root', async () => {
+      vi.spyOn(pnpmProxy, 'detectWorkspaceRoot').mockReturnValue(true);
+      const executeCommandSpy = mockedExecuteCommand.mockResolvedValue({ stdout: '9.15.9' } as any);
+
+      await pnpmProxy.addDependencies({ type: 'devDependencies' }, ['storybook']);
+
+      expect(executeCommandSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          command: 'pnpm',
+          args: ['add', '-D', 'storybook', '-w'],
         })
       );
     });
@@ -155,6 +677,47 @@ describe('PNPM Proxy', () => {
         expect.any(String)
       );
       expect(executeCommandSpy).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('getPublishedPeerDependencies', () => {
+    const readPeers = () =>
+      pnpmProxy.getPublishedPeerDependencies('@storybook/react-native', '11.0.0-next.0');
+
+    describe('when the version has peer dependencies', () => {
+      beforeEach(() => {
+        mockedExecuteCommand.mockResolvedValue({ stdout: '{"storybook":"^10.5.4"}' } as any);
+      });
+
+      it('reads them through the package manager', async () => {
+        await expect(readPeers()).resolves.toEqual({ storybook: '^10.5.4' });
+        expect(mockedExecuteCommand).toHaveBeenCalledWith(
+          expect.objectContaining({
+            command: 'pnpm',
+            args: ['info', '@storybook/react-native@11.0.0-next.0', 'peerDependencies', '--json'],
+          })
+        );
+      });
+    });
+
+    describe('when the version has no peer dependencies', () => {
+      beforeEach(() => {
+        mockedExecuteCommand.mockResolvedValue({ stdout: '' } as any);
+      });
+
+      it('returns an empty object', async () => {
+        await expect(readPeers()).resolves.toEqual({});
+      });
+    });
+
+    describe('when the lookup fails', () => {
+      beforeEach(() => {
+        mockedExecuteCommand.mockRejectedValue(new Error('401 Unauthorized'));
+      });
+
+      it('returns null', async () => {
+        await expect(readPeers()).resolves.toBeNull();
+      });
     });
   });
 
@@ -408,9 +971,84 @@ describe('PNPM Proxy', () => {
         }
       `);
     });
+
+    it('finds a package that only another package depends on', async () => {
+      mockedExecuteCommand.mockResolvedValue({
+        stdout: JSON.stringify([
+          {
+            devDependencies: {
+              'qa-wrapper': {
+                version: '1.0.0',
+                dependencies: { '@storybook/test-runner': { version: '0.24.0' } },
+              },
+            },
+          },
+        ]),
+      } as any);
+
+      const installations = await pnpmProxy.findInstallations(['@storybook/test-runner']);
+
+      expect(installations?.dependencies).toEqual({
+        '@storybook/test-runner': [{ version: '0.24.0', location: '' }],
+      });
+    });
+
+    it('reports a workspace package next to the registry copy a dependency brings in', async () => {
+      mockedExecuteCommand.mockResolvedValue({
+        stdout: JSON.stringify([
+          {
+            devDependencies: {
+              'has-flag': { version: 'link:packages/has-flag' },
+              'supports-color': {
+                version: '7.2.0',
+                dependencies: { 'has-flag': { version: '4.0.0' } },
+              },
+            },
+          },
+        ]),
+      } as any);
+
+      const installations = await pnpmProxy.findInstallations(['has-flag']);
+
+      expect(installations?.duplicatedDependencies).toEqual({
+        'has-flag': ['link:packages/has-flag', '4.0.0'],
+      });
+    });
+
+    it('lists the version the project depends on before the versions its dependencies bring in', async () => {
+      mockedExecuteCommand.mockResolvedValue({
+        stdout: JSON.stringify([
+          {
+            devDependencies: {
+              chalk: {
+                version: '4.1.2',
+                dependencies: { 'supports-color': { version: '7.2.0' } },
+              },
+              'supports-color': { version: '9.4.0' },
+            },
+          },
+        ]),
+      } as any);
+
+      const installations = await pnpmProxy.findInstallations(['supports-color']);
+
+      expect(installations?.dependencies).toEqual({
+        'supports-color': [
+          { version: '9.4.0', location: '' },
+          { version: '7.2.0', location: '' },
+        ],
+      });
+    });
   });
 
   describe('precheckStorybookPackageInstall', () => {
+    const packageTimeMap = {
+      created: '2025-01-01T00:00:00.000Z',
+      modified: '2026-05-11T12:00:00.000Z',
+      '10.4.0-alpha.17': '2026-05-11T11:59:00.000Z',
+      '10.3.2': '2026-05-01T00:00:00.000Z',
+    };
+
     beforeEach(() => {
       vi.useFakeTimers();
       vi.setSystemTime(new Date('2026-05-11T12:00:00.000Z'));
@@ -424,15 +1062,8 @@ describe('PNPM Proxy', () => {
       mockedExecuteCommand
         .mockResolvedValueOnce({ stdout: '1440\n' } as any)
         .mockResolvedValueOnce({ stdout: JSON.stringify(['react', 'webpack']) } as any)
-        .mockResolvedValueOnce({ stdout: '"2026-05-11T11:59:00.000Z"' } as any)
-        .mockResolvedValueOnce({
-          stdout: JSON.stringify({
-            created: '2025-01-01T00:00:00.000Z',
-            modified: '2026-05-11T12:00:00.000Z',
-            '10.4.0-alpha.17': '2026-05-11T11:59:00.000Z',
-            '10.3.2': '2026-05-01T00:00:00.000Z',
-          }),
-        } as any)
+        .mockResolvedValueOnce({ stdout: JSON.stringify(packageTimeMap) } as any)
+        .mockResolvedValueOnce({ stdout: JSON.stringify(packageTimeMap) } as any)
         .mockResolvedValueOnce({ stdout: JSON.stringify(['react', 'webpack']) } as any)
         .mockResolvedValueOnce({ stdout: '' } as any);
       vi.mocked(prompt.executeTaskWithSpinner).mockImplementationOnce(async (factory: any) => {
@@ -466,15 +1097,8 @@ describe('PNPM Proxy', () => {
         .mockResolvedValueOnce({
           stdout: JSON.stringify(['react', '@storybook/preset-react-webpack']),
         } as any)
-        .mockResolvedValueOnce({ stdout: '"2026-05-11T11:59:00.000Z"' } as any)
-        .mockResolvedValueOnce({
-          stdout: JSON.stringify({
-            created: '2025-01-01T00:00:00.000Z',
-            modified: '2026-05-11T12:00:00.000Z',
-            '10.4.0-alpha.17': '2026-05-11T11:59:00.000Z',
-            '10.3.2': '2026-05-01T00:00:00.000Z',
-          }),
-        } as any)
+        .mockResolvedValueOnce({ stdout: JSON.stringify(packageTimeMap) } as any)
+        .mockResolvedValueOnce({ stdout: JSON.stringify(packageTimeMap) } as any)
         .mockResolvedValueOnce({ stdout: JSON.stringify(['react', 'webpack']) } as any)
         .mockResolvedValueOnce({ stdout: '' } as any);
       vi.mocked(prompt.select).mockResolvedValue('exclude' as never);
@@ -531,15 +1155,8 @@ describe('PNPM Proxy', () => {
       mockedExecuteCommand
         .mockResolvedValueOnce({ stdout: '1440\n' } as any)
         .mockResolvedValueOnce({ stdout: '[]' } as any)
-        .mockResolvedValueOnce({ stdout: '"2026-05-11T11:59:00.000Z"' } as any)
-        .mockResolvedValueOnce({
-          stdout: JSON.stringify({
-            created: '2025-01-01T00:00:00.000Z',
-            modified: '2026-05-11T12:00:00.000Z',
-            '10.4.0-alpha.17': '2026-05-11T11:59:00.000Z',
-            '10.3.2': '2026-05-01T00:00:00.000Z',
-          }),
-        } as any);
+        .mockResolvedValueOnce({ stdout: JSON.stringify([packageTimeMap]) } as any)
+        .mockResolvedValueOnce({ stdout: JSON.stringify([packageTimeMap]) } as any);
       vi.mocked(prompt.select).mockResolvedValue('rerun' as never);
 
       const rerunPromise = pnpmProxy.precheckStorybookPackageInstall({
@@ -561,15 +1178,8 @@ describe('PNPM Proxy', () => {
       mockedExecuteCommand
         .mockResolvedValueOnce({ stdout: '1440\n' } as any)
         .mockResolvedValueOnce({ stdout: '[]' } as any)
-        .mockResolvedValueOnce({ stdout: '"2026-05-11T11:59:00.000Z"' } as any)
-        .mockResolvedValueOnce({
-          stdout: JSON.stringify({
-            created: '2025-01-01T00:00:00.000Z',
-            modified: '2026-05-11T12:00:00.000Z',
-            '10.4.0-alpha.17': '2026-05-11T11:59:00.000Z',
-            '10.3.2': '2026-05-01T00:00:00.000Z',
-          }),
-        } as any);
+        .mockResolvedValueOnce({ stdout: JSON.stringify(packageTimeMap) } as any)
+        .mockResolvedValueOnce({ stdout: JSON.stringify(packageTimeMap) } as any);
       vi.mocked(prompt.select).mockImplementationOnce(async (_options: any, promptOptions: any) => {
         promptOptions.onCancel();
         return 'exclude';
@@ -586,17 +1196,59 @@ describe('PNPM Proxy', () => {
       );
     });
 
+    describe('release-time checks', () => {
+      beforeEach(() => {
+        mockedExecuteCommand
+          .mockResolvedValueOnce({ stdout: '1440\n' } as Awaited<ReturnType<typeof executeCommand>>)
+          .mockResolvedValueOnce({ stdout: '[]' } as Awaited<ReturnType<typeof executeCommand>>)
+          .mockImplementation(
+            ({ args = [] }) =>
+              Promise.resolve({
+                stdout: args.includes('time') ? JSON.stringify(packageTimeMap) : '',
+              }) as ReturnType<typeof executeCommand>
+          );
+        vi.mocked(prompt.select).mockResolvedValue('rerun');
+      });
+
+      it('should prompt before installing a release that is too recent', async () => {
+        await expect(
+          pnpmProxy.precheckStorybookPackageInstall({
+            storybookVersion: '10.4.0-alpha.17',
+            nonInteractive: false,
+            installContext: 'create',
+          })
+        ).rejects.toThrow(MinimumReleaseAgeHandledError);
+
+        expect(prompt.select).toHaveBeenCalled();
+      });
+
+      it.each([
+        { version: '10.3.2', condition: 'already satisfies the minimum release age' },
+        { version: '10.4.0-alpha.18', condition: 'has no release time' },
+      ])(
+        'should continue without prompting when the requested version $condition',
+        async ({ version }) => {
+          await expect(
+            pnpmProxy.precheckStorybookPackageInstall({
+              storybookVersion: version,
+              nonInteractive: false,
+              installContext: 'create',
+            })
+          ).resolves.toBeUndefined();
+
+          expect(prompt.select).not.toHaveBeenCalled();
+          expect(logger.warn).not.toHaveBeenCalled();
+          expect(prompt.executeTaskWithSpinner).not.toHaveBeenCalled();
+        }
+      );
+    });
+
     it('should skip the precheck when Storybook packages are already excluded', async () => {
       const updateSpy = vi.spyOn(pnpmProxy as any, 'updateMinimumReleaseAgeExclude');
       mockedExecuteCommand
         .mockResolvedValueOnce({ stdout: '1440\n' } as any)
         .mockResolvedValueOnce({
-          stdout: JSON.stringify([
-            'storybook',
-            '@storybook/*',
-            'eslint-plugin-storybook',
-            '@chromatic-com/storybook',
-          ]),
+          stdout: JSON.stringify(STORYBOOK_PACKAGE_PATTERNS),
         } as any);
 
       await expect(

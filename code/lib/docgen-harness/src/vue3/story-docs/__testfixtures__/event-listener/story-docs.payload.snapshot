@@ -1,0 +1,39 @@
+{
+  "id": "event-listener",
+  "name": "EventListenerForm",
+  "path": "__PATH__",
+  "stories": {
+    "forms-event-listener--primary": {
+      "description": undefined,
+      "id": "forms-event-listener--primary",
+      "name": "Primary",
+      "snippet": "<script lang="ts" setup>
+import EventListenerForm from './EventListenerForm.vue';
+
+const formatter = (value: string) => value.toUpperCase();
+
+const onSubmit = (payload: { value: string }) => console.log(payload);
+</script>
+
+<template>
+  <EventListenerForm :formatter="formatter" label="Send" @submit="onSubmit">
+    Submit now
+  </EventListenerForm>
+</template>",
+      "summary": undefined,
+      "template": "<script lang="ts" setup>
+import EventListenerForm from './EventListenerForm.vue';
+
+const formatter = ⟦value formatter in="script"⟫(value: string) => value.toUpperCase()⟧;
+
+const onSubmit = ⟦value onSubmit in="script"⟫(payload: { value: string }) => console.log(payload)⟧;
+</script>
+
+<template>
+  <EventListenerForm :formatter="formatter"⟦attr label ~" "⟫ label="Send"⟧ @submit="onSubmit"⟦props * except=["label","default","formatter","onSubmit"] ~" "⟫⟧>
+    Submit now
+  </EventListenerForm>
+</template>",
+    },
+  },
+}

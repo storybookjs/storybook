@@ -1,11 +1,10 @@
 import React, { useRef } from 'react';
 
-import { AbstractToolbar, Button, Separator, TabList } from 'storybook/internal/components';
+import { AbstractToolbar, Button } from 'storybook/internal/components';
 import { Addon_TypesEnum, type Addon_BaseType } from 'storybook/internal/types';
 
 import { CloseIcon, ExpandIcon } from '@storybook/icons';
 
-import type { TabListState } from '@react-stately/tabs';
 import {
   Consumer,
   addons,
@@ -16,7 +15,7 @@ import {
   type LeafEntry,
   type State,
 } from 'storybook/manager-api';
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/emotion';
 
 import { useLandmark } from '../../hooks/useLandmark.ts';
 import { useLayout } from '../layout/LayoutProvider.tsx';
@@ -73,8 +72,6 @@ export const fullScreenTool: Addon_BaseType = {
 
 export interface ToolData {
   isShown: boolean;
-  tabs: Addon_BaseType[];
-  tabState: TabListState<object>;
   tools: Addon_BaseType[];
   toolsExtra: Addon_BaseType[];
 }
@@ -83,19 +80,23 @@ export const ToolbarComp = React.memo<ToolData>(function ToolbarComp({
   isShown,
   tools,
   toolsExtra,
-  tabs,
-  tabState,
 }) {
+  return isShown && (tools.length > 0 || toolsExtra.length > 0) ? (
+    <ToolbarSection key="toolbar" tools={tools} toolsExtra={toolsExtra} />
+  ) : null;
+});
+
+/** Mounted only while shown, so its landmark never outlives the section element. */
+function ToolbarSection({ tools, toolsExtra }: Omit<ToolData, 'isShown'>): React.ReactElement {
   const sectionRef = useRef<HTMLElement>(null);
   const { landmarkProps } = useLandmark(
     { 'aria-labelledby': 'sb-preview-toolbar-title', role: 'region' },
     sectionRef
   );
 
-  return isShown && (tabs || tools || toolsExtra) ? (
+  return (
     <StyledSection
       className="sb-bar"
-      key="toolbar"
       data-testid="sb-preview-toolbar"
       ref={sectionRef}
       {...landmarkProps}
@@ -103,19 +104,13 @@ export const ToolbarComp = React.memo<ToolData>(function ToolbarComp({
       <h2 id="sb-preview-toolbar-title" className="sb-sr-only">
         Toolbar
       </h2>
-      {tabs.length > 1 ? (
-        <>
-          <TabList state={tabState} />
-          <Separator />
-        </>
-      ) : null}
       <StyledToolbar>
         <Tools key="left" list={tools} />
         <Tools key="right" list={toolsExtra} />
       </StyledToolbar>
     </StyledSection>
-  ) : null;
-});
+  );
+}
 
 export const Tools = React.memo<{ list: Addon_BaseType[] }>(function Tools({ list }) {
   return (
@@ -148,8 +143,7 @@ export function filterToolsSide(
   entry: PreviewProps['entry'],
   viewMode: State['viewMode'],
   location: State['location'],
-  path: State['path'],
-  tabId: string
+  path: State['path']
 ) {
   const filter = (item: Partial<Addon_BaseType>) =>
     item &&
@@ -160,7 +154,6 @@ export function filterToolsSide(
         viewMode,
         location,
         path,
-        tabId,
       })) &&
     !toolbarItemHasBeenExcluded(item, entry);
 

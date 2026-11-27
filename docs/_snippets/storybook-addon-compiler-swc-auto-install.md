@@ -3,7 +3,7 @@ npx storybook@latest add @storybook/addon-webpack5-compiler-swc
 ```
 
 ```sh renderer="common" packageManager="pnpm"
-pnpm dlx storybook@latest add @storybook/addon-webpack5-compiler-swc
+pnpm --allow-build=esbuild dlx storybook@latest add @storybook/addon-webpack5-compiler-swc
 ```
 
 ```sh renderer="common" packageManager="yarn"

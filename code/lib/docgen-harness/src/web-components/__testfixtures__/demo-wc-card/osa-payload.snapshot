@@ -1,0 +1,131 @@
+{
+  "customElementsManifest": {
+    "declaration": {
+      "attributes": [
+        {
+          "default": "false",
+          "description": "Indicates that the back of the card is shown",
+          "fieldName": "backSide",
+          "name": "back-side",
+          "type": {
+            "text": "boolean",
+          },
+        },
+        {
+          "default": "'Your Message'",
+          "description": "Header message",
+          "fieldName": "header",
+          "name": "header",
+          "type": {
+            "text": "string",
+          },
+        },
+        {
+          "default": "[]",
+          "description": "Data rows",
+          "fieldName": "rows",
+          "name": "rows",
+          "type": {
+            "text": "array",
+          },
+        },
+      ],
+      "cssParts": [
+        {
+          "description": "Front of the card",
+          "name": "front",
+        },
+        {
+          "description": "Back of the card",
+          "name": "back",
+        },
+      ],
+      "cssProperties": [
+        {
+          "description": "Header font size",
+          "name": "--demo-wc-card-header-font-size",
+        },
+        {
+          "description": "Font color for front",
+          "name": "--demo-wc-card-front-color",
+        },
+        {
+          "description": "Font color for back",
+          "name": "--demo-wc-card-back-color",
+        },
+      ],
+      "customElement": true,
+      "description": "This is a container looking like a card with a back and front side you can switch",
+      "events": [
+        {
+          "description": "Fires whenever it switches between front/back",
+          "name": "side-changed",
+          "type": {
+            "text": "CustomEvent",
+          },
+        },
+      ],
+      "kind": "class",
+      "members": [
+        {
+          "kind": "method",
+          "name": "toggle",
+        },
+        {
+          "attribute": "back-side",
+          "default": "false",
+          "description": "Indicates that the back of the card is shown",
+          "kind": "field",
+          "name": "backSide",
+          "privacy": "public",
+          "reflects": true,
+          "type": {
+            "text": "boolean",
+          },
+        },
+        {
+          "attribute": "header",
+          "default": "'Your Message'",
+          "description": "Header message",
+          "kind": "field",
+          "name": "header",
+          "privacy": "public",
+          "type": {
+            "text": "string",
+          },
+        },
+        {
+          "attribute": "rows",
+          "default": "[]",
+          "description": "Data rows",
+          "kind": "field",
+          "name": "rows",
+          "privacy": "public",
+          "type": {
+            "text": "array",
+          },
+        },
+      ],
+      "name": "DemoWcCard",
+      "slots": [
+        {
+          "description": "This is an unnamed slot (the default slot)",
+          "name": "",
+        },
+      ],
+      "superclass": {
+        "name": "LitElement",
+        "package": "lit",
+      },
+      "tagName": "demo-wc-card",
+    },
+    "manifestPath": "custom-elements.json",
+  },
+  "description": "This is a container looking like a card with a back and front side you can switch",
+  "id": "demo-wc-card",
+  "jsDocTags": {},
+  "name": "demo-wc-card",
+  "path": "./input.stories.ts",
+  "renderer": "web-components",
+  "summary": undefined,
+}

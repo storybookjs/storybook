@@ -204,7 +204,7 @@ describe('experimental_manifests', () => {
     );
   });
 
-  it('should emit shallow MDX refs when experimentalDocgenServer is enabled', async () => {
+  it('should emit shallow MDX refs when docgenServer is enabled', async () => {
     const manifestEntries: IndexEntry[] = [
       {
         id: 'example--docs',
@@ -238,7 +238,7 @@ describe('experimental_manifests', () => {
         manifestEntries,
         presets: {
           apply: vi.fn().mockResolvedValue({
-            experimentalDocgenServer: true,
+            docgenServer: true,
             componentsManifest: true,
           }),
         },
@@ -250,6 +250,7 @@ describe('experimental_manifests', () => {
     expect(result.docs?.docs['standalone--docs']).toEqual({
       id: 'standalone--docs',
       name: 'docs',
+      title: 'Standalone',
       mdx: {
         $ref: '../services/addon-docs/mdx/standalone--docs.json#/components/standalone--docs/docs/standalone--docs',
       },
@@ -283,7 +284,7 @@ describe('experimental_manifests', () => {
       manifestEntries,
       presets: {
         apply: vi.fn().mockResolvedValue({
-          experimentalDocgenServer: true,
+          docgenServer: true,
           componentsManifest: true,
         }),
       },
@@ -293,6 +294,7 @@ describe('experimental_manifests', () => {
     expect(result.docs?.docs['missing--docs']).toEqual({
       id: 'missing--docs',
       name: 'docs',
+      title: 'Missing',
       mdx: {
         $ref: '../services/addon-docs/mdx/missing--docs.json#/components/missing--docs/docs/missing--docs',
       },

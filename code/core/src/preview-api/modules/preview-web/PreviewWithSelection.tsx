@@ -3,7 +3,10 @@ import {
   CURRENT_STORY_WAS_SET,
   DOCS_PREPARED,
   GLOBALS_UPDATED,
+  NAVIGATE_URL,
   PRELOAD_ENTRIES,
+  type PreloadEntriesPayload,
+  type PreloadSource,
   PREVIEW_KEYDOWN,
   SET_CURRENT_STORY,
   STORY_CHANGED,
@@ -53,6 +56,11 @@ import { setupStoryFreezer } from './setupStoryFreezer.ts';
 
 const globalWindow = globalThis;
 
+/** Whether the preview runs inside a frame of the manager, which navigates landmarks on F6. */
+function isEmbedded() {
+  return !!globalWindow.parent && globalWindow.parent !== globalWindow.self;
+}
+
 function focusInInput(event: Event) {
   const target = ((event.composedPath && event.composedPath()[0]) || event.target) as Element;
   return /input|textarea/i.test(target.tagName) || target.getAttribute('contenteditable') !== null;
@@ -86,6 +94,10 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
 
   currentRender?: PossibleRender<TRenderer>;
 
+  private pendingPreloads = new Map<PreloadSource | undefined, PreloadEntriesPayload>();
+
+  private preloadsDrained: Promise<void> | null = null;
+
   constructor(
     public importFn: ModuleImportFn,
 
@@ -105,6 +117,15 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
     super.setupListeners();
 
     globalWindow.onkeydown = this.onKeydown.bind(this);
+    // A story that navigates its own landmarks with React Aria stops F6 from reaching onKeydown
+    // for as long as it has a landmark to go to. React Aria asks before wrapping around at the end
+    // of those; declining leaves the key unhandled, so it reaches onKeydown and moves on to the
+    // manager's landmarks instead. React Native has no addEventListener on its global.
+    globalWindow.addEventListener?.('react-aria-landmark-navigation', (event) => {
+      if (isEmbedded()) {
+        event.preventDefault();
+      }
+    });
     const { onContentFrozen } = setupContentResizeBroadcast({
       getViewport: () => {
         const render = this.currentRender;
@@ -123,6 +144,16 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
     this.channel.on(SET_CURRENT_STORY, this.onSetCurrentStory.bind(this));
     this.channel.on(UPDATE_QUERY_PARAMS, this.onUpdateQueryParams.bind(this));
     this.channel.on(PRELOAD_ENTRIES, this.onPreloadStories.bind(this));
+    this.channel.on(NAVIGATE_URL, this.onNavigateUrl.bind(this));
+  }
+
+  // The manager emits NAVIGATE_URL for in-page (`#hash`) navigation, e.g. when a docs heading is
+  // selected in search while its page is already rendered. Nothing re-renders in that case, so the
+  // view scrolls to the anchor explicitly.
+  onNavigateUrl(url: string) {
+    if (url.startsWith('#')) {
+      this.view.scrollToAnchor?.(url);
+    }
   }
 
   async setInitialGlobals() {
@@ -226,13 +257,27 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
   }
 
   onKeydown(event: KeyboardEvent) {
-    if (!this.storyRenders.find((r) => r.disableKeyListeners) && !focusInInput(event)) {
-      // We have to pick off the keys of the event that we need on the other side
-      const { altKey, ctrlKey, metaKey, shiftKey, key, code, keyCode } = event;
-      this.channel.emit(PREVIEW_KEYDOWN, {
-        event: { altKey, ctrlKey, metaKey, shiftKey, key, code, keyCode },
-      });
+    if (this.storyRenders.find((r) => r.disableKeyListeners)) {
+      return;
     }
+
+    // F6 and Shift+F6 navigate the manager's landmarks, and they are forwarded even from
+    // text inputs. If the preview is not embedded in a manager, we let the browser handle F6.
+    const isLandmarkNavigation = event.key === 'F6' && isEmbedded();
+    if (isLandmarkNavigation) {
+      event.preventDefault();
+    }
+
+    // For all other keys, we only forward them to the manager when focus is not in an input.
+    if (!isLandmarkNavigation && focusInInput(event)) {
+      return;
+    }
+
+    // We forward to the manager for interception by the shortcut handler.
+    const { altKey, ctrlKey, metaKey, shiftKey, key, code, keyCode } = event;
+    this.channel.emit(PREVIEW_KEYDOWN, {
+      event: { altKey, ctrlKey, metaKey, shiftKey, key, code, keyCode },
+    });
   }
 
   async onSetCurrentStory(selection: { storyId: StoryId; viewMode?: ViewMode }) {
@@ -256,7 +301,7 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
   async onUpdateGlobals({ globals }: { globals: Globals }) {
     const currentStory =
       (this.currentRender instanceof StoryRender && this.currentRender.story) || undefined;
-    super.onUpdateGlobals({ globals, currentStory });
+    await super.onUpdateGlobals({ globals, currentStory });
     if (
       this.currentRender instanceof MdxDocsRender ||
       this.currentRender instanceof CsfDocsRender
@@ -269,18 +314,30 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
     super.onUpdateArgs({ storyId, updatedArgs });
   }
 
-  async onPreloadStories({ ids }: { ids: string[] }) {
-    await this.storeInitializationPromise;
+  async onPreloadStories(request: PreloadEntriesPayload) {
+    this.pendingPreloads.set(request.source, request);
+    this.preloadsDrained ??= this.drainPreloads();
+    await this.preloadsDrained;
+  }
 
-    if (this.storyStoreValue) {
-      /**
-       * It's possible that we're trying to preload a story in a ref we haven't loaded the iframe
-       * for yet. Because of the way the targeting works, if we can't find the targeted iframe,
-       * we'll use the currently active iframe which can cause the event to be targeted to the wrong
-       * iframe, causing an error if the storyId does not exists there.
-       */
-      await Promise.allSettled(ids.map((id) => this.storyStoreValue?.loadEntry(id)));
+  // Sidebar hovers request preloads faster than a dev server compiles them, so batches run one at
+  // a time and a request received while a batch runs replaces the one its source has waiting.
+  // Sibling preloads are a guess, so they wait until no other source has a request waiting.
+  private async drainPreloads() {
+    await this.storeInitializationPromise;
+    while (this.pendingPreloads.size > 0) {
+      const request = this.takePreload();
+      // One unknown id from a ref's fallback iframe must not fail the batch.
+      await Promise.allSettled(request.ids.map((id) => this.storyStoreValue?.loadEntry(id)));
     }
+    this.preloadsDrained = null;
+  }
+
+  private takePreload() {
+    const waiting = [...this.pendingPreloads];
+    const [source, request] = waiting.find(([key]) => key !== 'sibling') ?? waiting[0] ?? [];
+    this.pendingPreloads.delete(source);
+    return request;
   }
 
   // RENDERING
@@ -318,11 +375,16 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
     const storyIdChanged = this.currentSelection?.storyId !== storyId;
     const viewModeChanged = this.currentRender?.type !== entry.type;
 
-    // Show a spinner while we load the next story
-    if (entry.type === 'story') {
-      this.view.showPreparingStory({ immediate: viewModeChanged });
-    } else {
-      this.view.showPreparingDocs({ immediate: viewModeChanged });
+    // Show a spinner while we load the next story, but only when actually changing story or
+    // view mode. On a same-story re-render (e.g. after an HMR update) the previous content
+    // must stay visible until the new render commits: the preparing mode hides every element
+    // on the page, which collapses the document and clamps the scroll position to 0 (#22057).
+    if (storyIdChanged || viewModeChanged) {
+      if (entry.type === 'story') {
+        this.view.showPreparingStory({ immediate: viewModeChanged });
+      } else {
+        this.view.showPreparingDocs({ immediate: viewModeChanged });
+      }
     }
 
     // If the last render is still preparing, let's drop it right now. Either
@@ -406,14 +468,20 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
 
     // Wait for the previous render to leave the page. NOTE: this will wait to ensure anything async
     // is properly aborted, which (in some cases) can lead to the whole screen being refreshed.
-
-    // Wait for the previous render to leave the page. NOTE: this will wait to ensure anything async
-    // is properly aborted, which (in some cases) can lead to the whole screen being refreshed.
     if (lastRender) {
-      await this.teardownRender(lastRender, { viewModeChanged });
+      await this.teardownRender(lastRender, {
+        viewModeChanged,
+        // On a same-story re-render, the previous DOM stays mounted until the new render
+        // replaces it in place, so the document never collapses and scroll is preserved.
+        keepRenderedDom: !storyIdChanged && !viewModeChanged,
+      });
     }
 
-    // If we are rendering something new (as opposed to re-rendering the same or first story), emit
+    // A newer selection can take over while the previous render tears down.
+    if (this.currentRender !== render) {
+      if (!render.torndown) await this.teardownRender(render);
+      return;
+    }
 
     // If we are rendering something new (as opposed to re-rendering the same or first story), emit
     if (lastSelection && (storyIdChanged || viewModeChanged)) {
@@ -475,11 +543,13 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
     if (isStoryRender(render)) {
       invariant(!!render.story);
       this.storyRenders.push(render as StoryRender<TRenderer>);
-      (this.currentRender as StoryRender<TRenderer>).renderToElement(
-        this.view.prepareForStory(render.story)
+      render.renderToElement(
+        this.view.prepareForStory(render.story, {
+          scrollReset: storyIdChanged || viewModeChanged,
+        })
       );
     } else {
-      this.currentRender.renderToElement(
+      render.renderToElement(
         this.view.prepareForDocs({ scrollReset: storyIdChanged || viewModeChanged }),
         // This argument is used for docs, which is currently only compatible with HTMLElements
         this.renderStoryToElement.bind(this) as any
@@ -489,10 +559,13 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
 
   async teardownRender(
     render: PossibleRender<TRenderer>,
-    { viewModeChanged = false }: { viewModeChanged?: boolean } = {}
+    {
+      viewModeChanged = false,
+      keepRenderedDom = false,
+    }: { viewModeChanged?: boolean; keepRenderedDom?: boolean } = {}
   ) {
     this.storyRenders = this.storyRenders.filter((r) => r !== render);
-    await render?.teardown?.({ viewModeChanged });
+    await render?.teardown?.({ viewModeChanged, keepRenderedDom });
   }
 
   // UTILITIES

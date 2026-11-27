@@ -4,24 +4,28 @@ import React, { useCallback, useEffect } from 'react';
 import { Button } from 'storybook/internal/components';
 import { PRELOAD_ENTRIES } from 'storybook/internal/core-events';
 
-import { global } from '@storybook/global';
 import { TrashIcon } from '@storybook/icons';
 
 import type { ControllerStateAndHelpers } from 'downshift';
 import { transparentize } from 'polished';
-import { useStorybookApi } from 'storybook/manager-api';
-import { styled, useTheme } from 'storybook/theming';
+import { type API, useStorybookApi } from 'storybook/manager-api';
+import { styled, type Theme, useTheme } from 'storybook/theming/emotion';
 
 import { matchesKeyCode, matchesModifiers } from '../../keybinding.ts';
 import { getStatus } from '../../utils/status.tsx';
-import { UseSymbol } from './IconSymbols.tsx';
 import { NoResults } from './NoResults.tsx';
-import { StatusLabel } from './StatusButton.tsx';
-import { TypeIcon } from './TreeNode.tsx';
+import { DEFAULT_REF_ID } from './Sidebar.tsx';
+import { TypeIconWithSymbol } from './TypeIcon.tsx';
 import type { DownshiftItem, Match, SearchResult } from './types.ts';
 import { isExpandType } from './types.ts';
+import type { StatusValue } from '../../../types/index.ts';
 
-const { document } = global;
+const StatusLabel = styled.div<{ status: StatusValue }>(
+  ({ theme, status }: { theme: Theme; status: StatusValue }) => ({
+    color: getStatus(theme, status).textColor ?? undefined,
+    margin: 3,
+  })
+);
 
 const ResultsList = styled.ol({
   listStyle: 'none',
@@ -153,9 +157,18 @@ const Path = styled.div(({ theme }) => ({
   '& > span + span': {
     '&:before': {
       content: "' / '",
+      whiteSpace: 'pre',
     },
   },
 }));
+
+/** Preloads the entry that selecting a result opens, so that it is ready when it is clicked. */
+const preloadResult = (api: API, id: string, refId: string) => {
+  const entry = api.resolveLeafEntry(id, refId === DEFAULT_REF_ID ? undefined : refId);
+  if (entry) {
+    api.emit(PRELOAD_ENTRIES, { ids: [entry.id], source: 'search', options: { target: refId } });
+  }
+};
 
 const Result: FC<
   SearchResult & {
@@ -174,7 +187,7 @@ const Result: FC<
   const api = useStorybookApi();
   useEffect(() => {
     if (api && props.isHighlighted && item.type === 'component') {
-      api.emit(PRELOAD_ENTRIES, { ids: [item.children[0]] }, { options: { target: item.refId } });
+      preloadResult(api, item.id, item.refId);
     }
   }, [api, props.isHighlighted, item]);
 
@@ -186,21 +199,9 @@ const Result: FC<
   return (
     <ResultRow {...props} onClick={click}>
       <IconWrapper>
-        {item.type === 'component' && (
-          <TypeIcon viewBox="0 0 14 14" width="14" height="14" type="component">
-            <UseSymbol type="component" />
-          </TypeIcon>
-        )}
-        {item.type === 'story' && (
-          <TypeIcon viewBox="0 0 14 14" width="14" height="14" type={item.subtype}>
-            <UseSymbol type={item.subtype} />
-          </TypeIcon>
-        )}
-        {!(item.type === 'component' || item.type === 'story') && (
-          <TypeIcon viewBox="0 0 14 14" width="14" height="14" type="document">
-            <UseSymbol type="document" />
-          </TypeIcon>
-        )}
+        {/* The same icon as the row in the tree. A recently opened story lists its parent, which
+            is a group when the component has nested stories, so every entry type must resolve. */}
+        <TypeIconWithSymbol item={item} />
       </IconWrapper>
       <ResultRowContent className="search-result-item--label">
         <Title>
@@ -271,14 +272,11 @@ export const SearchResults: FC<{
     const storyId = currentTarget.getAttribute('data-id');
     const refId = currentTarget.getAttribute('data-refid');
     // @ts-expect-error (non strict)
-    const item = api.resolveStory(storyId, refId === 'storybook_internal' ? undefined : refId);
+    const item = api.resolveStory(storyId, refId === DEFAULT_REF_ID ? undefined : refId);
 
     if (item?.type === 'component') {
-      api.emit(PRELOAD_ENTRIES, {
-        // @ts-expect-error (TODO)
-        ids: [item.isLeaf ? item.id : item.children[0]],
-        options: { target: refId },
-      });
+      // @ts-expect-error (non strict)
+      preloadResult(api, storyId, refId);
     }
   }, []);
 
@@ -318,7 +316,7 @@ export const SearchResults: FC<{
           const { key, ...rest } = props;
           return (
             <MoreWrapper key="search-result-expand">
-              <Button key={key} {...rest} size="small">
+              <Button ariaLabel={false} key={key} {...rest} size="small">
                 Show {result.moreCount} more results
               </Button>
             </MoreWrapper>

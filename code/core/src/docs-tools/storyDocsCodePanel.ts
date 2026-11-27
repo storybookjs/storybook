@@ -12,6 +12,19 @@ export type StoryDocsCodePanelParameters = {
 };
 
 /**
+ * Where a story's source snippet is generated. Exactly one runtime runs: `'preview'` registers each
+ * renderer's source decorator, which builds the snippet while the story renders; `'server'`
+ * (`features.docgenServer`) registers no source decorator and fills the snippet from the
+ * story-docs service instead.
+ */
+export type SourceSnippetRuntime = 'preview' | 'server';
+
+/** Read which runtime generates source snippets in this Storybook. */
+export function getSourceSnippetRuntime(): SourceSnippetRuntime {
+  return globalThis.FEATURES?.docgenServer ? 'server' : 'preview';
+}
+
+/**
  * Whether the preview story-docs hook should skip emitting a snippet to the manager Code panel.
  *
  * The args/source shape logic mirrors {@link skipJsxRender} in the React `jsxDecorator`, so static
@@ -48,7 +61,7 @@ export function shouldWaitForServiceSnippet(
   parameters: StoryDocsCodePanelParameters | undefined,
   storyPrepared: boolean | undefined
 ): boolean {
-  if (!globalThis.FEATURES?.experimentalDocgenServer) {
+  if (getSourceSnippetRuntime() !== 'server') {
     return false;
   }
   return !storyPrepared || !shouldSkipStoryDocsEmit(parameters);

@@ -24,21 +24,12 @@ const checkGlobals = (parameters: Parameters) => {
   }
 };
 
-const checkStorySort = (parameters: Parameters) => {
-  const { options } = parameters;
-
-  if (options?.storySort) {
-    logger.error('The storySort option parameter can only be set globally');
-  }
-};
-
 const checkDisallowedParameters = (parameters?: Parameters) => {
   if (!parameters) {
     return;
   }
 
   checkGlobals(parameters);
-  checkStorySort(parameters);
 };
 
 // Given the raw exports of a CSF file, check and normalize it.

@@ -8,7 +8,7 @@ import { MarkupIcon } from '@storybook/icons';
 import convert from 'color-convert';
 import { debounce } from 'es-toolkit/function';
 import { HexColorPicker, HslaStringColorPicker, RgbaStringColorPicker } from 'react-colorful';
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/emotion';
 
 import { getControlId } from './helpers';
 import type { ColorConfig, ColorValue, ControlProps, PresetColor } from './types';
@@ -408,6 +408,7 @@ export const ColorControl: FC<ColorControlProps> = ({
         defaultVisible={startOpen}
         visible={readOnly ? false : undefined}
         onVisibleChange={() => color && addPreset(color)}
+        scrollable={false}
         popover={
           <TooltipContent>
             <Picker

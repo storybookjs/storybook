@@ -1,63 +1,41 @@
-import { test } from 'vitest';
 import {
-  expectAllStoryExportsInDisplayReview,
-  expectDisplayReviewForVisualChange,
-  expectPreviewBrowserStarted,
-  expectPreviewStoriesWithFinalLinks,
-  expectSkillInvoked,
-  getEvalContext,
-  expectStoryDiscoveryBeforeReview,
+  expectAnyWorkflowSkillInvoked,
+  expectNoDisplayReview,
+  expectReviewHint,
   expectStoryTestsRanAndPassed,
-  expectValidStorybookLaunchConfig,
   expectWorkflowCalls,
-  isReviewEnabled,
+  getEvalContext,
 } from '#test-utils';
+import { describe, test } from 'vitest';
 
-// Unlike 801, the template's valid .claude/launch.json is left intact, so the
-// plugin must reuse the existing config instead of writing a fresh one.
-const review = isReviewEnabled();
+// The skills of the workflow in AGENTS.md that this task cannot do without. The tests are a
+// command of the workflow, not a skill, and a review only comes when the user asks for one.
+const WORKFLOW_SKILLS = ['component-docs', 'write-stories'];
 
-// Building the ProfileCard from Reshaped primitives requires the docs tools;
-// codex is an accepted known failure here (skipped the docs tools under both
-// instruction shapes, CI run 28660377980, 2026-07-03).
-// Re-enable this assertion for Codex after the documentation tool call passes on three consecutive scheduled CI runs.
-test.skipIf(getEvalContext().agent === 'codex')('uses the documentation tooling', () => {
-  expectWorkflowCalls(['get-documentation']);
-});
+describe('creating a ProfileCard component', () => {
+  test('runs story tests after the change and finishes with them passing', async () => {
+    await expectStoryTestsRanAndPassed({
+      covering: ['profilecard'],
+    });
+  });
 
-test.runIf(review)('uses Storybook story instructions and publishes a display review', () => {
-  expectWorkflowCalls(['get-storybook-story-instructions', 'display-review']);
-  expectDisplayReviewForVisualChange();
-});
+  test('runs the skills of the workflow, and creates no review unasked', () => {
+    expectWorkflowCalls(WORKFLOW_SKILLS);
+    expectNoDisplayReview();
+  });
 
-test.runIf(!review)('uses Storybook story instructions and previews the new stories', () => {
-  expectWorkflowCalls(['get-storybook-story-instructions']);
-  expectPreviewStoriesWithFinalLinks({ covering: ['profilecard'] });
-});
+  test('tells the user about the /ui-review skill', () => {
+    expectReviewHint();
+  });
 
-test.runIf(review)('every new story appears in the display review', () => {
-  expectAllStoryExportsInDisplayReview();
-});
+  describe('depending on the current agent and integration', () => {
+    const { integration } = getEvalContext();
 
-test.runIf(review)(
-  'discovers stories through the workflow tools before publishing the review',
-  () => {
-    expectStoryDiscoveryBeforeReview();
-  }
-);
+    // Building the ProfileCard from Reshaped primitives requires the docs tools.
+    test('uses the documentation tooling', () => expectWorkflowCalls(['docs-show']));
 
-test('runs story tests after the change and finishes with them passing', () => {
-  expectStoryTestsRanAndPassed({ covering: ['profilecard'] });
-});
-
-test.skipIf(getEvalContext().integration === 'mcp')('invokes the stories skill', () => {
-  expectSkillInvoked('stories');
-});
-
-test('keeps the pre-existing Storybook launch config valid', () => {
-  expectValidStorybookLaunchConfig();
-});
-
-test('opens the preview browser when using the plugin', () => {
-  expectPreviewBrowserStarted();
+    test.skipIf(integration === 'mcp')('finds the workflow through the plugin skills', () => {
+      expectAnyWorkflowSkillInvoked();
+    });
+  });
 });

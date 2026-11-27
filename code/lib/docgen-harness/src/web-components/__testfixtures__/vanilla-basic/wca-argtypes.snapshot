@@ -1,0 +1,70 @@
+{
+  "count": {
+    "description": "Item count.",
+    "name": "count",
+    "required": false,
+    "table": {
+      "category": "attributes",
+      "defaultValue": {
+        "summary": "0",
+      },
+      "type": {
+        "summary": "number",
+      },
+    },
+    "type": {
+      "name": "number",
+    },
+  },
+  "disabled": {
+    "description": "Disabled state.",
+    "name": "disabled",
+    "required": false,
+    "table": {
+      "category": "attributes",
+      "defaultValue": {
+        "summary": "false",
+      },
+      "type": {
+        "summary": "boolean",
+      },
+    },
+    "type": {
+      "name": "boolean",
+    },
+  },
+  "label": {
+    "description": "Text label.",
+    "name": "label",
+    "required": false,
+    "table": {
+      "category": "attributes",
+      "defaultValue": {
+        "summary": "",
+      },
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+    },
+  },
+  "legacy-label": {
+    "description": "Old name for label. @deprecated Use label instead.",
+    "name": "legacy-label",
+    "required": false,
+    "table": {
+      "category": "attributes",
+      "defaultValue": {
+        "summary": "",
+      },
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+    },
+  },
+}

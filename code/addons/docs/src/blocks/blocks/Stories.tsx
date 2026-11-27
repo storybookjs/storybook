@@ -3,8 +3,6 @@ import React, { useContext } from 'react';
 
 import { Tag } from 'storybook/internal/preview-api';
 
-import { styled } from 'storybook/theming';
-
 import { DocsContext } from './DocsContext';
 import { DocsStory } from './DocsStory';
 import { Heading } from './Heading';
@@ -15,22 +13,6 @@ interface StoriesProps {
   title?: ReactElement | string;
   includePrimary?: boolean;
 }
-
-const StyledHeading: typeof Heading = styled(Heading)(({ theme }) => ({
-  fontSize: `${theme.typography.size.s2 - 1}px`,
-  fontWeight: theme.typography.weight.bold,
-  lineHeight: '16px',
-  letterSpacing: '0.35em',
-  textTransform: 'uppercase',
-  color: theme.textMutedColor,
-  border: 0,
-  marginBottom: '12px',
-
-  '&:first-of-type': {
-    // specificity issue
-    marginTop: '56px',
-  },
-}));
 
 const StoriesImpl: FC<StoriesProps> = ({ title = 'Stories', includePrimary = true }) => {
   const { componentStories, projectAnnotations, getStoryContext } = useContext(DocsContext);
@@ -64,7 +46,7 @@ const StoriesImpl: FC<StoriesProps> = ({ title = 'Stories', includePrimary = tru
   }
   return (
     <>
-      {typeof title === 'string' ? <StyledHeading>{title}</StyledHeading> : title}
+      {typeof title === 'string' ? <Heading>{title}</Heading> : title}
       {stories.map(
         (story) =>
           story && <DocsStory key={story.id} of={story.moduleExport} expanded __forceInitialArgs />

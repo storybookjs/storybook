@@ -1,0 +1,7 @@
+<script>
+  import Alert from './Alert.svelte';
+</script>
+
+<Alert title="Children title">
+  Children body
+</Alert>

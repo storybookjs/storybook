@@ -2,7 +2,7 @@
 title: Stories in unit tests
 sidebar:
   title: Unit tests
-  order: 3
+  order: 2
 ---
 
 Teams test a variety of UI characteristics using different tools. Each tool requires you to replicate the same component state over and over. That’s a maintenance headache. Ideally, you’d set up your tests similarly and reuse that across tools.
@@ -13,13 +13,21 @@ Stories are a practical starting point for UI testing. Import stories into tools
 
 ## Write a test with Testing Library
 
-[Testing Library](https://testing-library.com/) is a suite of helper libraries for browser-based component tests. With [Component Story Format](../../api/csf/index.mdx), your stories are reusable with Testing Library. Each named export (story) is renderable within your testing setup. For example, if you were working on a login component and wanted to test the invalid credentials scenario, here's how you could write your test:
+[Testing Library](https://testing-library.com/) is a suite of helper libraries for browser-based component tests. With [Component Story Format](../../writing-stories/csf/index.mdx), your stories are reusable with Testing Library. Each named export (story) is renderable within your testing setup. For example, if you were working on a login component and wanted to test the invalid credentials scenario, here's how you could write your test:
 
 Storybook provides a [`composeStories`](../../api/portable-stories/portable-stories-vitest.mdx#composestories) utility that helps convert stories from a test file into renderable elements that can be reused in your Node tests with JSDOM. It also allows you to apply other Storybook features that you have enabled your project (e.g., [decorators](../../writing-stories/decorators.mdx), [args](../../writing-stories/args.mdx)) into your tests, enabling you to reuse your stories in your testing environment of choice (e.g., [Jest](https://jestjs.io/), [Vitest](https://vitest.dev/)), ensuring your tests are always in sync with your stories without having to rewrite them. This is what we refer to as portable stories in Storybook.
 
 <CodeSnippets path="component-test-with-testing-library.md" />
 
 These examples use Testing Library's `screen` queries because the composed stories run inside your unit test renderer. In a story's `play` function, prefer the provided `canvas` queries so interactions stay scoped to the rendered story.
+
+<Callout variant="warning">
+
+In test files that contain stories, import `userEvent` from `storybook/test` rather than `@testing-library/user-event`. Storybook uses its own copy of `user-event` when running stories, so importing `@testing-library/user-event` can cause conflicts between both copies.
+
+If you see that components don't receive click or keyboard events in a story, it could be because you imported from `@testing-library/user-event`.
+
+</Callout>
 
 <Callout variant="warning">
 
@@ -39,7 +47,7 @@ To avoid this, you can override the global configurations by extending either th
 
 ## Run tests on a single story
 
-You can use the [`composeStory`](../../api/portable-stories/portable-stories-vitest.mdx#composestory) function to allow your tests to run on a single story. However, if you're relying on this method, we recommend that you supply the story metadata (i.e., the [default export](../../writing-stories/index.mdx#default-export)) to the `composeStory` function. This ensures that your tests can accurately determine the correct information about the story. For example:
+You can use the [`composeStory`](../../api/portable-stories/portable-stories-vitest.mdx#composestory) function to allow your tests to run on a single story. However, if you're relying on this method, we recommend that you supply the story metadata (i.e., the [default export](../../writing-stories/index.mdx#meta)) to the `composeStory` function. This ensures that your tests can accurately determine the correct information about the story. For example:
 
 <CodeSnippets path="single-story-test.md" />
 
@@ -83,6 +91,7 @@ When using the `composeStories` or `composeStory` functions, the components bein
 
 **More testing resources**
 
+- [See our complete guide to component testing](https://storybook.js.org/blog/component-testing-a-practical-guide-for-frontend-developers/)
 - [Interaction testing](../interaction-testing.mdx) for user behavior simulation
 - [Accessibility testing](../accessibility-testing.mdx) for accessibility
 - [Visual testing](../visual-testing.mdx) for appearance
@@ -90,5 +99,4 @@ When using the `composeStories` or `composeStory` functions, the components bein
 - [Test coverage](../test-coverage.mdx) for measuring code coverage
 - [CI](../in-ci.mdx) for running tests in your CI/CD pipeline
 - [Vitest addon](./vitest-addon/index.mdx) for running tests in Storybook
-- [Test runner](./test-runner.mdx) to automate test execution
 - [End-to-end testing](./stories-in-end-to-end-tests.mdx) for simulating real user scenarios

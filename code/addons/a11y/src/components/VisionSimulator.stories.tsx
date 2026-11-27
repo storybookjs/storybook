@@ -1,4 +1,4 @@
-import type { PlayFunction, PlayFunctionContext } from 'storybook/internal/types';
+import type { PlayFunction } from 'storybook/internal/types';
 
 import { ManagerContext } from 'storybook/manager-api';
 import { expect, fn, screen } from 'storybook/test';
@@ -35,7 +35,11 @@ const openMenu: PlayFunction = async ({ canvas, userEvent }) => {
 };
 
 export const Default = meta.story({
-  play: openMenu,
+  play: async (context) => {
+    await openMenu(context);
+    await expect(await screen.findByText(/3\.26% of users/)).toBeVisible();
+    await expect(await screen.findByText(/Brettel et al\. 1997/)).toBeVisible();
+  },
 });
 
 export const WithFilter = meta.story({

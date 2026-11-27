@@ -1,4 +1,5 @@
 import { x } from 'tinyexec';
+import { mkdir, open } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 
 export const STORYBOOK_DIR = fileURLToPath(new URL('..', import.meta.url));
@@ -17,6 +18,21 @@ export async function parseMCPResponse(response: Response) {
 	const dataLine = text.split('\n').find((line) => line.startsWith('data: '));
 	const jsonText = dataLine!.replace(/^data: /, '').trim();
 	return JSON.parse(jsonText);
+}
+
+/** One JSON-RPC request against an MCP endpoint, with the SSE framing parsed away. */
+export async function mcpRequest(endpoint: string, method: string, params: any = {}, id: number = 1) {
+	const response = await fetch(endpoint, {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify(createMCPRequestBody(method, params, id)),
+	});
+
+	if (!response.ok) {
+		throw new Error(`HTTP error! status: ${response.status}`);
+	}
+
+	return parseMCPResponse(response);
 }
 
 export async function waitForMcpEndpoint(
@@ -69,12 +85,25 @@ export async function killPort(port: number): Promise<void> {
 	}
 }
 
-export function startStorybook(configDir: string, port: number): ReturnType<typeof x> {
-	return x('yarn', ['storybook', '--config-dir', configDir, '--port', String(port)], {
+const STORYBOOK_LOG_DIR = new URL('../storybook-logs/', import.meta.url);
+
+export async function startStorybook(
+	configDir: string,
+	port: number,
+	env?: Record<string, string>,
+): Promise<{ storybookProcess: ReturnType<typeof x> }> {
+	await mkdir(STORYBOOK_LOG_DIR, { recursive: true });
+	const log = await open(new URL(`${configDir.replace(/^\./, '')}-${port}.log`, STORYBOOK_LOG_DIR), 'w');
+	const storybookProcess = x('yarn', ['storybook', '--config-dir', configDir, '--port', String(port)], {
 		nodeOptions: {
 			cwd: STORYBOOK_DIR,
+			stdio: ['pipe', log.fd, log.fd],
+			...(env ? { env: { ...process.env, ...env } } : {}),
 		},
 	});
+	await log.close();
+	// Wrapped because tinyexec's result is a thenable that resolves when the process exits.
+	return { storybookProcess };
 }
 
 export async function stopStorybook(storybookProcess: ReturnType<typeof x> | null): Promise<void> {

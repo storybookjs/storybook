@@ -47,6 +47,7 @@ export interface ChannelLike {
   removeListener(eventName: string, listener: Listener): void;
   on(eventName: string, listener: Listener): void;
   off(eventName: string, listener: Listener): void;
+  receive?(event: ChannelEvent): void;
 }
 export type ChannelArgs = ChannelArgsSingle | ChannelArgsMulti;
 export interface ChannelArgsSingle {

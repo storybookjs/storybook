@@ -6,6 +6,11 @@ import { logger } from 'storybook/internal/node-logger';
 
 import { sync as spawnSync } from 'cross-spawn';
 
+export function isYarnBerryVersion(version: string) {
+  const major = Number.parseInt(version, 10);
+  return Number.isInteger(major) && major >= 2;
+}
+
 interface LinkOptions {
   target: string;
   local?: boolean;
@@ -50,7 +55,7 @@ export const link = async ({ target, local, start }: LinkOptions) => {
     shell: true,
   }).stdout.toString();
 
-  if (!/^[2-4]\./.test(version)) {
+  if (!isYarnBerryVersion(version)) {
     logger.warn(`🚨 Expected yarn 2 or higher in ${reproDir}!`);
     logger.warn('');
     logger.warn('Please set it up with `yarn set version berry`,');
@@ -88,7 +93,8 @@ export const link = async ({ target, local, start }: LinkOptions) => {
 
   await executeCommand({
     command: 'yarn',
-    args: ['install'],
+    // We just edited package.json; Yarn Berry refuses lockfile changes when CI is set.
+    args: ['install', '--no-immutable'],
     cwd: reproDir,
   });
 

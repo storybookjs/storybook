@@ -1,0 +1,260 @@
+import { relative } from 'node:path';
+
+import type { Options } from '../../types/index.ts';
+
+import { resolveStorybookConfigDir } from '../tools/config-dir.ts';
+import { buildComponentDocsSkill } from './content/build-component-docs-skill.ts';
+import { buildTestStoriesSkill } from './content/build-test-stories-skill.ts';
+import { buildUiReviewSkill } from './content/build-ui-review-skill.ts';
+import { buildWriteStoriesSkill } from './content/build-write-stories-skill.ts';
+import type { SkillTextTransport } from './content/skill-vocabulary.ts';
+import type { getSetupMarkdownOutput } from './content/setup-prompts/index.ts';
+import { SKILLS, SKILL_IDS, isSkillId, type SkillId } from './content/skills.ts';
+import type { SkillInputs, resolveSkillInputs } from './inputs.ts';
+import type { ProjectInfo, getProjectInfo } from './project-info.ts';
+import { getSetupSupportError } from './setup-support.ts';
+
+export const SKILLS_OPTION_SPECS = [
+  { flags: '--cwd <path>', description: 'Project directory of the target Storybook' },
+  {
+    flags: '-c, --config-dir <dir-name>',
+    description: 'Storybook config directory of the target Storybook',
+  },
+  { flags: '--all', description: 'Print every skill in full' },
+  {
+    flags: '--mcp',
+    description: 'Name the tools of the Storybook MCP server instead of CLI commands',
+  },
+  { flags: '-h, --help', description: 'Show this usage and every skill' },
+] as const;
+
+export type SkillsRunInput = {
+  tokens: string[];
+  help?: boolean;
+  all?: boolean;
+  // Render the skills for an agent connected to the Storybook MCP server: MCP tool names
+  // instead of `npx storybook tools` commands.
+  mcp?: boolean;
+  target: { cwd?: string; configDir?: string };
+};
+
+export type SkillsRunResult = {
+  output: string;
+  errorOutput?: string;
+  exitCode: number;
+  // For telemetry: which skill was served (or `all`), when the run got that far.
+  skill?: SkillId | 'all';
+  // Set when the `setup` skill itself was requested, so the caller can record the setup session.
+  setupRun?: SetupRun;
+};
+
+export type SetupRun = { projectInfo: ProjectInfo; prompt: string };
+
+export type SkillsRunDeps = {
+  /**
+   * `experimental_loadStorybook`, injected so this module stays testable without loading a real
+   * Storybook configuration. Typed to the `Options` surface `resolveSkillInputs` consumes, so no
+   * cast is needed at either call site.
+   */
+  loadStorybook: (args: { configDir: string }) => Promise<Options>;
+  resolveSkillInputs: typeof resolveSkillInputs;
+  getProjectInfo: typeof getProjectInfo;
+  getSetupMarkdown: typeof getSetupMarkdownOutput;
+};
+
+export type SkillsIntent =
+  | { kind: 'catalog' }
+  | { kind: 'all' }
+  | { kind: 'get'; id: SkillId }
+  | { kind: 'error'; message: string };
+
+// The skill ids of Storybook 10.6, which an `AGENTS.md` or a plugin from then can still name.
+function replacedSkillMessage(id: string, mcp: boolean): string | undefined {
+  const run = (skill: string) => `\`npx storybook skills ${skill}${mcp ? ' --mcp' : ''}\``;
+  if (id === 'stories') {
+    return `The \`/stories\` skill is replaced by \`/component-docs\` (look up the components to reuse) and \`/write-stories\` (the story rules). Run ${run('component-docs')} and ${run('write-stories')} now, each in a command of its own, and follow each one at its step. When the user asks for a review, run ${run('ui-review')}.`;
+  }
+  if (id === 'write-story') {
+    return `The \`/write-story\` skill is renamed to \`/write-stories\`. Run ${run('write-stories')}.`;
+  }
+  return undefined;
+}
+
+export function resolveSkillsIntent({
+  tokens,
+  help,
+  all,
+  mcp = false,
+}: Pick<SkillsRunInput, 'tokens' | 'help' | 'all' | 'mcp'>): SkillsIntent {
+  const [id, ...rest] = tokens;
+  if (help) {
+    return { kind: 'catalog' };
+  }
+  if (id === undefined) {
+    return all ? { kind: 'all' } : { kind: 'catalog' };
+  }
+  const replaced = replacedSkillMessage(id, mcp);
+  if (replaced) {
+    return { kind: 'error', message: replaced };
+  }
+  if (!isSkillId(id)) {
+    return {
+      kind: 'error',
+      message: `Unknown skill "${id}". Available skills: ${SKILL_IDS.join(', ')}.`,
+    };
+  }
+  if (all) {
+    return {
+      kind: 'error',
+      message: `\`--all\` prints every skill and takes no skill id; drop "${id}" or \`--all\`.`,
+    };
+  }
+  if (rest.length > 0) {
+    return {
+      kind: 'error',
+      message: `Unexpected arguments: ${rest.map((token) => `"${token}"`).join(' ')}. Run \`npx storybook skills --help\` for usage.`,
+    };
+  }
+  return { kind: 'get', id };
+}
+
+export async function runSkillsCommand(
+  input: SkillsRunInput,
+  deps: SkillsRunDeps
+): Promise<SkillsRunResult> {
+  const intent = resolveSkillsIntent(input);
+  if (intent.kind === 'catalog') {
+    return { output: renderCatalogHelp(), exitCode: 0 };
+  }
+  if (intent.kind === 'error') {
+    return { output: '', errorOutput: intent.message, exitCode: 1 };
+  }
+  try {
+    const ids = intent.kind === 'all' ? SKILL_IDS : [intent.id];
+    const { docs, setupRun } = await serveSkills(
+      ids,
+      resolveStorybookConfigDir(input.target),
+      input.mcp ? 'mcp' : 'cli',
+      deps
+    );
+    return {
+      output: docs.join('\n\n---\n\n'),
+      exitCode: 0,
+      skill: intent.kind === 'all' ? 'all' : intent.id,
+      ...(intent.kind === 'get' && setupRun ? { setupRun } : {}),
+    };
+  } catch (error) {
+    if (error instanceof SkillsError) {
+      return { output: '', errorOutput: error.message, exitCode: 1 };
+    }
+    throw error;
+  }
+}
+
+// An expected failure: its message is printed to stderr with exit code 1, without a stack trace.
+class SkillsError extends Error {}
+
+async function serveSkills(
+  ids: readonly SkillId[],
+  configDir: string,
+  transport: SkillTextTransport,
+  deps: SkillsRunDeps
+): Promise<{ docs: string[]; setupRun?: SetupRun }> {
+  let inputs: SkillInputs | undefined;
+  let setupRun: SetupRun | undefined;
+  const docs: string[] = [];
+  for (const id of ids) {
+    if (id === 'setup') {
+      const setup = await serveSetup(configDir, deps);
+      docs.push(setup.markdown);
+      setupRun = setup.run;
+    } else {
+      inputs ??= await loadInputs(configDir, deps);
+      docs.push(buildProjectSkill(id, inputs, transport));
+    }
+  }
+  return { docs, setupRun };
+}
+
+async function serveSetup(
+  configDir: string,
+  deps: SkillsRunDeps
+): Promise<{ markdown: string; run: SetupRun }> {
+  // The project probe derives the project directory from the config dir, which only survives
+  // `--config-dir .` while the path is still relative; the prompt also prints it verbatim.
+  const probed = await deps.getProjectInfo({
+    configDir: relative(process.cwd(), configDir) || '.',
+  });
+  if (!probed.ok) {
+    throw new SkillsError(probed.message);
+  }
+  const supportError = getSetupSupportError(probed.projectInfo);
+  if (supportError) {
+    throw new SkillsError(supportError);
+  }
+  const { markdown, prompt } = await deps.getSetupMarkdown(probed.projectInfo);
+  return { markdown, run: { projectInfo: probed.projectInfo, prompt } };
+}
+
+async function loadInputs(configDir: string, deps: SkillsRunDeps): Promise<SkillInputs> {
+  try {
+    return await deps.resolveSkillInputs(await deps.loadStorybook({ configDir }));
+  } catch (error) {
+    // Reduce to one clean line, matching `cli/tools/run.ts`'s equivalent bootstrap failure: an
+    // agent piping this output should not see a raw Node stack trace for an everyday "wrong
+    // directory" mistake.
+    throw new SkillsError(
+      `Could not load the Storybook configuration for this project: ${
+        error instanceof Error ? error.message : String(error)
+      }`
+    );
+  }
+}
+
+function table(rows: [string, string][]): string[] {
+  const column = Math.max(...rows.map(([key]) => key.length)) + 2;
+  return rows.map(([key, text]) => `  ${key.padEnd(column)}${text}`);
+}
+
+function renderCatalogHelp(): string {
+  return [
+    'Usage: npx storybook skills [options] [id]',
+    '',
+    'Agent skills served by this Storybook.',
+    '',
+    'Options:',
+    ...table(SKILLS_OPTION_SPECS.map((spec) => [spec.flags, spec.description])),
+    '',
+    'Skills:',
+    ...table(SKILL_IDS.map((id) => [id, SKILLS[id].blurb])),
+    '',
+    'Print a skill with `npx storybook skills <id>`, or every skill with `npx storybook skills --all`.',
+  ].join('\n');
+}
+
+function buildProjectSkill(
+  id: Exclude<SkillId, 'setup'>,
+  inputs: SkillInputs,
+  transport: SkillTextTransport
+): string {
+  if (id === 'write-stories') {
+    return buildWriteStoriesSkill(inputs);
+  }
+  // Over MCP, match addon-mcp's docs-tool gate; the CLI docs commands need manifests or composed Storybooks.
+  const docsSupported =
+    (transport === 'mcp' ? inputs.docsEnabled : inputs.docsEnabledForCli) || inputs.composed;
+  if (id === 'component-docs') {
+    return buildComponentDocsSkill({ transport, docsSupported, composed: inputs.composed });
+  }
+  return id === 'test-stories'
+    ? buildTestStoriesSkill({
+        transport,
+        testSupported: inputs.testSupported,
+        a11yEnabled: inputs.a11yEnabled,
+      })
+    : buildUiReviewSkill({
+        docsEnabled: docsSupported,
+        moduleGraphSupported: inputs.moduleGraphSupported,
+        transport,
+      });
+}

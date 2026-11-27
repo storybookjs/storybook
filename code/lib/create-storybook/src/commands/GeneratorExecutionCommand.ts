@@ -111,7 +111,6 @@ export class GeneratorExecutionCommand {
       framework: frameworkInfo.framework,
       renderer: frameworkInfo.renderer,
       linkable: !!options.linkable,
-      pnp: !!options.usePnp,
       yes: !!options.yes,
       projectType,
       features: selectedFeatures,

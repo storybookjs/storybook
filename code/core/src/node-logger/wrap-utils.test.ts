@@ -1,77 +1,68 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { stripVTControlCharacters } from 'node:util';
+
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // eslint-disable-next-line depend/ban-dependencies
 import { execaSync } from 'execa';
 
-import {
-  getTerminalWidth,
-  protectUrls,
-  wrapTextForClack,
-  wrapTextForClackHint,
-} from './wrap-utils.ts';
+import { createHyperlink, getTerminalWidth, protectUrls, wrapTextForClack } from './wrap-utils.ts';
 
 // Mock dependencies at the top with spy: true option
-vi.mock('@clack/prompts', () => ({
-  S_BAR: '│',
-}));
-
-vi.mock('picocolors', () => ({
-  cyan: vi.fn((text) => `cyan(${text})`),
-  dim: vi.fn((text) => `dim(${text})`),
-  reset: vi.fn((text) => `reset(${text})`),
-}));
-
 vi.mock('execa', () => ({
   execaSync: vi.fn(),
 }));
 
-// Helper function to strip ANSI codes for length calculation
-function stripAnsi(str: string): string {
-  return str.replace(/\u001b\[[0-9;]*m/g, '');
+function getVisibleLength(str: string): number {
+  return stripVTControlCharacters(str).length;
 }
 
-// Helper function to get visible length
-function getVisibleLength(str: string): number {
-  return stripAnsi(str).length;
-}
+const stubStdoutColumns = (descriptor: PropertyDescriptor, isTTY = true) => {
+  const stdout = Object.create(process.stdout);
+  Object.defineProperty(stdout, 'columns', { configurable: true, ...descriptor });
+  Object.defineProperty(stdout, 'isTTY', { configurable: true, value: isTTY });
+
+  const stubbedProcess = Object.create(process);
+  Object.defineProperty(stubbedProcess, 'stdout', { value: stdout, configurable: true });
+  vi.stubGlobal('process', stubbedProcess);
+};
 
 describe('wrap-utils', () => {
   beforeEach(() => {
-    // Mock process.stdout.columns
-    Object.defineProperty(process.stdout, 'columns', {
-      value: 80,
-      configurable: true,
-    });
+    stubStdoutColumns({ value: 80 });
 
     // Clear all mocks
     vi.clearAllMocks();
   });
 
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
   describe('getTerminalWidth', () => {
     it('should return process.stdout.columns when available', () => {
-      Object.defineProperty(process.stdout, 'columns', {
-        value: 120,
-        configurable: true,
-      });
+      stubStdoutColumns({ value: 120 });
 
       expect(getTerminalWidth()).toBe(120);
     });
 
     it('should return default width (80) when process.stdout.columns is undefined', () => {
-      Object.defineProperty(process.stdout, 'columns', {
-        value: undefined,
-        configurable: true,
-      });
+      stubStdoutColumns({ value: undefined });
+
+      expect(getTerminalWidth()).toBe(80);
+    });
+
+    // Some ptys and CI wrappers report non-positive terminal widths.
+    it.each([0, -1])('should return default width (80) when columns is %i', (columns) => {
+      stubStdoutColumns({ value: columns });
 
       expect(getTerminalWidth()).toBe(80);
     });
 
     it('should return default width (80) when accessing columns throws an error', () => {
-      Object.defineProperty(process.stdout, 'columns', {
+      stubStdoutColumns({
         get: () => {
           throw new Error('Test error');
         },
-        configurable: true,
       });
 
       expect(getTerminalWidth()).toBe(80);
@@ -145,8 +136,8 @@ describe('wrap-utils', () => {
       expect(result).toMatch(/\u001b\[0m/); // Reset code
 
       // Text content should be preserved
-      expect(stripAnsi(result)).toContain('This is red text');
-      expect(stripAnsi(result)).toContain('normal text');
+      expect(stripVTControlCharacters(result)).toContain('This is red text');
+      expect(stripVTControlCharacters(result)).toContain('normal text');
 
       // Should wrap into multiple lines
       expect(result.split('\n').length).toBeGreaterThan(1);
@@ -169,102 +160,6 @@ describe('wrap-utils', () => {
     });
   });
 
-  describe('wrapTextForClackHint', () => {
-    it('should wrap hint text with proper continuation line indentation', () => {
-      const text =
-        'This is a very long hint text that should be wrapped with proper indentation for continuation lines';
-      const result = wrapTextForClackHint(text, 60, 'Label');
-
-      if (result.includes('\n')) {
-        const lines = result.split('\n');
-        expect(lines.length).toBeGreaterThan(1);
-
-        // First line should be the original text start
-        expect(lines[0]).toContain('This is a very');
-
-        // Continuation lines should have proper indentation structure
-        for (let i = 1; i < lines.length; i++) {
-          // Should contain the stroke character and proper spacing
-          expect(lines[i]).toMatch(/cyan\(│\)/);
-          expect(lines[i]).toMatch(/dim\(/);
-
-          // Should have meaningful content after indentation
-          const contentAfterIndent = lines[i].replace(/^.*dim\(/, '').replace(/\)$/, '');
-          expect(contentAfterIndent.trim()).not.toBe('');
-        }
-      }
-    });
-
-    it('should not wrap short text and return it unchanged', () => {
-      const text = 'Short hint';
-      const result = wrapTextForClackHint(text, 80, 'Label');
-
-      expect(result).toBe(text);
-      expect(result).not.toContain('\n');
-      expect(result).not.toContain('cyan(│)');
-    });
-
-    it('should calculate available width correctly based on label length', () => {
-      const text = 'This hint text should account for the long label when calculating wrap width';
-      const longLabel = 'Very long label name that takes up space';
-      const shortLabel = 'Short';
-
-      const resultWithLongLabel = wrapTextForClackHint(text, 60, longLabel);
-      const resultWithShortLabel = wrapTextForClackHint(text, 60, shortLabel);
-
-      // With longer label, should wrap earlier (more lines)
-      const longLabelLines = resultWithLongLabel.split('\n').length;
-      const shortLabelLines = resultWithShortLabel.split('\n').length;
-
-      if (longLabelLines > 1 || shortLabelLines > 1) {
-        expect(longLabelLines).toBeGreaterThanOrEqual(shortLabelLines);
-      }
-    });
-
-    it('should handle hint text without label parameter', () => {
-      const text =
-        'Hint without label that might be long enough to wrap depending on terminal width constraints';
-      const result = wrapTextForClackHint(text, 50);
-
-      // Should still work without label
-      expect(typeof result).toBe('string');
-      expect(stripAnsi(result)).toContain('Hint without label');
-
-      // If wrapped, should still have proper structure
-      if (result.includes('\n')) {
-        const lines = result.split('\n');
-        for (let i = 1; i < lines.length; i++) {
-          expect(lines[i]).toMatch(/cyan\(│\)/);
-        }
-      }
-    });
-
-    it('should maintain minimum content width of 30 characters', () => {
-      const text = 'Test hint text that should maintain minimum width';
-      const veryLongLabel = 'A'.repeat(50); // Very long label
-      const result = wrapTextForClackHint(text, 10, veryLongLabel); // Very small terminal width
-
-      // Should still produce reasonable output
-      expect(typeof result).toBe('string');
-      expect(result.length).toBeGreaterThan(0);
-      expect(stripAnsi(result)).toContain('Test hint text');
-    });
-
-    it('should handle empty hint text', () => {
-      const result = wrapTextForClackHint('', 80, 'Label');
-      expect(result).toBe('');
-    });
-
-    it('should preserve ANSI codes in hint text', () => {
-      const text = '\u001b[33mYellow hint text\u001b[0m with normal text that might wrap';
-      const result = wrapTextForClackHint(text, 40, 'Label');
-
-      // ANSI codes should be preserved
-      expect(result).toMatch(/\u001b\[33m/); // Yellow color
-      expect(result).toMatch(/\u001b\[0m/); // Reset
-    });
-  });
-
   describe('edge cases and special characters', () => {
     it('should keep symbols with following text when possible (no-break behavior)', () => {
       const text =
@@ -274,13 +169,13 @@ describe('wrap-utils', () => {
       const lines = result.split('\n');
 
       // Find the line with the checkmark
-      const checkmarkLine = lines.find((line) => stripAnsi(line).includes('✔'));
+      const checkmarkLine = lines.find((line) => stripVTControlCharacters(line).includes('✔'));
       expect(checkmarkLine).toBeDefined();
 
       // The checkmark should be followed by "Success" on the same line if width allows
       if (checkmarkLine && getVisibleLength(checkmarkLine) <= 32) {
         // 40 - 8 = 32
-        expect(stripAnsi(checkmarkLine)).toMatch(/✔\s+Success/);
+        expect(stripVTControlCharacters(checkmarkLine)).toMatch(/✔\s+Success/);
       }
     });
 
@@ -295,9 +190,9 @@ describe('wrap-utils', () => {
       expect(result).toMatch(/\u001b\[0m/); // Reset (multiple instances)
 
       // Should preserve content
-      expect(stripAnsi(result)).toContain('✔');
-      expect(stripAnsi(result)).toContain('Bold text');
-      expect(stripAnsi(result)).toContain('normal text');
+      expect(stripVTControlCharacters(result)).toContain('✔');
+      expect(stripVTControlCharacters(result)).toContain('Bold text');
+      expect(stripVTControlCharacters(result)).toContain('normal text');
 
       // Line length constraints should be respected
       const lines = result.split('\n');
@@ -317,8 +212,8 @@ describe('wrap-utils', () => {
       expect(result).toMatch(/\u001b\[0m/); // Reset
 
       // Content should be intact
-      expect(stripAnsi(result)).toContain('Multiple codes');
-      expect(stripAnsi(result)).toContain('normal text continues');
+      expect(stripVTControlCharacters(result)).toContain('Multiple codes');
+      expect(stripVTControlCharacters(result)).toContain('normal text continues');
     });
 
     it('should properly handle reset codes and color state', () => {
@@ -335,7 +230,7 @@ describe('wrap-utils', () => {
       expect(resetMatches!.length).toBeGreaterThanOrEqual(2);
 
       // Content order should be preserved
-      const cleanResult = stripAnsi(result);
+      const cleanResult = stripVTControlCharacters(result);
       expect(cleanResult.indexOf('Red')).toBeLessThan(cleanResult.indexOf('normal'));
       expect(cleanResult.indexOf('normal')).toBeLessThan(cleanResult.indexOf('Green'));
     });
@@ -375,6 +270,33 @@ describe('wrap-utils', () => {
 
       expect(result).toMatchInlineSnapshot(
         `"Visit ]8;;https://example.comhttps://example.com]8;; for more info"`
+      );
+    });
+
+    it('should keep URLs plain when stdout is piped', () => {
+      stubStdoutColumns({ value: undefined }, false);
+      vi.stubEnv('TERM_PROGRAM', 'iTerm.app');
+
+      const url = 'https://example.com/path/to/guide';
+
+      expect(protectUrls(`Visit ${url}`)).toBe(`Visit ${url}`);
+      expect(createHyperlink('Guide', url)).toBe(`Guide: ${url}`);
+    });
+
+    it('should keep hyperlink targets on a supported TTY', () => {
+      vi.stubEnv('TERM_PROGRAM', 'iTerm.app');
+      vi.stubEnv('TERM_PROGRAM_VERSION', '3.4.0');
+
+      expect(createHyperlink('Guide', 'https://example.com/guide')).toBe(
+        '\u001b]8;;https://example.com/guide\u0007Guide\u001b]8;;\u0007'
+      );
+    });
+
+    it('should use the titled URL fallback in Apple Terminal', () => {
+      vi.stubEnv('TERM_PROGRAM', 'Apple_Terminal');
+
+      expect(createHyperlink('Guide', 'https://example.com/guide')).toBe(
+        'Guide: https://example.com/guide'
       );
     });
 
@@ -479,10 +401,7 @@ describe('wrap-utils', () => {
     });
 
     it('should use terminal width as default when no options provided', () => {
-      Object.defineProperty(process.stdout, 'columns', {
-        value: 100,
-        configurable: true,
-      });
+      stubStdoutColumns({ value: 100 });
 
       const url = 'https://example.com';
       const text = `Visit ${url}`;
@@ -503,28 +422,14 @@ describe('wrap-utils', () => {
     });
 
     it('should not modify text when terminal does not support hyperlinks', () => {
-      // Mock process.env to return unsupported terminal
-      const originalEnv = process.env.TERM_PROGRAM;
-      const originalVersion = process.env.TERM_PROGRAM_VERSION;
-
-      process.env.TERM_PROGRAM = 'Apple_Terminal';
-      delete process.env.TERM_PROGRAM_VERSION;
+      vi.stubEnv('TERM_PROGRAM', 'Apple_Terminal');
+      vi.stubEnv('TERM_PROGRAM_VERSION', undefined);
 
       const text = 'Visit https://example.com for info';
       const result = protectUrls(text);
 
       expect(result).toBe(text);
       expect(result).not.toContain('\u001b]8;;');
-
-      // Restore original env
-      if (originalEnv) {
-        process.env.TERM_PROGRAM = originalEnv;
-      } else {
-        delete process.env.TERM_PROGRAM;
-      }
-      if (originalVersion) {
-        process.env.TERM_PROGRAM_VERSION = originalVersion;
-      }
     });
 
     it('should handle complex URLs with ports and authentication', () => {

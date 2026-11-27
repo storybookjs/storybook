@@ -8,12 +8,14 @@ import {
 	startStorybook,
 	stopStorybook,
 } from './helpers';
+import { startRefFixtures, type RefFixtures } from './ref-fixtures.ts';
 
 const PORT = 6007;
 const MCP_ENDPOINT = `http://localhost:${PORT}/mcp`;
 const STARTUP_TIMEOUT = 30_000;
 
 let storybookProcess: ReturnType<typeof x> | null = null;
+let fixtures: RefFixtures | null = null;
 
 async function mcpRequest(method: string, params: any = {}) {
 	const response = await fetch(MCP_ENDPOINT, {
@@ -32,19 +34,22 @@ async function mcpRequest(method: string, params: any = {}) {
 describe('MCP Composition E2E Tests', () => {
 	beforeAll(async () => {
 		await killPort(PORT);
-		storybookProcess = startStorybook('.storybook-composition', PORT);
+		fixtures = await startRefFixtures();
+		({ storybookProcess } = await startStorybook('.storybook-composition', PORT, fixtures.env));
 		await waitForMcpEndpoint(MCP_ENDPOINT);
 	}, STARTUP_TIMEOUT);
 
 	afterAll(async () => {
 		await stopStorybook(storybookProcess);
 		storybookProcess = null;
+		await fixtures?.close();
+		fixtures = null;
 	});
 
 	describe('Multi-Source Documentation', () => {
 		it('should list documentation from both local and remote sources', async () => {
 			const response = await mcpRequest('tools/call', {
-				name: 'list-all-documentation',
+				name: 'docs-list',
 				arguments: {},
 			});
 
@@ -67,7 +72,7 @@ describe('MCP Composition E2E Tests', () => {
 
 		it('should fetch documentation for a local component', async () => {
 			const response = await mcpRequest('tools/call', {
-				name: 'get-documentation',
+				name: 'docs-show',
 				arguments: {
 					id: 'example-button',
 					storybookId: 'local',
@@ -84,6 +89,23 @@ describe('MCP Composition E2E Tests', () => {
 
 				Primary UI component for user interaction
 
+				## Props
+
+				\`\`\`
+				export type Props = {
+				  /** Is this the principal call to action on the page? */
+				  primary?: boolean = false;
+				  /** What background color to use */
+				  backgroundColor?: string;
+				  /** How large should the button be? */
+				  size?: 'small' | 'medium' | 'large' = 'medium';
+				  /** Button contents */
+				  label: string;
+				  /** Optional click handler */
+				  onClick?: () => void;
+				}
+				\`\`\`
+
 				## Stories
 
 				### Primary
@@ -91,7 +113,8 @@ describe('MCP Composition E2E Tests', () => {
 				Story ID: example-button--primary
 
 				\`\`\`
-				import { Button } from "@my-org/my-component-library";
+				import { Button } from '@my-org/my-component-library';
+				import { fn } from 'storybook/test';
 
 				const Primary = () => <Button onClick={fn()} primary label="Button" />;
 				\`\`\`
@@ -101,7 +124,8 @@ describe('MCP Composition E2E Tests', () => {
 				Story ID: example-button--secondary
 
 				\`\`\`
-				import { Button } from "@my-org/my-component-library";
+				import { Button } from '@my-org/my-component-library';
+				import { fn } from 'storybook/test';
 
 				const Secondary = () => <Button onClick={fn()} label="Button" />;
 				\`\`\`
@@ -111,42 +135,18 @@ describe('MCP Composition E2E Tests', () => {
 				Story ID: example-button--large
 
 				\`\`\`
-				import { Button } from "@my-org/my-component-library";
+				import { Button } from '@my-org/my-component-library';
+				import { fn } from 'storybook/test';
 
 				const Large = () => <Button onClick={fn()} size="large" label="Button" />;
 				\`\`\`
 
 				### Other Stories
 
+				Get the code of one of these stories with the docs-show-story tool and its story ID.
+
 				- Small (example-button--small)
 				- With A 11 Y Violation (example-button--with-a-11-y-violation)
-
-				## Props
-
-				\`\`\`
-				export type Props = {
-				  /**
-				    Is this the principal call to action on the page?
-				  */
-				  primary?: boolean = false;
-				  /**
-				    What background color to use
-				  */
-				  backgroundColor?: string;
-				  /**
-				    How large should the button be?
-				  */
-				  size?: 'small' | 'medium' | 'large' = 'medium';
-				  /**
-				    Button contents
-				  */
-				  label: string;
-				  /**
-				    Optional click handler
-				  */
-				  onClick?: () => void;
-				}
-				\`\`\`
 
 				## Docs
 
@@ -172,7 +172,7 @@ describe('MCP Composition E2E Tests', () => {
 		it('should fetch documentation for a component from remote source', async () => {
 			// Get documentation for a component that exists in the remote Storybook UI
 			const response = await mcpRequest('tools/call', {
-				name: 'get-documentation',
+				name: 'docs-show',
 				arguments: {
 					id: 'example-button',
 					storybookId: 'storybook-ui',
@@ -190,7 +190,7 @@ describe('MCP Composition E2E Tests', () => {
 
 		it('should silently exclude refs that have no manifest', async () => {
 			const response = await mcpRequest('tools/call', {
-				name: 'list-all-documentation',
+				name: 'docs-list',
 				arguments: {},
 			});
 
@@ -201,25 +201,19 @@ describe('MCP Composition E2E Tests', () => {
 			expect(text).not.toContain('no-manifest');
 		});
 
-		it('should require storybookId in multi-source mode', async () => {
+		it('should default docs-show to the local source when storybookId is omitted', async () => {
 			const response = await mcpRequest('tools/call', {
-				name: 'get-documentation',
+				name: 'docs-show',
 				arguments: {
 					id: 'example-button',
 				},
 			});
 
-			expect(response.result).toMatchInlineSnapshot(`
-				{
-				  "content": [
-				    {
-				      "text": "Invalid arguments for tool get-documentation: [{"kind":"schema","type":"object","expected":"\\"storybookId\\"","received":"undefined","message":"Invalid key: Expected \\"storybookId\\" but received undefined","path":[{"type":"object","origin":"key","input":{"id":"example-button"},"key":"storybookId"}]}]",
-				      "type": "text",
-				    },
-				  ],
-				  "isError": true,
-				}
-			`);
+			expect(response.result.isError).toBeFalsy();
+			const text = response.result.content[0].text;
+			expect(text).toContain('ID: example-button');
+			// Only the local Button carries this attached doc; the storybook-ui ref has its own Button.
+			expect(text).toContain('🍌-emoji');
 		});
 	});
 
@@ -235,10 +229,10 @@ describe('MCP Composition E2E Tests', () => {
 	});
 
 	describe('Tools Schema', () => {
-		it('should include storybookId parameter in get-documentation schema', async () => {
+		it('should include storybookId parameter in docs-show schema', async () => {
 			const response = await mcpRequest('tools/list');
 
-			const getDocTool = response.result.tools.find((t: any) => t.name === 'get-documentation');
+			const getDocTool = response.result.tools.find((t: any) => t.name === 'docs-show');
 
 			expect(getDocTool).toBeDefined();
 			expect(getDocTool.inputSchema.properties).toHaveProperty('storybookId');

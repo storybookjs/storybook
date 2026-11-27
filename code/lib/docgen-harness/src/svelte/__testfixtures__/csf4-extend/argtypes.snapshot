@@ -1,0 +1,85 @@
+{
+  "children": {
+    "control": null,
+    "description": "Alert body.",
+    "name": "children",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "Snippet<[]>",
+      },
+    },
+    "type": {
+      "name": "Snippet<[]>",
+      "required": false,
+    },
+  },
+  "dismissible": {
+    "control": {
+      "type": "boolean",
+    },
+    "description": "Shows a close button.",
+    "name": "dismissible",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": "false",
+      },
+      "type": {
+        "summary": "boolean",
+      },
+    },
+    "type": {
+      "name": "boolean",
+      "required": false,
+    },
+  },
+  "level": {
+    "control": {
+      "type": "radio",
+    },
+    "description": "Severity level.",
+    "name": "level",
+    "options": [
+      "info",
+      "warning",
+      "error",
+    ],
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": ""info"",
+      },
+      "type": {
+        "summary": ""info" | "warning" | "error"",
+      },
+    },
+    "type": {
+      "name": ""info" | "warning" | "error"",
+      "required": false,
+    },
+  },
+  "title": {
+    "control": {
+      "type": "text",
+    },
+    "description": "Alert heading.",
+    "name": "title",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+      "required": true,
+    },
+  },
+}

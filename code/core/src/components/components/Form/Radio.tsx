@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { color, styled } from 'storybook/theming';
+import { color, styled } from 'storybook/theming/emotion';
 
 const Input = styled.input(({ theme }) => ({
   appearance: 'none',

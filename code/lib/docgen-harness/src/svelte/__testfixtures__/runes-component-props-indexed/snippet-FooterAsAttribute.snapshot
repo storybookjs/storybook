@@ -1,0 +1,1 @@
+<Modal footer={sharedFooter} id="modal-footer-attr" open />

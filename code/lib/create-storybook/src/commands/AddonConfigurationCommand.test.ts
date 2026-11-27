@@ -5,7 +5,6 @@ import { type JsPackageManager, PackageManagerName } from 'storybook/internal/co
 import { logger, prompt } from 'storybook/internal/node-logger';
 import { ErrorCollector } from 'storybook/internal/telemetry';
 
-import addonA11yPostinstall from '../../../../addons/a11y/src/postinstall.ts';
 import addonVitestPostinstall from '../../../../addons/vitest/src/postinstall.ts';
 import type { TelemetryService } from '../services/index.ts';
 import {
@@ -15,7 +14,6 @@ import {
 
 vi.mock('storybook/internal/node-logger', { spy: true });
 vi.mock('storybook/internal/telemetry', { spy: true });
-vi.mock('../../../../addons/a11y/src/postinstall', { spy: true });
 vi.mock('../../../../addons/vitest/src/postinstall', { spy: true });
 vi.mock('../../../cli-storybook/src/postinstallAddon', () => ({
   postinstallAddon: vi.fn().mockResolvedValue(undefined),
@@ -53,7 +51,6 @@ describe('AddonConfigurationCommand', () => {
     vi.mocked(logger.debug).mockImplementation(() => {});
     vi.mocked(logger.log).mockImplementation(() => {});
     vi.mocked(ErrorCollector.addError).mockImplementation(() => {});
-    vi.mocked(addonA11yPostinstall).mockResolvedValue(undefined);
     vi.mocked(addonVitestPostinstall).mockResolvedValue(undefined);
 
     command = new AddonConfigurationCommand(
@@ -114,28 +111,6 @@ describe('AddonConfigurationCommand', () => {
       expect(mockTaskLog.success).toHaveBeenCalledWith('Addons configured successfully');
     });
 
-    it('should configure a11y addon successfully', async () => {
-      vi.mocked(prompt.taskLog).mockReturnValue(mockTaskLog);
-
-      const result = await command.execute({
-        addons: ['@storybook/addon-a11y'],
-        configDir: '.storybook',
-      });
-
-      expect(result).toEqual({ status: 'success' });
-      expect(addonA11yPostinstall).toHaveBeenCalledWith({
-        packageManager: 'npm',
-        configDir: '.storybook',
-        yes: true,
-        skipInstall: true,
-        useRemotePkg: false,
-        skipDependencyManagement: true,
-        logger,
-        prompt,
-      });
-      expect(mockTaskLog.success).toHaveBeenCalledWith('Addons configured successfully');
-    });
-
     it('should configure generic addon via postinstallAddon', async () => {
       const { postinstallAddon } = await import('../../../cli-storybook/src/postinstallAddon.ts');
       vi.mocked(prompt.taskLog).mockReturnValue(mockTaskLog);
@@ -157,23 +132,6 @@ describe('AddonConfigurationCommand', () => {
         prompt,
       });
       expect(mockTaskLog.success).toHaveBeenCalledWith('Addons configured successfully');
-    });
-
-    it('should skip the a11y postinstall when vitest was configured in the same run', async () => {
-      vi.mocked(prompt.taskLog).mockReturnValue(mockTaskLog);
-
-      const result = await command.execute({
-        addons: ['@storybook/addon-vitest', '@storybook/addon-a11y'],
-        configDir: '.storybook',
-      });
-
-      expect(result).toEqual({ status: 'success' });
-      expect(addonVitestPostinstall).toHaveBeenCalled();
-      // vitest's postinstall already runs the addon-a11y-addon-test
-      // automigration when both addons are configured together
-      expect(addonA11yPostinstall).not.toHaveBeenCalled();
-      expect(mockTaskLog.message).toHaveBeenCalledWith('Configuring @storybook/addon-vitest...');
-      expect(mockTaskLog.message).toHaveBeenCalledWith('Configuring @storybook/addon-a11y...');
     });
 
     it('should handle addon configuration failure gracefully', async () => {
@@ -202,8 +160,9 @@ describe('AddonConfigurationCommand', () => {
         configDir: '.storybook',
       });
 
+      const { postinstallAddon } = await import('../../../cli-storybook/src/postinstallAddon.ts');
       expect(result).toEqual({ status: 'failed' });
-      expect(addonA11yPostinstall).toHaveBeenCalled();
+      expect(postinstallAddon).toHaveBeenCalledWith('@storybook/addon-a11y', expect.anything());
       expect(mockTaskLog.error).toHaveBeenCalledWith('Failed to configure addons');
     });
 
@@ -323,7 +282,6 @@ describe('executeAddonConfiguration', () => {
     vi.mocked(logger.error).mockImplementation(() => {});
     vi.mocked(logger.debug).mockImplementation(() => {});
     vi.mocked(logger.log).mockImplementation(() => {});
-    vi.mocked(addonA11yPostinstall).mockResolvedValue(undefined);
     vi.mocked(addonVitestPostinstall).mockResolvedValue(undefined);
 
     vi.clearAllMocks();
@@ -348,7 +306,8 @@ describe('executeAddonConfiguration', () => {
       configDir: '.storybook',
     });
 
+    const { postinstallAddon } = await import('../../../cli-storybook/src/postinstallAddon.ts');
     expect(result).toEqual({ status: 'success' });
-    expect(addonA11yPostinstall).toHaveBeenCalled();
+    expect(postinstallAddon).toHaveBeenCalledWith('@storybook/addon-a11y', expect.anything());
   });
 });

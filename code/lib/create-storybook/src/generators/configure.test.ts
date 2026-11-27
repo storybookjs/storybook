@@ -149,7 +149,7 @@ describe('configureMain', () => {
       prefixes: [],
       addons: [
         "%%path.dirname(require.resolve(path.join('@storybook/addon-essentials', 'package.json')))%%",
-        "%%path.dirname(require.resolve(path.join('@storybook/preset-create-react-app', 'package.json')))%%",
+        "%%path.dirname(require.resolve(path.join('@storybook/addon-links', 'package.json')))%%",
       ],
       storybookConfigFolder: '.storybook',
       framework:
@@ -173,11 +173,43 @@ describe('configureMain', () => {
         ],
         "addons": [
           path.dirname(require.resolve(path.join('@storybook/addon-essentials', 'package.json'))),
-          path.dirname(require.resolve(path.join('@storybook/preset-create-react-app', 'package.json')))
+          path.dirname(require.resolve(path.join('@storybook/addon-links', 'package.json')))
         ],
         "framework": path.dirname(require.resolve(path.join('@storybook/react-webpack5', 'package.json')))
       };
       export default config;"
+    `);
+  });
+
+  it('should generate defineMain when csfFactories is enabled', async () => {
+    await configureMain({
+      language: SupportedLanguage.TYPESCRIPT,
+      addons: ['@storybook/addon-a11y'],
+      prefixes: [],
+      storybookConfigFolder: '.storybook',
+      framework: '@storybook/react-vite',
+      frameworkPackage: '@storybook/react-vite',
+      features: new Set([Feature.DOCS]),
+      csfFactories: true,
+    });
+
+    const { calls } = vi.mocked(fsp.writeFile).mock;
+    const [mainConfigPath, mainConfigContent] = calls[calls.length - 1];
+
+    expect(mainConfigPath).toEqual('./.storybook/main.ts');
+    expect(mainConfigContent).toMatchInlineSnapshot(`
+      "import { defineMain } from '@storybook/react-vite/node';
+
+      export default defineMain({
+        "stories": [
+          "../stories/**/*.mdx",
+          "../stories/**/*.stories.@(js|jsx|mjs|ts|tsx)"
+        ],
+        "addons": [
+          "@storybook/addon-a11y"
+        ],
+        "framework": "@storybook/react-vite"
+      });"
     `);
   });
 });
@@ -318,6 +350,37 @@ describe('configurePreview', () => {
       };
 
       export default preview;"
+    `);
+  });
+
+  it('should generate definePreview when csfFactories is enabled', async () => {
+    vi.mocked(fsp.stat).mockRejectedValueOnce({});
+    await configurePreview({
+      language: SupportedLanguage.TYPESCRIPT,
+      storybookConfigFolder: '.storybook',
+      frameworkPackage: '@storybook/react-vite',
+      renderer: SupportedRenderer.REACT,
+      csfFactories: true,
+    });
+
+    const { calls } = vi.mocked(fsp.writeFile).mock;
+    const [previewConfigPath, previewConfigContent] = calls[calls.length - 1];
+
+    expect(previewConfigPath).toEqual('./.storybook/preview.tsx');
+    expect(previewConfigContent).toMatchInlineSnapshot(`
+      "import { definePreview } from '@storybook/react-vite'
+
+      export default definePreview({
+        addons: [],
+        parameters: {
+          controls: {
+            matchers: {
+             color: /(background|color)$/i,
+             date: /Date$/i,
+            },
+          },
+        },
+      });"
     `);
   });
 });

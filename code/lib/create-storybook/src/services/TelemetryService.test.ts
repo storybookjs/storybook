@@ -1,20 +1,19 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ProjectType } from 'storybook/internal/cli';
+import { getProcessAncestry } from 'storybook/internal/common';
 import { telemetry } from 'storybook/internal/telemetry';
 import { Feature } from 'storybook/internal/types';
-
-import { getProcessAncestry } from 'process-ancestry';
 
 import { TelemetryService } from './TelemetryService.ts';
 
 vi.mock('storybook/internal/telemetry', { spy: true });
-vi.mock('process-ancestry', { spy: true });
 
 describe('TelemetryService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(telemetry).mockResolvedValue(undefined);
+    vi.mocked(getProcessAncestry).mockReturnValue([]);
   });
 
   describe('when telemetry is enabled', () => {
@@ -39,6 +38,21 @@ describe('TelemetryService', () => {
       expect(telemetry).toHaveBeenCalledWith('init-step', {
         step: 'install-type',
         installType: 'recommended',
+      });
+    });
+
+    it('should track the skills step', async () => {
+      await telemetryService.trackSkills({
+        result: 'failed',
+        source: 'ai-feature',
+        exitCode: 1,
+      });
+
+      expect(telemetry).toHaveBeenCalledWith('init-step', {
+        step: 'skills',
+        result: 'failed',
+        source: 'ai-feature',
+        exitCode: 1,
       });
     });
 
@@ -110,8 +124,8 @@ describe('TelemetryService', () => {
       const selectedFeatures = new Set([Feature.DOCS, Feature.TEST]);
 
       vi.mocked(getProcessAncestry).mockReturnValue([
-        { command: 'npx storybook@8.0.5 init' },
-      ] as any);
+        { pid: 2, ppid: 1, command: 'npx storybook@8.0.5 init' },
+      ]);
 
       await telemetryService.trackInitWithContext(
         ProjectType.REACT,
@@ -140,40 +154,13 @@ describe('TelemetryService', () => {
       );
     });
 
-    it('should handle ancestry errors gracefully', async () => {
-      const telemetryService = new TelemetryService();
-      const selectedFeatures = new Set([]);
-
-      vi.mocked(getProcessAncestry).mockImplementation(() => {
-        throw new Error('Ancestry error');
-      });
-
-      await telemetryService.trackInitWithContext(ProjectType.VUE3, selectedFeatures, false);
-
-      expect(telemetry).toHaveBeenCalledWith(
-        'init',
-        {
-          projectType: ProjectType.VUE3,
-          features: {
-            dev: true,
-            docs: false,
-            test: false,
-            onboarding: false,
-            ai: false,
-          },
-          newUser: false,
-          versionSpecifier: undefined,
-          cliIntegration: undefined,
-        },
-        { configDir: undefined }
-      );
-    });
-
     it('should detect CLI integration from ancestry', async () => {
       const telemetryService = new TelemetryService();
       const selectedFeatures = new Set([]);
 
-      vi.mocked(getProcessAncestry).mockReturnValue([{ command: 'sv create my-app' }] as any);
+      vi.mocked(getProcessAncestry).mockReturnValue([
+        { pid: 2, ppid: 1, command: 'sv create my-app' },
+      ]);
 
       await telemetryService.trackInitWithContext(ProjectType.NEXTJS, selectedFeatures, false);
 
@@ -187,10 +174,6 @@ describe('TelemetryService', () => {
     });
 
     describe('when AI feature is selected', () => {
-      beforeEach(() => {
-        vi.mocked(getProcessAncestry).mockReturnValue([]);
-      });
-
       it('should set ai: true when AI feature is selected', async () => {
         const telemetryService = new TelemetryService();
         const selectedFeatures = new Set([Feature.AI]);

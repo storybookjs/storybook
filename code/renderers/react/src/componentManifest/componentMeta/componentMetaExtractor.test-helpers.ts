@@ -1,34 +1,64 @@
 import * as path from 'node:path';
 
+import { extractDeclaredSubcomponents } from 'storybook/internal/common';
 import { loadCsf } from 'storybook/internal/csf-tools';
+
+import { afterAll } from 'vitest';
+
+import type { ComponentMetaProjectBase } from 'storybook/internal/component-meta';
 
 import { vol } from 'memfs';
 import ts from 'typescript';
 
 import { type StoryRef, getComponents } from '../getComponentImports.ts';
 import { findMatchingComponent } from '../resolveComponents.ts';
-import { extractDeclaredSubcomponents } from '../subcomponents.ts';
-import { ComponentMetaProject } from './ComponentMetaProject.ts';
+import { ComponentMetaProject, type ReactComponentMetaProject } from './ComponentMetaProject.ts';
+import { NativeComponentMetaProject } from './native/native-component-meta-project.ts';
+import { createNativeDocgenTypeScript } from '@storybook/component-meta-typescript';
 import { createTempProject, writeFiles } from './test-helpers.ts';
+import {
+  DOCGEN_TS_API,
+  loadTestNativeTypeScriptModules,
+} from '@storybook/component-meta-typescript/testing';
+
+type SharedProject = ReactComponentMetaProject & ComponentMetaProjectBase;
 
 /**
- * Shared LanguageService across all tests — avoids re-parsing @types/react per test. First
- * getProgram() is ~300ms, subsequent incremental rebuilds are ~5ms.
+ * Shared project across all tests — avoids re-parsing @types/react per test. First getProgram() is
+ * ~300ms, subsequent incremental rebuilds are ~5ms.
  */
 const { projectDir, configPath } = createTempProject({});
-const fsFileSnapshots = new Map<string, [number | undefined, ts.IScriptSnapshot | undefined]>();
-const sharedProject = new ComponentMetaProject(
-  ts,
-  ts.parseJsonSourceFileConfigFileContent(
-    ts.readJsonConfigFile(configPath, ts.sys.readFile),
-    ts.sys,
-    projectDir,
-    {},
-    configPath
-  ),
-  configPath,
-  fsFileSnapshots
-);
+const sharedProject: SharedProject = await (async () => {
+  if (DOCGEN_TS_API === 'native') {
+    const modules = await loadTestNativeTypeScriptModules();
+    const api = new modules.sync.API({ cwd: projectDir });
+    const { fileNames, options, projectReferences } = api.parseConfigFile(configPath);
+    const project = new NativeComponentMetaProject(
+      api,
+      createNativeDocgenTypeScript(modules, api),
+      { fileNames: [...fileNames], options, projectReferences },
+      configPath
+    );
+    afterAll(() => {
+      project.dispose();
+      api.close();
+    });
+    return project;
+  }
+  const fsFileSnapshots = new Map<string, [number | undefined, ts.IScriptSnapshot | undefined]>();
+  return new ComponentMetaProject(
+    ts,
+    ts.parseJsonSourceFileConfigFileContent(
+      ts.readJsonConfigFile(configPath, ts.sys.readFile),
+      ts.sys,
+      projectDir,
+      {},
+      configPath
+    ),
+    configPath,
+    fsFileSnapshots
+  );
+})();
 
 /** Reads a project file from the in-memory mirror populated by {@link withProject}. */
 export function readProjectFile(filePath: string): string {
@@ -43,17 +73,18 @@ export function resetProjectVolume(): void {
 /** Write files into the shared project, invalidate caches, and run a callback. */
 export async function withProject<T>(
   files: Record<string, string>,
-  fn: (project: ComponentMetaProject, filePaths: Record<string, string>) => T | Promise<T>
+  fn: (project: SharedProject, filePaths: Record<string, string>) => T | Promise<T>
 ): Promise<T> {
   vol.reset();
   const filePaths = writeFiles(projectDir, files);
   vol.fromNestedJSON(
     Object.fromEntries(Object.entries(filePaths).map(([name, filePath]) => [filePath, files[name]]))
   );
-  for (const fp of Object.values(filePaths)) {
-    fsFileSnapshots.delete(fp);
-  }
-  (sharedProject as any).projectVersion++;
+  // Report every rewritten path as changed: the tracker evicts its snapshots and bumps versions,
+  // which stays correct even when consecutive writes land within one mtime tick.
+  sharedProject.onFilesChanged(
+    Object.values(filePaths).map((filePath) => ({ filePath, type: 'changed' as const }))
+  );
   return fn(sharedProject, filePaths);
 }
 

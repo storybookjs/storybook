@@ -1,9 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import {
-  incomingMessageToWebRequest,
-  webResponseToServerResponse,
-  getToolsets,
-} from './mcp-handler.ts';
+import { registerCoreToolsetsForTest } from './test-support/register-core-toolsets.ts';
+import { incomingMessageToWebRequest, webResponseToServerResponse } from './mcp-handler.ts';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { PassThrough } from 'node:stream';
 import { CompositionAuth } from './auth/index.ts';
@@ -205,6 +202,8 @@ describe('mcpServerHandler', () => {
   beforeEach(async () => {
     // Reset modules and get fresh handler for each test to avoid state pollution
     vi.resetModules();
+    // The `services` preset hook does this in a real Storybook, before the MCP server boots.
+    registerCoreToolsetsForTest();
     const handler = await import('./mcp-handler.ts');
     mcpServerHandler = handler.mcpServerHandler;
   });
@@ -236,40 +235,40 @@ describe('mcpServerHandler', () => {
   async function getRegisteredToolNames(
     mockOptions: any,
     port: number,
-    handlerOptions: { sources?: any[]; headers?: Record<string, string> } = {}
+    handlerOptions: { sources?: any[] } = {}
   ): Promise<string[]> {
     const host = `localhost:${port}`;
-    const addonOptions = { toolsets: { dev: true, docs: true } };
-    const { headers: extraHeaders = {}, ...restHandlerOptions } = handlerOptions;
 
     const initReq = createMockIncomingMessage({
       method: 'POST',
-      headers: { 'content-type': 'application/json', host, ...extraHeaders },
+      headers: { 'content-type': 'application/json', host },
       body: createMCPInitializeRequest(),
     });
     const { response: initResponse } = createMockServerResponse();
     await mcpServerHandler({
       req: initReq,
       res: initResponse,
+      origin: 'http://localhost:6006',
+      basePath: '/',
       options: mockOptions,
-      addonOptions,
       compositionAuth: new CompositionAuth(),
-      ...restHandlerOptions,
+      ...handlerOptions,
     });
 
     const listReq = createMockIncomingMessage({
       method: 'POST',
-      headers: { 'content-type': 'application/json', host, ...extraHeaders },
+      headers: { 'content-type': 'application/json', host },
       body: { jsonrpc: '2.0', id: 2, method: 'tools/list', params: {} },
     });
     const { response: listResponse, getResponseData } = createMockServerResponse();
     await mcpServerHandler({
       req: listReq,
       res: listResponse,
+      origin: 'http://localhost:6006',
+      basePath: '/',
       options: mockOptions,
-      addonOptions,
       compositionAuth: new CompositionAuth(),
-      ...restHandlerOptions,
+      ...handlerOptions,
     });
 
     const { body } = getResponseData();
@@ -290,13 +289,9 @@ describe('mcpServerHandler', () => {
     await mcpServerHandler({
       req: mockReq,
       res: response,
+      origin: 'http://localhost:6006',
+      basePath: '/',
       options: mockOptions as any,
-      addonOptions: {
-        toolsets: {
-          dev: true,
-          docs: true,
-        },
-      },
       compositionAuth: new CompositionAuth(),
     });
 
@@ -312,9 +307,10 @@ describe('mcpServerHandler', () => {
       id: 1,
       result: {
         protocolVersion: '2025-06-18',
-        adapter: {},
+        // No list-changed notifications: a client that waits for them never gets an answer.
         capabilities: {
-          tools: { listChanged: true },
+          tools: { listChanged: false },
+          resources: { listChanged: false },
         },
         serverInfo: {
           name: '@storybook/addon-mcp',
@@ -324,17 +320,50 @@ describe('mcpServerHandler', () => {
     });
     expect(parsedResponse.result.serverInfo.version).toBeDefined();
     expect(parsedResponse.result.instructions).toBeDefined();
+    expect(parsedResponse.result.instructions).toContain('## Storybook');
     expect(parsedResponse.result.instructions).toContain(
-      'Follow these workflows when working with UI and/or Storybook.'
+      '`npx storybook skills write-stories --mcp`: every component'
+    );
+    expect(parsedResponse.result.instructions).toContain('2. To test stories, call `test-run`');
+    // A review is no step: the agent tells the user about it, and creates one only when asked.
+    expect(parsedResponse.result.instructions).not.toMatch(
+      /^\d\. `npx storybook skills ui-review/m
     );
     expect(parsedResponse.result.instructions).toContain(
-      '## UI Building and Story Writing Workflow'
+      'ALWAYS inform the user about the `/ui-review` skill after a change the user can see: "Use the /ui-review skill to see the changed components in Storybook"'
     );
-    expect(parsedResponse.result.instructions).toContain('## Validation Workflow');
-    expect(parsedResponse.result.instructions).not.toContain('## Documentation Workflow');
+    expect(parsedResponse.result.instructions).not.toContain('component-docs');
   });
 
-  it('should include docs-style instructions when docs toolset is selected and manifest is available', async () => {
+  it.each([
+    ['a null body', 'null', -32600],
+    ['a message without jsonrpc', { id: 1, method: 'tools/list' }, -32600],
+    ['a batch', [{ jsonrpc: '2.0', id: 1, method: 'tools/list' }], -32600],
+    ['an unparseable body', '{bad', -32700],
+  ])('should answer %s with a 400 JSON-RPC error', async (_, body, code) => {
+    const mockReq = createMockIncomingMessage({
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body,
+    });
+    const { response, getResponseData } = createMockServerResponse();
+
+    await mcpServerHandler({
+      req: mockReq,
+      res: response,
+      origin: 'http://localhost:6006',
+      basePath: '/',
+      options: createMockOptions(),
+      compositionAuth: new CompositionAuth(),
+    });
+
+    expect(response.end).toHaveBeenCalled();
+    const { status, body: responseBody } = getResponseData();
+    expect(status).toBe(400);
+    expect(JSON.parse(responseBody)).toMatchObject({ jsonrpc: '2.0', error: { code } });
+  });
+
+  it('should include component-docs instructions when manifest is available', async () => {
     const applyMock = vi.fn(async (key: string, defaultValue?: any) => {
       if (key === 'core') {
         return { disableTelemetry: false };
@@ -357,7 +386,6 @@ describe('mcpServerHandler', () => {
       headers: {
         'content-type': 'application/json',
         host: 'localhost:6011',
-        'X-MCP-Toolsets': 'docs',
       },
       body: createMCPInitializeRequest(),
     });
@@ -366,14 +394,9 @@ describe('mcpServerHandler', () => {
     await mcpServerHandler({
       req: mockReq,
       res: response,
+      origin: 'http://localhost:6006',
+      basePath: '/',
       options: mockOptions as any,
-      addonOptions: {
-        toolsets: {
-          dev: true,
-          docs: true,
-          test: true,
-        },
-      },
       compositionAuth: new CompositionAuth(),
     });
 
@@ -383,17 +406,10 @@ describe('mcpServerHandler', () => {
     const parsedResponse = JSON.parse(responseText);
 
     expect(parsedResponse.result.instructions).toContain(
-      'Follow these workflows when working with UI and/or Storybook.'
+      '1. `npx storybook skills component-docs --mcp`'
     );
-    expect(parsedResponse.result.instructions).toContain('## Documentation Workflow');
-    expect(parsedResponse.result.instructions).toContain(
-      '**CRITICAL: Never hallucinate component properties!**'
-    );
-    expect(parsedResponse.result.instructions).toContain('## Multi-Source Requests');
-    expect(parsedResponse.result.instructions).not.toContain(
-      '## UI Building and Story Writing Workflow'
-    );
-    expect(parsedResponse.result.instructions).not.toContain('## Validation Workflow');
+    expect(parsedResponse.result.instructions).toContain('write-stories');
+    expect(parsedResponse.result.instructions).toContain('ui-review');
   });
 
   it('should respect disableTelemetry setting', async () => {
@@ -422,13 +438,9 @@ describe('mcpServerHandler', () => {
     await mcpServerHandler({
       req: mockReq,
       res: response,
+      origin: 'http://localhost:6006',
+      basePath: '/',
       options: mockOptions as any,
-      addonOptions: {
-        toolsets: {
-          dev: true,
-          docs: true,
-        },
-      },
       compositionAuth: new CompositionAuth(),
     });
 
@@ -439,7 +451,7 @@ describe('mcpServerHandler', () => {
     expect(telemetry).not.toHaveBeenCalled();
   });
 
-  it('should register tools from @storybook/mcp when feature flag and generator are enabled', async () => {
+  it('should register the docs tools when feature flag and generator are enabled', async () => {
     const applyMock = vi.fn(async (key: string, defaultValue?: any) => {
       if (key === 'core') {
         return { disableTelemetry: false };
@@ -469,10 +481,9 @@ describe('mcpServerHandler', () => {
     await mcpServerHandler({
       req: initReq,
       res: initResponse,
+      origin: 'http://localhost:6006',
+      basePath: '/',
       options: mockOptions as any,
-      addonOptions: {
-        toolsets: { dev: true, docs: true },
-      },
       compositionAuth: new CompositionAuth(),
     });
 
@@ -492,10 +503,9 @@ describe('mcpServerHandler', () => {
     await mcpServerHandler({
       req: listToolsReq,
       res: listResponse,
+      origin: 'http://localhost:6006',
+      basePath: '/',
       options: mockOptions as any,
-      addonOptions: {
-        toolsets: { dev: true, docs: true },
-      },
       compositionAuth: new CompositionAuth(),
     });
 
@@ -507,9 +517,9 @@ describe('mcpServerHandler', () => {
 
     // Verify component manifest tools are included
     const toolNames = parsedResponse.result.tools.map((t: any) => t.name);
-    expect(toolNames).toContain('list-all-documentation');
-    expect(toolNames).toContain('get-documentation');
-    expect(toolNames).toContain('get-documentation-for-story');
+    expect(toolNames).toContain('docs-list');
+    expect(toolNames).toContain('docs-show');
+    expect(toolNames).toContain('docs-show-story');
   });
 
   it('registers docs tools for composed sources when local manifests are unavailable', async () => {
@@ -531,225 +541,15 @@ describe('mcpServerHandler', () => {
       ],
     });
 
-    expect(toolNames).toContain('list-all-documentation');
-    expect(toolNames).toContain('get-documentation');
-    expect(toolNames).toContain('get-documentation-for-story');
+    expect(toolNames).toContain('docs-list');
+    expect(toolNames).toContain('docs-show');
+    expect(toolNames).toContain('docs-show-story');
   });
 
-  it('registers get-changed-stories when the changeDetection feature flag is on', async () => {
-    const mockOptions = createMockOptions({
-      port: 6009,
-      presets: {
-        apply: vi.fn(async (key: string, defaultValue?: any) => {
-          if (key === 'core') return { disableTelemetry: false };
-          if (key === 'features') return { changeDetection: true };
-          return defaultValue;
-        }),
-      },
-    });
+  it('registers stories-changed and review-create', async () => {
+    const toolNames = await getRegisteredToolNames(createMockOptions({ port: 6009 }), 6009);
 
-    const toolNames = await getRegisteredToolNames(mockOptions, 6009);
-    expect(toolNames).toContain('get-changed-stories');
-  });
-
-  it('registers display-review when the experimentalReview and changeDetection feature flags are on', async () => {
-    const mockOptions = createMockOptions({
-      port: 6010,
-      presets: {
-        apply: vi.fn(async (key: string, defaultValue?: any) => {
-          if (key === 'core') return { disableTelemetry: false };
-          if (key === 'features') return { changeDetection: true, experimentalReview: true };
-          return defaultValue;
-        }),
-      },
-    });
-
-    const toolNames = await getRegisteredToolNames(mockOptions, 6010);
-    expect(toolNames).toContain('display-review');
-  });
-
-  it('does not list display-review for direct MCP clients when only the changeDetection feature flag is on', async () => {
-    const mockOptions = createMockOptions({
-      port: 6013,
-      presets: {
-        apply: vi.fn(async (key: string, defaultValue?: any) => {
-          if (key === 'core') return { disableTelemetry: false };
-          if (key === 'features') return { changeDetection: true };
-          return defaultValue;
-        }),
-      },
-    });
-
-    const toolNames = await getRegisteredToolNames(mockOptions, 6013);
-    expect(toolNames).toContain('get-changed-stories');
-    expect(toolNames).not.toContain('display-review');
-  });
-
-  it('lists display-review for storybook ai CLI requests when only the changeDetection feature flag is on', async () => {
-    const mockOptions = createMockOptions({
-      port: 6014,
-      presets: {
-        apply: vi.fn(async (key: string, defaultValue?: any) => {
-          if (key === 'core') return { disableTelemetry: false };
-          if (key === 'features') return { changeDetection: true };
-          return defaultValue;
-        }),
-      },
-    });
-
-    const toolNames = await getRegisteredToolNames(mockOptions, 6014, {
-      headers: { 'x-storybook-mcp-proxy': 'true' },
-    });
-    expect(toolNames).toContain('display-review');
-  });
-
-  it('does not list display-review for CLI requests when experimentalReview is explicitly false', async () => {
-    const mockOptions = createMockOptions({
-      port: 6015,
-      presets: {
-        apply: vi.fn(async (key: string, defaultValue?: any) => {
-          if (key === 'core') return { disableTelemetry: false };
-          if (key === 'features') return { changeDetection: true, experimentalReview: false };
-          return defaultValue;
-        }),
-      },
-    });
-
-    const toolNames = await getRegisteredToolNames(mockOptions, 6015, {
-      headers: { 'x-storybook-mcp-proxy': 'true' },
-    });
-    expect(toolNames).not.toContain('display-review');
-  });
-});
-
-describe('getToolsets', () => {
-  it('should return addon options when no header is present', () => {
-    const request = new Request('http://localhost:6006/mcp');
-    const addonOptions = {
-      toolsets: {
-        dev: true,
-        docs: false,
-        test: true,
-      },
-    };
-
-    const result = getToolsets(request, addonOptions);
-
-    expect(result).toEqual({
-      dev: true,
-      docs: false,
-      test: true,
-    });
-  });
-
-  it('should enable only toolsets specified in header', () => {
-    const request = new Request('http://localhost:6006/mcp', {
-      headers: { 'X-MCP-Toolsets': 'dev' },
-    });
-    const addonOptions = {
-      toolsets: {
-        dev: true,
-        docs: true,
-        test: true,
-      },
-    };
-
-    const result = getToolsets(request, addonOptions);
-
-    expect(result).toEqual({
-      dev: true,
-      docs: false,
-      test: false,
-    });
-  });
-
-  it('should enable multiple toolsets from comma-separated header', () => {
-    const request = new Request('http://localhost:6006/mcp', {
-      headers: {
-        'X-MCP-Toolsets': 'dev,docs',
-      },
-    });
-    const addonOptions = {
-      toolsets: {
-        dev: false,
-        docs: false,
-        test: false,
-      },
-    };
-
-    const result = getToolsets(request, addonOptions);
-
-    expect(result).toEqual({
-      dev: true,
-      docs: true,
-      test: false,
-    });
-  });
-
-  it('should handle whitespace in header values', () => {
-    const request = new Request('http://localhost:6006/mcp', {
-      headers: {
-        'X-MCP-Toolsets': ' dev , docs ',
-      },
-    });
-    const addonOptions = {
-      toolsets: {
-        dev: false,
-        docs: false,
-        test: false,
-      },
-    };
-
-    const result = getToolsets(request, addonOptions);
-
-    expect(result).toEqual({
-      dev: true,
-      docs: true,
-      test: false,
-    });
-  });
-
-  it('should ignore invalid toolset names in header', () => {
-    const request = new Request('http://localhost:6006/mcp', {
-      headers: {
-        'X-MCP-Toolsets': 'dev,invalidToolset,docs',
-      },
-    });
-    const addonOptions = {
-      toolsets: {
-        dev: false,
-        docs: false,
-        test: false,
-      },
-    };
-
-    const result = getToolsets(request, addonOptions);
-
-    expect(result).toEqual({
-      dev: true,
-      docs: true,
-      test: false,
-    });
-  });
-
-  it('should return addon options when header is present with empty value', () => {
-    const request = new Request('http://localhost:6006/mcp', {
-      headers: { 'X-MCP-Toolsets': '' },
-    });
-    const addonOptions = {
-      toolsets: {
-        dev: true,
-        docs: true,
-        test: true,
-      },
-    };
-
-    const result = getToolsets(request, addonOptions);
-
-    expect(result).toEqual({
-      dev: true,
-      docs: true,
-      test: true,
-    });
+    expect(toolNames).toContain('stories-changed');
+    expect(toolNames).toContain('review-create');
   });
 });

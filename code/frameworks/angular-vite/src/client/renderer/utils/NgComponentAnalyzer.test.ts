@@ -6,6 +6,7 @@ import {
   ComponentFactoryResolver,
   Directive,
   EventEmitter,
+  forwardRef,
   HostBinding,
   Injectable,
   Input,
@@ -27,6 +28,194 @@ import {
 } from './NgComponentAnalyzer.ts';
 
 describe('getComponentInputsOutputs', () => {
+  it('includes only inputs exposed by host directives under their public names', () => {
+    @Directive({ standalone: true })
+    class HostDirective {
+      @Input() value?: string;
+      @Input('directiveAlias') aliased?: string;
+      @Input() hidden?: string;
+    }
+
+    @Component({
+      template: '',
+      hostDirectives: [
+        { directive: HostDirective, inputs: ['value', 'directiveAlias: publicValue'] },
+      ],
+    })
+    class HostComponent {}
+
+    expect(getComponentInputsOutputs(HostComponent)).toEqual({
+      inputs: [
+        { propName: 'value', templateName: 'value' },
+        { propName: 'publicValue', templateName: 'publicValue' },
+      ],
+      outputs: [],
+    });
+  });
+
+  it('discovers inputs exposed by inherited host directives', () => {
+    @Directive({ standalone: true })
+    class HostDirective {
+      @Input() value?: string;
+    }
+    @Component({
+      selector: 'inherited-base',
+      template: '',
+      hostDirectives: [{ directive: HostDirective, inputs: ['value: publicValue'] }],
+    })
+    class BaseComponent {}
+    @Component({ selector: 'inherited-child', template: '' })
+    class ChildComponent extends BaseComponent {}
+
+    expect(
+      getComponentInputsOutputs(ChildComponent).inputs.map((input) => input.templateName)
+    ).toEqual(['publicValue']);
+  });
+
+  it('discovers exposed inputs through forwardRef', () => {
+    @Component({
+      template: '',
+      hostDirectives: [
+        { directive: forwardRef(() => HostDirective), inputs: ['value: publicValue'] },
+      ],
+    })
+    class HostComponent {}
+    @Directive({ standalone: true })
+    class HostDirective {
+      @Input() value?: string;
+    }
+    expect(
+      getComponentInputsOutputs(HostComponent).inputs.map((input) => input.templateName)
+    ).toEqual(['publicValue']);
+  });
+
+  it('discovers the public names exposed through nested host directives', () => {
+    @Directive({ standalone: true })
+    class InnerDirective {
+      @Input() value?: string;
+    }
+    @Directive({
+      standalone: true,
+      hostDirectives: [{ directive: InnerDirective, inputs: ['value: middleValue'] }],
+    })
+    class OuterDirective {}
+    @Component({
+      template: '',
+      hostDirectives: [{ directive: OuterDirective, inputs: ['middleValue: publicValue'] }],
+    })
+    class HostComponent {}
+    expect(
+      getComponentInputsOutputs(HostComponent).inputs.map((input) => input.templateName)
+    ).toEqual(['publicValue']);
+  });
+
+  it('does not duplicate a public name shared with a component input', () => {
+    @Directive({ standalone: true })
+    class HostDirective {
+      @Input() value?: string;
+    }
+    @Component({
+      template: '',
+      hostDirectives: [{ directive: HostDirective, inputs: ['value: publicValue'] }],
+    })
+    class HostComponent {
+      @Input('publicValue') ownValue?: string;
+    }
+    expect(
+      getComponentInputsOutputs(HostComponent).inputs.map((input) => input.templateName)
+    ).toEqual(['publicValue']);
+  });
+
+  it('keeps a host input whose public name matches an aliased component property', () => {
+    @Directive({ standalone: true })
+    class HostDirective {
+      @Input() value?: string;
+    }
+    @Component({ template: '', hostDirectives: [{ directive: HostDirective, inputs: ['value'] }] })
+    class HostComponent {
+      @Input('ownValue') value?: string;
+    }
+    expect(
+      getComponentInputsOutputs(HostComponent).inputs.map((input) => input.templateName)
+    ).toEqual(['ownValue', 'value']);
+  });
+
+  it('reads compiled host inputs without decorator metadata', () => {
+    class CompiledComponent {
+      static ɵcmp = {
+        inputs: {},
+        outputs: {},
+        hostDirectives: [{ inputs: { value: 'publicValue' } }],
+      };
+    }
+    expect(
+      getComponentInputsOutputs(CompiledComponent).inputs.map((input) => input.templateName)
+    ).toEqual(['publicValue']);
+  });
+
+  it('reads deferred compiled host input pairs', () => {
+    class CompiledComponent {
+      static ɵcmp = {
+        inputs: {},
+        outputs: {},
+        hostDirectives: [() => [{ inputs: ['value', 'publicValue', 'other', 'otherValue'] }]],
+      };
+    }
+    expect(
+      getComponentInputsOutputs(CompiledComponent).inputs.map((input) => input.templateName)
+    ).toEqual(['publicValue', 'otherValue']);
+  });
+
+  it('includes only outputs exposed by host directives under their public names', () => {
+    @Directive({ standalone: true })
+    class HostDirective {
+      @Output() opened = new EventEmitter<void>();
+      @Output('directiveClosed') closed = new EventEmitter<void>();
+      @Output() hidden = new EventEmitter<void>();
+    }
+
+    @Component({
+      template: '',
+      hostDirectives: [
+        { directive: HostDirective, outputs: ['opened', 'directiveClosed: publicClosed'] },
+      ],
+    })
+    class HostComponent {}
+
+    expect(getComponentInputsOutputs(HostComponent)).toEqual({
+      inputs: [],
+      outputs: [
+        { propName: 'opened', templateName: 'opened' },
+        { propName: 'publicClosed', templateName: 'publicClosed' },
+      ],
+    });
+  });
+
+  it('reads deferred compiled host output pairs', () => {
+    class CompiledComponent {
+      static ɵcmp = {
+        inputs: {},
+        outputs: {},
+        hostDirectives: [() => [{ outputs: ['valueChange', 'expandedChange'] }]],
+      };
+    }
+    expect(
+      getComponentInputsOutputs(CompiledComponent).outputs.map((output) => output.templateName)
+    ).toEqual(['expandedChange']);
+  });
+
+  it('does not expose inputs from a bare host directive reference', () => {
+    @Directive({ standalone: true })
+    class HostDirective {
+      @Input() hidden?: string;
+    }
+
+    @Component({ template: '', hostDirectives: [HostDirective] })
+    class HostComponent {}
+
+    expect(getComponentInputsOutputs(HostComponent)).toEqual({ inputs: [], outputs: [] });
+  });
+
   it('should return empty if no I/O found', () => {
     @Component({
       standalone: false,
@@ -55,7 +244,7 @@ describe('getComponentInputsOutputs', () => {
     })
     class FooComponent {
       @Input()
-      public input: string;
+      public input?: string;
 
       public signalInput = input<string>();
 
@@ -64,7 +253,7 @@ describe('getComponentInputsOutputs', () => {
       });
 
       @Input('inputPropertyName')
-      public inputWithBindingPropertyName: string;
+      public inputWithBindingPropertyName?: string;
 
       @Output()
       public output = new EventEmitter<Event>();
@@ -98,6 +287,24 @@ describe('getComponentInputsOutputs', () => {
     expect(sortByPropName(outputs)).toEqual(sortByPropName(fooComponentFactory.outputs));
   });
 
+  it('binds an object-form metadata input without an alias under its own name', () => {
+    @Component({
+      template: '',
+      inputs: [{ name: 'plain' }, { name: 'aliased', alias: 'aliasedName' }],
+      standalone: false,
+    })
+    class FooComponent {
+      public plain?: string;
+
+      public aliased?: string;
+    }
+
+    expect(getComponentInputsOutputs(FooComponent).inputs).toEqual([
+      { propName: 'plain', templateName: 'plain' },
+      { propName: 'aliased', templateName: 'aliasedName' },
+    ]);
+  });
+
   it("should return I/O when some of component metadata has the same name as one of component's properties", () => {
     @Component({
       template: '',
@@ -107,10 +314,10 @@ describe('getComponentInputsOutputs', () => {
     })
     class FooComponent {
       @Input()
-      public input: string;
+      public input?: string;
 
       @Input('inputPropertyName')
-      public inputWithBindingPropertyName: string;
+      public inputWithBindingPropertyName?: string;
 
       @Output()
       public output = new EventEmitter<Event>();
@@ -137,11 +344,11 @@ describe('getComponentInputsOutputs', () => {
     class FooComponent {
       @Input()
       @HostBinding('class.preceeding-first')
-      public inputPreceedingHostBinding: string;
+      public inputPreceedingHostBinding?: string;
 
       @HostBinding('class.following-binding')
       @Input()
-      public inputFollowingHostBinding: string;
+      public inputFollowingHostBinding?: string;
     }
 
     const fooComponentFactory = resolveComponentFactory(FooComponent);
@@ -169,10 +376,10 @@ describe('getComponentInputsOutputs', () => {
     })
     class BarComponent {
       @Input()
-      public a: string;
+      public a?: string;
 
       @Input()
-      public b: string;
+      public b?: string;
     }
 
     @Component({
@@ -184,7 +391,7 @@ describe('getComponentInputsOutputs', () => {
       declare public b: string;
 
       @Input()
-      public c: string;
+      public c?: string;
     }
 
     const fooComponentFactory = resolveComponentFactory(FooComponent);
@@ -222,9 +429,9 @@ describe('getComponentInputsOutputs (signal-based I/O)', () => {
   it('detects @Input / @Output (decorator path, unchanged)', () => {
     @Component({ template: '', standalone: false })
     class FooComponent {
-      @Input() public input: string;
+      @Input() public input?: string;
 
-      @Input('inputPropertyName') public inputWithBindingPropertyName: string;
+      @Input('inputPropertyName') public inputWithBindingPropertyName?: string;
 
       @Output() public output = new EventEmitter<Event>();
 

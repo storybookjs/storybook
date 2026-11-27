@@ -1,5 +1,5 @@
 import { transparentize } from 'polished';
-import type { CSSObject, FunctionInterpolation } from 'storybook/theming';
+import type { CSSObject, FunctionInterpolation } from 'storybook/theming/emotion';
 
 export const headerCommon: FunctionInterpolation = ({ theme }) => ({
   margin: '20px 0 8px',

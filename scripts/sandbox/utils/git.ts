@@ -71,14 +71,15 @@ export async function commitAllToGit({ cwd, branch }: { cwd: string; branch: str
         .filter((s: string) => s.includes('pull request'));
 
       const prLinks = mergeCommits.map((mergeCommit) => {
-        const prNumber = mergeCommit.match(/Merge pull request #(\d+)/)[1];
-        const branchName = mergeCommit.match(/from (.+)/)[1].replace('storybookjs/', '');
-        return `- https://github.com/storybookjs/storybook/pull/${prNumber} (${branchName})`;
+        const prNumber = mergeCommit.match(/Merge pull request #(\d+)/)?.[1];
+        const branchName = mergeCommit.match(/from (.+)/)?.[1];
+        invariant(prNumber && branchName, `Unexpected merge commit message: ${mergeCommit}`);
+        return `- https://github.com/storybookjs/storybook/pull/${prNumber} (${branchName.replace('storybookjs/', '')})`;
       });
 
       const diffLink = `https://github.com/storybookjs/storybook/compare/${previousCommitHash}...${currentCommitHash}`;
 
-      const commitTitle = `${storybookVersion} - ${new Date().toDateString()} - ${previousCommitHash}`;
+      const commitTitle = `${storybookVersion} - ${new Date().toDateString()} - ${currentCommitHash}`;
       const commitBody = [
         `\nCheck the diff here: ${diffLink}`,
         '\nList of included PRs since previous version:',

@@ -4,7 +4,7 @@ import {
   frameworkToRenderer,
   getFrameworkName,
 } from 'storybook/internal/common';
-import { type Options, SupportedBuilder } from 'storybook/internal/types';
+import { type Options, type SecurityConfig, SupportedBuilder } from 'storybook/internal/types';
 
 export const buildFrameworkGlobalsFromOptions = async (options: Options) => {
   const globals: Record<string, any> = {};
@@ -19,13 +19,21 @@ export const buildFrameworkGlobalsFromOptions = async (options: Options) => {
   const renderer = frameworkToRenderer[framework];
 
   if (options.configType === 'DEVELOPMENT') {
-    // Manager only needs the token currently, so we don't pass any other channel options.
-    globals.CHANNEL_OPTIONS = { wsToken: channelOptions?.wsToken };
+    // Manager only needs the token and the channel path.
+    globals.CHANNEL_OPTIONS = {
+      wsToken: channelOptions?.wsToken,
+      ...(channelOptions?.wsPath ? { wsPath: channelOptions.wsPath } : {}),
+    };
   }
   globals.STORYBOOK_BUILDER = builder;
   globals.STORYBOOK_FRAMEWORK = framework;
   globals.STORYBOOK_RENDERER = renderer;
-  globals.STORYBOOK_NETWORK_ADDRESS = options.networkAddress;
+  globals.STORYBOOK_NETWORK_ADDRESS = options.host ? options.networkAddress : undefined;
+
+  const security = await options.presets.apply<SecurityConfig | undefined>('security');
+  if (security?.insecureIframeMessaging) {
+    globals.INSECURE_IFRAME_MESSAGING = true;
+  }
 
   return globals;
 };

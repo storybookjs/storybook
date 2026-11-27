@@ -3,7 +3,7 @@ npx storybook@latest add @storybook/addon-a11y
 ```
 
 ```shell renderer="common" packageManager="pnpm"
-pnpm dlx storybook@latest add @storybook/addon-a11y
+pnpm --allow-build=esbuild dlx storybook@latest add @storybook/addon-a11y
 ```
 
 ```shell renderer="common" packageManager="yarn"

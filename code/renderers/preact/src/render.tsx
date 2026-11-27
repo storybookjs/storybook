@@ -19,16 +19,8 @@ export const render: ArgsStoryFn<PreactRenderer> = (args, context) => {
   return h(Component, args);
 };
 
-let renderedStory: Element;
-
 function preactRender(story: StoryFnPreactReturnType | null, canvasElement: Element): void {
-  // @ts-expect-error (Converted from ts-ignore)
-  if (preact.Fragment) {
-    // Preact 10 only:
-    preact.render(story, canvasElement);
-  } else {
-    renderedStory = preact.render(story, canvasElement, renderedStory) as unknown as Element;
-  }
+  preact.render(story, canvasElement);
 }
 
 const StoryHarness: preact.FunctionalComponent<{

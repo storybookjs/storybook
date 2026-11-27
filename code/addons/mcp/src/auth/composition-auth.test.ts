@@ -1,15 +1,11 @@
 import { logger } from 'storybook/internal/node-logger';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { CompositionAuth, extractBearerToken } from './composition-auth.ts';
 
 describe('CompositionAuth', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
-  });
-
-  afterEach(() => {
-    vi.unstubAllGlobals();
   });
 
   describe('extractBearerToken', () => {
@@ -180,55 +176,6 @@ describe('CompositionAuth', () => {
       );
     });
 
-    it('delegates the local source to localManifestProvider when provided (docgen-server mode)', async () => {
-      const auth = new CompositionAuth();
-
-      const mockFetch = vi.fn();
-      vi.stubGlobal('fetch', mockFetch);
-
-      const localManifestProvider = vi
-        .fn()
-        .mockResolvedValue('{"v":1,"components":{"button":{"id":"button","name":"Button"}}}');
-
-      const provider = auth.createManifestProvider('http://localhost:6006', localManifestProvider);
-      const request = new Request('http://localhost:6006/mcp');
-      const source = { id: 'local', title: 'Local' };
-
-      const result = await provider(request, './manifests/components.json', source);
-
-      // Read in-process, never over loopback HTTP.
-      expect(localManifestProvider).toHaveBeenCalledWith(
-        request,
-        './manifests/components.json',
-        source
-      );
-      expect(mockFetch).not.toHaveBeenCalled();
-      expect(result).toContain('button');
-    });
-
-    it('still fetches remote sources over HTTP even when localManifestProvider is provided', async () => {
-      const auth = new CompositionAuth();
-
-      const mockFetch = vi.fn().mockResolvedValue({
-        ok: true,
-        text: () => Promise.resolve('{"v":1,"components":{}}'),
-      });
-      vi.stubGlobal('fetch', mockFetch);
-      const localManifestProvider = vi.fn();
-
-      const provider = auth.createManifestProvider('http://localhost:6006', localManifestProvider);
-      const request = new Request('http://localhost:6006/mcp');
-      const source = { id: 'remote', title: 'Remote', url: 'http://remote.example.com' };
-
-      await provider(request, './manifests/components.json', source);
-
-      expect(localManifestProvider).not.toHaveBeenCalled();
-      expect(mockFetch).toHaveBeenCalledWith(
-        'http://remote.example.com/manifests/components.json',
-        expect.any(Object)
-      );
-    });
-
     it('fetches from source URL when source provided', async () => {
       const auth = new CompositionAuth();
 
@@ -246,6 +193,27 @@ describe('CompositionAuth', () => {
 
       expect(mockFetch).toHaveBeenCalledWith(
         'http://remote.example.com/manifests/components.json',
+        expect.any(Object)
+      );
+    });
+
+    it('only rewrites a leading ./ in the manifest path, leaving inner ./ sequences intact', async () => {
+      const auth = new CompositionAuth();
+
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        text: () => Promise.resolve('{"anything":"goes"}'),
+      });
+      vi.stubGlobal('fetch', mockFetch);
+
+      const provider = auth.createManifestProvider('http://localhost:6006');
+      const request = new Request('http://localhost:6006/mcp');
+      const source = { id: 'remote', title: 'Remote', url: 'http://remote.example.com' };
+
+      await provider(request, '/services/a./b.json', source);
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        'http://remote.example.com/services/a./b.json',
         expect.any(Object)
       );
     });
@@ -667,7 +635,7 @@ describe('CompositionAuth', () => {
       expect(auth.requiresAuth).toBe(true);
       expect(auth.authUrls).toContain('https://private.example.com');
 
-      const wellKnown = auth.buildWellKnown('http://localhost:6006');
+      const wellKnown = auth.buildWellKnown('http://localhost:6006/mcp');
       expect(wellKnown).toEqual({
         resource: 'http://localhost:6006/mcp',
         authorization_servers: ['https://auth.example.com'],
@@ -775,62 +743,37 @@ describe('CompositionAuth', () => {
       const auth = new CompositionAuth();
       const warnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => {});
 
+      // Refs are probed concurrently, so responses are routed by URL rather than by call order.
+      const authServer = (origin: string) => ({
+        [`${origin}/manifests/components.json`]: {
+          ok: false,
+          status: 401,
+          headers: new Headers({
+            'WWW-Authenticate': `Bearer resource_metadata="${origin}/.well-known/oauth-protected-resource"`,
+          }),
+        },
+        [`${origin}/.well-known/oauth-protected-resource`]: {
+          ok: true,
+          json: () =>
+            Promise.resolve({ resource: `${origin}/mcp`, authorization_servers: [origin] }),
+        },
+        [`${origin}/.well-known/oauth-authorization-server`]: {
+          ok: true,
+          json: () =>
+            Promise.resolve({
+              issuer: origin,
+              authorization_endpoint: `${origin}/authorize`,
+              token_endpoint: `${origin}/token`,
+            }),
+        },
+      });
+      const responses: Record<string, unknown> = {
+        ...authServer('https://private.chromatic.com'),
+        ...authServer('https://other.example.com'),
+      };
       vi.stubGlobal(
         'fetch',
-        vi
-          .fn()
-          // First ref: manifest returns 401
-          .mockResolvedValueOnce({
-            ok: false,
-            status: 401,
-            headers: new Headers({
-              'WWW-Authenticate':
-                'Bearer resource_metadata="https://chromatic.com/.well-known/oauth-protected-resource"',
-            }),
-          })
-          .mockResolvedValueOnce({
-            ok: true,
-            json: () =>
-              Promise.resolve({
-                resource: 'https://chromatic.com/mcp',
-                authorization_servers: ['https://www.chromatic.com'],
-              }),
-          })
-          .mockResolvedValueOnce({
-            ok: true,
-            json: () =>
-              Promise.resolve({
-                issuer: 'https://www.chromatic.com',
-                authorization_endpoint: 'https://www.chromatic.com/authorize',
-                token_endpoint: 'https://www.chromatic.com/token',
-              }),
-          })
-          // Second ref: manifest returns 401 with different server
-          .mockResolvedValueOnce({
-            ok: false,
-            status: 401,
-            headers: new Headers({
-              'WWW-Authenticate':
-                'Bearer resource_metadata="https://other.example.com/.well-known/oauth-protected-resource"',
-            }),
-          })
-          .mockResolvedValueOnce({
-            ok: true,
-            json: () =>
-              Promise.resolve({
-                resource: 'https://other.example.com/mcp',
-                authorization_servers: ['https://other.example.com'],
-              }),
-          })
-          .mockResolvedValueOnce({
-            ok: true,
-            json: () =>
-              Promise.resolve({
-                issuer: 'https://other.example.com',
-                authorization_endpoint: 'https://other.example.com/authorize',
-                token_endpoint: 'https://other.example.com/token',
-              }),
-          })
+        vi.fn((url: string) => Promise.resolve(responses[url] ?? { ok: false, status: 404 }))
       );
 
       await auth.initialize([
@@ -839,6 +782,43 @@ describe('CompositionAuth', () => {
       ]);
 
       expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('different OAuth server'));
+    });
+
+    it('skips a ref whose OAuth metadata endpoint never answers', async () => {
+      const auth = new CompositionAuth();
+      const warnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => {});
+      vi.stubGlobal(
+        'fetch',
+        vi.fn((url: string, init?: RequestInit) =>
+          url.endsWith('/manifests/components.json')
+            ? Promise.resolve({
+                ok: false,
+                status: 401,
+                headers: new Headers({
+                  'WWW-Authenticate':
+                    'Bearer resource_metadata="https://stalled.example.com/.well-known/oauth-protected-resource"',
+                }),
+              })
+            : new Promise((_resolve, reject) =>
+                init?.signal?.addEventListener('abort', () => reject(init.signal!.reason))
+              )
+        )
+      );
+      // Fake timers do not drive `AbortSignal.timeout`, so the signal it returns is stubbed and
+      // aborted by hand, which also pins the budget it was created with.
+      const controller = new AbortController();
+      const timeoutSpy = vi.spyOn(AbortSignal, 'timeout').mockReturnValue(controller.signal);
+      const pending = auth.initialize([
+        { id: 'stalled', title: 'Stalled', url: 'https://stalled.example.com' },
+      ]);
+      await vi.waitFor(() => expect(timeoutSpy).toHaveBeenCalledWith(3_000));
+      controller.abort(new DOMException('timed out', 'TimeoutError'));
+      await pending;
+
+      expect(auth.requiresAuth).toBe(false);
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.stringContaining('Skipping composed ref "Stalled"')
+      );
     });
 
     it('gracefully skips refs that fail during auth discovery', async () => {
@@ -854,7 +834,7 @@ describe('CompositionAuth', () => {
       expect(auth.requiresAuth).toBe(false);
       expect(auth.authUrls).toHaveLength(0);
       expect(warnSpy).toHaveBeenCalledWith(
-        expect.stringContaining('Failed to check auth for composed ref "Down Service"')
+        expect.stringContaining('Skipping composed ref "Down Service"')
       );
     });
 

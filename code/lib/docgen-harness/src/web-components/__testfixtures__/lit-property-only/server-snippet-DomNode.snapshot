@@ -1,0 +1,10 @@
+const DomNode = () => {
+  const el = document.createElement('lit-property-only') as HTMLElement & {
+    config?: unknown;
+    items?: unknown;
+  };
+  el.setAttribute('label', String('Configured'));
+  el.items = [{ name: 'Alpha' }, { name: 'Beta' }];
+  el.config = { dense: true, theme: 'dark' };
+  return el;
+};

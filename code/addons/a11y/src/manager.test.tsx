@@ -7,11 +7,13 @@ import * as api from 'storybook/manager-api';
 
 import { PANEL_ID } from './constants.ts';
 import './manager.tsx';
+import { useA11yState } from './store.ts';
 
 vi.mock('storybook/manager-api');
 const mockedApi = vi.mocked<api.API>(api as any);
 mockedApi.useStorybookApi = vi.fn(() => ({ getSelectedPanel: vi.fn() }));
-mockedApi.useAddonState = vi.fn();
+vi.mock('./store.ts', () => ({ useA11yState: vi.fn() }));
+const mockedUseA11yState = vi.mocked(useA11yState);
 const mockedAddons = vi.mocked(api.addons);
 const registrationImpl = mockedAddons.register.mock.calls[0][1];
 
@@ -38,7 +40,7 @@ describe('A11yManager', () => {
 
   it('should compute title with no issues', () => {
     // given
-    mockedApi.useAddonState.mockImplementation(() => [{ results: undefined }]);
+    mockedUseA11yState.mockImplementation(() => [{ results: undefined }] as any);
     registrationImpl(api as unknown as api.API);
     const title = mockedAddons.add.mock.calls.map(([_, def]) => def).find(isPanel)
       ?.title as () => void;
@@ -63,14 +65,17 @@ describe('A11yManager', () => {
 
   it('should compute title with issues', () => {
     // given
-    mockedApi.useAddonState.mockImplementation(() => [
-      {
-        results: {
-          violations: [{}],
-          incomplete: [{}, {}],
-        },
-      },
-    ]);
+    mockedUseA11yState.mockImplementation(
+      () =>
+        [
+          {
+            results: {
+              violations: [{}],
+              incomplete: [{}, {}],
+            },
+          },
+        ] as any
+    );
     registrationImpl(mockedApi);
     const title = mockedAddons.add.mock.calls.map(([_, def]) => def).find(isPanel)
       ?.title as () => void;

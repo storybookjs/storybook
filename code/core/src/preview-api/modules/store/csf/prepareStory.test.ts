@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type {
   ArgsEnhancer,
@@ -11,6 +11,8 @@ import type {
   StoryContext,
 } from 'storybook/internal/types';
 
+import { ArgTypesRemovedFromStoryContextError } from 'storybook/internal/preview-errors';
+
 import type { UserEventObject } from 'storybook/test';
 
 import { Tag } from '../../../../shared/constants/tags.ts';
@@ -19,8 +21,6 @@ import { UNTARGETED } from '../args.ts';
 import { composeConfigs } from './composeConfigs.ts';
 import { normalizeProjectAnnotations } from './normalizeProjectAnnotations.ts';
 import { prepareContext, prepareMeta, prepareStory as realPrepareStory } from './prepareStory.ts';
-
-vi.mock('@storybook/global', { spy: true });
 
 const id = 'id';
 const name = 'name';
@@ -564,6 +564,125 @@ describe('prepareStory', () => {
     });
   });
 
+  describe('argTypes in the context of decorators and render functions', () => {
+    const argTypes = { one: { name: 'one', type: { name: 'string' as const } } };
+
+    const renderStory = (
+      story: PreparedStory,
+      render: (context: StoryContext) => unknown = story.unboundStoryFn
+    ) => {
+      const hooks = new HooksContext();
+      const context = prepareContext({ args: story.initialArgs, globals: {}, ...story });
+      try {
+        return render({ ...addExtraContext(context), hooks });
+      } finally {
+        hooks.clean();
+      }
+    };
+
+    beforeEach(() => {
+      addons.setChannel({ on: vi.fn(), removeListener: vi.fn() } as any);
+    });
+
+    it('throws when a decorator reads argTypes', () => {
+      const story = prepareStory(
+        { id, name, argTypes, decorators: [(storyFn, context) => context.argTypes], moduleExport },
+        { id, title },
+        { render }
+      );
+
+      expect(() => renderStory(story)).toThrow(ArgTypesRemovedFromStoryContextError);
+    });
+
+    it('throws when a render function reads argTypes', () => {
+      const story = prepareStory(
+        { id, name, argTypes, render: (args, context) => context.argTypes, moduleExport },
+        { id, title },
+        {}
+      );
+
+      expect(() => renderStory(story)).toThrow(ArgTypesRemovedFromStoryContextError);
+      expect(() => renderStory(story, story.undecoratedStoryFn)).toThrow(
+        ArgTypesRemovedFromStoryContextError
+      );
+    });
+
+    it('throws when a decorator reads argTypes under a framework decorator applicator', () => {
+      const story = prepareStory(
+        { id, name, argTypes, decorators: [(storyFn, context) => context.argTypes], moduleExport },
+        { id, title },
+        {
+          render,
+          applyDecorators: (storyFn, decorators) =>
+            decorators.reduce(
+              (decorated, decorator) => (context) =>
+                decorator((update) => decorated({ ...context, ...update }), context),
+              storyFn
+            ),
+        }
+      );
+
+      expect(() => renderStory(story)).toThrow(ArgTypesRemovedFromStoryContextError);
+    });
+
+    it('lets a framework decorator applicator identify a decorator by its originalFn', () => {
+      const decorator = vi.fn((storyFn) => storyFn());
+      let received: unknown[] = [];
+      prepareStory(
+        { id, name, decorators: [decorator], moduleExport },
+        { id, title },
+        {
+          render,
+          applyDecorators: (storyFn, decorators) => {
+            received = decorators;
+            return storyFn;
+          },
+        }
+      );
+
+      expect(received).toEqual([expect.objectContaining({ originalFn: decorator })]);
+    });
+
+    it('lets a decorator pass its context on to the story function', () => {
+      const story = prepareStory(
+        {
+          id,
+          name,
+          argTypes,
+          args: { one: 'initial' },
+          decorators: [(storyFn, context) => storyFn(context)],
+          render: (args, context) => [args, 'argTypes' in context],
+          moduleExport,
+        },
+        { id, title },
+        {}
+      );
+
+      expect(renderStory(story)).toEqual([{ one: 'initial' }, false]);
+    });
+
+    it('keeps argTypes hidden when an outer decorator updates the context', () => {
+      const story = prepareStory(
+        {
+          id,
+          name,
+          argTypes,
+          args: { one: 'initial' },
+          decorators: [
+            (storyFn, context) => [context.args, 'argTypes' in context, storyFn()],
+            (storyFn) => storyFn({ args: { one: 'updated' } }),
+          ],
+          render: (args, context) => [args, 'argTypes' in context],
+          moduleExport,
+        },
+        { id, title },
+        {}
+      );
+
+      expect(renderStory(story)).toEqual([{ one: 'updated' }, false, [{ one: 'updated' }, false]]);
+    });
+  });
+
   describe('mapping', () => {
     it('maps labels to values in prepareContext', () => {
       const story = prepareStory(
@@ -610,128 +729,114 @@ describe('prepareStory', () => {
     });
   });
 
-  describe('with `FEATURES.argTypeTargetsV7`', () => {
-    beforeEach(() => {
-      vi.stubGlobal('FEATURES', { argTypeTargetsV7: true });
-    });
+  it('filters out targeted args', () => {
+    const renderMock = vi.fn();
+    const firstStory = prepareStory(
+      {
+        id,
+        name,
+        args: { a: 1, b: 2 },
+        argTypes: { b: { name: 'b', target: 'foo' } },
+        moduleExport,
+      },
+      { id, title },
+      { render: renderMock }
+    );
 
-    afterEach(() => {
-      vi.unstubAllGlobals();
-    });
-
-    it('filters out targeted args', () => {
-      const renderMock = vi.fn();
-      const firstStory = prepareStory(
-        {
-          id,
-          name,
-          args: { a: 1, b: 2 },
-          argTypes: { b: { name: 'b', target: 'foo' } },
-          moduleExport,
-        },
-        { id, title },
-        { render: renderMock }
-      );
-
-      const context = prepareContext({ args: firstStory.initialArgs, globals: {}, ...firstStory });
-      firstStory.unboundStoryFn(addExtraContext(context));
-      expect(renderMock).toHaveBeenCalledWith(
-        { a: 1 },
-        expect.objectContaining({ args: { a: 1 }, allArgs: { a: 1, b: 2 } })
-      );
-    });
-
-    it('filters out conditional args', () => {
-      const renderMock = vi.fn();
-      const firstStory = prepareStory(
-        {
-          id,
-          name,
-          args: { a: 1, b: 2 },
-          argTypes: { b: { name: 'b', if: { arg: 'a', truthy: false } } },
-          moduleExport,
-        },
-        { id, title },
-        { render: renderMock }
-      );
-
-      const context = prepareContext({ args: firstStory.initialArgs, globals: {}, ...firstStory });
-      firstStory.unboundStoryFn(addExtraContext(context));
-      expect(renderMock).toHaveBeenCalledWith(
-        { a: 1 },
-        expect.objectContaining({ args: { a: 1 }, allArgs: { a: 1, b: 2 } })
-      );
-    });
-
-    it('adds argsByTarget to context', () => {
-      const renderMock = vi.fn();
-      const firstStory = prepareStory(
-        {
-          id,
-          name,
-          args: { a: 1, b: 2 },
-          argTypes: { b: { name: 'b', target: 'foo' } },
-          moduleExport,
-        },
-        { id, title },
-        { render: renderMock }
-      );
-
-      const context = prepareContext({ args: firstStory.initialArgs, globals: {}, ...firstStory });
-      firstStory.unboundStoryFn(addExtraContext(context));
-      expect(renderMock).toHaveBeenCalledWith(
-        { a: 1 },
-        expect.objectContaining({ argsByTarget: { [UNTARGETED]: { a: 1 }, foo: { b: 2 } } })
-      );
-    });
-
-    it('always sets args, even when all are targetted', () => {
-      const renderMock = vi.fn();
-      const firstStory = prepareStory(
-        {
-          id,
-          name,
-          args: { b: 2 },
-          argTypes: { b: { name: 'b', target: 'foo' } },
-          moduleExport,
-        },
-        { id, title },
-        { render: renderMock }
-      );
-
-      const context = prepareContext({ args: firstStory.initialArgs, globals: {}, ...firstStory });
-      firstStory.unboundStoryFn(addExtraContext(context));
-      expect(renderMock).toHaveBeenCalledWith(
-        {},
-        expect.objectContaining({ argsByTarget: { foo: { b: 2 } } })
-      );
-    });
-
-    it('always sets args, even when none are set for the story', () => {
-      const renderMock = vi.fn();
-      const firstStory = prepareStory(
-        {
-          id,
-          name,
-          moduleExport,
-        },
-        { id, title },
-        { render: renderMock }
-      );
-
-      const context = prepareContext({ args: firstStory.initialArgs, globals: {}, ...firstStory });
-      firstStory.unboundStoryFn(addExtraContext(context));
-      expect(renderMock).toHaveBeenCalledWith({}, expect.objectContaining({ argsByTarget: {} }));
-    });
+    const context = prepareContext({ args: firstStory.initialArgs, globals: {}, ...firstStory });
+    firstStory.unboundStoryFn(addExtraContext(context));
+    expect(renderMock).toHaveBeenCalledWith(
+      { a: 1 },
+      expect.objectContaining({ args: { a: 1 }, allArgs: { a: 1, b: 2 } })
+    );
   });
 
-  describe('with `FEATURES.experimentalDocgenServer`', () => {
-    beforeEach(() => {
-      vi.stubGlobal('FEATURES', { experimentalDocgenServer: true });
-    });
+  it('filters out conditional args', () => {
+    const renderMock = vi.fn();
+    const firstStory = prepareStory(
+      {
+        id,
+        name,
+        args: { a: 1, b: 2 },
+        argTypes: { b: { name: 'b', if: { arg: 'a', truthy: false } } },
+        moduleExport,
+      },
+      { id, title },
+      { render: renderMock }
+    );
 
-    afterEach(() => {
-      vi.unstubAllGlobals();
+    const context = prepareContext({ args: firstStory.initialArgs, globals: {}, ...firstStory });
+    firstStory.unboundStoryFn(addExtraContext(context));
+    expect(renderMock).toHaveBeenCalledWith(
+      { a: 1 },
+      expect.objectContaining({ args: { a: 1 }, allArgs: { a: 1, b: 2 } })
+    );
+  });
+
+  it('adds argsByTarget to context', () => {
+    const renderMock = vi.fn();
+    const firstStory = prepareStory(
+      {
+        id,
+        name,
+        args: { a: 1, b: 2 },
+        argTypes: { b: { name: 'b', target: 'foo' } },
+        moduleExport,
+      },
+      { id, title },
+      { render: renderMock }
+    );
+
+    const context = prepareContext({ args: firstStory.initialArgs, globals: {}, ...firstStory });
+    firstStory.unboundStoryFn(addExtraContext(context));
+    expect(renderMock).toHaveBeenCalledWith(
+      { a: 1 },
+      expect.objectContaining({ argsByTarget: { [UNTARGETED]: { a: 1 }, foo: { b: 2 } } })
+    );
+  });
+
+  it('always sets args, even when all are targetted', () => {
+    const renderMock = vi.fn();
+    const firstStory = prepareStory(
+      {
+        id,
+        name,
+        args: { b: 2 },
+        argTypes: { b: { name: 'b', target: 'foo' } },
+        moduleExport,
+      },
+      { id, title },
+      { render: renderMock }
+    );
+
+    const context = prepareContext({ args: firstStory.initialArgs, globals: {}, ...firstStory });
+    firstStory.unboundStoryFn(addExtraContext(context));
+    expect(renderMock).toHaveBeenCalledWith(
+      {},
+      expect.objectContaining({ argsByTarget: { foo: { b: 2 } } })
+    );
+  });
+
+  it('always sets args, even when none are set for the story', () => {
+    const renderMock = vi.fn();
+    const firstStory = prepareStory(
+      {
+        id,
+        name,
+        moduleExport,
+      },
+      { id, title },
+      { render: renderMock }
+    );
+
+    const context = prepareContext({ args: firstStory.initialArgs, globals: {}, ...firstStory });
+    firstStory.unboundStoryFn(addExtraContext(context));
+    expect(renderMock).toHaveBeenCalledWith({}, expect.objectContaining({ argsByTarget: {} }));
+  });
+
+  describe('with `FEATURES.docgenServer`', () => {
+    beforeEach(() => {
+      vi.stubGlobal('FEATURES', { docgenServer: true });
     });
 
     it('skips second-pass argTypes enhancers so args are not inferred in prepareStory', () => {
@@ -854,7 +959,6 @@ describe('prepareMeta', () => {
     // omitting the properties from preparedStory that are not in preparedMeta
     const {
       name: storyName,
-      story,
       applyLoaders,
       applyBeforeEach,
       applyAfterEach,

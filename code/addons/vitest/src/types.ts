@@ -1,5 +1,5 @@
-import type { experimental_UniversalStore } from 'storybook/internal/core-server';
-import type { PreviewAnnotation, Status, StoryId, StoryIndex } from 'storybook/internal/types';
+import type { internal_UniversalStore } from 'storybook/internal/core-server';
+import type { Status, StoryId } from 'storybook/internal/types';
 import type { API_HashEntry } from 'storybook/internal/types';
 import type { Report } from 'storybook/preview-api';
 
@@ -50,6 +50,8 @@ export type CurrentRun = {
   a11yReports: Record<StoryId, A11yRunReport[]>;
   reports: Record<StoryId, Report[]>;
   totalTestCount: number | undefined;
+  // How many story files the file filters of the run matched; undefined without file filters
+  matchedFileCount: number | undefined;
   storyIds: StoryId[] | undefined;
   startedAt: number | undefined;
   finishedAt: number | undefined;
@@ -69,8 +71,6 @@ export type StoreState = {
   };
   watching: boolean;
   cancelling: boolean;
-  index: StoryIndex;
-  previewAnnotations: PreviewAnnotation[];
   fatalError:
     | {
         message: string | undefined;
@@ -86,6 +86,10 @@ export type TriggerRunEvent = {
   type: 'TRIGGER_RUN';
   payload: {
     storyIds?: string[] | undefined;
+    /** Vitest file filters, as in `vitest Button`: only the story files they match run. */
+    fileFilters?: string[];
+    /** Story index import paths: only these story files run. */
+    storyFiles?: string[];
     triggeredBy: RunTrigger;
     configOverride?: RunConfig;
   };
@@ -118,4 +122,4 @@ export type StoreEvent =
   | ToggleWatchingEvent
   | TestRunCompletedEvent;
 
-export type Store = ReturnType<typeof experimental_UniversalStore.create<StoreState, StoreEvent>>;
+export type Store = ReturnType<typeof internal_UniversalStore.create<StoreState, StoreEvent>>;

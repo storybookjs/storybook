@@ -1,4 +1,4 @@
-```ts filename=".storybook/main.js|ts (CSF Next 🧪)" renderer="react" language="ts"
+```ts filename=".storybook/main.js|ts" renderer="react" language="ts"
 // Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
 import { defineMain } from '@storybook/your-framework/node';
 
@@ -11,7 +11,7 @@ export default defineMain({
 });
 ```
 
-```ts filename=".storybook/main.js|ts (CSF Next 🧪)" renderer="vue" language="ts"
+```ts filename=".storybook/main.js|ts" renderer="vue" language="ts"
 import { defineMain } from '@storybook/vue3-vite/node';
 
 export default defineMain({
@@ -23,7 +23,7 @@ export default defineMain({
 });
 ```
 
-```ts filename=".storybook/main.js|ts (CSF Next 🧪)" renderer="angular" language="ts"
+```ts filename=".storybook/main.js|ts" renderer="angular" language="ts"
 import { defineMain } from '@storybook/angular/node';
 
 export default defineMain({
@@ -35,7 +35,7 @@ export default defineMain({
 });
 ```
 
-```ts filename=".storybook/main.js|ts (CSF Next 🧪)" renderer="web-components" language="ts"
+```ts filename=".storybook/main.js|ts" renderer="web-components" language="ts"
 import { defineMain } from '@storybook/web-components-vite/node';
 
 export default defineMain({

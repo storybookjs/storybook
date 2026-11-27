@@ -74,6 +74,29 @@ describe('createStorybookMcpHandler', () => {
     }
   });
 
+  it.each([
+    ['a null body', 'null', -32600],
+    ['a message without jsonrpc', JSON.stringify({ id: 1, method: 'tools/list' }), -32600],
+    ['a batch', JSON.stringify([{ jsonrpc: '2.0', id: 1, method: 'tools/list' }]), -32600],
+    ['an unparseable body', '{bad', -32700],
+  ])('should answer %s with a 400 JSON-RPC error', async (_, body, code) => {
+    const handler = await createStorybookMcpHandler();
+
+    const response = await handler(
+      new Request('http://localhost/mcp', {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          accept: 'application/json, text/event-stream',
+        },
+        body,
+      })
+    );
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toMatchObject({ jsonrpc: '2.0', error: { code } });
+  });
+
   it('should handle initialize and list tools', async () => {
     const handler = await createStorybookMcpHandler();
     await setupClient(handler);
@@ -84,15 +107,15 @@ describe('createStorybookMcpHandler', () => {
     expect(tools.tools).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          name: 'list-all-documentation',
+          name: 'docs-list',
           title: 'List All Documentation',
         }),
         expect.objectContaining({
-          name: 'get-documentation',
+          name: 'docs-show',
           title: 'Get Documentation',
         }),
         expect.objectContaining({
-          name: 'get-documentation-for-story',
+          name: 'docs-show-story',
           title: 'Get Documentation for Story',
         }),
       ])
@@ -106,21 +129,21 @@ describe('createStorybookMcpHandler', () => {
     const instructions = client.getInstructions();
     expect(instructions).toBeDefined();
     expect(instructions).toMatchInlineSnapshot(`
-			"## Documentation Workflow
+      "## Documentation Workflow
 
-			**CRITICAL: Never hallucinate component properties!** Before using ANY property on a component (even common-sounding ones like \`shadow\`), you MUST verify it is documented via these tools. If it is not documented, it does not exist — never assume props from naming conventions or other libraries; report it to the user instead.
+      **CRITICAL: Never hallucinate component properties!** Before using ANY property on a component (even common-sounding ones like \`shadow\`), you MUST verify it is documented via these tools. If it is not documented, it does not exist — never assume props from naming conventions or other libraries; report it to the user instead.
 
-			1. Call **list-all-documentation** once at the start of the task to discover available component and docs IDs.
-			2. Call **get-documentation** with an \`id\` from that list to retrieve full component docs, props, usage examples, and stories.
-			3. Call **get-documentation-for-story** for extra docs on a story variant not covered by the component docs.
+      1. Call **docs-list** once at the start of the task to discover available component and docs IDs.
+      2. Call **docs-show** with an \`id\` from that list to retrieve full component docs, props, usage examples, and stories.
+      3. Call **docs-show-story** for extra docs on a story variant not covered by the component docs.
 
-			Only use properties explicitly documented or shown in example stories. Only reference IDs returned by these tools; never guess IDs.
+      Only use properties explicitly documented or shown in example stories. Only reference IDs returned by these tools; never guess IDs.
 
-			## Multi-Source Requests
+      ## Multi-Source Requests
 
-			- With multiple sources configured, **list-all-documentation** returns entries from every source; pass \`storybookId\` to **get-documentation** to scope one.
-			"
-		`);
+      - With multiple sources configured, **docs-list** returns entries from every source; pass \`storybookId\` to **docs-show** to scope one.
+      "
+    `);
   });
 
   it('should call onSessionInitialize handler when provided', async () => {
@@ -142,7 +165,7 @@ describe('createStorybookMcpHandler', () => {
     );
   });
 
-  it('should use manifestProvider when calling list-all-documentation', async () => {
+  it('should use manifestProvider when calling docs-list', async () => {
     const manifestProvider = createManifestProviderMock();
 
     const handler = await createStorybookMcpHandler({
@@ -151,7 +174,7 @@ describe('createStorybookMcpHandler', () => {
     await setupClient(handler);
 
     const result = await client.callTool({
-      name: 'list-all-documentation',
+      name: 'docs-list',
       arguments: {},
     });
 
@@ -181,7 +204,7 @@ describe('createStorybookMcpHandler', () => {
     await setupClient(handler);
 
     await client.callTool({
-      name: 'list-all-documentation',
+      name: 'docs-list',
       arguments: {},
     });
 
@@ -225,7 +248,7 @@ describe('createStorybookMcpHandler', () => {
     });
 
     await client.callTool({
-      name: 'list-all-documentation',
+      name: 'docs-list',
       arguments: {},
     });
 
@@ -246,6 +269,124 @@ describe('createStorybookMcpHandler', () => {
     );
   });
 
+  describe('composition schema', () => {
+    const sources = [
+      { id: 'local', title: 'Local' },
+      { id: 'remote', title: 'Remote', url: 'https://example.com/storybook' },
+    ];
+
+    async function listedStorybookIdInputs() {
+      const { tools } = await client.listTools();
+      return Object.fromEntries(
+        tools.map((tool) => [
+          tool.name,
+          (tool.inputSchema.properties as Record<string, unknown> | undefined)?.storybookId,
+        ])
+      );
+    }
+
+    it('should advertise storybookId on the lookup tools when handler-level sources compose', async () => {
+      const handler = await createStorybookMcpHandler({
+        manifestProvider: createManifestProviderMockWithDocs(),
+        sources,
+      });
+      await setupClient(handler);
+
+      const inputs = await listedStorybookIdInputs();
+      expect(inputs['docs-show']).toMatchObject({ type: 'string' });
+      expect(inputs['docs-show-story']).toMatchObject({ type: 'string' });
+      expect(inputs['docs-list']).toBeUndefined();
+    });
+
+    it('should not advertise storybookId for a single Storybook', async () => {
+      const handler = await createStorybookMcpHandler({
+        manifestProvider: createManifestProviderMockWithDocs(),
+      });
+      await setupClient(handler);
+
+      const inputs = await listedStorybookIdInputs();
+      expect(inputs['docs-show']).toBeUndefined();
+      expect(inputs['docs-show-story']).toBeUndefined();
+    });
+
+    it('should advertise storybookId when only the per-request sources compose', async () => {
+      const handler = await createStorybookMcpHandler({
+        manifestProvider: createManifestProviderMockWithDocs(),
+      });
+      await setupClient(handler, { sources });
+
+      const inputs = await listedStorybookIdInputs();
+      expect(inputs['docs-show']).toMatchObject({ type: 'string' });
+      expect(inputs['docs-show-story']).toMatchObject({ type: 'string' });
+    });
+
+    it('should route docs-show to the source named by storybookId', async () => {
+      const manifestProvider = createManifestProviderMockWithDocs();
+      const handler = await createStorybookMcpHandler({ manifestProvider, sources });
+      await setupClient(handler);
+
+      const result = await client.callTool({
+        name: 'docs-show',
+        arguments: { id: 'button', storybookId: 'remote' },
+      });
+
+      expect(result.isError).toBeFalsy();
+      expect(manifestProvider).toHaveBeenCalledWith(
+        expect.any(Request),
+        './manifests/components.json',
+        sources[1]
+      );
+      expect(manifestProvider).not.toHaveBeenCalledWith(
+        expect.any(Request),
+        expect.any(String),
+        sources[0]
+      );
+    });
+
+    it('should route docs-show-story to the source named by storybookId', async () => {
+      const manifestProvider = createManifestProviderMockWithDocs();
+      const handler = await createStorybookMcpHandler({ manifestProvider, sources });
+      await setupClient(handler);
+
+      const result = await client.callTool({
+        name: 'docs-show-story',
+        arguments: { storyId: 'button--primary', storybookId: 'remote' },
+      });
+
+      expect(result.isError).toBeFalsy();
+      expect(manifestProvider).toHaveBeenCalledWith(
+        expect.any(Request),
+        './manifests/components.json',
+        sources[1]
+      );
+    });
+
+    it('should follow the sources of each request on one handler', async () => {
+      const context: StorybookContext = {};
+      const manifestProvider = createManifestProviderMockWithDocs();
+      const handler = await createStorybookMcpHandler({ manifestProvider });
+      await setupClient(handler, context);
+      const showFromRemote = () =>
+        client.callTool({ name: 'docs-show', arguments: { id: 'button', storybookId: 'remote' } });
+      const remoteRead = [expect.any(Request), expect.any(String), sources[1]];
+
+      expect((await listedStorybookIdInputs())['docs-show']).toBeUndefined();
+      await showFromRemote();
+      expect(manifestProvider).not.toHaveBeenCalledWith(...remoteRead);
+
+      context.sources = sources;
+      expect((await listedStorybookIdInputs())['docs-show']).toMatchObject({ type: 'string' });
+      await showFromRemote();
+      expect(manifestProvider).toHaveBeenCalledWith(...remoteRead);
+
+      manifestProvider.mockClear();
+      context.sources = undefined;
+      expect((await listedStorybookIdInputs())['docs-show']).toBeUndefined();
+      await showFromRemote();
+      expect(manifestProvider).not.toHaveBeenCalledWith(...remoteRead);
+    });
+  });
+
   it('should call onListAllDocumentation handler when tool is invoked', async () => {
     const onListAllDocumentation = vi.fn();
     const manifestProvider = createManifestProviderMock();
@@ -257,7 +398,7 @@ describe('createStorybookMcpHandler', () => {
     await setupClient(handler);
 
     await client.callTool({
-      name: 'list-all-documentation',
+      name: 'docs-list',
       arguments: {},
     });
 
@@ -282,7 +423,7 @@ describe('createStorybookMcpHandler', () => {
     await setupClient(handler);
 
     const result = await client.callTool({
-      name: 'get-documentation',
+      name: 'docs-show',
       arguments: {
         id: 'button',
       },
@@ -313,7 +454,7 @@ describe('createStorybookMcpHandler', () => {
     await setupClient(handler);
 
     const result = await client.callTool({
-      name: 'list-all-documentation',
+      name: 'docs-list',
       arguments: {},
     });
 
@@ -324,7 +465,7 @@ describe('createStorybookMcpHandler', () => {
     });
   });
 
-  it('should handle non-existent component ID in get-documentation', async () => {
+  it('should handle a non-existent component ID in docs-show', async () => {
     const onGetDocumentation = vi.fn();
     const manifestProvider = createManifestProviderMock();
 
@@ -335,7 +476,7 @@ describe('createStorybookMcpHandler', () => {
     await setupClient(handler);
 
     const result = await client.callTool({
-      name: 'get-documentation',
+      name: 'docs-show',
       arguments: {
         id: 'non-existent',
       },
@@ -358,7 +499,7 @@ describe('createStorybookMcpHandler', () => {
   });
 
   describe('with docs manifest', () => {
-    it('should return docs entries in list-all-documentation when docs manifest is available', async () => {
+    it('should return docs entries in docs-list when docs manifest is available', async () => {
       const manifestProvider = createManifestProviderMockWithDocs();
 
       const handler = await createStorybookMcpHandler({
@@ -367,7 +508,7 @@ describe('createStorybookMcpHandler', () => {
       await setupClient(handler);
 
       const result = await client.callTool({
-        name: 'list-all-documentation',
+        name: 'docs-list',
         arguments: {},
       });
 
@@ -400,7 +541,7 @@ describe('createStorybookMcpHandler', () => {
       await setupClient(handler);
 
       await client.callTool({
-        name: 'list-all-documentation',
+        name: 'docs-list',
         arguments: {},
       });
 
@@ -428,7 +569,7 @@ describe('createStorybookMcpHandler', () => {
       await setupClient(handler);
 
       const result = await client.callTool({
-        name: 'get-documentation',
+        name: 'docs-show',
         arguments: {
           id: 'getting-started',
         },

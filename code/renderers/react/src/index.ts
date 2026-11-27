@@ -6,4 +6,8 @@ export * from './portable-stories.tsx';
 
 export * from './preview.tsx';
 
-export type { ReactTypes } from './types.ts';
+export type {
+  ReactDocgenTypescriptParserOptions,
+  ReactDocgenTypescriptPropItem,
+  ReactTypes,
+} from './types.ts';

@@ -1,9 +1,4 @@
-import {
-  HandledError,
-  getEnvConfig,
-  optionalEnvToBoolean,
-  parseList,
-} from 'storybook/internal/common';
+import { HandledError, getEnvConfig, optionalEnvToBoolean } from 'storybook/internal/common';
 import { logTracker, logger } from 'storybook/internal/node-logger';
 import { addToGlobalContext } from 'storybook/internal/telemetry';
 
@@ -16,9 +11,8 @@ import { registerSkillsCommand } from '../cli/skills/register.ts';
 import { registerToolsPassthrough } from '../cli/tools/register.ts';
 import { build } from '../cli/build.ts';
 import { buildIndex as index } from '../cli/buildIndex.ts';
-import { dev } from '../cli/dev.ts';
 import { globalSettings } from '../cli/globalSettings.ts';
-import { resolveDevCommandOptions } from './dev-options.ts';
+import { registerDevCommand } from './dev-command.ts';
 
 addToGlobalContext('cliVersion', version);
 process.env.STORYBOOK = 'true';
@@ -92,58 +86,7 @@ const command = (name: string) =>
       }
     });
 
-command('dev')
-  .option('-p, --port <number>', 'Port to run Storybook')
-  .option('-h, --host <string>', 'Host to run Storybook')
-  .option('-c, --config-dir <dir-name>', 'Directory where to load Storybook configurations from')
-  .option(
-    '--https',
-    'Serve Storybook over HTTPS. Note: You must provide your own certificate information.'
-  )
-  .option(
-    '--ssl-ca <ca>',
-    'Provide an SSL certificate authority. (Optional with --https, required if using a self-signed certificate)',
-    parseList
-  )
-  .option('--ssl-cert <cert>', 'Provide an SSL certificate. (Required with --https)')
-  .option('--ssl-key <key>', 'Provide an SSL key. (Required with --https)')
-  .option('--smoke-test', 'Exit after successful start')
-  .option('--ci', "CI mode (skip interactive prompts, don't open browser)")
-  .option('--open', 'Open Storybook automatically in the browser', false)
-  .option('--quiet', 'Suppress verbose build output')
-  .option('--no-version-updates', 'Suppress update check', true)
-  .option('--debug-webpack', 'Display final webpack configurations for debugging purposes')
-  .option(
-    '--webpack-stats-json [directory]',
-    'Write Webpack stats JSON to disk (synonym for `--stats-json`)'
-  )
-  .option('--stats-json [directory]', 'Write stats JSON to disk')
-  .option('--docs', 'Build a documentation-only site using addon-docs')
-  .option('--exact-port', 'Exit early if the desired port is not available')
-  .option(
-    '--initial-path [path]',
-    'URL path to be appended when visiting Storybook for the first time'
-  )
-  .option('--preview-only', 'Use the preview without the manager UI')
-  .action(async (options) => {
-    const { default: packageJson } = await import('storybook/package.json', {
-      with: { type: 'json' },
-    });
-
-    logger.intro(`${packageJson.name} v${packageJson.version}`);
-
-    let resolvedOptions: typeof options;
-    try {
-      resolvedOptions = resolveDevCommandOptions(options);
-    } catch (error) {
-      logger.error(error instanceof Error ? error.message : String(error));
-      return handleCommandFailure(options.logfile);
-    }
-
-    await dev({ ...resolvedOptions, packageJson }).catch(() => {
-      handleCommandFailure(options.logfile);
-    });
-  });
+registerDevCommand(command, handleCommandFailure);
 
 command('build')
   .option('-o, --output-dir <dir-name>', 'Directory where to store built files')

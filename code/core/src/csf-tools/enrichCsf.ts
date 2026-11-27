@@ -129,21 +129,20 @@ const leadingComments = (node: Node | undefined, editor: SourceEditor) => {
   return start === undefined ? [] : triviaBefore(editor, start).comments;
 };
 
-export const extractDescription = (node: Node | undefined, editor: SourceEditor) => {
-  const comments = leadingComments(node, editor)
-    .map((comment) => {
-      if (comment.type === 'Line' || !comment.value.startsWith('*')) {
-        return null;
-      }
-      return (
-        comment.value
-          .split('\n')
-          // remove leading *'s and spaces from the beginning of each line
-          .map((line) => line.replace(/^(\s+)?(\*+)?(\s)?/, ''))
-          .join('\n')
-          .trim()
-      );
-    })
-    .filter(Boolean);
-  return comments.join('\n');
-};
+/** The body of each docblock written directly above a node, in source order. */
+export const extractDocblocks = (node: Node | undefined, editor: SourceEditor): string[] =>
+  leadingComments(node, editor).flatMap((comment) => {
+    if (comment.type === 'Line' || !comment.value.startsWith('*')) {
+      return [];
+    }
+    const body = comment.value
+      .split('\n')
+      // remove leading *'s and spaces from the beginning of each line
+      .map((line) => line.replace(/^(\s+)?(\*+)?(\s)?/, ''))
+      .join('\n')
+      .trim();
+    return body ? [body] : [];
+  });
+
+export const extractDescription = (node: Node | undefined, editor: SourceEditor) =>
+  extractDocblocks(node, editor).join('\n');

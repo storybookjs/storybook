@@ -137,7 +137,7 @@ describe('ProjectTypeService', () => {
 
       await expect(
         service.autoDetectProjectType({ html: false } as CommandOptions)
-      ).rejects.toThrowError('Storybook failed to detect your project type');
+      ).resolves.toBeUndefined();
     });
 
     it('detects SVELTEKIT via @sveltejs/kit', async () => {

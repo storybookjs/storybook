@@ -145,8 +145,6 @@ export type PnpmNodeLinker = 'isolated' | 'hoisted' | 'pnp';
 export type NodeLinker = 'node_modules' | YarnNodeLinker | PnpmNodeLinker;
 
 export interface Options {
-  retryDelay: number;
-  immediate: boolean;
   configDir?: string;
   enableCrashReports?: boolean;
   stripMetadata?: boolean;

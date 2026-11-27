@@ -9,16 +9,15 @@ import {
   shouldSkipStoryDocsEmit,
 } from 'storybook/internal/docs-tools';
 import { argChanges } from 'storybook/internal/docs-tools/snippets';
-import type { API_LeafEntry } from 'storybook/internal/types';
-import { addons, getService, types, useServiceQuery } from 'storybook/manager-api';
+import { addons, getService, types, useServiceQuery, useStorybookApi } from 'storybook/manager-api';
 
 import { CodePanel } from './CodePanel.tsx';
 
-const LiveSnippetCodePanel = ({
-  story,
-  ...props
-}: Omit<Parameters<typeof CodePanel>[0], 'liveSnippet'> & { story: API_LeafEntry | undefined }) => {
+const LiveSnippetCodePanel = (props: Omit<Parameters<typeof CodePanel>[0], 'liveSnippet'>) => {
   const service = getService('core/story-docs', { internal: true });
+  // Read through the hook, so an args change renders this again: the panel's `render` does not run
+  // again for it.
+  const story = useStorybookApi().getCurrentStoryData();
   // A story of a composed Storybook has its story docs in that Storybook.
   const isStory =
     story?.type === 'story' && !story.refId && !shouldSkipStoryDocsEmit(story.parameters);
@@ -69,7 +68,7 @@ addons.register(ADDON_ID, (api) => {
 
       return globalThis.FEATURES?.docgenServer &&
         globalThis.FEATURES.experimentalLiveServerSnippets ? (
-        <LiveSnippetCodePanel {...props} story={currentStory} />
+        <LiveSnippetCodePanel {...props} />
       ) : (
         <CodePanel {...props} />
       );

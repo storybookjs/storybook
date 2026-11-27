@@ -11,18 +11,16 @@ import type { ComponentInputsOutputs } from './utils/NgComponentAnalyzer.ts';
 import {
   getComponentDecoratorMetadata,
   getComponentInputsOutputs,
-  resolveOutputArgs,
+  resolveArgBindings,
 } from './utils/NgComponentAnalyzer.ts';
 
 const separateInputsOutputsAttributes = (
   ngComponentInputsOutputs: ComponentInputsOutputs,
   props: ICollection = {}
-) => ({
-  inputs: ngComponentInputsOutputs.inputs
-    .filter((i) => i.templateName in props)
-    .map((i) => i.templateName),
-  outputs: resolveOutputArgs(ngComponentInputsOutputs, props).bindings,
-});
+) => {
+  const { inputs, outputs } = resolveArgBindings(ngComponentInputsOutputs, props);
+  return { inputs: inputs.map(({ name }) => name), outputs };
+};
 
 /** Converts a component into a template with inputs/outputs present in initial props. */
 export const computesTemplateFromComponent = (
@@ -49,10 +47,7 @@ export const computesTemplateFromComponent = (
 
   return buildTemplate(ngComponentMetadata.selector, {
     inputs: inputs.map((name) => ({ name, expression: formatPropInTemplate(name) })),
-    outputs: outputs.map(({ bindingName, propKey }) => ({
-      name: bindingName,
-      handlerKey: propKey,
-    })),
+    outputs,
     innerTemplate,
   });
 };
@@ -80,9 +75,6 @@ export const computesTemplateSourceFromComponent = (
 
   return buildTemplate(ngComponentMetadata.selector, {
     inputs: inputs.map((name) => ({ name, expression: formatInputValue(initialProps?.[name]) })),
-    outputs: outputs.map(({ bindingName, propKey }) => ({
-      name: bindingName,
-      handlerKey: propKey,
-    })),
+    outputs,
   });
 };

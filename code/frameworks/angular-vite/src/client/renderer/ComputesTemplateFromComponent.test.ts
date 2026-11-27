@@ -767,4 +767,25 @@ describe('aliased outputs', () => {
     });
     expect(source).toEqual(`<signal-output (my-click)="myClick($event)"></signal-output>`);
   });
+
+  it('does not bind an aliased model property as an output handler', () => {
+    @Component({
+      selector: 'aliased-model',
+      template: '',
+    })
+    class AliasedModelComponent {}
+    Object.assign(AliasedModelComponent, {
+      ɵcmp: { inputs: { v: ['value', 1, null] }, outputs: { vChange: 'value' } },
+    });
+
+    expect(computesTemplateFromComponent(AliasedModelComponent, { value: 5 })).toEqual(
+      '<aliased-model></aliased-model>'
+    );
+    expect(computesTemplateSourceFromComponent(AliasedModelComponent, { value: 5 })).toEqual(
+      '<aliased-model></aliased-model>'
+    );
+    expect(
+      computesTemplateFromComponent(AliasedModelComponent, { v: 5, vChange: () => {} })
+    ).toEqual('<aliased-model [v]="v" (vChange)="vChange($event)"></aliased-model>');
+  });
 });

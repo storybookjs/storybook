@@ -24,29 +24,45 @@ export type ComponentInputsOutputs = {
   }[];
 };
 
-// Explicit binding names take priority over output property-name fallbacks.
-export const resolveOutputArgs = (
+// argKeys contains the args that must not be assigned directly to the component instance.
+export const resolveArgBindings = (
   { inputs, outputs }: ComponentInputsOutputs,
   props: ICollection = {}
 ) => {
   const templateNames = new Set([...inputs, ...outputs].map(({ templateName }) => templateName));
-  const bindings: { bindingName: string; propKey: string }[] = [];
+  const inputPropNames = new Set(inputs.map(({ propName }) => propName));
   const argKeys = new Set<string>();
 
-  for (const { propName, templateName } of outputs) {
-    let propKey: string | undefined;
-    if (templateName in props) {
-      propKey = templateName;
-    } else if (propName in props && !templateNames.has(propName)) {
-      propKey = propName;
-    }
-    if (propKey !== undefined) {
-      bindings.push({ bindingName: templateName, propKey });
-      argKeys.add(templateName).add(propName);
-    }
-  }
+  const resolve = (members: ComponentInputsOutputs['inputs'], allowPropertyFallback: boolean) =>
+    members.flatMap(({ propName, templateName }) => {
+      const name = templateName;
+      if (allowPropertyFallback && inputPropNames.has(propName)) {
+        // A model's input and output share a property; never overwrite the model with an arg.
+        argKeys.add(propName);
+      }
 
-  return { bindings, argKeys };
+      const handlerKey =
+        templateName in props
+          ? templateName
+          : allowPropertyFallback &&
+              propName in props &&
+              !templateNames.has(propName) &&
+              !inputPropNames.has(propName)
+            ? propName
+            : undefined;
+
+      if (handlerKey === undefined) {
+        return [];
+      }
+
+      argKeys.add(templateName);
+      if (allowPropertyFallback) {
+        argKeys.add(propName);
+      }
+      return [{ name, handlerKey }];
+    });
+
+  return { inputs: resolve(inputs, false), outputs: resolve(outputs, true), argKeys };
 };
 
 /** Returns component Inputs / Outputs by browsing these properties and decorator */

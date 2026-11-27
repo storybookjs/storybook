@@ -7,7 +7,7 @@ import type { ComponentInputsOutputs } from './utils/NgComponentAnalyzer.ts';
 import {
   getComponentDecoratorMetadata,
   getComponentInputsOutputs,
-  resolveOutputArgs,
+  resolveArgBindings,
 } from './utils/NgComponentAnalyzer.ts';
 
 /**
@@ -23,23 +23,15 @@ const isValidIdentifier = (name: string): boolean => /^[a-zA-Z_$][a-zA-Z0-9_$]*$
 export const formatPropInTemplate = (propertyName: string) =>
   isValidIdentifier(propertyName) ? propertyName : `this['${propertyName}']`;
 
+const formatOutputBinding = ({ name, handlerKey }: { name: string; handlerKey: string }) =>
+  `(${name})="${formatPropInTemplate(handlerKey)}($event)"`;
+
 const separateInputsOutputsAttributes = (
   ngComponentInputsOutputs: ComponentInputsOutputs,
   props: ICollection = {}
 ) => {
-  const inputs = ngComponentInputsOutputs.inputs
-    .filter((i) => i.templateName in props)
-    .map((i) => i.templateName);
-  const { bindings: outputs, argKeys: outputArgKeys } = resolveOutputArgs(
-    ngComponentInputsOutputs,
-    props
-  );
-
-  return {
-    inputs,
-    outputs,
-    otherProps: Object.keys(props).filter((k) => !inputs.includes(k) && !outputArgKeys.has(k)),
-  };
+  const { inputs, outputs } = resolveArgBindings(ngComponentInputsOutputs, props);
+  return { inputs: inputs.map(({ name }) => name), outputs };
 };
 
 /**
@@ -78,10 +70,7 @@ export const computesTemplateFromComponent = (
   const templateOutputs =
     initialOutputs.length > 0
       ? ` ${initialOutputs
-          .map(
-            ({ bindingName, propKey }) =>
-              `(${bindingName})="${formatPropInTemplate(propKey)}($event)"`
-          )
+          .map(formatOutputBinding)
           .join(' ')}`
       : '';
 
@@ -182,10 +171,7 @@ export const computesTemplateSourceFromComponent = (
   const templateOutputs =
     initialOutputs.length > 0
       ? ` ${initialOutputs
-          .map(
-            ({ bindingName, propKey }) =>
-              `(${bindingName})="${formatPropInTemplate(propKey)}($event)"`
-          )
+          .map(formatOutputBinding)
           .join(' ')}`
       : '';
 

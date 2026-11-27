@@ -1,7 +1,8 @@
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { join } from 'pathe';
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { prompt } from 'storybook/internal/node-logger';
 import { MinimumReleaseAgeHandledError } from 'storybook/internal/server-errors';
@@ -155,6 +156,146 @@ describe('NPM Proxy', () => {
         expect(error?.message).toContain('min-release-age');
         expect(error?.message).toContain('@storybook/react-vite@10.4.0-alpha.17');
       });
+    });
+  });
+
+  describe('unlockStorybookPackages', () => {
+    let workspaceRoot: string;
+    let workspacePackage: string;
+    let lockfilePath: string;
+
+    const lockfile = (packages: Record<string, { version?: string }>) =>
+      `${JSON.stringify({ lockfileVersion: 3, packages }, null, '\t')}\n`.replaceAll('\n', '\r\n');
+
+    const writeManifest = (directory: string, manifest: object) =>
+      writeFile(join(directory, 'package.json'), JSON.stringify(manifest));
+
+    beforeEach(async () => {
+      workspaceRoot = await mkdtemp(join(process.cwd(), '.npm-workspace-'));
+      workspacePackage = join(workspaceRoot, 'packages', 'app');
+      lockfilePath = join(workspaceRoot, 'package-lock.json');
+      await mkdir(workspacePackage, { recursive: true });
+      await writeManifest(workspaceRoot, { workspaces: ['packages/*'] });
+      await writeManifest(workspacePackage, {
+        name: 'app',
+        devDependencies: { storybook: '^11.0.0', '@storybook/react-vite': '^11.0.0' },
+      });
+    });
+
+    afterEach(async () => {
+      await rm(workspaceRoot, { recursive: true, force: true });
+    });
+
+    it('removes the Storybook packages of the replaced version, and what they nest, from the lockfile at the workspace root', async () => {
+      await writeFile(
+        lockfilePath,
+        lockfile({
+          '': {},
+          'packages/app': { version: '1.0.0' },
+          'node_modules/storybook': { version: '10.6.0' },
+          'node_modules/storybook/node_modules/esbuild': { version: '0.27.0' },
+          'node_modules/storybook-addon-pseudo-states': { version: '10.6.0' },
+          'node_modules/@storybook/react-vite': { version: '10.6.0' },
+          'node_modules/@storybook/icons': { version: '2.1.0' },
+          'node_modules/react': { version: '19.2.0' },
+          'packages/app/node_modules/@storybook/react': { version: '10.6.0' },
+          'packages/legacy/node_modules/storybook': { version: '8.6.0' },
+        })
+      );
+
+      new NPMProxy({ cwd: workspacePackage }).unlockStorybookPackages({
+        from: '10.6.0',
+        to: '11.0.0',
+      });
+
+      expect(await readFile(lockfilePath, 'utf8')).toBe(
+        lockfile({
+          '': {},
+          'packages/app': { version: '1.0.0' },
+          'node_modules/@storybook/icons': { version: '2.1.0' },
+          'node_modules/react': { version: '19.2.0' },
+          'packages/legacy/node_modules/storybook': { version: '8.6.0' },
+        })
+      );
+    });
+
+    it.each([
+      { manifest: { devDependencies: { storybook: '^10.6.0' } }, unlocked: false },
+      { manifest: { dependencies: { '@storybook/react': '10.6.0' } }, unlocked: false },
+      { manifest: { peerDependencies: { storybook: '^10.0.0' } }, unlocked: false },
+      { manifest: { peerDependencies: { storybook: '^10.0.0 || ^11.0.0' } }, unlocked: true },
+      { manifest: { devDependencies: { '@storybook/addon-designs': '^10.0.0' } }, unlocked: true },
+    ])(
+      'unlocks only when no workspace still requires the replaced version: $manifest is $unlocked',
+      async ({ manifest, unlocked }) => {
+        const otherWorkspace = join(workspaceRoot, 'packages', 'docs');
+        await mkdir(otherWorkspace);
+        await writeManifest(otherWorkspace, { name: 'docs', ...manifest });
+        await writeFile(
+          lockfilePath,
+          lockfile({
+            '': {},
+            'packages/app': {},
+            'packages/docs': {},
+            'node_modules/storybook': { version: '10.6.0' },
+          })
+        );
+
+        new NPMProxy({ cwd: workspacePackage }).unlockStorybookPackages({
+          from: '10.6.0',
+          to: '11.0.0',
+        });
+
+        const { packages } = JSON.parse(await readFile(lockfilePath, 'utf8'));
+        expect('node_modules/storybook' in packages).toBe(!unlocked);
+      }
+    );
+
+    it.each([
+      { from: '10.6.0', to: '11.0.0-rc.1', unlocked: true },
+      { from: '10.6.0', to: '10.7.0-alpha.0', unlocked: true },
+      { from: '10.5.0', to: '10.6.0', unlocked: false },
+      { from: '11.0.0-rc.1', to: '11.0.0', unlocked: false },
+    ])(
+      'unlocks only when the old peer range rejects the new version: $from to $to is $unlocked',
+      async ({ from, to, unlocked }) => {
+        await writeFile(lockfilePath, lockfile({ 'node_modules/storybook': { version: from } }));
+
+        new NPMProxy({ cwd: workspacePackage }).unlockStorybookPackages({ from, to });
+
+        const { packages } = JSON.parse(await readFile(lockfilePath, 'utf8'));
+        expect('node_modules/storybook' in packages).toBe(!unlocked);
+      }
+    );
+
+    it.each([
+      [
+        'has no packages map',
+        JSON.stringify({ lockfileVersion: 1, dependencies: { storybook: { version: '10.6.0' } } }),
+      ],
+      ['is not valid JSON', '<<<<<<< HEAD'],
+      [
+        'has an entry that is not an object',
+        JSON.stringify({ packages: { 'node_modules/storybook': null } }),
+      ],
+    ])('leaves a lockfile alone that %s', async (_, content) => {
+      await writeFile(lockfilePath, content);
+
+      new NPMProxy({ cwd: workspacePackage }).unlockStorybookPackages({
+        from: '10.6.0',
+        to: '11.0.0',
+      });
+
+      expect(await readFile(lockfilePath, 'utf8')).toBe(content);
+    });
+
+    it('does nothing without a lockfile', () => {
+      new NPMProxy({ cwd: workspacePackage }).unlockStorybookPackages({
+        from: '10.6.0',
+        to: '11.0.0',
+      });
+
+      expect(existsSync(lockfilePath)).toBe(false);
     });
   });
 

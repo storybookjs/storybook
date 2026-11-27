@@ -22,17 +22,20 @@ vi.mock('./automigrate/multi-project.ts', { spy: true });
 vi.mock('./doctor/index.ts', { spy: true });
 vi.mock('./postinstallAddon.ts');
 vi.mock('./util.ts', { spy: true });
+const rootPackageManager = vi.hoisted(() => ({
+  type: 'npm',
+  unlockStorybookPackages: vi.fn(),
+  installDependencies: vi.fn(async () => {}),
+  isStorybookInMonorepo: () => false,
+}));
+
 vi.mock(import('storybook/internal/common'), async (importOriginal) => {
   const actual = await importOriginal();
   return {
     ...actual,
     isCI: vi.fn(),
     JsPackageManagerFactory: Object.assign(actual.JsPackageManagerFactory, {
-      getPackageManager: () => ({
-        type: 'npm',
-        installDependencies: async () => {},
-        isStorybookInMonorepo: () => false,
-      }),
+      getPackageManager: () => rootPackageManager,
     }),
   };
 });
@@ -53,6 +56,7 @@ const project = (
       type: 'npm',
       packageJsonPaths: [],
       precheckStorybookPackageInstall: async () => {},
+      unlockStorybookPackages: () => {},
       installDependencies: async () => {},
       isStorybookInMonorepo: () => false,
     } as Partial<JsPackageManager> as JsPackageManager,
@@ -271,6 +275,32 @@ describe('upgrade: refreshing the skills', () => {
     await upgrade({ ...baseOptions, dryRun: true });
 
     expect(installSkills).not.toHaveBeenCalled();
+  });
+});
+
+describe('upgrade: unlocking the replaced Storybook packages', () => {
+  it('unlocks each replaced version once, before installing', async () => {
+    useProjects(
+      project('/repo/a/.storybook'),
+      project('/repo/b/.storybook'),
+      project('/repo/c/.storybook', { beforeVersion: '10.2.0' })
+    );
+
+    await upgrade(baseOptions);
+
+    expect(rootPackageManager.unlockStorybookPackages.mock.calls).toEqual([
+      [{ from: '10.3.0', to: '11.0.0' }],
+      [{ from: '10.2.0', to: '11.0.0' }],
+    ]);
+    expect(rootPackageManager.unlockStorybookPackages.mock.invocationCallOrder[1]).toBeLessThan(
+      rootPackageManager.installDependencies.mock.invocationCallOrder[0]
+    );
+  });
+
+  it('leaves the lockfile alone on a dry run', async () => {
+    await upgrade({ ...baseOptions, dryRun: true });
+
+    expect(rootPackageManager.unlockStorybookPackages).not.toHaveBeenCalled();
   });
 });
 

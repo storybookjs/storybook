@@ -1,3 +1,4 @@
+import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 
 import { logger, prompt } from 'storybook/internal/node-logger';
@@ -6,14 +7,19 @@ import {
   MinimumReleaseAgeHandledError,
 } from 'storybook/internal/server-errors';
 
+import detectIndent from 'detect-indent';
 // eslint-disable-next-line depend/ban-dependencies
 import type { ResultPromise } from 'execa';
+import { join } from 'pathe';
+import { satisfies } from 'semver';
 import { dedent } from 'ts-dedent';
 
+import { isCorePackage } from '../utils/cli.ts';
 import type { ExecuteCommandOptions } from '../utils/command.ts';
 import { executeCommand } from '../utils/command.ts';
 import { JsPackageManager, PackageManagerName } from './JsPackageManager.ts';
 import type { PackageJson } from './PackageJson.ts';
+import { NPM_LOCKFILE } from './constants.ts';
 import type { InstallationMetadata } from './types.ts';
 import {
   findInstallationsInDependencyTree,
@@ -79,6 +85,8 @@ const NPM_ERROR_CODES = {
   ETOOMANYARGS: 'Too many arguments provided.',
   EUNKNOWNTYPE: 'Unknown type encountered.',
 };
+
+const LOCKED_PACKAGE_NAME = /(?:^|\/)node_modules\/((?:@[^/]+\/)?[^/]+)$/;
 
 export class NPMProxy extends JsPackageManager {
   readonly type = PackageManagerName.NPM;
@@ -187,25 +195,78 @@ export class NPMProxy extends JsPackageManager {
     };
   }
 
-  protected runInstall(options?: { force?: boolean; legacyPeerDeps?: boolean }) {
+  #installDirectory() {
     const packageJsonPath = this.packageJsonPaths[0];
     const workspacePackageJsonPath =
       packageJsonPath && this.findWorkspaceRootPackageJsonPath(packageJsonPath);
 
+    return workspacePackageJsonPath ? dirname(workspacePackageJsonPath) : this.cwd;
+  }
+
+  protected runInstall(options?: { force?: boolean }) {
     return executeCommand({
       command: 'npm',
-      args: [
-        'install',
-        ...this.getInstallArgs(),
-        ...(options?.force ? ['--force'] : []),
-        ...(options?.legacyPeerDeps ? ['--legacy-peer-deps'] : []),
-      ],
-      cwd: workspacePackageJsonPath ? dirname(workspacePackageJsonPath) : this.cwd,
+      args: ['install', ...this.getInstallArgs(), ...(options?.force ? ['--force'] : [])],
+      cwd: this.#installDirectory(),
       stdio: prompt.getPreferredStdio(),
     });
   }
 
-  async installDependencies(options?: { force?: boolean; legacyPeerDeps?: boolean }) {
+  // npm refuses to replace a locked Storybook package that its old siblings still peer on, although
+  // the same install replaces those siblings too: https://github.com/npm/cli/issues/8059
+  unlockStorybookPackages({ from, to }: { from: string; to: string }) {
+    const requiresOldVersion = (range: string) => satisfies(from, range) && !satisfies(to, range);
+    const oldPeerRange = `^${from}`;
+    if (!requiresOldVersion(oldPeerRange)) {
+      return;
+    }
+
+    const installDirectory = this.#installDirectory();
+    const lockfilePath = join(installDirectory, NPM_LOCKFILE);
+    try {
+      const content = readFileSync(lockfilePath, 'utf8');
+      const lockfile: { packages?: Record<string, { version?: string }> } = JSON.parse(content);
+      const packages = lockfile.packages ?? {};
+      const locations = Object.keys(packages);
+
+      const replaced = locations.filter(
+        (location) =>
+          isCorePackage(LOCKED_PACKAGE_NAME.exec(location)?.[1] ?? '') &&
+          packages[location].version === from
+      );
+      const workspaces = locations.filter((location) => !location.includes('node_modules/'));
+      const isOldVersionStillRequired = () =>
+        workspaces.some((workspace) => {
+          const manifest: PackageJson = JSON.parse(
+            readFileSync(join(installDirectory, workspace, 'package.json'), 'utf8')
+          );
+          return [manifest.dependencies, manifest.devDependencies, manifest.peerDependencies].some(
+            (dependencies) =>
+              Object.entries(dependencies ?? {}).some(
+                ([name, range]) => isCorePackage(name) && !!range && requiresOldVersion(range)
+              )
+          );
+        });
+      if (replaced.length === 0 || isOldVersionStillRequired()) {
+        return;
+      }
+
+      for (const location of locations) {
+        if (replaced.some((parent) => location === parent || location.startsWith(`${parent}/`))) {
+          delete packages[location];
+        }
+      }
+      const serialized = `${JSON.stringify(lockfile, null, detectIndent(content).indent || 2)}\n`;
+      writeFileSync(
+        lockfilePath,
+        content.includes('\r\n') ? serialized.replaceAll('\n', '\r\n') : serialized
+      );
+    } catch (error) {
+      logger.debug(`Left ${lockfilePath} as it is: ${error}`);
+    }
+  }
+
+  async installDependencies(options?: { force?: boolean }) {
     try {
       await super.installDependencies(options);
     } catch (error) {

@@ -453,6 +453,14 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
         : storybookProjects[0].packageManager;
 
     if (!options.dryRun) {
+      const replacedVersions = new Set(storybookProjects.map((project) => project.beforeVersion));
+      for (const from of replacedVersions) {
+        rootPackageManager.unlockStorybookPackages({
+          from,
+          to: storybookProjects[0].currentCLIVersion,
+        });
+      }
+
       await withNpmForceFallback(rootPackageManager, (installOptions) =>
         rootPackageManager.installDependencies(installOptions)
       );
@@ -621,7 +629,7 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
 
 export const withNpmForceFallback = async (
   packageManager: JsPackageManager,
-  operation: (options?: { force?: boolean; legacyPeerDeps?: boolean }) => Promise<void>
+  operation: (options?: { force?: boolean }) => Promise<void>
 ) => {
   try {
     await operation();
@@ -633,14 +641,7 @@ export const withNpmForceFallback = async (
     ) {
       throw error;
     }
-    try {
-      // --legacy-peer-deps resolves the conflict without forced resolution, so try it first:
-      // npm/cli#8059 shows --force can spin on large trees, making it only a last resort.
-      logger.warn('Peer dependency conflict detected; retrying with --legacy-peer-deps');
-      await operation({ legacyPeerDeps: true });
-    } catch {
-      logger.warn('Retry with --legacy-peer-deps failed; retrying with --force');
-      await operation({ force: true });
-    }
+    logger.warn('Peer dependency conflict detected; retrying with --force');
+    await operation({ force: true });
   }
 };

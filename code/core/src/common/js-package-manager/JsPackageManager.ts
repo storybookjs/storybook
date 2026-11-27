@@ -205,7 +205,7 @@ export abstract class JsPackageManager {
     return false;
   }
 
-  async installDependencies(options?: { force?: boolean; legacyPeerDeps?: boolean }) {
+  async installDependencies(options?: { force?: boolean }) {
     try {
       const executeTask = this.installUsesTerminal
         ? prompt.executeTask
@@ -238,17 +238,12 @@ export abstract class JsPackageManager {
     installContext: 'create' | 'upgrade';
   }): Promise<void> {}
 
-  async dedupeDependencies(options?: { force?: boolean; legacyPeerDeps?: boolean }) {
+  /** Let the next install replace the Storybook packages of version `from` with those of `to`. */
+  unlockStorybookPackages(_change: { from: string; to: string }): void {}
+
+  async dedupeDependencies(options?: { force?: boolean }) {
     await prompt.executeTask(
-      (_signal) =>
-        this.runInternalCommand(
-          'dedupe',
-          [
-            ...(options?.force ? ['--force'] : []),
-            ...(options?.legacyPeerDeps ? ['--legacy-peer-deps'] : []),
-          ],
-          this.cwd
-        ),
+      (_signal) => this.runInternalCommand('dedupe', options?.force ? ['--force'] : [], this.cwd),
       {
         intro: 'Deduplicating dependencies...',
         error: 'An error occurred while deduplicating dependencies.',
@@ -879,10 +874,7 @@ export abstract class JsPackageManager {
   }
 
   // Must let the lockfile change: every caller installs right after it edited package.json.
-  protected abstract runInstall(options?: {
-    force?: boolean;
-    legacyPeerDeps?: boolean;
-  }): ResultPromise;
+  protected abstract runInstall(options?: { force?: boolean }): ResultPromise;
 
   protected get installUsesTerminal(): boolean {
     return false;

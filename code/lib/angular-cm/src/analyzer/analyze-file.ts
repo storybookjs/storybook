@@ -1,22 +1,40 @@
 import { logger } from 'storybook/internal/node-logger';
 
 import type * as tsModule from 'typescript';
+import type { DocgenTypeChecker, DocgenTypeScript } from '@storybook/component-meta-typescript';
 
 import type { Class, Directive, Injectable, Pipe, Property } from '../types.ts';
 import type { AngularFileMeta } from '../types.ts';
 import type { AnalyzerContext } from './context.ts';
+import type { DocumentedClassKind } from './members.ts';
 import { collectClassMembers } from './class-members.ts';
-import { decoratorObjectArg, getDecorators, objectProperty, stringOption } from './decorators.ts';
+import { type ComponentMetadata, readComponentDeclaration } from './component-declaration.ts';
+import {
+  decoratorObjectArg,
+  getDecorators,
+  objectProperty,
+  resolveReference,
+  stringOption,
+} from './decorators.ts';
 import { getJsDocDescription, getJsDocTagsField, hasJsDocTag } from './jsdoc.ts';
 import { TypeIndex } from './type-index.ts';
 
-export function analyzeSourceFile(
-  ts: typeof tsModule,
+/** A context over one source file; shared between the file's analysis and its argTypes extraction. */
+export function analyzerContext(
+  ts: DocgenTypeScript,
   sourceFile: tsModule.SourceFile,
-  checker: tsModule.TypeChecker
+  checker: DocgenTypeChecker
+): AnalyzerContext {
+  return { ts, checker, types: new TypeIndex(ts, checker), sourceFile };
+}
+
+export function analyzeSourceFile(
+  ts: DocgenTypeScript,
+  sourceFile: tsModule.SourceFile,
+  checker: DocgenTypeChecker,
+  context: AnalyzerContext = analyzerContext(ts, sourceFile, checker)
 ): AngularFileMeta {
-  const types = new TypeIndex(ts, checker);
-  const ctx: AnalyzerContext = { ts, checker, types };
+  const ctx = context;
   const meta: AngularFileMeta = {
     components: [],
     directives: [],
@@ -28,7 +46,7 @@ export function analyzeSourceFile(
 
   for (const statement of sourceFile.statements) {
     if (ts.isEnumDeclaration(statement) || ts.isTypeAliasDeclaration(statement)) {
-      types.addDeclaration(statement);
+      ctx.types.addDeclaration(statement);
       continue;
     }
     if (!ts.isClassDeclaration(statement) || !statement.name) {
@@ -43,9 +61,15 @@ export function analyzeSourceFile(
       logger.debug(`[angular-cm] ${statement.name.text} left out of docgen: an @NgModule`);
       continue;
     }
+    if (kind === 'class' && sourceFile.isDeclarationFile) {
+      logger.debug(
+        `[angular-cm] ${statement.name.text} left out of docgen: a declaration-file class with no compiled ɵcmp`
+      );
+      continue;
+    }
     const name = statement.name.text;
     const file = sourceFile.fileName;
-    const members = collectClassMembers(ctx, statement);
+    const members = collectClassMembers(ctx, statement, kind);
     const common = {
       file,
       ...getJsDocDescription(ts, statement),
@@ -53,13 +77,7 @@ export function analyzeSourceFile(
     };
 
     if (kind === 'component' || kind === 'directive') {
-      const metadata = decoratorObjectArg(
-        ctx,
-        statement,
-        kind === 'component' ? 'Component' : 'Directive'
-      );
-      const selector = metadata && decoratorSelector(ctx, metadata);
-      const standalone = metadata && decoratorStandalone(ctx, metadata);
+      const { selector, standalone } = componentMetadata(ctx, statement, kind);
       const record: Directive & typeof common & { selector?: string; standalone?: boolean } = {
         name,
         type: kind,
@@ -107,11 +125,11 @@ export function analyzeSourceFile(
     }
   }
 
-  meta.miscellaneous = types.toMiscellaneous();
+  meta.miscellaneous = ctx.types.toMiscellaneous();
   return meta;
 }
 
-type ClassKind = 'component' | 'directive' | 'pipe' | 'injectable' | 'ngmodule' | 'class';
+type ClassKind = DocumentedClassKind | 'ngmodule';
 
 const KNOWN_DECORATORS: Record<string, ClassKind> = {
   Component: 'component',
@@ -128,7 +146,23 @@ const classify = (ctx: AnalyzerContext, node: tsModule.ClassDeclaration): ClassK
       return kind;
     }
   }
-  return 'class';
+  return readComponentDeclaration(ctx, node) ? 'component' : 'class';
+};
+
+const componentMetadata = (
+  ctx: AnalyzerContext,
+  node: tsModule.ClassDeclaration,
+  kind: 'component' | 'directive'
+): ComponentMetadata => {
+  const declared = readComponentDeclaration(ctx, node);
+  if (declared) {
+    return declared;
+  }
+  const metadata = decoratorObjectArg(ctx, node, kind === 'component' ? 'Component' : 'Directive');
+  return {
+    selector: metadata && decoratorSelector(ctx, metadata),
+    standalone: metadata && decoratorStandalone(ctx, metadata),
+  };
 };
 
 const decoratorSelector = (
@@ -136,7 +170,7 @@ const decoratorSelector = (
   metadata: tsModule.ObjectLiteralExpression
 ): string | undefined => {
   const selector = objectProperty(ctx, metadata, 'selector');
-  const value = selector && resolveInitializer(ctx, selector);
+  const value = selector && resolveReference(ctx, selector);
   return value && ctx.ts.isStringLiteralLike(value) ? value.text : undefined;
 };
 
@@ -144,32 +178,41 @@ const decoratorStandalone = (
   ctx: AnalyzerContext,
   metadata: tsModule.ObjectLiteralExpression
 ): boolean | undefined => {
-  const standalone = objectProperty(ctx, metadata, 'standalone');
-  const value = standalone && resolveInitializer(ctx, standalone);
-  if (value?.kind === ctx.ts.SyntaxKind.TrueKeyword) {
-    return true;
-  }
-  if (value?.kind === ctx.ts.SyntaxKind.FalseKeyword) {
-    return false;
-  }
-  return undefined;
-};
+  let standalone: boolean | undefined = true;
 
-// A reference to a variable resolves to its initializer, a slice of what ngtsc's own partial
-// evaluator accepts in decorator metadata.
-const resolveInitializer = (
-  ctx: AnalyzerContext,
-  expression: tsModule.Expression
-): tsModule.Expression | undefined => {
-  const { ts, checker } = ctx;
-  if (!ts.isIdentifier(expression)) {
-    return expression;
+  for (const property of metadata.properties) {
+    if (ctx.ts.isSpreadAssignment(property)) {
+      standalone = undefined;
+      continue;
+    }
+    if (ctx.ts.isComputedPropertyName(property.name)) {
+      standalone = undefined;
+      continue;
+    }
+    if (ctx.ts.isShorthandPropertyAssignment(property)) {
+      if (property.name.text === 'standalone') {
+        standalone = undefined;
+      }
+      continue;
+    }
+    if (
+      !ctx.ts.isPropertyAssignment(property) ||
+      (!ctx.ts.isIdentifier(property.name) && !ctx.ts.isStringLiteralLike(property.name)) ||
+      property.name.text !== 'standalone'
+    ) {
+      continue;
+    }
+
+    const value = resolveReference(ctx, property.initializer);
+    standalone =
+      value?.kind === ctx.ts.SyntaxKind.TrueKeyword
+        ? true
+        : value?.kind === ctx.ts.SyntaxKind.FalseKeyword
+          ? false
+          : undefined;
   }
-  const symbol = checker.getSymbolAtLocation(expression);
-  const target =
-    symbol && symbol.flags & ts.SymbolFlags.Alias ? checker.getAliasedSymbol(symbol) : symbol;
-  const declaration = target?.valueDeclaration;
-  return declaration && ts.isVariableDeclaration(declaration) ? declaration.initializer : undefined;
+
+  return standalone;
 };
 
 const pipeName = (ctx: AnalyzerContext, node: tsModule.ClassDeclaration): string | undefined => {

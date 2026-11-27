@@ -1,13 +1,13 @@
 import { fileURLToPath } from 'node:url';
 
-import type { PresetProperty } from 'storybook/internal/types';
-import { dirname } from 'pathe';
 import type { StorybookConfigVite } from '@storybook/builder-vite';
 import { viteFinal as reactViteFinal } from '@storybook/react-vite/preset';
+import { dirname } from 'pathe';
+import type { PresetProperty } from 'storybook/internal/types';
 import { isCloudflareVitePlugin, isTanStackStartPlugin } from './plugins/incompatible-plugins.ts';
+import { moduleInterceptionPlugin } from './plugins/module-interception.ts';
 import { serverCodeEliminationPlugin } from './plugins/server-code-elimination.ts';
 import { serverOnlyStubPlugin } from './plugins/server-only-stub.ts';
-import { moduleInterceptionPlugin } from './plugins/module-interception.ts';
 
 export const core: PresetProperty<'core'> = async (config, options) => {
   const framework = await options.presets.apply('framework');
@@ -28,9 +28,8 @@ export const previewAnnotations: PresetProperty<'previewAnnotations'> = (entry =
 ];
 
 export const optimizeViteDeps = [
-  '@tanstack/react-store',
   '@tanstack/react-router > @tanstack/react-store',
-  'use-sync-external-store/shim/with-selector',
+  '@tanstack/react-router > @tanstack/react-store > use-sync-external-store/shim/with-selector',
 ];
 
 export const viteFinal: StorybookConfigVite['viteFinal'] = async (config, options) => {

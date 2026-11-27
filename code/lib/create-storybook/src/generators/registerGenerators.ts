@@ -1,4 +1,5 @@
 import angularGenerator from './ANGULAR/index.ts';
+import astroGenerator from './ASTRO/index.ts';
 import emberGenerator from './EMBER/index.ts';
 import { generatorRegistry } from './GeneratorRegistry.ts';
 import htmlGenerator from './HTML/index.ts';
@@ -10,7 +11,6 @@ import reactGenerator from './REACT/index.ts';
 import reactNativeGenerator from './REACT_NATIVE/index.ts';
 import reactNativeAndRNWGenerator from './REACT_NATIVE_AND_RNW/index.ts';
 import reactNativeWebGenerator from './REACT_NATIVE_WEB/index.ts';
-import reactScriptsGenerator from './REACT_SCRIPTS/index.ts';
 import serverGenerator from './SERVER/index.ts';
 import solidGenerator from './SOLID/index.ts';
 import svelteGenerator from './SVELTE/index.ts';
@@ -22,7 +22,6 @@ import type { GeneratorModule } from './types.ts';
 
 const setOfGenerators = new Set<GeneratorModule>([
   reactGenerator,
-  reactScriptsGenerator,
   reactNativeGenerator,
   reactNativeWebGenerator,
   reactNativeAndRNWGenerator,
@@ -40,6 +39,7 @@ const setOfGenerators = new Set<GeneratorModule>([
   serverGenerator,
   qwikGenerator,
   tanstackGenerator,
+  astroGenerator,
 ]);
 
 /** Register all framework generators with the central registry */

@@ -37,7 +37,7 @@ export const sourceDecorator = (
 
     const { props, userDefinedTemplate } = story;
     const { component, parameters } = context;
-    const template: string = parameters.docs?.source?.excludeDecorators
+    const template: string | undefined = parameters.docs?.source?.excludeDecorators
       ? (context.originalStoryFn as ArgsStoryFn<AngularRenderer>)(context.args, context).template
       : story.template;
 

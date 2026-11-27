@@ -1,6 +1,6 @@
 import { dirname } from 'node:path';
 
-import { findTsconfigPathForFile } from 'storybook/internal/common';
+import { findTsconfigPathForFile, getTsconfigPathsBaseDir } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
 import MagicString from 'magic-string';
@@ -135,7 +135,9 @@ export function getReactDocgenImporter(matchingPath: TsconfigPaths.MatchPath | u
   return makeFsImporter((filename, basedir) => {
     const mappedFilenameByPaths = (() => {
       if (matchingPath) {
-        const match = matchingPath(filename);
+        // Without extensions, tsconfig-paths only tries `.js`, `.json` and `.node`, so an alias to a
+        // TypeScript file such as `@/components/types` would never match.
+        const match = matchingPath(filename, undefined, undefined, RESOLVE_EXTENSIONS);
         return match || filename;
       } else {
         return filename;
@@ -172,11 +174,11 @@ function createTsconfigMatchPath(filePath: string) {
   }
 
   logger.debug('Using tsconfig paths for react-docgen');
-  const matchPath = TsconfigPaths.createMatchPath(tsconfig.absoluteBaseUrl, tsconfig.paths, [
-    'browser',
-    'module',
-    'main',
-  ]);
+  const matchPath = TsconfigPaths.createMatchPath(
+    getTsconfigPathsBaseDir(tsconfig.configFileAbsolutePath),
+    tsconfig.paths,
+    ['browser', 'module', 'main']
+  );
   matchPathByTsconfigPath.set(tsconfigPath, matchPath);
   return matchPath;
 }

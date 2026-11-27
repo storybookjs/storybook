@@ -40,7 +40,7 @@ const preview: Preview = {
 export default preview;
 ```
 
-```ts filename=".storybook/preview.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+```ts filename=".storybook/preview.ts" renderer="web-components" language="ts" tabTitle="CSF 4"
 import { definePreview, setCustomElementsManifest } from '@storybook/web-components-vite';
 
 import customElements from '../custom-elements.json';
@@ -48,6 +48,7 @@ import customElements from '../custom-elements.json';
 setCustomElementsManifest(customElements);
 
 export default definePreview({
+  addons: [/* ... */],
   parameters: {
     controls: {
       matchers: {
@@ -59,9 +60,7 @@ export default definePreview({
 });
 ```
 
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
-
-```js filename=".storybook/preview.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+```js filename=".storybook/preview.js" renderer="web-components" language="js" tabTitle="CSF 4"
 import { definePreview, setCustomElementsManifest } from '@storybook/web-components-vite';
 
 import customElements from '../custom-elements.json';
@@ -69,6 +68,7 @@ import customElements from '../custom-elements.json';
 setCustomElementsManifest(customElements);
 
 export default definePreview({
+  addons: [/* ... */],
   parameters: {
     controls: {
       matchers: {

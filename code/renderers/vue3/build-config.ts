@@ -28,6 +28,10 @@ const config: BuildEntries = {
         entryPoint: './src/docgen/docgen-worker.ts',
         dts: false,
       },
+      {
+        exportEntries: ['./internal/docgen'],
+        entryPoint: './src/docgen/index.ts',
+      },
     ],
   },
 };

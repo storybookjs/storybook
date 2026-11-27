@@ -11,11 +11,17 @@
 @Component({
   selector: 'app-demo',
   imports: [],
-  template: `
-    <sb-non-standalone
-        [label]="'Legacy'"
-        (pressed)="pressed($event)">
-    </sb-non-standalone>`,
+  template: `<sb-non-standalone [label]="'Legacy'" (pressed)="pressed($event)" />`,
+})
+export class DemoComponent {
+  pressed(event: unknown) {}
+}",
+      "template": "import { Component } from '@angular/core';
+
+@Component({
+  selector: 'app-demo',
+  imports: [],
+  template: `<sb-non-standalone [label]="⟦bind label⟫'Legacy'⟧" (pressed)="pressed($event)" />`,
 })
 export class DemoComponent {
   pressed(event: unknown) {}

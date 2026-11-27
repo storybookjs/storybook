@@ -1,0 +1,527 @@
+import { getComponentIdFromEntry, getStoryImportPathFromEntry } from 'storybook/internal/common';
+import { storyNameFromExport } from 'storybook/internal/csf';
+import type {
+  CsfFile,
+  ESTreeNode as Node,
+  StoryArgsResolver,
+  StoryReferences,
+} from 'storybook/internal/csf-tools';
+import {
+  authoredSource,
+  createStoryArgsResolver,
+  createStoryReferenceResolver,
+  detachedTextOf,
+  extractStoryJSDocInfo,
+  noSnippetWarning,
+  resolveEffectiveRender,
+  oneLineTextOf,
+  reindent,
+  unwrapExpression,
+  unresolvedWarning,
+} from 'storybook/internal/csf-tools';
+import type { StoryDoc, StoryDocsPayload, StoryDocsProviderInput } from 'storybook/internal/types';
+import { createHoleMarks, withHoleSpace } from 'storybook/internal/docs-tools';
+
+import { resolve } from 'node:path';
+
+import type { WebComponentsDocgenPayload } from '../component-docgen/build-docgen.ts';
+import type { ManifestDeclaration } from '../component-docgen/manifest/types.ts';
+import {
+  parseStoryFile,
+  resolveStoryComponent,
+} from '../component-docgen/resolve-component/resolve-component.ts';
+import type { HtmlHolePlace, HtmlSnippetTemplate, SnippetProperty } from '../../snippet-holes.ts';
+import { evaluateArgValue, isFunctionNode } from './arg-values.ts';
+import { classifyArg, type ArgBinding } from './classify-args.ts';
+import { parseArgKey } from '../../arg-keys.ts';
+import type { ElementSnippet } from './print-element.ts';
+import { printElementSnippet } from './print-element.ts';
+import { renderSnippet } from './render-snippet.ts';
+
+export interface BuildStoryDocsContext {
+  getDocgenPayload: (componentId: string) => Promise<WebComponentsDocgenPayload | undefined>;
+  resolvePath?: (importPath: string) => string;
+}
+
+interface StoryDocDeps {
+  csf: CsfFile;
+  declaration: ManifestDeclaration;
+  docgenPayload: WebComponentsDocgenPayload;
+  resolveStoryArgs: StoryArgsResolver;
+  tag: string;
+}
+
+// A story's snippet, and its `template`: the same html with a hole wherever it prints an arg, which
+// the preview fills with the args as the controls change them.
+type SnippetResult = { snippet?: string; template?: HtmlSnippetTemplate; warning?: string };
+type ResolvedStoryArgs = ReturnType<StoryArgsResolver['resolve']>;
+type AuthoredFallback = (resolved: ResolvedStoryArgs) => SnippetResult;
+
+const NO_COMPONENT_WARNING = 'No static snippet: `meta.component` is not set.';
+
+const openStoryReferences = createStoryReferenceResolver();
+
+export async function buildStoryDocsPayload(
+  input: StoryDocsProviderInput,
+  context: BuildStoryDocsContext
+): Promise<StoryDocsPayload | undefined> {
+  const storyImportPath = getStoryImportPathFromEntry(input.entry);
+  if (!storyImportPath) {
+    return undefined;
+  }
+  const resolvePath =
+    context.resolvePath ?? ((importPath: string) => resolve(process.cwd(), importPath));
+  const storyFilePath = resolvePath(storyImportPath);
+  const csf = parseStoryFile(storyFilePath, input.entry.title);
+  if (!csf) {
+    return undefined;
+  }
+
+  const resolved = resolveStoryComponent(csf);
+  if ('reason' in resolved && resolved.reason === 'no-meta-component') {
+    const titleName = input.entry.title.slice(input.entry.title.lastIndexOf('/') + 1);
+    return buildPayload(
+      input,
+      storyImportPath,
+      csf,
+      authoredSnippetFactory(csf, storyFilePath, () => ({ warning: NO_COMPONENT_WARNING })),
+      titleName
+    );
+  }
+
+  const docgenPayload = await context.getDocgenPayload(getComponentIdFromEntry(input.entry));
+  if (!docgenPayload) {
+    return undefined;
+  }
+  const declaration = docgenPayload?.customElementsManifest?.declaration;
+  const snippetFor: (exportName: string) => SnippetResult = declaration
+    ? renderedSnippetFactory(csf, declaration, docgenPayload, storyFilePath)
+    : authoredSnippetFactory(csf, storyFilePath, () => ({
+        warning: `No static snippet: ${
+          docgenPayload.error?.message ??
+          'no Custom Elements Manifest declaration for this component.'
+        }`,
+      }));
+
+  return buildPayload(input, storyImportPath, csf, snippetFor, docgenPayload.name);
+}
+
+const buildPayload = (
+  input: StoryDocsProviderInput,
+  storyImportPath: string,
+  csf: CsfFile,
+  snippetFor: (exportName: string) => SnippetResult,
+  name: string
+): StoryDocsPayload => {
+  const stories = Object.fromEntries(
+    Object.entries(csf._stories).map(([exportName, story]) => [
+      story.id,
+      buildStoryDoc(exportName, story, csf, snippetFor),
+    ])
+  );
+
+  return {
+    id: getComponentIdFromEntry(input.entry),
+    name,
+    path: storyImportPath,
+    stories,
+  };
+};
+
+const renderedSnippetFactory = (
+  csf: CsfFile,
+  declaration: ManifestDeclaration,
+  docgenPayload: WebComponentsDocgenPayload,
+  storyFilePath: string
+): ((exportName: string) => SnippetResult) => {
+  const references = storyReferences(storyFilePath);
+  const deps: StoryDocDeps = {
+    csf,
+    declaration,
+    docgenPayload,
+    resolveStoryArgs: createStoryArgsResolver(csf, references),
+    tag: declaration.tagName ?? docgenPayload.name,
+  };
+  return (exportName) => renderedSnippet(exportName, deps);
+};
+
+const storyReferences = (storyFilePath: string): StoryReferences => ({
+  filePath: storyFilePath,
+  resolveModule: openStoryReferences().resolveModule,
+});
+
+const baseStoryDoc = (
+  csf: CsfFile,
+  exportName: string,
+  story: CsfFile['_stories'][string],
+  result: SnippetResult
+): StoryDoc => {
+  const { description, summary } = extractStoryJSDocInfo(
+    csf._storyStatements[exportName],
+    csf.editor
+  );
+  return {
+    id: story.id,
+    name: story.name ?? storyNameFromExport(exportName),
+    ...(result.snippet === undefined ? {} : { snippet: result.snippet }),
+    ...(result.snippet === undefined || result.template === undefined
+      ? {}
+      : {
+          // A value a control clears leaves no gap or empty line.
+          template: withHoleSpace(result.template, (hole) => hole.kind !== 'code'),
+        }),
+    ...(result.warning === undefined ? {} : { warning: result.warning }),
+    ...(description ? { description } : {}),
+    ...(summary === undefined ? {} : { summary }),
+  };
+};
+
+const buildStoryDoc = (
+  exportName: string,
+  story: CsfFile['_stories'][string],
+  csf: CsfFile,
+  snippetFor: (exportName: string) => SnippetResult
+): StoryDoc => {
+  try {
+    return baseStoryDoc(csf, exportName, story, snippetFor(exportName));
+  } catch (e) {
+    const err = e instanceof Error ? e : undefined;
+    return {
+      id: story.id,
+      name: story.name ?? storyNameFromExport(exportName),
+      error: { name: err?.name ?? 'Error', message: err?.message ?? String(e) },
+    };
+  }
+};
+
+const renderedSnippet = (exportName: string, deps: StoryDocDeps): SnippetResult => {
+  return authoredOrFallback(exportName, deps.resolveStoryArgs, (resolved) =>
+    renderedArgsSnippet(exportName, resolved, deps)
+  );
+};
+
+const authoredSnippetFactory = (
+  csf: CsfFile,
+  storyFilePath: string,
+  fallback: AuthoredFallback
+): ((exportName: string) => SnippetResult) => {
+  const resolveStoryArgs = createStoryArgsResolver(csf, storyReferences(storyFilePath));
+  return (exportName) => authoredOrFallback(exportName, resolveStoryArgs, fallback);
+};
+
+const authoredOrFallback = (
+  exportName: string,
+  resolveStoryArgs: StoryArgsResolver,
+  fallback: AuthoredFallback
+): SnippetResult => {
+  const resolved = resolveStoryArgs.resolve(exportName);
+  const warnings: (string | undefined)[] = [];
+  const authored = authoredSource(resolved, resolveStoryArgs.ctx);
+  if (authored.kind === 'code') {
+    return { snippet: authored.code };
+  }
+  if (authored.kind === 'disabled') {
+    return {};
+  }
+  if (authored.kind === 'unresolvable') {
+    warnings.push(unresolvedWarning([authored.source]));
+  }
+  const result = fallback(resolved);
+  return { ...result, ...joinWarnings([...warnings, result.warning]) };
+};
+
+const renderedArgsSnippet = (
+  exportName: string,
+  resolved: ResolvedStoryArgs,
+  deps: StoryDocDeps
+): SnippetResult => {
+  const warnings: (string | undefined)[] = [];
+  const render = resolveEffectiveRender(deps.csf, exportName, deps.resolveStoryArgs.ctx);
+  if (render.kind === 'resolved') {
+    // The render function's own code, with the args it reads filled in.
+    const code = render.node.body && renderSnippet(render.node, exportName, resolved.args);
+    if (code) {
+      return code;
+    }
+    warnings.push(unresolvedWarning([oneLineTextOf(render.node)]));
+  } else if (render.kind === 'unresolved') {
+    warnings.push(unresolvedWarning(unresolvedRenderSource(render, resolved)));
+  }
+
+  const args = argsSnippet(
+    resolved.args,
+    deps.declaration,
+    deps.docgenPayload.argTypes ?? {},
+    deps.tag,
+    resolved.unresolved,
+    render.kind !== 'missing'
+  );
+  warnings.push(args.warning);
+
+  return {
+    ...(args.snippet ? { snippet: args.snippet, template: args.template } : {}),
+    ...joinWarnings(warnings),
+  };
+};
+
+const unresolvedRenderSource = (
+  render: Extract<ReturnType<typeof resolveEffectiveRender>, { kind: 'unresolved' }>,
+  resolved: ResolvedStoryArgs
+): string[] => {
+  const node =
+    resolved.storyMembers.properties.render ??
+    resolved.metaMembers.properties.render ??
+    render.shadowedRender;
+  return node ? [oneLineTextOf(node)] : [];
+};
+
+const argsSnippet = (
+  args: Record<string, Node>,
+  declaration: ManifestDeclaration,
+  argTypes: WebComponentsDocgenPayload['argTypes'],
+  tag: string,
+  unresolvedArgs: readonly string[],
+  customRender: boolean
+): SnippetResult => {
+  const snippet: ElementSnippet = {
+    tag,
+    attributes: [],
+    cssProperties: [],
+    listeners: [],
+    slots: [],
+    styleRules: [],
+  };
+  const unresolved: string[] = [];
+  const listeners: string[] = [];
+  const properties: string[] = [];
+  const unknown: string[] = [];
+
+  for (const [key, node] of Object.entries(args)) {
+    const value = evaluateArgValue(node);
+    if (value.kind === 'unset') {
+      continue;
+    }
+    const binding = classifyArg(key, value.kind === 'function', argTypes ?? {}, declaration);
+    switch (binding.kind) {
+      case 'listener':
+        if (binding.event) {
+          snippet.listeners.push({ event: binding.event, handler: listenerHandler(node), tag });
+        } else {
+          listeners.push(key);
+        }
+        break;
+      case 'property':
+        properties.push(key);
+        break;
+      case 'method':
+        break;
+      case 'unknown':
+        unknown.push(key);
+        break;
+      case 'attribute':
+      case 'cssProperty':
+      case 'slot':
+      case 'cssPart':
+      case 'cssState':
+        if (value.kind === 'value') {
+          addBoundValue(snippet, binding, key, value.value, tag);
+        } else if (value.kind === 'unresolved') {
+          unresolved.push(value.source);
+        }
+        break;
+      default: {
+        const exhaustive: never = binding;
+        return exhaustive;
+      }
+    }
+  }
+
+  const warnings = [
+    incompleteList(listeners, 'listeners the HTML snippet cannot express'),
+    incompleteList(properties, 'properties without an attribute'),
+    incompleteList(unknown, `args not declared by \`${tag}\``),
+    incompleteList(falseDefaultAttributes(snippet), 'false values that HTML cannot express'),
+  ];
+  const allUnresolved = [...unresolvedArgs, ...unresolved];
+  const printed = hasSnippetContent(snippet) || allUnresolved.length === 0;
+  warnings.push(printed ? unresolvedWarning(allUnresolved) : noSnippetWarning(allUnresolved));
+
+  if (!printed) {
+    return joinWarnings(warnings);
+  }
+  const html = printElementSnippet(snippet);
+  return {
+    snippet: html,
+    template: elementTemplate(html, snippet, args, argTypes, declaration, customRender),
+    ...joinWarnings(warnings),
+  };
+};
+
+// The template of the element, with a hole for each arg the snippet prints no value of where it
+// would print one, and after it a `props` hole for the args Storybook's render sets as properties,
+// which html cannot set. A render of the story's own, which the server cannot read, may set them
+// any other way, as may Storybook's render an undeclared arg whose key names a category, so those
+// get a `guard` hole. Its marks hold no character of `html`, the static snippet.
+const elementTemplate = (
+  html: string,
+  snippet: ElementSnippet,
+  args: Record<string, Node>,
+  argTypes: WebComponentsDocgenPayload['argTypes'],
+  declaration: ManifestDeclaration,
+  customRender: boolean
+): HtmlSnippetTemplate | undefined => {
+  const kinds = new Map(
+    Object.entries(args).map(([key, node]) => [key, evaluateArgValue(node).kind])
+  );
+  const template: ElementSnippet = {
+    ...snippet,
+    attributes: [...snippet.attributes],
+    cssProperties: [...snippet.cssProperties],
+    slots: [...snippet.slots],
+    styleRules: [...snippet.styleRules],
+  };
+  const properties: SnippetProperty[] = [];
+  const guarded: string[] = [];
+  for (const key of new Set([...Object.keys(args), ...Object.keys(argTypes ?? {})])) {
+    const binding = classifyArg(key, kinds.get(key) === 'function', argTypes ?? {}, declaration);
+    switch (binding.kind) {
+      case 'attribute':
+      case 'cssProperty':
+      case 'slot':
+      case 'cssPart':
+      case 'cssState':
+        // The snippet prints the value of an arg the story sets to a value.
+        if (kinds.get(key) !== 'value') {
+          addBoundValue(template, binding, key, undefined, snippet.tag, true);
+        }
+        break;
+      case 'property':
+      case 'unknown':
+        if (customRender || (binding.kind === 'unknown' && parseArgKey(key))) {
+          guarded.push(key);
+        } else {
+          properties.push({
+            arg: key,
+            name: binding.kind === 'property' ? binding.name : key,
+            tag: snippet.tag,
+          });
+        }
+        break;
+      default:
+        break;
+    }
+  }
+  const marks = createHoleMarks<HtmlHolePlace>([html]);
+  const guards = guarded.map((arg) => marks.mark({ kind: 'guard', arg }, '')).join('');
+  const props =
+    properties.length === 0
+      ? ''
+      : marks.mark({ kind: 'props', spread: true, properties }, '', '\n');
+  return marks.toTemplate(guards + printElementSnippet(template, marks) + props);
+};
+
+// Each value is the arg `source`'s, so the template prints a hole for it. An unset arg is only
+// added where no other arg already sets the same attribute, slot or rule.
+const addBoundValue = (
+  snippet: ElementSnippet,
+  binding: Exclude<ArgBinding, { kind: 'listener' | 'property' | 'method' | 'unknown' }>,
+  source: string,
+  value: unknown,
+  tag: string,
+  unset = false
+): void => {
+  const upsert = unset ? addIfAbsent : upsertByName;
+  switch (binding.kind) {
+    case 'attribute':
+      upsert(snippet.attributes, {
+        name: binding.name,
+        value,
+        viaField: binding.viaField,
+        defaultValue: binding.defaultValue,
+        source,
+        arg: source,
+      });
+      break;
+    case 'cssProperty':
+      upsert(snippet.cssProperties, { name: binding.name, value, arg: source });
+      break;
+    case 'slot':
+      upsert(snippet.slots, { name: binding.name, html: value, arg: source });
+      break;
+    case 'cssPart':
+    case 'cssState': {
+      const selector =
+        binding.kind === 'cssPart'
+          ? `${tag}::part(${binding.name})`
+          : `${tag}:state(${binding.name})`;
+      const rule = {
+        selector,
+        declarations: unset ? undefined : String(value),
+        arg: source,
+      };
+      if (!unset) {
+        upsertBySelector(snippet.styleRules, rule);
+      } else if (!snippet.styleRules.some((existing) => existing.selector === selector)) {
+        snippet.styleRules.push(rule);
+      }
+      break;
+    }
+    default: {
+      const exhaustive: never = binding;
+      return exhaustive;
+    }
+  }
+};
+
+const upsertByName = <T extends { name: string }>(items: T[], next: T): void => {
+  const index = items.findIndex((item) => item.name === next.name);
+  if (index === -1) {
+    items.push(next);
+    return;
+  }
+  items[index] = next;
+};
+
+const addIfAbsent = <T extends { name: string }>(items: T[], next: T): void => {
+  if (!items.some((item) => item.name === next.name)) {
+    items.push(next);
+  }
+};
+
+const upsertBySelector = <T extends { selector: string }>(items: T[], next: T): void => {
+  const index = items.findIndex((item) => item.selector === next.selector);
+  if (index === -1) {
+    items.push(next);
+    return;
+  }
+  items[index] = next;
+};
+
+const falseDefaultAttributes = (snippet: ElementSnippet): string[] =>
+  snippet.attributes
+    .filter(({ value, defaultValue }) => value === false && defaultValue === 'true')
+    .map(({ source, name }) => source ?? name);
+
+const hasSnippetContent = (snippet: ElementSnippet): boolean =>
+  snippet.attributes.length > 0 ||
+  snippet.cssProperties.length > 0 ||
+  snippet.listeners.length > 0 ||
+  snippet.slots.length > 0 ||
+  snippet.styleRules.length > 0;
+
+// A handler runs inside the snippet's `<script>`, so it keeps its lines and comments, re-indented
+// from the story file to the snippet.
+const handlerText = (node: Node): string => reindent(detachedTextOf(node), '', '    ');
+
+const listenerHandler = (node: Node): string =>
+  isFunctionNode(unwrapExpression(node)) ? handlerText(node) : '() => {}';
+
+const incompleteList = (names: string[], suffix: string): string | undefined =>
+  names.length === 0
+    ? undefined
+    : `Incomplete snippet: ${suffix}: ${names.map((name) => `\`${name}\``).join(', ')}.`;
+
+const joinWarnings = (parts: (string | undefined)[]): { warning?: string } => {
+  const warning = [...new Set(parts.filter((part) => part !== undefined))].join('\n');
+  return warning === '' ? {} : { warning };
+};

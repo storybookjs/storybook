@@ -1,0 +1,90 @@
+{
+  "schemaVersion": "1.0.0",
+  "readme": "",
+  "modules": [
+    {
+      "kind": "javascript-module",
+      "path": "vanilla-multi-definition.js",
+      "declarations": [
+        {
+          "kind": "class",
+          "description": "",
+          "name": "MultiAlpha",
+          "members": [
+            {
+              "kind": "field",
+              "name": "alphaLabel",
+              "description": "Alpha label."
+            }
+          ],
+          "attributes": [
+            {
+              "name": "alpha-label"
+            }
+          ],
+          "superclass": {
+            "name": "HTMLElement"
+          },
+          "tagName": "multi-alpha",
+          "customElement": true
+        },
+        {
+          "kind": "class",
+          "description": "Second element defined by the same module.",
+          "name": "MultiBeta",
+          "members": [
+            {
+              "kind": "field",
+              "name": "betaLabel",
+              "description": "Beta label."
+            }
+          ],
+          "attributes": [
+            {
+              "name": "beta-label"
+            }
+          ],
+          "superclass": {
+            "name": "HTMLElement"
+          },
+          "tagName": "multi-beta",
+          "customElement": true
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "MultiAlpha",
+          "declaration": {
+            "name": "MultiAlpha",
+            "module": "vanilla-multi-definition.js"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "MultiBeta",
+          "declaration": {
+            "name": "MultiBeta",
+            "module": "vanilla-multi-definition.js"
+          }
+        },
+        {
+          "kind": "custom-element-definition",
+          "name": "multi-alpha",
+          "declaration": {
+            "name": "MultiAlpha",
+            "module": "vanilla-multi-definition.js"
+          }
+        },
+        {
+          "kind": "custom-element-definition",
+          "name": "multi-beta",
+          "declaration": {
+            "name": "MultiBeta",
+            "module": "vanilla-multi-definition.js"
+          }
+        }
+      ]
+    }
+  ]
+}

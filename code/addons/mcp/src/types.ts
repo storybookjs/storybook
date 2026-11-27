@@ -18,23 +18,9 @@ export const AddonOptions = v.object({
       v.check(isLiteralEndpointPathname, 'Endpoint must be a literal URL pathname')
     )
   ),
-  toolsets: v.optional(
-    v.object({
-      dev: v.exactOptional(v.boolean(), true),
-      docs: v.exactOptional(v.boolean(), true),
-      test: v.exactOptional(v.boolean(), true),
-    }),
-    {
-      // Default values for toolsets
-      dev: true,
-      docs: true,
-      test: true,
-    }
-  ),
 });
 
 export type AddonOptionsInput = v.InferInput<typeof AddonOptions>;
-export type AddonOptionsOutput = v.InferOutput<typeof AddonOptions>;
 /**
  * What serving the docs tools needs from the request being handled.
  *
@@ -76,6 +62,11 @@ export type AddonContext = DocsServingContext & {
   origin: string;
 
   /**
+   * URL path prefix the Storybook instance is served from, `/` or `/seg/`.
+   */
+  basePath: string;
+
+  /**
    * Whether telemetry collection is disabled.
    */
   disableTelemetry: boolean;
@@ -85,21 +76,4 @@ export type AddonContext = DocsServingContext & {
    * Used to dynamically tailor tool descriptions and guidance.
    */
   a11yEnabled?: boolean;
-
-  toolsets?: NonNullable<AddonOptionsOutput>['toolsets'];
-
-  /**
-   * Effective review gate for the current request: the explicit
-   * `experimentalReview` feature flag, or the CLI default when the request
-   * carries the trusted local-client header (`storybook ai` / the plugins).
-   * Gates the `review-create` tool and the instruction variant.
-   */
-  reviewEnabled?: boolean;
-
-  /**
-   * Whether this request came through the `storybook ai` CLI channel (marked by
-   * {@link STORYBOOK_MCP_PROXY_HEADER}) rather than from a direct MCP client. Telemetry reports it
-   * as the `transport` field.
-   */
-  cliClient?: boolean;
 };

@@ -77,7 +77,7 @@ const SUPPORTED_PROJECTS: Record<string, SupportedProject> = {
     },
     createScript: {
       npm: 'npm create vite@latest . -- --template lit-ts',
-      yarn: 'yarn create vite . --template lit-ts && touch yarn.lock && yarn set version berry && yarn config set nodeLinker pnp',
+      yarn: 'yarn create vite . --template lit-ts && touch yarn.lock && yarn set version berry && yarn config set nodeLinker node-modules',
       pnpm: 'pnpm create vite@latest . --template lit-ts',
     },
   },

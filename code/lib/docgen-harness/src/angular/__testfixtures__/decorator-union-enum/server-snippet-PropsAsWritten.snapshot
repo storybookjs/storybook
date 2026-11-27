@@ -8,7 +8,7 @@ import { DecoratorUnionEnumComponent } from './decorator-union-enum.component.ts
     <sb-decorator-union-enum
         [size]="'large'"
         [tone]="'warn'"
-        [kind]="'secondary'">
-    </sb-decorator-union-enum>`,
+        [kind]="'secondary'"
+    />`,
 })
 export class DemoComponent {}

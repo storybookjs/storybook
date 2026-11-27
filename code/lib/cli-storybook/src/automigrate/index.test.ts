@@ -1,11 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { JsPackageManager, PackageJson } from 'storybook/internal/common';
-import { prompt } from 'storybook/internal/node-logger';
+import { logger, prompt } from 'storybook/internal/node-logger';
 
 import * as mainConfigFile from './helpers/mainConfigFile.ts';
 import { doAutomigrate, runFixes } from './index.ts';
 import type { Fix } from './types.ts';
+
+vi.mock('../doctor/index.ts', () => ({ doctor: vi.fn() }));
+import { doctor } from '../doctor/index.ts';
 
 const check1 = vi.fn();
 const run1 = vi.fn();
@@ -25,6 +28,7 @@ vi.mock('storybook/internal/node-logger', () => ({
     info: vi.fn(),
     debug: vi.fn(),
     step: vi.fn(),
+    SYMBOLS: { success: '✔', error: '✕' },
   },
   prompt: {
     confirm: vi.fn(),
@@ -92,7 +96,6 @@ const packageManager = new PackageManager() as unknown as JsPackageManager;
 
 const dryRun = false;
 const yes = true;
-const rendererPackage = 'storybook';
 const skipInstall = false;
 const configDir = '/path/to/config';
 const mainConfigPath = '/path/to/mainConfig';
@@ -104,14 +107,12 @@ const common = {
   dryRun,
   yes,
   mainConfig: { stories: [] },
-  rendererPackage,
   skipInstall,
   configDir,
   packageManager: packageManager,
   mainConfigPath,
   isUpgrade,
   storiesPaths: [],
-  hasCsfFactoryPreview: false,
 };
 
 const runFixWrapper = async ({ storybookVersion }: { storybookVersion: string }) => {
@@ -160,7 +161,7 @@ describe('runFixes', () => {
     });
     expect(run1).toHaveBeenCalledWith(
       expect.objectContaining({
-        dryRun,
+        files: expect.objectContaining({ edit: expect.any(Function) }),
         mainConfigPath,
         packageManager,
         result: {
@@ -169,6 +170,140 @@ describe('runFixes', () => {
         skipInstall,
       })
     );
+  });
+
+  it('skips an opt-in fix with --yes unless the user named it', async () => {
+    const optIn = { ...fixes[0], id: 'opt-in', defaultSelected: false };
+
+    const unnamed = await runFixes({ ...common, fixes: [optIn], storybookVersion: '7.0.0' });
+    expect(unnamed.fixResults).toEqual({ 'opt-in': 'skipped' });
+    expect(run1).not.toHaveBeenCalled();
+
+    const named = await runFixes({
+      ...common,
+      fixes: [optIn],
+      fixId: 'opt-in',
+      storybookVersion: '7.0.0',
+    });
+    expect(named.fixResults).toEqual({ 'opt-in': 'succeeded' });
+    expect(run1).toHaveBeenCalled();
+  });
+
+  it("prints a skipped fix's skip warning exactly once under --yes, naming its command", async () => {
+    const optIn = {
+      ...fixes[0],
+      id: 'generic-opt-in',
+      defaultSelected: false,
+      skipWarning:
+        'The generic-opt-in migration was skipped. Run `npx storybook automigrate generic-opt-in` to migrate later.',
+    };
+
+    const { fixResults } = await runFixes({ ...common, fixes: [optIn], storybookVersion: '7.0.0' });
+
+    expect(fixResults).toEqual({ 'generic-opt-in': 'skipped' });
+    expect(run1).not.toHaveBeenCalled();
+    const skipWarnings = vi
+      .mocked(logger.warn)
+      .mock.calls.filter(([message]) =>
+        String(message).includes('npx storybook automigrate generic-opt-in')
+      );
+    expect(skipWarnings).toHaveLength(1);
+  });
+
+  it('skips a fix and prints its skip warning when the user declines it interactively', async () => {
+    vi.mocked(prompt.confirm).mockResolvedValue(false);
+    const declinable = {
+      ...fixes[0],
+      id: 'declinable-fix',
+      skipWarning:
+        'The declinable-fix migration was declined. Run `npx storybook automigrate declinable-fix` to migrate later.',
+    };
+
+    const { fixResults } = await runFixes({
+      ...common,
+      yes: false,
+      fixes: [declinable],
+      storybookVersion: '7.0.0',
+    });
+
+    expect(fixResults).toEqual({ 'declinable-fix': 'skipped' });
+    expect(run1).not.toHaveBeenCalled();
+    // The user was asked, and the warning names the command to run later.
+    expect(vi.mocked(prompt.confirm)).toHaveBeenCalled();
+    expect(vi.mocked(logger.warn)).toHaveBeenCalledWith(
+      expect.stringContaining('npx storybook automigrate declinable-fix')
+    );
+  });
+
+  it('does not print a skip warning in a dry run, where nothing was declined', async () => {
+    const optIn = {
+      ...fixes[0],
+      id: 'generic-opt-in',
+      defaultSelected: false,
+      skipWarning: 'The generic-opt-in migration was skipped.',
+    };
+
+    await runFixes({
+      ...common,
+      dryRun: true,
+      fixes: [optIn],
+      storybookVersion: '7.0.0',
+    });
+
+    expect(vi.mocked(logger.warn)).not.toHaveBeenCalledWith(
+      expect.stringContaining('generic-opt-in migration was skipped')
+    );
+  });
+
+  it('does not print a skip warning for fixes that define none', async () => {
+    const optIn = { ...fixes[0], id: 'opt-in', defaultSelected: false };
+
+    await runFixes({ ...common, fixes: [optIn], storybookVersion: '7.0.0' });
+
+    expect(vi.mocked(logger.warn)).not.toHaveBeenCalled();
+  });
+
+  it('does not warn for a fix that cancels itself from run, so the doctor still reports its deprecation', async () => {
+    const selfCancelling: Fix = {
+      id: 'self-cancelling',
+      async check() {
+        return check1();
+      },
+      prompt() {
+        return prompt1Message;
+      },
+      run: vi.fn(async () => false as const),
+    };
+
+    const { fixResults, warnedFixIds } = await runFixes({
+      ...common,
+      fixes: [selfCancelling],
+      storybookVersion: '7.0.0',
+    });
+
+    // The fix ran and cancelled: skipped, but no skip warning was printed for it.
+    expect(fixResults).toEqual({ 'self-cancelling': 'skipped' });
+    expect(selfCancelling.run).toHaveBeenCalled();
+    expect(vi.mocked(logger.warn)).not.toHaveBeenCalled();
+    expect(warnedFixIds).toEqual([]);
+  });
+
+  it('returns undefined warned ids on a dry run, where no skip warning was printed', async () => {
+    const optIn = {
+      ...fixes[0],
+      id: 'generic-opt-in',
+      defaultSelected: false,
+      skipWarning: 'The generic-opt-in migration was skipped.',
+    };
+
+    const { warnedFixIds } = await runFixes({
+      ...common,
+      dryRun: true,
+      fixes: [optIn],
+      storybookVersion: '7.0.0',
+    });
+
+    expect(warnedFixIds).toBeUndefined();
   });
 
   it('should fail if an error is thrown by migration', async () => {
@@ -191,5 +326,49 @@ describe('runFixes', () => {
       'An error occurred while running the automigrate command.'
     );
     expect(run1).not.toHaveBeenCalled();
+  });
+
+  it('hands the doctor the ids whose skip warning was printed, not every skipped id', async () => {
+    const declined: Fix = {
+      id: 'declined-fix',
+      defaultSelected: false,
+      async check() {
+        return check1();
+      },
+      prompt() {
+        return prompt1Message;
+      },
+      run: async () => {},
+      skipWarning: 'The declined-fix migration was skipped.',
+    };
+    const selfCancelling: Fix = {
+      id: 'cancelled-fix',
+      async check() {
+        return check1();
+      },
+      prompt() {
+        return prompt1Message;
+      },
+      run: vi.fn(async () => false as const),
+    };
+    getStorybookData.mockResolvedValue({
+      ...common,
+      beforeVersion,
+      versionInstalled: '7.0.0',
+      isLatest: true,
+    });
+
+    await doAutomigrate({
+      configDir,
+      yes: true,
+      skipInstall: true,
+      fixes: [declined, selfCancelling],
+    });
+
+    // The declined fix printed its skip warning; the fix that cancelled itself from `run` did
+    // not, so the doctor still reports that one's deprecation.
+    expect(vi.mocked(doctor)).toHaveBeenCalledWith(
+      expect.objectContaining({ warnedFixIds: ['declined-fix'] })
+    );
   });
 });

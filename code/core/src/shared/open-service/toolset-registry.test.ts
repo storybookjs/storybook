@@ -23,7 +23,7 @@ const makeToolset = (id: string, description = `${id} toolset`) =>
       noop: {
         title: 'No-op',
         description: 'No-op method.',
-        input: v.object({}),
+        input: v.strictObject({}),
         handler: () => ({ ok: true, data: undefined, markdown: '' }) as const,
       },
     },
@@ -60,13 +60,13 @@ describe('registerToolset', () => {
         getHTTPFrame: {
           title: 'HTTP',
           description: 'a',
-          input: v.object({}),
+          input: v.strictObject({}),
           handler: () => ({ ok: true, data: undefined, markdown: '' }) as const,
         },
         getHttpFrame: {
           title: 'Http',
           description: 'b',
-          input: v.object({}),
+          input: v.strictObject({}),
           handler: () => ({ ok: true, data: undefined, markdown: '' }) as const,
         },
       },
@@ -84,7 +84,7 @@ describe('registerToolset', () => {
           baz: {
             title: 'Baz',
             description: 'a',
-            input: v.object({}),
+            input: v.strictObject({}),
             handler: () => ({ ok: true, data: undefined, markdown: '' }) as const,
           },
         },
@@ -100,7 +100,7 @@ describe('registerToolset', () => {
             barBaz: {
               title: 'Bar baz',
               description: 'b',
-              input: v.object({}),
+              input: v.strictObject({}),
               handler: () => ({ ok: true, data: undefined, markdown: '' }) as const,
             },
           },

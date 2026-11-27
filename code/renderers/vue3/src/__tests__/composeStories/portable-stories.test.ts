@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-/// <reference types="@testing-library/jest-dom" />
+import '@testing-library/jest-dom/vitest';
 import { cleanup, render, screen } from '@testing-library/vue';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 

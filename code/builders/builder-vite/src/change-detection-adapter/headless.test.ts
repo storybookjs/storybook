@@ -16,7 +16,6 @@ vi.mock('vite', () => ({ resolveConfig: resolveConfigMock }));
 vi.mock('../vite-config.ts', () => ({ commonConfig: commonConfigMock }));
 
 const alias = [{ find: '@', replacement: '/repo/src' }];
-const conditions = ['import', 'module', 'default'];
 
 function createOptions() {
   const apply = vi.fn(async (_name: string, config: unknown) => ({
@@ -31,7 +30,11 @@ describe('createHeadlessViteChangeDetectionAdapter', () => {
     commonConfigMock.mockResolvedValue({ root: '/repo' });
     resolveConfigMock.mockResolvedValue({
       root: '/repo',
-      resolve: { alias, conditions },
+      isProduction: false,
+      resolve: {
+        alias,
+        conditions: ['storybook', 'module', 'browser', 'development|production'],
+      },
     });
     const { options } = createOptions();
 
@@ -41,13 +44,17 @@ describe('createHeadlessViteChangeDetectionAdapter', () => {
     expect(config).toEqual({
       projectRoot: '/repo',
       alias,
-      conditions,
+      conditions: ['storybook', 'module', 'browser', 'development', 'import'],
     });
   });
 
   it('assembles config like the dev server: commonConfig in development mode, then viteFinal', async () => {
     commonConfigMock.mockResolvedValue({ root: '/repo' });
-    resolveConfigMock.mockResolvedValue({ root: '/repo', resolve: {} });
+    resolveConfigMock.mockResolvedValue({
+      root: '/repo',
+      isProduction: false,
+      resolve: { alias: [], conditions: [] },
+    });
     const { options, apply } = createOptions();
 
     const adapter = createHeadlessViteChangeDetectionAdapter(options);

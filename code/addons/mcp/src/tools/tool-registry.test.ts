@@ -37,7 +37,7 @@ function registerTestToolsetThrowing(error: Error) {
       description: 'stub',
       methods: {
         run: {
-          input: v.object({}),
+          input: v.strictObject({}),
           title: 'Storybook Tests',
           description: () => {
             throw error;
@@ -53,10 +53,8 @@ function registerTestToolsetThrowing(error: Error) {
 function availabilityWith(overrides: Partial<ToolAvailability> = {}): ToolAvailability {
   return {
     moduleGraphSupported: false,
-    changeDetectionEnabled: false,
-    reviewEnabled: false,
-    reviewEnabledForCli: false,
     docsEnabled: false,
+    docsEnabledForCli: false,
     docsHasManifests: false,
     docsFeatureEnabled: false,
     testSupported: false,
@@ -103,7 +101,7 @@ describe('a broken tool definition', () => {
     expect(loggerError).toHaveBeenCalledWith(expect.stringContaining('test-run'));
   });
 
-  it('is dropped from the storybook ai metadata instead of failing the build', () => {
+  it('is dropped from the tool metadata instead of throwing', () => {
     const metadata = getAddonToolMetadata(context);
     const names = metadata.map((tool) => tool.name);
 
@@ -124,23 +122,12 @@ describe('the preview app resource', () => {
     registerCoreToolsetsForTest();
   });
 
-  // The resource ships with the preview tool: a client that cannot see the tool must not see the
-  // ui:// resource either.
-  it('is registered exactly when the dev toolset is enabled', async () => {
-    const enabled = makeServer();
-    const enabledResource = vi.fn();
-    enabled.server.resource = enabledResource;
-    await registerAddonMcpTools(enabled.server, { availability: availabilityWith() });
-    expect(enabledResource).toHaveBeenCalledTimes(1);
-
-    const disabled = makeServer();
-    const disabledResource = vi.fn();
-    disabled.server.resource = disabledResource;
-    await registerAddonMcpTools(disabled.server, {
-      availability: availabilityWith(),
-      toolsets: { dev: false, docs: true, test: true },
-    });
-    expect(disabledResource).not.toHaveBeenCalled();
+  it('is registered with the MCP tools', async () => {
+    const { server } = makeServer();
+    const resource = vi.fn();
+    server.resource = resource;
+    await registerAddonMcpTools(server, { availability: availabilityWith() });
+    expect(resource).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -165,7 +152,7 @@ describe('test-run over the registry', () => {
         description: 'stub',
         methods: {
           run: {
-            input: v.object({}),
+            input: v.strictObject({}),
             title: 'Storybook Tests',
             description: 'run',
             handler: async () => ({

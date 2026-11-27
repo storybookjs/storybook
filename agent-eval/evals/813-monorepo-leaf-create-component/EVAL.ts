@@ -1,67 +1,52 @@
 import { existsSync } from 'node:fs';
-import { expect, test } from 'vitest';
+import { describe, expect, test } from 'vitest';
 import {
-  expectDisplayReviewForVisualChange,
-  expectPreviewBrowserStarted,
-  expectPreviewStoriesWithFinalLinks,
-  expectSkillInvoked,
-  getEvalContext,
-  expectStoryDiscoveryBeforeReview,
-  expectStoryIdsInDisplayReview,
+  expectAnyWorkflowSkillInvoked,
+  expectNoDisplayReview,
+  expectReviewHint,
   expectStoryTestsRanAndPassed,
-  expectValidStorybookLaunchConfig,
   expectWorkflowCalls,
-  isReviewEnabled,
+  getEvalContext,
 } from '#test-utils';
 
-// The workflow assertions below were test.todo while agents ran `storybook ai`
-// from the monorepo root and hit the degraded help of
-// storybookjs/storybook#35359 (still open). Re-enabled now that the stories
-// skills direct the dev server and every `storybook ai` command to the
-// package where Storybook is installed, which avoids the degraded-help path.
+// The skills of the workflow in AGENTS.md that this task cannot do without. The tests are a
+// command of the workflow, not a skill, and a review only comes when the user asks for one.
+const WORKFLOW_SKILLS = ['write-stories'];
 
-const review = isReviewEnabled();
+describe('creating a Callout in a monorepo UI package', () => {
+  // Workflow asserts are enabled. The skills direct the dev server and
+  // every Storybook CLI command to the package where Storybook is installed,
+  // which avoids the degraded help output at the monorepo root (historical
+  // context: storybookjs/storybook#35359).
 
-test('creates the component inside the leaf package', () => {
-  expect(
-    existsSync('packages/ui/src/components/Callout.tsx'),
-    'Expected packages/ui/src/components/Callout.tsx to be created'
-  ).toBe(true);
-});
+  test('creates the component inside the leaf package', () => {
+    expect(
+      existsSync('packages/ui/src/components/Callout.tsx'),
+      'Expected packages/ui/src/components/Callout.tsx to be created'
+    ).toBe(true);
+  });
 
-test.runIf(review)('uses Storybook story instructions and publishes a display review', () => {
-  expectWorkflowCalls(['get-storybook-story-instructions', 'review-create']);
-  expectDisplayReviewForVisualChange();
-});
+  test('runs story tests after the change and finishes with them passing', async () => {
+    await expectStoryTestsRanAndPassed({
+      covering: ['callout'],
+      cwd: 'packages/ui',
+    });
+  });
 
-test.runIf(review)('the review covers the new Callout stories', () => {
-  expectStoryIdsInDisplayReview(['callout']);
-});
+  test('runs the skills of the workflow, and creates no review unasked', () => {
+    expectWorkflowCalls(WORKFLOW_SKILLS);
+    expectNoDisplayReview();
+  });
 
-test.runIf(!review)('uses Storybook story instructions and previews the new stories', () => {
-  expectWorkflowCalls(['get-storybook-story-instructions']);
-  expectPreviewStoriesWithFinalLinks({ covering: ['callout'] });
-});
+  test('tells the user about the /ui-review skill', () => {
+    expectReviewHint();
+  });
 
-test.runIf(review)(
-  'discovers stories through the workflow tools before publishing the review',
-  () => {
-    expectStoryDiscoveryBeforeReview();
-  }
-);
+  describe('depending on the current agent and integration', () => {
+    const { integration } = getEvalContext();
 
-test('runs story tests after the change and finishes with them passing', () => {
-  expectStoryTestsRanAndPassed({ covering: ['callout'] });
-});
-
-test.skipIf(getEvalContext().integration === 'mcp')('invokes the stories skill', () => {
-  expectSkillInvoked('stories');
-});
-
-test('keeps the pre-existing Storybook launch config valid', () => {
-  expectValidStorybookLaunchConfig();
-});
-
-test('opens the preview browser when using the plugin', () => {
-  expectPreviewBrowserStarted();
+    test.skipIf(integration === 'mcp')('finds the workflow through the plugin skills', () => {
+      expectAnyWorkflowSkillInvoked();
+    });
+  });
 });

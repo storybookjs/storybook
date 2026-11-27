@@ -56,7 +56,7 @@ function storyDocsServiceStoryBeforeEach(of: ModuleExport, data: StoryDocsMockDa
     // disabled by default in production builds (e.g. Chromatic). Enable it here so the service-backed
     // story renders the mocked data instead of falling back to the non-service path.
     const previousFeatures = globalThis.FEATURES;
-    globalThis.FEATURES = { ...previousFeatures, experimentalDocgenServer: true };
+    globalThis.FEATURES = { ...previousFeatures, docgenServer: true };
 
     const payload = createStoryDocsPayload(docsContext, of, data);
     unregisterService('core/story-docs');
@@ -91,7 +91,7 @@ function storyDocsServiceStoryBeforeEach(of: ModuleExport, data: StoryDocsMockDa
 const SERVICE_IMPORT = "import { EmptyExample } from './EmptyExample';";
 const SERVICE_SNIPPET = '<EmptyExample something="from-service" />';
 
-const meta: Meta<typeof Source> = {
+const meta = {
   component: Source,
   parameters: {
     layout: 'fullscreen',
@@ -122,7 +122,7 @@ const meta: Meta<typeof Source> = {
       </SourceContext.Provider>
     ),
   ],
-};
+} satisfies Meta<typeof Source>;
 export default meta;
 type Story = StoryObj<typeof meta>;
 
@@ -339,6 +339,25 @@ export const OfTransformProp: Story = {
     // this is the story id: ${storyContext.id}
     // these are the current args: ${JSON.stringify(storyContext.args)}
     ${src}`,
+  },
+};
+
+export const OfTransformPropReadingArgTypes: Story = {
+  args: {
+    of: ParametersStories.NoParameters,
+    transform: (src, storyContext) => {
+      try {
+        return `read ${Object.keys(storyContext.argTypes).length} argTypes`;
+      } catch (error) {
+        return (error as Error).message.split('\n')[0];
+      }
+    },
+  },
+  play: async ({ canvasElement }) => {
+    // The syntax highlighter splits the message into one span per token.
+    await waitFor(() =>
+      expect(canvasElement).toHaveTextContent(/no longer part of the story context/)
+    );
   },
 };
 

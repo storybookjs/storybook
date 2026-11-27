@@ -1,6 +1,8 @@
 ---
 name: fix-linting-types-on-pr
 description: Checks out a PR (including fork PRs), fixes all linting and TypeScript errors, then pushes the changes back. Use when asked to fix lint, types, or TS errors on a PR.
+metadata:
+  internal: true
 ---
 
 # Fix Linting and TypeScript Issues on a PR

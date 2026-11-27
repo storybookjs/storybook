@@ -1,0 +1,23 @@
+{
+  "name": "815-write-stories-for-fetching-component-without-msw",
+  "type": "module",
+  "scripts": {
+    "build-storybook": "storybook build",
+    "postinstall": "playwright install chromium && node ./scripts/start-storybook-mcp.mjs",
+    "storybook": "storybook dev",
+    "test:stories": "vitest run --config ./vitest.storybook.config.ts --project storybook"
+  },
+  "devDependencies": {
+    "@storybook/addon-a11y": "workspace:*",
+    "@storybook/addon-docs": "workspace:*",
+    "@storybook/addon-vitest": "workspace:*",
+    "@storybook/react": "workspace:*",
+    "@storybook/react-vite": "workspace:*",
+    "@vitest/browser-playwright": "4.0.6",
+    "playwright": "1.56.1",
+    "storybook": "workspace:*"
+  },
+  "evals": {
+    "template": "vite-app"
+  }
+}

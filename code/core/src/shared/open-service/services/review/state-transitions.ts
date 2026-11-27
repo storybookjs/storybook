@@ -1,5 +1,5 @@
 import type { ReviewState } from '../../../review/review-state.ts';
-import { REVIEW_STALE_GRACE_MS, type ReviewServiceState } from './definition.ts';
+import type { ReviewServiceState } from './definition.ts';
 
 /**
  * Pure state transitions for the `core/review` service, shared by the server registration and the
@@ -42,18 +42,23 @@ export function applyAcceptPending(state: ReviewServiceState): void {
 }
 
 /**
- * Marks the current review stale once the grace window has passed. Replaces `current` with a plain
- * deep copy: a fresh reference keeps same-realm query subscribers reactive, and the deep copy
- * avoids leaving proxied nested arrays behind (which `structuredClone` cannot snapshot).
+ * Marks the current and pending reviews stale when the module graph changed after each was
+ * published. Replaces a marked review with a plain deep copy: a fresh reference keeps same-realm
+ * query subscribers reactive, and the deep copy avoids leaving proxied nested arrays behind (which
+ * `structuredClone` cannot snapshot).
  */
-export function applyMarkStale(state: ReviewServiceState, now: number): void {
-  const current = state.current;
-  if (
-    current?.createdAt !== undefined &&
-    !current.stale &&
-    now >= current.createdAt + REVIEW_STALE_GRACE_MS
-  ) {
-    state.current = { ...toPlainReview(current), stale: true };
+export function applyMarkStale(
+  state: ReviewServiceState,
+  { changedAt }: { changedAt: number }
+): void {
+  const isOutdated = (review: ReviewState | null): review is ReviewState =>
+    review?.createdAt !== undefined && !review.stale && changedAt > review.createdAt;
+
+  if (isOutdated(state.current)) {
+    state.current = { ...toPlainReview(state.current), stale: true };
+  }
+  if (isOutdated(state.pending)) {
+    state.pending = { ...toPlainReview(state.pending), stale: true };
   }
 }
 

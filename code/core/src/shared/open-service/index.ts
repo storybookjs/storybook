@@ -10,23 +10,30 @@ export { seedQueryState } from './query-state.ts';
 
 export {
   defineToolset,
-  reportToolsetTelemetry,
+  invokeToolsetMethod,
   resolveToolsetDescription,
 } from './toolset-definition.ts';
 export type {
   AnyToolsetDefinition,
   AnyToolsetOutcome,
+  InvokedToolsetOutcome,
   ToolsetCtx,
   ToolsetDefinition,
   ToolsetGetService,
   ToolsetMethod,
   ToolsetMethodDescription,
   ToolsetObjectOutputSchema,
+  ToolsetMethodReport,
   ToolsetOutcome,
-  ToolsetTelemetry,
+  ToolsetTelemetryReport,
   ToolsetTransport,
 } from './toolset-definition.ts';
-export { getToolName, parseToolsetMethodId, toMcpToolName } from './toolset-names.ts';
+export {
+  getSkillCommand,
+  getToolName,
+  parseToolsetMethodId,
+  toMcpToolName,
+} from './toolset-names.ts';
 export type { ToolsetMethodId } from './toolset-names.ts';
 export {
   clearToolsetRegistry,
@@ -49,9 +56,15 @@ export type { DocgenService } from './services/docgen/definition.ts';
 export type { DocgenPayload } from './services/docgen/types.ts';
 export type { StoryDocsService } from './services/story-docs/definition.ts';
 export {
+  getPrintHole,
+  selectLiveSnippetForStory,
+  type StoryArgs,
+} from './services/story-docs/live-snippet.ts';
+export {
   prependImportToSnippet,
   selectSnippetForStory,
   selectStoryDoc,
+  selectWarningForStory,
 } from './services/story-docs/snippet.ts';
 
 export type {

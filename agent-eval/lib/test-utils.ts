@@ -1,5 +1,5 @@
-import { spawn } from 'node:child_process';
-import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { execFile, spawn } from 'node:child_process';
+import { existsSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 
@@ -9,32 +9,40 @@ import { expect } from 'vitest';
 
 import {
   getNestedWorkflowInput,
-  isRecord,
   isSameWorkflowCall,
   normalizeStorybookWorkflowName,
   parseJson,
   parseStorybookWorkflowShellCommands,
+  shellCommandReadsFile,
+  skillComesBeforeTool,
+  workflowCallMatchesName,
 } from './shell-parse.ts';
 import type { StorybookWorkflowCall } from './shell-parse.ts';
+import { isRecord } from './utils/type.ts';
 
-export { isRecord, parseJson, parseStorybookWorkflowShellCommands };
+// Re-exported, not merely used: #test-utils is the only module an EVAL.ts can
+// reach from inside a sandbox, so anything evals need has to surface here.
+export { isRecord, parseJson, parseStorybookWorkflowShellCommands, workflowCallMatchesName };
 export type { StorybookWorkflowCall };
 
 const AGENT_CONTEXT_PATH = '__agent_eval__/agent.json';
 const RESULTS_PATH = '__agent_eval__/results.json';
 const TRANSCRIPT_PATH = '__agent_eval__/transcript.txt';
+const CHECKOUT_REGISTRY_PATH = '__agent_eval__/checkout-registry.json';
 
 type AgentContext = {
   agent?: unknown;
+  model?: unknown;
   integration?: unknown;
-  review?: unknown;
 };
 
 type EvalContext = {
   agent: string;
-  integration: 'mcp' | 'plugin';
-  /** Whether the sandbox runs review-on: always for the plugin integration, via EVAL_REVIEW=1 for MCP. */
-  review: boolean;
+  // Such as `gpt-6-luna?reasoningEffort=low`; absent when the experiment passes none.
+  model?: string;
+  // 'none' is the agentic-reference bare control (no Storybook tooling flavor);
+  // see lib/templates.ts. Plugin-only helpers below treat it as "not plugin".
+  integration: 'mcp' | 'plugin' | 'none';
 };
 
 type AgentEvalResults = {
@@ -55,7 +63,7 @@ export type StoryInputExpectation = {
 
 export function getEvalContext(): EvalContext {
   const agentContext = readAgentContext();
-  const { agent, integration } = agentContext;
+  const { agent, model, integration } = agentContext;
 
   if (typeof agent !== 'string') {
     throw new Error(
@@ -63,7 +71,7 @@ export function getEvalContext(): EvalContext {
     );
   }
 
-  if (integration !== 'mcp' && integration !== 'plugin') {
+  if (integration !== 'mcp' && integration !== 'plugin' && integration !== 'none') {
     throw new Error(
       'Expected ' +
         AGENT_CONTEXT_PATH +
@@ -72,18 +80,7 @@ export function getEvalContext(): EvalContext {
     );
   }
 
-  return { agent, integration, review: agentContext.review === true };
-}
-
-// Review mode of this run. Plugin runs are always review-on — the addon
-// enables review by default for the `storybook ai` CLI channel — while MCP
-// runs are review-on only when EVAL_REVIEW=1 (the ci:review PR label) sets
-// the `experimentalReview` feature flag in the sandbox Storybook. EVAL.ts
-// files branch on this — with review on, visual work must end in a published
-// review-create; with review off, review-create is not even exposed and
-// the workflow ends in stories-preview links.
-export function isReviewEnabled(): boolean {
-  return getEvalContext().review;
+  return { agent, ...(typeof model === 'string' && { model }), integration };
 }
 
 export function getTranscript(agent = getEvalContext().agent): Transcript {
@@ -114,18 +111,74 @@ export function getStorybookWorkflowCalls(): StorybookWorkflowCall[] {
 
   const parsedCalls = getParsedMcpWorkflowCalls();
   const rawCalls = getRawCodexMcpWorkflowCalls();
-  cachedStorybookWorkflowCalls = mergeMcpWorkflowCalls(parsedCalls, rawCalls);
+  // The MCP server's instructions have agents run the skills with `--mcp`; every other workflow
+  // step is an MCP tool call. Only name assertions look at the skill calls, so their position in
+  // the list does not matter.
+  const skillCalls = parseStorybookWorkflowShellCommands(getShellCommands()).filter(
+    (call) => call.name === 'skills-get'
+  );
+  cachedStorybookWorkflowCalls = [...mergeMcpWorkflowCalls(parsedCalls, rawCalls), ...skillCalls];
   return cachedStorybookWorkflowCalls;
 }
 
 export function getWorkflowCalls(name: string): StorybookWorkflowCall[] {
-  return getStorybookWorkflowCalls().filter((call) => call.name === name);
+  return getStorybookWorkflowCalls().filter((call) => workflowCallMatchesName(call, name));
 }
 
 export function expectWorkflowCalls(expectedNames: string[]): void {
   for (const name of expectedNames) {
-    expect(getWorkflowCalls(name).length, `Expected ${name} to be called`).toBeGreaterThan(0);
+    const count = getWorkflowCalls(name).length;
+    expect(
+      count,
+      `Expected ${name} to be called${count === 0 ? describeIgnoredCodexSettings() : ''}`
+    ).toBeGreaterThan(0);
+    const tool = STEP_TOOLS[name];
+    if (tool) {
+      expectSkillBeforeItsTool(name, tool);
+    }
   }
+}
+
+// The tool that a step of the workflow runs, by the skill of that step. The tests have no skill
+// in the workflow: `AGENTS.md` names the test command itself.
+const STEP_TOOLS: Record<string, string> = {
+  'ui-review': 'review-create',
+};
+
+// An agent that opens a skill only after it ran the tool of that step did the step without its
+// rules. On the MCP path the skill commands and the tool calls come from two sources, so their
+// order is unknown there.
+function expectSkillBeforeItsTool(skill: string, tool: string): void {
+  if (getEvalContext().integration !== 'plugin') {
+    return;
+  }
+  expect(
+    skillComesBeforeTool(getStorybookWorkflowCalls(), skill, tool),
+    `Expected the ${skill} skill to be opened before the first ${tool} call`
+  ).toBe(true);
+}
+
+// Codex runs on when it does not know a config setting, and only reports it in an error item. When
+// that setting is the `model_instructions_file` of the Luna experiments, Luna skips the tests, which
+// would look like a regression in the skills.
+function describeIgnoredCodexSettings(): string {
+  let raw = '';
+  try {
+    raw = readFileSync(TRANSCRIPT_PATH, 'utf8');
+  } catch {
+    return '';
+  }
+  const messages = raw.split('\n').flatMap((line) => {
+    const event = parseJson(line);
+    const item = isRecord(event) ? event.item : undefined;
+    return isRecord(item) &&
+      item.type === 'error' &&
+      typeof item.message === 'string' &&
+      item.message.includes('configuration setting')
+      ? [item.message]
+      : [];
+  });
+  return messages.length > 0 ? `. Codex reported: ${messages.join(' ')}` : '';
 }
 
 export function expectFinalResponseContains(substrings: string[]): void {
@@ -154,67 +207,73 @@ export function expectDisplayReviewForVisualChange(): void {
   expectFinalResponseSharesReviewLink();
 }
 
-// Review-off counterpart of expectDisplayReviewForVisualChange (review is
-// opt-in via the `experimentalReview` flag, so this is the default path):
-// review-create is not registered, so visual work must end in
-// stories-preview calls and the final response must share the preview URLs.
-// `covering` requires each substring to appear in some stories-preview story
-// input (storyId, exportName, or story path); `coveringAnyOf` requires at
-// least one of the substrings instead.
-export function expectPreviewStoriesWithFinalLinks(options?: {
-  covering?: string[];
-  coveringAnyOf?: string[];
-}): void {
-  expectWorkflowCalls(['stories-preview']);
-
-  const storyInputs = getWorkflowCalls('stories-preview').flatMap((call) =>
-    getStoryInputs(call.input)
-  );
-  const inputCovers = (substring: string) =>
-    storyInputs.some((input) =>
-      JSON.stringify(input).toLowerCase().includes(substring.toLowerCase())
-    );
-
-  for (const substring of options?.covering ?? []) {
-    expect(
-      inputCovers(substring),
-      `Expected a stories-preview story input covering "${substring}". Received: ${JSON.stringify(storyInputs)}`
-    ).toBe(true);
-  }
-
-  const anyOf = options?.coveringAnyOf ?? [];
-  if (anyOf.length > 0) {
-    expect(
-      anyOf.some(inputCovers),
-      `Expected a stories-preview story input covering one of ${JSON.stringify(anyOf)}. Received: ${JSON.stringify(storyInputs)}`
-    ).toBe(true);
-  }
-
-  const finalMessage = getFinalAssistantMessage() ?? '';
-  expect(finalMessage, 'Final response must include a story preview link').toMatch(
-    /(?:\?path=\/story\/|\/iframe\.html\?id=)/
-  );
-  expect(
-    finalMessage,
-    'Final response must not link to the Storybook review page when review is disabled'
-  ).not.toMatch(/[?&]path=\/review\//);
-}
-
-// Trigger correctness: a pure non-visual refactor must NOT publish a review,
-// and the final response must not pretend there is one.
+// Trigger correctness: an agent creates a review only when the user asks for one or to see
+// stories, so a task that does not ask must NOT create one, and the final response must not
+// pretend there is one.
 export function expectNoDisplayReview(): void {
   const displayReviewCalls = getWorkflowCalls('review-create');
   expect(
     displayReviewCalls.length,
-    `Expected review-create NOT to be called for a non-visual change. Received payloads: ${JSON.stringify(
+    `Expected review-create NOT to be called for a task that did not ask for a review. Received payloads: ${JSON.stringify(
       displayReviewCalls.map((call) => call.input)
     )}`
   ).toBe(0);
 
   expect(
     getFinalAssistantMessage() ?? '',
-    'Final response must not link to the Storybook review page for a non-visual change'
+    'Final response must not link to the Storybook review page when no review was asked for'
   ).not.toMatch(/[?&]path=\/review\//);
+}
+
+// For a request to test or fix one component (810, 811): a \`test-run\` call with \`changed\`,
+// with story \`files\`, or with \`stories\` (the MCP tool takes story ids). A run of every story
+// alone also tests it, but is not the run that was asked for.
+export function expectFocusedTestRun(): void {
+  const calls = getWorkflowCalls('test-run');
+  const isList = (value: unknown) => Array.isArray(value) && value.length > 0;
+  expect(
+    calls.some(
+      ({ input }) =>
+        (input.changed !== undefined && input.changed !== false) ||
+        isList(input.files) ||
+        isList(input.stories)
+    ),
+    `Expected a test-run call with changed, files or stories. Received inputs: ${JSON.stringify(calls.map(({ input }) => input))}`
+  ).toBe(true);
+}
+
+// The workflow tells the agent to inform the user about the `/ui-review` skill after a visible
+// change. The words are the agent's; the skill has to be named the way a user invokes it: with a
+// slash, or `$` in Codex, with or without the plugin namespace (`/storybook:ui-review`).
+const REVIEW_HINT = /(?:^|[\s`'"(*_[“>])[/$](?:storybook:)?ui-review(?![\w-])/m;
+
+export const mentionsReviewSkill = (answer: string): boolean => REVIEW_HINT.test(answer);
+
+export function expectReviewHint(): void {
+  expect(
+    getFinalAssistantMessage() ?? '',
+    'Expected the final answer to tell the user about the /ui-review skill'
+  ).toMatch(REVIEW_HINT);
+}
+
+// A clause that names the skill recommends it, unless the clause says the opposite: that the
+// agent left the review out ("I didn't suggest `/ui-review`", "`/ui-review` isn't needed"), or
+// would make one on request ("tell me if you want a `/ui-review` anyway"). Clauses, not
+// sentences: "the UI didn't change, but you can use /ui-review" recommends it.
+const DECLINES = /\b(?:not|no|without|if|unless|skipped|left (?:out|off))\b|n['’]t\b/i;
+// A comma between two skill names ("`/write-stories`, or `/ui-review`") does not end the clause.
+const CLAUSE_END =
+  /(?<=[.!?])\s+|\n+|(?<![/$][\w:-]+`?),\s+|,\s+(?!(?:(?:or|and)\s+)?`?[/$])|[;:]\s+|\s+[—–]\s+|\s+(?=but\b)/i;
+
+export const recommendsReviewSkill = (answer: string): boolean =>
+  answer.split(CLAUSE_END).some((clause) => REVIEW_HINT.test(clause) && !DECLINES.test(clause));
+
+export function expectNoReviewHint(): void {
+  const answer = getFinalAssistantMessage() ?? '';
+  expect(
+    recommendsReviewSkill(answer),
+    `Expected the final answer not to recommend /ui-review: nothing visible changed, or a review was just created. Answer:\n${answer}`
+  ).toBe(false);
 }
 
 // Browse request: the review is resolved from the live story index, so the
@@ -236,7 +295,7 @@ export function expectDisplayReviewForBrowseRequest(): void {
 }
 
 // Hard completeness floor: every story exported from the story files written
-// during the run must appear in the published review — curation may group
+// during the run must appear in the created review — curation may group
 // stories, never omit them. Assumes the template starts without story files,
 // so every story file on disk was created by the agent.
 export function expectAllStoryExportsInDisplayReview(): void {
@@ -263,7 +322,7 @@ export function expectAllStoryExportsInDisplayReview(): void {
 }
 
 // Targeted completeness floor: the stories the task is about must appear in
-// the published review. Deliberately weaker than the every-new-story rule of
+// the created review. Deliberately weaker than the every-new-story rule of
 // expectAllStoryExportsInDisplayReview, for fixtures with pre-existing
 // stories the agent may legitimately leave out of the review.
 export function expectStoryIdsInDisplayReview(idSubstrings: string[]): void {
@@ -322,197 +381,36 @@ function kebabCase(value: string): string {
 
 const DOCUMENTATION_WORKFLOW_NAMES = ['docs-show', 'docs-show-story', 'docs-list'] as const;
 
-const LAUNCH_CONFIG_PATH = '.claude/launch.json';
-
-function usesClaudePreviewTooling(): boolean {
-  const { agent, integration } = getEvalContext();
-  return agent === 'claude-code' && integration === 'plugin';
-}
-
-export function expectValidStorybookLaunchConfig(): void {
-  if (!usesClaudePreviewTooling()) {
-    return;
-  }
-
-  if (!existsSync(LAUNCH_CONFIG_PATH)) {
-    expect.fail(`Expected ${LAUNCH_CONFIG_PATH} to be written`);
-  }
-
-  const launchConfig = parseJson(readFileSync(LAUNCH_CONFIG_PATH, 'utf8'));
-  expectRecord(launchConfig, LAUNCH_CONFIG_PATH);
-  expectNonEmptyArray(launchConfig.configurations, `${LAUNCH_CONFIG_PATH} configurations`);
-
-  const storybookEntry = launchConfig.configurations.find(
-    (configuration) =>
-      isRecord(configuration) &&
-      Array.isArray(configuration.runtimeArgs) &&
-      configuration.runtimeArgs.includes('storybook')
-  );
-  expectRecord(storybookEntry, `${LAUNCH_CONFIG_PATH} configuration running the storybook script`);
-
-  expect(storybookEntry.port, 'Storybook launch entry must use port 6006').toBe(6006);
-  expect(storybookEntry.autoPort, 'Storybook launch entry must set autoPort: true').toBe(true);
-
-  const packageJson = parseJson(readFileSync('package.json', 'utf8'));
-  const scripts = isRecord(packageJson) && isRecord(packageJson.scripts) ? packageJson.scripts : {};
-  expect(
-    typeof scripts.storybook,
-    'Launch entry references the storybook script, so package.json must define it'
-  ).toBe('string');
-}
-
-// Preview-surface outcome check, per plugin surface — both branches check
-// tool usage in the transcript:
-// - claude-code: the dev server must be started through the Claude preview
-//   tooling (the preview_start tool), which presents the app's preview browser.
-// - codex: the agent must open the Storybook URL in the in-app browser and
-//   leave the dev server running. Codex drives the browser through the
-//   node_repl `js` tool (the control-in-app-browser skill), so the tool-usage
-//   evidence is a successful `js` call whose code navigates a tab to the
-//   Storybook URL; "left running" is asserted as the absence of any
-//   self-describing dev-server kill command (see findDevServerKillCommands —
-//   a kill routed through an unrelated variable, e.g. `PID=$(lsof -ti:6006)`
-//   then `kill $PID` in a later command, is beyond this heuristic).
-//   A liveness probe at eval time is deliberately NOT used: the sandbox
-//   Storybook can crash on its own after test-run (the storybook/test
-//   vitest sub-runner dies on "Restarting Vitest due to config change" →
-//   "No projects matched the filter", taking the dev-server process with it;
-//   local runs 2026-07-08), so a probe would fail on that infra bug, not on
-//   agent behavior. The stories skill gates browser-opening on the
-//   control-in-app-browser skill being available; the assertion does not,
-//   because the codex plugin experiment always installs that skill and its
-//   browser mock (writeCodexInAppBrowserMock in lib/templates.ts).
-// MCP cells have no preview surface installed, so nothing is asserted there.
-export function expectPreviewBrowserStarted(): void {
-  const { agent, integration } = getEvalContext();
+// Not a liveness probe: the sandbox Storybook can crash on its own after
+// test-run, which would fail the eval on infra rather than on the agent.
+export function expectDevServerLeftRunning(): void {
+  const { integration } = getEvalContext();
   if (integration !== 'plugin') {
-    return;
-  }
-
-  if (usesClaudePreviewTooling()) {
-    const started = getTranscript().events.some(
-      (event) =>
-        event.type === 'tool_call' &&
-        typeof event.tool?.originalName === 'string' &&
-        event.tool.originalName.endsWith('__preview_start')
-    );
-    expect(
-      started,
-      'Expected the Claude preview browser to be opened via the preview_start tool'
-    ).toBe(true);
-    return;
-  }
-
-  if (agent !== 'codex') {
     expect.fail(
-      `Unknown plugin agent "${agent}" — teach expectPreviewBrowserStarted its preview surface`
+      `expectDevServerLeftRunning is only for plugin (got integration=${integration}). Gate callers with test.skipIf(getEvalContext().integration !== 'plugin')`
     );
   }
 
-  const navigatedUrls = parseCodexBrowserNavigations(readFileSync(TRANSCRIPT_PATH, 'utf8'));
-  const storybookUrls = [...new Set(navigatedUrls.filter(isLocalStorybookPreviewUrl))];
   expect(
-    storybookUrls.length,
-    `Expected an in-app browser navigation to the local Storybook review or story preview URL (a node_repl js tool call whose code calls goto). Navigations found: ${JSON.stringify(navigatedUrls)}`
-  ).toBeGreaterThan(0);
-
-  const killCommands = findDevServerKillCommands(getShellCommands(), storybookUrls);
-  expect(
-    killCommands,
-    'The dev server must be left running for the user — never kill it after verification'
+    findDevServerKillCommands(getShellCommands()),
+    'The dev server must be left running for the user, never killed after verification'
   ).toEqual([]);
 }
 
-// Shell commands that kill the dev server the in-app browser navigated to: a
-// kill-style command that also references Storybook, a recorded pidfile, or
-// one of the navigated dev-server ports in the same command string. Scoped
-// that way so killing an unrelated process (e.g. a stray test worker) does
-// not count; the flip side is that a kill routed through an unrelated
-// variable in a later command escapes this heuristic (accepted — the eval
-// fails loud on the missing navigation instead when the server dies early).
+// The target must appear in the kill command itself so killing an unrelated
+// process does not count; a kill of a PID captured in an earlier command escapes.
 const KILL_COMMAND_PATTERN = /\b(?:kill|pkill|killall)\b|\bfuser\b[^;&|]*\s-[a-z]*k/i;
+const DEV_SERVER_TARGET_PATTERN = /storybook|\.pid\b|\b6006\b/i;
 
-export function findDevServerKillCommands(commands: string[], navigatedUrls: string[]): string[] {
-  const ports = [
-    ...new Set(
-      navigatedUrls.flatMap((url) => {
-        try {
-          const { port } = new URL(url);
-          return port ? [port] : [];
-        } catch {
-          return [];
-        }
-      })
-    ),
-  ];
-  const target = new RegExp(
-    ['storybook', String.raw`\.pid\b`, ...ports.map((port) => String.raw`\b${port}\b`)].join('|'),
-    'i'
+export function findDevServerKillCommands(commands: string[]): string[] {
+  return commands.filter(
+    (command) => KILL_COMMAND_PATTERN.test(command) && DEV_SERVER_TARGET_PATTERN.test(command)
   );
-  return commands.filter((command) => KILL_COMMAND_PATTERN.test(command) && target.test(command));
-}
-
-// URLs the in-app browser navigated to, from the codex raw transcript: each
-// successful node_repl `js` tool call is scanned for `goto('<url>')` string
-// literals in its code argument. This mirrors how plugin workflow calls are
-// parsed out of `storybook ai` shell commands. A dynamically composed URL
-// (`goto(baseUrl + path)`) escapes the literal match and fails the assertion
-// loud rather than passing vacuously.
-export function parseCodexBrowserNavigations(rawTranscript: string): string[] {
-  return rawTranscript.split('\n').flatMap((line) => {
-    const event = parseJson(line);
-    if (!isRecord(event) || event.type !== 'item.completed' || !isRecord(event.item)) {
-      return [];
-    }
-
-    const item = event.item;
-    if (
-      item.type !== 'mcp_tool_call' ||
-      item.server !== 'node_repl' ||
-      item.tool !== 'js' ||
-      item.status !== 'completed' ||
-      (item.error !== null && item.error !== undefined)
-    ) {
-      return [];
-    }
-
-    const code = isRecord(item.arguments) ? item.arguments.code : undefined;
-    if (typeof code !== 'string') {
-      return [];
-    }
-
-    return [...code.matchAll(/\.goto\(\s*(['"`])([^'"`]+)\1/g)].flatMap((match) =>
-      match[2] === undefined ? [] : [match[2]]
-    );
-  });
-}
-
-export function isLocalDevServerUrl(value: string): boolean {
-  try {
-    const { protocol, hostname } = new URL(value);
-    return (
-      (protocol === 'http:' || protocol === 'https:') &&
-      ['localhost', '127.0.0.1', '0.0.0.0', '[::1]'].includes(hostname)
-    );
-  } catch {
-    return false;
-  }
-}
-
-// The URL shapes the Storybook workflow hands out: manager page links
-// (?path=/review/…, ?path=/story/…) and iframe preview links
-// (/iframe.html?id=…). A bare local origin does not count — navigating to
-// the app's own dev server (or just Storybook's root) is not opening the
-// Storybook result the skill demands.
-const STORYBOOK_PREVIEW_URL_PATTERN = /[?&]path=\/|\/iframe\.html\?/;
-
-export function isLocalStorybookPreviewUrl(value: string): boolean {
-  return isLocalDevServerUrl(value) && STORYBOOK_PREVIEW_URL_PATTERN.test(value);
 }
 
 // Story IDs must come from a discovery tool (stories-changed, or the
 // stories-find-by-component fallback), never from file names or memory. A
-// published review without a prior discovery call means the agent guessed
+// created review without a prior discovery call means the agent guessed
 // its way to valid-looking IDs.
 const STORY_DISCOVERY_WORKFLOW_NAMES = ['stories-changed', 'stories-find-by-component'];
 
@@ -523,14 +421,14 @@ export function expectStoryDiscoveryBeforeReview(): void {
   );
   expect(
     firstDiscoveryIndex,
-    `Expected a story-discovery call (${STORY_DISCOVERY_WORKFLOW_NAMES.join(' or ')}) before publishing the review`
+    `Expected a story-discovery call (${STORY_DISCOVERY_WORKFLOW_NAMES.join(' or ')}) before creating the review`
   ).toBeGreaterThanOrEqual(0);
 
   const lastReviewIndex = calls.findLastIndex((call) => call.name === 'review-create');
   expect(lastReviewIndex, 'Expected review-create to be called').toBeGreaterThanOrEqual(0);
   expect(
     firstDiscoveryIndex,
-    'Story discovery must happen before the review is published'
+    'Story discovery must happen before the review is created'
   ).toBeLessThan(lastReviewIndex);
 }
 
@@ -539,89 +437,173 @@ export type WorkflowToolResult = {
   isError: boolean;
 };
 
-// The validation workflow the instructions demand: run test-run after
-// each component or story change, and fix failing tests before reporting
-// success. The section headers come from the test-run result
-// formatter in packages/addon-mcp (## Passing Stories / ## Failing Stories /
-// ## Unhandled Errors) and appear verbatim in the MCP tool result and in the
-// `storybook ai test-run` CLI output.
+// The AGENTS.md section names the command that tests stories. When to run it is up to the agent
+// and its own harness, and the agents of the evals do test after a change: Haiku in Claude Code,
+// and Luna in Codex with the test rules of Sol. So the transcript has to show that the agent ran
+// the story tests, and that its last run did not end red: a fix that was never re-run is
+// unverified. The agent's own output is often cut by `| tail` or `| grep`, so the verdict is a
+// run of the harness's own. There is no after-the-edit ordering check.
 //
-// `covering` pins the final green run to the change under test: at least one
-// of the given substrings must appear in its story ids. A stricter
-// after-the-edit ordering check is deliberately not encoded, because real
-// passing flows legitimately run tests before the discovery step.
-export function expectStoryTestsRanAndPassed(options?: { covering?: string[] }): void {
+// `covering` requires one of the given substrings in the passing story ids.
+// `cwd` is the Storybook project, for fixtures where that is not the root.
+export async function expectStoryTestsRanAndPassed(options?: {
+  covering?: string[];
+  cwd?: string;
+}): Promise<void> {
   expectWorkflowCalls(['test-run']);
-
-  const results = getWorkflowToolResults('test-run');
-  expect(results.length, 'Expected at least one test-run result in the transcript').toBeGreaterThan(
-    0
-  );
-
-  const lastResult = selectFinalRunStoryTestsReport(results);
-  if (lastResult === undefined) {
-    expect.fail('Expected a final test-run result');
-  }
-
   expect(
-    lastResult.isError,
-    `Final test-run call must succeed. Output: ${truncateForMessage(lastResult.output)}`
+    getWorkflowToolResults('test-run').at(-1)?.output ?? '',
+    "The agent's last test run must not report failing stories or unhandled errors"
+  ).not.toMatch(/## (Failing Stories|Unhandled Errors)/);
+
+  const result = await runStoryTestsInSandbox(options?.cwd);
+  expect(
+    result.isError,
+    `The final test run must complete. Output: ${truncateForMessage(result.output)}`
   ).toBe(false);
-  expect(lastResult.output, 'Final test-run result must not report failing stories').not.toMatch(
+  expect(result.output, 'The final test run must not report failing stories').not.toMatch(
     /## Failing Stories/
   );
-  expect(lastResult.output, 'Final test-run result must not report unhandled errors').not.toMatch(
+  expect(result.output, 'The final test run must not report unhandled errors').not.toMatch(
     /## Unhandled Errors/
   );
   expect(
-    lastResult.output,
-    `Final test-run result must report passing stories. Output: ${truncateForMessage(lastResult.output)}`
+    result.output,
+    `The final test run must report passing stories. Output: ${truncateForMessage(result.output)}`
   ).toMatch(/## Passing Stories/);
 
   const covering = options?.covering ?? [];
   if (covering.length > 0) {
+    const passingStories =
+      /## Passing Stories\n\n([\s\S]*?)(?:\n\n## |$)/.exec(result.output)?.[1] ?? '';
     expect(
-      covering.some((substring) =>
-        lastResult.output.toLowerCase().includes(substring.toLowerCase())
-      ),
-      `Final test-run result must cover the changed component (one of: ${covering.join(', ')}). Output: ${truncateForMessage(lastResult.output)}`
+      covering.some((substring) => passingStories.toLowerCase().includes(substring.toLowerCase())),
+      `The final test run must cover the changed component (one of: ${covering.join(', ')}). Output: ${truncateForMessage(result.output)}`
     ).toBe(true);
   }
 }
 
-// The test-run result formatter (packages/addon-mcp) always emits at
-// least one of these markers. A captured output with none of them is a
-// shell-filtered fragment of the real report, not the report itself. isError
-// deliberately does not count as recognizable: a piped `… | grep` exits
-// non-zero when the filter simply matches nothing, so an errored markerless
-// result is exactly the filtered-fragment case this selection skips.
-const RUN_STORY_TESTS_REPORT_MARKERS = [
-  '## Passing Stories',
-  '## Failing Stories',
-  '## Accessibility Violations',
-  '## Unhandled Errors',
-  'No stories found matching',
-];
+const sandboxStoryTestRuns = new Map<string, Promise<WorkflowToolResult>>();
 
-// On the plugin path agents pipe the `storybook ai test-run` CLI
-// output through grep/sed/tail, so the chronologically last captured output
-// can be a filtered fragment of an otherwise correct run (observed in CI run
-// 28672627415, 2026-07-03). Judge the last output that still looks like a
-// test-run report; only when no output is recognizable does the raw
-// last result stand, so fully-filtered transcripts still fail loud.
-export function selectFinalRunStoryTestsReport(
-  results: WorkflowToolResult[]
-): WorkflowToolResult | undefined {
-  return (
-    results.findLast((result) =>
-      RUN_STORY_TESTS_REPORT_MARKERS.some((marker) => result.output.includes(marker))
-    ) ?? results.at(-1)
+// `isError` means stdout held no test-run document.
+export function runStoryTestsInSandbox(cwd = '.'): Promise<WorkflowToolResult> {
+  let run = sandboxStoryTestRuns.get(cwd);
+  if (run === undefined) {
+    run = withProjectVitestConfig(cwd, () => runStorybookTestRun(cwd));
+    sandboxStoryTestRuns.set(cwd, run);
+  }
+  return run;
+}
+
+// The eval runner replaces vitest.config.ts with its own before EVAL.ts runs,
+// so fixtures keep their Storybook test project in vitest.storybook.config.ts.
+const STORYBOOK_VITEST_CONFIG = 'vitest.storybook.config.ts';
+
+async function withProjectVitestConfig<T>(cwd: string, run: () => Promise<T>): Promise<T> {
+  if (!existsSync(join(cwd, STORYBOOK_VITEST_CONFIG))) {
+    return run();
+  }
+  const configPath = join(cwd, 'vitest.config.ts');
+  const evalConfig = existsSync(configPath) ? readFileSync(configPath, 'utf8') : undefined;
+  if (evalConfig?.includes(STORYBOOK_VITEST_CONFIG)) {
+    return run();
+  }
+
+  writeFileSync(configPath, `export { default } from './${STORYBOOK_VITEST_CONFIG}';\n`);
+  try {
+    return await run();
+  } finally {
+    if (evalConfig === undefined) {
+      rmSync(configPath);
+    } else {
+      writeFileSync(configPath, evalConfig);
+    }
+  }
+}
+
+// `--no-attach`: the dev server's Vitest restarts whenever vitest.config.ts
+// changes, so a fresh local host is the only one that reads a settled config.
+// The timeout leaves room in the experiment timeout, which the whole run shares,
+// so a hanging run fails this assertion rather than the sandbox.
+function runStorybookTestRun(cwd: string): Promise<WorkflowToolResult> {
+  return new Promise((resolve) => {
+    execFile(
+      'npx',
+      ['storybook', 'tools', '--no-attach', 'test', 'run', '--json'],
+      {
+        cwd,
+        env: { ...process.env, STORYBOOK_DISABLE_TELEMETRY: '1' },
+        maxBuffer: 256 * 1024 * 1024,
+        timeout: 240_000,
+      },
+      (error, stdout, stderr) => {
+        const report = renderTestRunJsonOutput(stdout);
+        resolve(
+          report === undefined
+            ? { output: [error?.message, stdout, stderr].filter(Boolean).join('\n'), isError: true }
+            : { output: report, isError: false }
+        );
+      }
+    );
+  });
+}
+
+// `storybook tools test run --json` prints the run's structured outcome
+// instead of the markdown report. The raw JSON is unusable for the assertions
+// here: the embedded axe reports list every rule id under passes/inapplicable,
+// so a green run still "mentions" button-name. Render it to the section headings
+// of the formatter (code/addons/vitest/src/node/toolset/format.ts), listing
+// only what the assertions read: story ids and violation ids. Error and
+// cancelled outcomes stay raw, as the markdown report has no heading for them.
+function renderTestRunJsonOutput(output: string): string | undefined {
+  // A `--json` run diverts every other stdout writer to stderr, so with `2>&1`
+  // npm/logger lines surround the document: the pretty-printed block between a
+  // `{` line and a `}` line.
+  const json = /^\{$[\s\S]*^\}$/m.exec(output)?.[0];
+  const data = json === undefined ? undefined : parseJson(json);
+  if (!isRecord(data)) {
+    return undefined;
+  }
+
+  if (data.status === 'no-stories') {
+    return 'No stories found matching the provided input.';
+  }
+
+  return data.status === 'completed' && isRecord(data.result)
+    ? renderCompletedTestRun(data.result, data.a11y !== false)
+    : undefined;
+}
+
+function renderCompletedTestRun(result: Record<string, unknown>, a11y: boolean): string {
+  const statuses = asRecords(result.componentTestStatuses);
+  const storyIds = (value: string) =>
+    statuses.filter((status) => status.value === value).map((status) => status.storyId);
+  const a11yReports = a11y && isRecord(result.a11yReports) ? result.a11yReports : {};
+  const violations = Object.entries(a11yReports).flatMap(([storyId, reports]) =>
+    asRecords(reports).flatMap((report) =>
+      asRecords(report.violations).map((violation) => `${storyId} - ${violation.id}`)
+    )
   );
+  const sections: [string, unknown[]][] = [
+    ['## Passing Stories', storyIds('status-value:success')],
+    ['## Failing Stories', storyIds('status-value:error')],
+    ['## Accessibility Violations', violations],
+    ['## Unhandled Errors', asRecords(result.unhandledErrors).map((error) => error.name)],
+  ];
+
+  return sections
+    .filter(([, items]) => items.length > 0)
+    .map(([heading, items]) => `${heading}\n\n- ${items.join('\n- ')}`)
+    .join('\n\n');
+}
+
+function asRecords(value: unknown): Record<string, unknown>[] {
+  return Array.isArray(value) ? value.filter(isRecord) : [];
 }
 
 // Chronological outputs of a Storybook workflow tool, across every path an
 // agent can reach it: Claude MCP tool calls, Codex MCP tool calls, and
-// `storybook ai <tool>` CLI invocations inside shell commands (plugin path).
+// `storybook tools` CLI invocations inside shell commands (plugin path).
 export function getWorkflowToolResults(workflowName: string): WorkflowToolResult[] {
   return parseWorkflowToolResults(readFileSync(TRANSCRIPT_PATH, 'utf8'), workflowName);
 }
@@ -641,6 +623,13 @@ export function parseWorkflowToolResults(
 
     collectClaudeWorkflowToolResults(event, workflowName, pendingClaudeToolUseIds, results);
     collectCodexWorkflowToolResult(event, workflowName, results);
+  }
+
+  if (workflowName === 'test-run') {
+    return results.map((result) => ({
+      ...result,
+      output: renderTestRunJsonOutput(result.output) ?? result.output,
+    }));
   }
 
   return results;
@@ -696,14 +685,20 @@ function isWorkflowToolUse(block: Record<string, unknown>, workflowName: string)
     return true;
   }
 
-  // Plugin path: the workflow call runs as a `storybook ai` CLI invocation
+  // Plugin path: the workflow call runs as a `storybook tools` CLI invocation
   // inside a shell tool call.
   const command = isRecord(block.input) ? block.input.command : undefined;
   if (typeof command !== 'string') {
     return false;
   }
 
-  return parseStorybookWorkflowShellCommands([command]).some((call) => call.name === workflowName);
+  return shellCommandRunsWorkflow(command, workflowName);
+}
+
+function shellCommandRunsWorkflow(command: string, workflowName: string): boolean {
+  return parseStorybookWorkflowShellCommands([command]).some((call) =>
+    workflowCallMatchesName(call, workflowName)
+  );
 }
 
 // Codex raw transcripts report completed MCP tool calls and shell commands as
@@ -734,7 +729,7 @@ function collectCodexWorkflowToolResult(
   if (
     item.type === 'command_execution' &&
     typeof item.command === 'string' &&
-    parseStorybookWorkflowShellCommands([item.command]).some((call) => call.name === workflowName)
+    shellCommandRunsWorkflow(item.command, workflowName)
   ) {
     results.push({
       output: typeof item.aggregated_output === 'string' ? item.aggregated_output : '',
@@ -793,33 +788,58 @@ export function workflowCallUsesStoryId(call: StorybookWorkflowCall): boolean {
 // shell command. Gate call sites with
 // `test.skipIf(getEvalContext().integration === 'mcp')` — no skills are
 // installed on the MCP path, so MCP runs should report a skip instead of a
-// vacuous pass.
+// false-pass.
 export function expectSkillInvoked(skillName: string): void {
   const { agent } = getEvalContext();
+  expect(
+    isSkillInvoked(skillName),
+    agent === 'claude-code'
+      ? `Expected the ${skillName} skill to be invoked via the Skill tool, or its SKILL.md to be read`
+      : `Expected the ${skillName} skill (skills/${codexSkillName(skillName)}) to be read via a shell command`
+  ).toBe(true);
+}
 
-  if (agent === 'claude-code') {
+const WORKFLOW_SKILLS = ['component-docs', 'write-stories', 'test-stories', 'ui-review'];
+
+// The plugin path: the installed skills are what leads the agent to the workflow. One invoked
+// skill shows that. `expectWorkflowCalls` asserts that the agent opens the text of each step with
+// `storybook skills <id>`; Codex often runs that command for a later step without reading the
+// SKILL.md that names it.
+export function expectAnyWorkflowSkillInvoked(): void {
+  expect(
+    WORKFLOW_SKILLS.some(isSkillInvoked),
+    `Expected one of the ${WORKFLOW_SKILLS.join(', ')} skills to be invoked`
+  ).toBe(true);
+}
+
+// The codex plugin names its skill directories without the storybook-
+// prefix (.agents/skills/init, .agents/skills/ui-review, …).
+const codexSkillName = (skillName: string) => skillName.replace(/^storybook-/, '');
+
+function isSkillInvoked(skillName: string): boolean {
+  if (getEvalContext().agent === 'claude-code') {
     // Match the skill argument exactly — a substring match would credit any
-    // Skill invocation whose free-text args merely mention the word.
-    const invoked = getTranscript().events.some(
-      (event) =>
-        event.type === 'tool_call' &&
-        event.tool?.originalName === 'Skill' &&
-        isRecord(event.tool.args) &&
-        event.tool.args.skill === skillName
+    // Skill invocation whose free-text args merely mention the word. When
+    // AGENTS.md names a skill, Claude Code sometimes reads its SKILL.md
+    // instead, with its Read tool or with a shell command such as `cat`,
+    // which loads the same instructions.
+    const skillFile = `/skills/${skillName}/SKILL.md`;
+    return (
+      getShellCommands().some((command) => shellCommandReadsFile(command, skillFile)) ||
+      getTranscript().events.some(
+        (event) =>
+          event.type === 'tool_call' &&
+          isRecord(event.tool?.args) &&
+          ((event.tool.originalName === 'Skill' && event.tool.args.skill === skillName) ||
+            (event.tool.originalName === 'Read' &&
+              typeof event.tool.args.file_path === 'string' &&
+              event.tool.args.file_path.endsWith(skillFile)))
+      )
     );
-    expect(invoked, `Expected the ${skillName} skill to be invoked via the Skill tool`).toBe(true);
-    return;
   }
 
-  // The codex plugin names its skill directories without the storybook-
-  // prefix (.agents/skills/init, .agents/skills/stories, …).
-  const codexSkillName = skillName.replace(/^storybook-/, '');
-  const skillPathPattern = new RegExp(`skills/${codexSkillName}\\b`);
-  const read = getShellCommands().some((command) => skillPathPattern.test(command));
-  expect(
-    read,
-    `Expected the ${skillName} skill (skills/${codexSkillName}) to be read via a shell command`
-  ).toBe(true);
+  const skillPathPattern = new RegExp(`skills/${codexSkillName(skillName)}\\b`);
+  return getShellCommands().some((command) => skillPathPattern.test(command));
 }
 
 // Lifecycle-outcome check for the upgrade evals: the given Storybook packages
@@ -882,6 +902,43 @@ export function expectStorybookDependenciesAtLeast(
       expectAtLeastMinimum(packageName, spec);
     }
   }
+}
+
+// For the evals whose agent installs Storybook itself: the setup serves this checkout's packages from
+// a registry in the sandbox (`evals.checkoutRegistry` in lib/templates.ts), and every Storybook
+// package installed at the checkout's version must have come from it rather than from npm.
+export function expectStorybookInstalledFromCheckout(): void {
+  const registry = parseJson(readFileSync(CHECKOUT_REGISTRY_PATH, 'utf8'));
+  if (
+    !isRecord(registry) ||
+    typeof registry.url !== 'string' ||
+    typeof registry.version !== 'string'
+  ) {
+    throw new Error(`${CHECKOUT_REGISTRY_PATH} must contain the registry url and version`);
+  }
+  const { url, version } = registry;
+
+  expect(existsSync('package-lock.json'), 'Expected Storybook to be installed with npm').toBe(true);
+  const lockfile = parseJson(readFileSync('package-lock.json', 'utf8'));
+  const installed = Object.entries(
+    isRecord(lockfile) && isRecord(lockfile.packages) ? lockfile.packages : {}
+  ).filter(([location]) => /(^|\/)node_modules\/(storybook|@storybook\/[^/]+)$/.test(location));
+
+  const storybook = installed.find(([location]) => location === 'node_modules/storybook')?.[1];
+  expect(
+    isRecord(storybook) ? storybook.version : undefined,
+    'Expected the checkout version of storybook in package-lock.json'
+  ).toBe(version);
+
+  const fromNpm = installed
+    .filter(
+      ([, entry]) =>
+        isRecord(entry) &&
+        entry.version === version &&
+        !(typeof entry.resolved === 'string' && entry.resolved.startsWith(`${url}-/checkout/`))
+    )
+    .map(([location]) => location);
+  expect(fromNpm, 'Expected these packages to come from the checkout registry').toEqual([]);
 }
 
 function parseSemverTriple(spec: string): [number, number, number] | undefined {
@@ -990,7 +1047,7 @@ function killProcessTree(child: ReturnType<typeof spawn>): void {
 // mechanically, because "meaningful grouping" and "useful rationale" are
 // judgment calls.
 export const DISPLAY_REVIEW_CURATION_CRITERION = [
-  'The final review-create tool call publishes a well-curated review.',
+  'The final review-create tool call creates a well-curated review.',
   'It groups stories into 2 to 5 collections.',
   'No collection contains only a single story, unless there are too few stories to avoid it.',
   "Collections follow a meaningful layering, such as the changed component's visual states, its interaction behavior, or the surfaces that consume it — not arbitrary groupings.",
@@ -1054,12 +1111,13 @@ function expectRecord(value: unknown, label: string): asserts value is Record<st
   }
 }
 
-// Substance floor only (relaxed 2026-07-03 after run 28663662412, where
-// correct reviews failed on presentation details): the user must get the
-// review link in the final response, and not a second set of individual
-// story links next to it — one set of links, never both. Presentation
-// quality (headings, disclaimers, link placement) belongs in the
-// judge-scored tier, not this gate.
+const REVIEW_PAGE_URL_PATTERN = /[?&]path=\/review(?![\w-])/;
+
+// Substance floor (relaxed 2026-07-03 after run 28663662412, where correct
+// reviews failed on presentation details): the user must get the review link
+// in the final response, and not a second set of individual story links next
+// to it — one set of links, never both. Presentation quality (headings,
+// disclaimers, link placement) belongs in the judge-scored tier, not this gate.
 function expectFinalResponseSharesReviewLink(): void {
   const finalMessage = getFinalAssistantMessage();
   if (finalMessage === undefined) {
@@ -1067,7 +1125,7 @@ function expectFinalResponseSharesReviewLink(): void {
   }
 
   expect(finalMessage, 'Final response must include the Storybook review page link').toMatch(
-    /[?&]path=\/review\/?/
+    REVIEW_PAGE_URL_PATTERN
   );
   expect(
     finalMessage,
@@ -1116,8 +1174,8 @@ function getRawCodexMcpWorkflowCalls(): StorybookWorkflowCall[] {
       }
 
       // Codex emits each MCP call twice (item.started + item.completed);
-      // counting both would double every call and let "called at least
-      // twice" assertions pass vacuously on a single real invocation.
+      // counting both would double every call and produce a false-pass for
+      // "called at least twice" assertions on a single real invocation.
       if (event.type !== 'item.completed') {
         return [];
       }

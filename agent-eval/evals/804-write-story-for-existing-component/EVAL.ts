@@ -1,56 +1,38 @@
-import { test } from 'vitest';
+import { describe, test } from 'vitest';
 import {
-  expectDisplayReviewForVisualChange,
-  expectPreviewBrowserStarted,
-  expectPreviewStoriesWithFinalLinks,
-  expectSkillInvoked,
-  getEvalContext,
-  expectStoryDiscoveryBeforeReview,
-  expectStoryIdsInDisplayReview,
+  expectAnyWorkflowSkillInvoked,
+  expectNoDisplayReview,
+  expectReviewHint,
   expectStoryTestsRanAndPassed,
-  expectValidStorybookLaunchConfig,
   expectWorkflowCalls,
-  isReviewEnabled,
+  getEvalContext,
 } from '#test-utils';
 
-const review = isReviewEnabled();
+// The skills of the workflow in AGENTS.md that this task cannot do without. The tests are a
+// command of the workflow, not a skill, and a review only comes when the user asks for one.
+const WORKFLOW_SKILLS = ['write-stories'];
 
-test.runIf(review)('uses Storybook story instructions and publishes a display review', () => {
-  expectWorkflowCalls(['get-storybook-story-instructions', 'review-create']);
-  expectDisplayReviewForVisualChange();
-});
+describe('writing stories for an existing AlertBanner', () => {
+  test('runs story tests after the change and finishes with them passing', async () => {
+    await expectStoryTestsRanAndPassed({
+      covering: ['alertbanner'],
+    });
+  });
 
-test.runIf(review)('the review covers the new AlertBanner stories', () => {
-  expectStoryIdsInDisplayReview(['alertbanner']);
-});
+  test('runs the skills of the workflow, and creates no review unasked', () => {
+    expectWorkflowCalls(WORKFLOW_SKILLS);
+    expectNoDisplayReview();
+  });
 
-test.runIf(!review)(
-  'uses Storybook story instructions and previews the new AlertBanner stories',
-  () => {
-    expectWorkflowCalls(['get-storybook-story-instructions']);
-    expectPreviewStoriesWithFinalLinks({ covering: ['alertbanner'] });
-  }
-);
+  test('tells the user about the /ui-review skill', () => {
+    expectReviewHint();
+  });
 
-test.runIf(review)(
-  'discovers stories through the workflow tools before publishing the review',
-  () => {
-    expectStoryDiscoveryBeforeReview();
-  }
-);
+  describe('depending on the current agent and integration', () => {
+    const { integration } = getEvalContext();
 
-test('runs story tests after the change and finishes with them passing', () => {
-  expectStoryTestsRanAndPassed({ covering: ['alertbanner'] });
-});
-
-test.skipIf(getEvalContext().integration === 'mcp')('invokes the stories skill', () => {
-  expectSkillInvoked('stories');
-});
-
-test('keeps the pre-existing Storybook launch config valid', () => {
-  expectValidStorybookLaunchConfig();
-});
-
-test('opens the preview browser when using the plugin', () => {
-  expectPreviewBrowserStarted();
+    test.skipIf(integration === 'mcp')('finds the workflow through the plugin skills', () => {
+      expectAnyWorkflowSkillInvoked();
+    });
+  });
 });

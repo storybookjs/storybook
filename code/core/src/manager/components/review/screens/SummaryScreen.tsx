@@ -13,11 +13,10 @@ import {
   Card,
   Collapsible,
   DocumentWrapper,
-  IconButton,
   ScrollArea,
   ToggleButton,
 } from 'storybook/internal/components';
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/emotion';
 
 import {
   CheckIcon,
@@ -35,12 +34,12 @@ import { CollectionGrid } from '../components/CollectionGrid.tsx';
 import { CopyButton } from '../components/CopyButton.tsx';
 import { Markdown } from '../components/Markdown.tsx';
 import { ReviewHeader } from '../components/ReviewHeader.tsx';
+import type { ReviewBanner } from '../review-context.ts';
 import {
   REVIEW_SUMMARY_BACK_ATTR,
   buildReviewStoryHref,
   buildSummaryBackHref,
 } from '../review-navigation.ts';
-import type { ReviewBanner } from '../review-context.ts';
 import type { ReviewState } from '../review-state.ts';
 import type { StoryInfo } from '../review-types.ts';
 
@@ -168,7 +167,7 @@ const SummaryHeading = styled.h2(({ theme }) => ({
 
 // A plain clickable row, not a semantic control: making the whole header
 // toggle is just a convenience affordance for pointer users. The real
-// accessible control is the chevron <IconButton> inside, which carries the
+// accessible control is the chevron <Button> inside, which carries the
 // aria-label and aria-expanded state for assistive technologies.
 const CardHead = styled.div({
   display: 'flex',
@@ -218,7 +217,16 @@ const CardRationale = styled(MarkdownWrapper)(({ theme }) => ({
   margin: '0 12px',
 }));
 
-const Footer = styled.div(({ theme }) => ({
+const Footer = styled.footer(({ theme }) => ({
+  color: theme.textMutedColor,
+  padding: '10px 22px 42px',
+  fontSize: theme.typography.size.s2,
+  textAlign: 'center',
+  textWrap: 'balance',
+}));
+
+const EmptyMessage = styled.p(({ theme }) => ({
+  margin: 0,
   color: theme.textMutedColor,
   padding: '10px 10px 30px',
   fontSize: theme.typography.size.s2,
@@ -239,18 +247,14 @@ const CollectionLandmark: FC<{ titleId: string; children: ReactNode }> = ({
   );
 };
 
-// A `contentinfo` landmark must stay top-level, but this footer sits inside the
-// `main` landmark, so it is exposed as a named `region` instead. It renders as a
-// `section` because `region` is not an allowed role on `footer` (aria-allowed-role),
-// and a `<footer>` nested in `<main>` has no implicit `contentinfo` role anyway.
 const FooterLandmark: FC<{ children: ReactNode }> = ({ children }) => {
-  const regionRef = useRef<HTMLDivElement>(null);
+  const footerRef = useRef<HTMLElement>(null);
   const { landmarkProps } = useLandmark(
     { role: 'contentinfo', 'aria-label': 'About this review' },
-    regionRef
+    footerRef
   );
   return (
-    <Footer as="section" ref={regionRef} {...landmarkProps}>
+    <Footer ref={footerRef} {...landmarkProps}>
       {children}
     </Footer>
   );
@@ -444,7 +448,9 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
               </SummaryCard>
             </SummaryLandmark>
             {visibleCollections.length === 0 ? (
-              <Footer>{showNewOnly ? 'No new stories found.' : 'No collections found.'}</Footer>
+              <EmptyMessage>
+                {showNewOnly ? 'No new stories found.' : 'No collections found.'}
+              </EmptyMessage>
             ) : (
               visibleCollections.map(({ collection, index, storyIds }) => {
                 const isExpanded = expandedCollections.has(index);
@@ -463,7 +469,7 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
                               >
                                 {storyIds.length}
                               </CardCount>
-                              <IconButton
+                              <Button
                                 variant="ghost"
                                 size="small"
                                 padding="small"
@@ -481,7 +487,7 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
                                 <ToggleChevronIcon
                                   style={{ transform: `rotate(${isExpanded ? -180 : 0}deg)` }}
                                 />
-                              </IconButton>
+                              </Button>
                             </CardControls>
                           </CardHead>
                         }
@@ -508,12 +514,12 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
                 );
               })
             )}
-            <FooterLandmark>
-              This review shows the {pluralize(storyCount, 'story', 'stories')} most relevant for
-              you to spot-check right now. Because this is AI-curated, results may be inaccurate or
-              incomplete.
-            </FooterLandmark>
           </Main>
+          <FooterLandmark>
+            This review shows the {pluralize(storyCount, 'story', 'stories')} most relevant for you
+            to spot-check right now. Because this is AI-curated, results may be inaccurate or
+            incomplete.
+          </FooterLandmark>
         </ScrollArea>
       </ListScroll>
     </Page>

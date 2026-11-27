@@ -14,7 +14,7 @@ import { combineParameters } from '../../preview-api/modules/store/parameters.ts
 /**
  * Builds the Controls/ArgTypes table shape from server docgen and custom argTypes.
  *
- * Mirrors the legacy `prepareStory` enhancer chain when `experimentalDocgenServer` is enabled:
+ * Mirrors the legacy `prepareStory` enhancer chain when `docgenServer` is enabled:
  * server docgen stands in for `enhanceArgTypes`, user annotations from `customArgTypes` layer on
  * top, then `inferArgTypes` and `inferControls` run the second pass that `prepareStory` skips.
  *
@@ -30,14 +30,15 @@ export function mergeServiceArgTypes({
   initialArgs,
   customArgTypes,
 }: {
-  payload: DocgenPayload;
+  /** Undefined when docgen has nothing for the component, e.g. a story file without `component`. */
+  payload: DocgenPayload | undefined;
   storyId: StoryId;
   /** May be undefined when the manager renders before the preview reports `storyPrepared`. */
   parameters?: Parameters;
   initialArgs?: Args;
   customArgTypes?: ArgTypes;
 }): StrictArgTypes {
-  const merged = combineParameters(payload.argTypes ?? {}, customArgTypes ?? {}) as StrictArgTypes;
+  const merged = combineParameters(payload?.argTypes ?? {}, customArgTypes ?? {}) as StrictArgTypes;
 
   const withInferredTypes = inferArgTypes({
     id: storyId,

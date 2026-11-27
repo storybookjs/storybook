@@ -3,14 +3,7 @@ import {
   STORY_ARGS_UPDATED,
   UPDATE_STORY_ARGS,
 } from 'storybook/internal/core-events';
-import type {
-  ArgsStoryFn,
-  PartialStoryFn,
-  PlayFunctionContext,
-  StoryContext,
-} from 'storybook/internal/types';
-
-import { global as globalThis } from '@storybook/global';
+import type { ArgsStoryFn, PartialStoryFn, StoryContext } from 'storybook/internal/types';
 
 import { useEffect } from 'storybook/preview-api';
 import { expect, within } from 'storybook/test';
@@ -32,7 +25,7 @@ export const Inheritance = {
   args: {
     text: 'starting',
   },
-  play: async ({ canvasElement }: PlayFunctionContext<any>) => {
+  play: async ({ canvasElement }: StoryContext<any>) => {
     const canvas = within(canvasElement);
     await expect(canvas.getByTestId('pre').innerText).toEqual('story component project starting');
   },
@@ -57,7 +50,7 @@ export const Hooks = {
     text: 'text',
     condition: true,
   },
-  play: async ({ id, args }: PlayFunctionContext<any>) => {
+  play: async ({ id, args }: StoryContext<any>) => {
     const channel = globalThis.__STORYBOOK_ADDONS_CHANNEL__;
     await channel.emit(RESET_STORY_ARGS, { storyId: id });
     await new Promise((resolve) => channel.once(STORY_ARGS_UPDATED, resolve));

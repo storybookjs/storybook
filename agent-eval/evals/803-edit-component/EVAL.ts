@@ -1,61 +1,44 @@
-import { test } from 'vitest';
 import {
-  expectDisplayReviewForVisualChange,
-  expectPreviewBrowserStarted,
-  expectPreviewStoriesWithFinalLinks,
-  expectSkillInvoked,
-  getEvalContext,
-  expectStoryDiscoveryBeforeReview,
-  expectStoryIdsInDisplayReview,
+  expectAnyWorkflowSkillInvoked,
+  expectNoDisplayReview,
+  expectReviewHint,
   expectStoryTestsRanAndPassed,
-  expectValidStorybookLaunchConfig,
   expectWorkflowCalls,
-  isReviewEnabled,
+  getEvalContext,
 } from '#test-utils';
+import { describe, test } from 'vitest';
 
-const review = isReviewEnabled();
+// The skills of the workflow in AGENTS.md that this task cannot do without. The tests are a
+// command of the workflow, not a skill, and a review only comes when the user asks for one.
+const WORKFLOW_SKILLS = ['component-docs', 'write-stories'];
 
-// The edit pulls in a new Reshaped component (Button), which requires the
-// docs tools; codex is an accepted known failure here (skipped the docs
-// tools under both instruction shapes, CI run 28660377980, 2026-07-03).
-// Re-enable this assertion for Codex after the documentation tool call passes on three consecutive scheduled CI runs.
-test.skipIf(getEvalContext().agent === 'codex')('uses the documentation tooling', () => {
-  expectWorkflowCalls(['docs-show']);
-});
+describe('editing ReviewCard to add date and optional onReport', () => {
+  test('runs story tests after the change and finishes with them passing', async () => {
+    await expectStoryTestsRanAndPassed({
+      covering: ['reviewcard'],
+    });
+  });
 
-test.runIf(review)('uses Storybook story instructions and publishes a display review', () => {
-  expectWorkflowCalls(['get-storybook-story-instructions', 'review-create']);
-  expectDisplayReviewForVisualChange();
-});
+  test('runs the skills of the workflow, and creates no review unasked', () => {
+    expectWorkflowCalls(WORKFLOW_SKILLS);
+    expectNoDisplayReview();
+  });
 
-test.runIf(review)('the review covers the edited ReviewCard component', () => {
-  expectStoryIdsInDisplayReview(['reviewcard']);
-});
+  test('tells the user about the /ui-review skill', () => {
+    expectReviewHint();
+  });
 
-test.runIf(!review)('uses Storybook story instructions and previews the edited component', () => {
-  expectWorkflowCalls(['get-storybook-story-instructions']);
-  expectPreviewStoriesWithFinalLinks({ covering: ['reviewcard'] });
-});
+  describe('depending on the current agent and integration', () => {
+    const { integration } = getEvalContext();
 
-test.runIf(review)(
-  'discovers stories through the workflow tools before publishing the review',
-  () => {
-    expectStoryDiscoveryBeforeReview();
-  }
-);
+    // The edit pulls in a new Reshaped component (Button), which requires the
+    // docs tools.
+    test('uses the documentation tooling', () => {
+      expectWorkflowCalls(['docs-show']);
+    });
 
-test('runs story tests after the change and finishes with them passing', () => {
-  expectStoryTestsRanAndPassed({ covering: ['reviewcard'] });
-});
-
-test.skipIf(getEvalContext().integration === 'mcp')('invokes the stories skill', () => {
-  expectSkillInvoked('stories');
-});
-
-test('keeps the pre-existing Storybook launch config valid', () => {
-  expectValidStorybookLaunchConfig();
-});
-
-test('opens the preview browser when using the plugin', () => {
-  expectPreviewBrowserStarted();
+    test.skipIf(integration === 'mcp')('finds the workflow through the plugin skills', () => {
+      expectAnyWorkflowSkillInvoked();
+    });
+  });
 });

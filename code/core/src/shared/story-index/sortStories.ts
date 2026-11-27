@@ -1,0 +1,102 @@
+import type {
+  Addon_Comparator,
+  Addon_StorySortParameter,
+  Addon_StorySortObjectParameter,
+  Addon_StorySortParameterV7,
+  IndexEntry,
+  IndexEntryLegacy,
+  StoryIndexEntry,
+} from 'storybook/internal/types';
+import type { Parameters, Path, Renderer } from 'storybook/internal/types';
+import type { PreparedStory } from 'storybook/internal/types';
+
+import { dedent } from 'ts-dedent';
+
+import { storySort } from './storySort.ts';
+
+const toComparator = (storySortParameter: Addon_StorySortParameterV7): Addon_Comparator<any> =>
+  typeof storySortParameter === 'function'
+    ? storySortParameter
+    : storySort(
+        Array.isArray(storySortParameter)
+          ? { order: storySortParameter }
+          : (storySortParameter as Addon_StorySortObjectParameter)
+      );
+
+// Each sorter breaks the ties of the ones before it.
+export const combineStorySorts = (
+  storySorts: Addon_StorySortParameterV7[]
+): Addon_StorySortParameterV7 | undefined => {
+  if (storySorts.length <= 1) {
+    return storySorts[0];
+  }
+  const comparators = storySorts.map(toComparator);
+  return (a: IndexEntry, b: IndexEntry) => {
+    for (const comparator of comparators) {
+      // A comparator that returns nothing (or `false`) considers the stories equal, as in Array.sort.
+      const result = Number(comparator(a, b)) || 0;
+      if (result !== 0) {
+        return result;
+      }
+    }
+    return 0;
+  };
+};
+
+const sortStoriesCommon = (
+  stories: IndexEntry[],
+  storySortParameter: Addon_StorySortParameterV7 | undefined,
+  fileNameOrder: Path[]
+) => {
+  if (storySortParameter) {
+    stories.sort(toComparator(storySortParameter) as (a: IndexEntry, b: IndexEntry) => number);
+  } else {
+    stories.sort(
+      (s1, s2) => fileNameOrder.indexOf(s1.importPath) - fileNameOrder.indexOf(s2.importPath)
+    );
+  }
+  return stories;
+};
+
+export const sortStoriesV7 = (
+  stories: IndexEntry[],
+  storySortParameter: Addon_StorySortParameterV7 | undefined,
+  fileNameOrder: Path[]
+) => {
+  try {
+    return sortStoriesCommon(stories, storySortParameter, fileNameOrder);
+  } catch (err) {
+    throw new Error(dedent`
+    Error sorting stories with sort parameter ${storySortParameter}:
+
+    > ${(err as Error).message}
+
+    Are you using a V6-style sort function in V7 mode?
+
+    More info: https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#v7-style-story-sort
+  `);
+  }
+};
+
+const toIndexEntry = (story: any): StoryIndexEntry => {
+  const { id, title, name, parameters, type, subtype, parent } = story;
+  return { id, title, name, importPath: parameters.fileName, type, subtype, parent };
+};
+
+export const sortStoriesV6 = <TRenderer extends Renderer>(
+  stories: [string, PreparedStory<TRenderer>, Parameters, Parameters][],
+  storySortParameter: Addon_StorySortParameter,
+  fileNameOrder: Path[]
+) => {
+  if (storySortParameter && typeof storySortParameter === 'function') {
+    stories.sort(storySortParameter as (a: IndexEntryLegacy, b: IndexEntryLegacy) => number);
+    return stories.map((s) => toIndexEntry(s[1]));
+  }
+
+  const storiesV7 = stories.map((s) => toIndexEntry(s[1]));
+  return sortStoriesCommon(
+    storiesV7,
+    storySortParameter as Addon_StorySortParameterV7,
+    fileNameOrder
+  );
+};

@@ -3,7 +3,7 @@ export default {
   framework: {
     name: '@storybook/web-components-vite',
     options: {
-      // ...
+      customElementsManifest: '../custom-elements.json',
     },
   },
 };
@@ -16,7 +16,7 @@ const config: StorybookConfig = {
   framework: {
     name: '@storybook/web-components-vite',
     options: {
-      // ...
+      customElementsManifest: '../custom-elements.json',
     },
   },
 };
@@ -24,29 +24,27 @@ const config: StorybookConfig = {
 export default config;
 ```
 
-```ts filename=".storybook/main.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+```ts filename=".storybook/main.ts" renderer="web-components" language="ts" tabTitle="CSF 4"
 import { defineMain } from '@storybook/web-components-vite/node';
 
 export default defineMain({
   framework: {
     name: '@storybook/web-components-vite',
     options: {
-      // ...
+      customElementsManifest: '../custom-elements.json',
     },
   },
 });
 ```
 
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
-
-```js filename=".storybook/main.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+```js filename=".storybook/main.js" renderer="web-components" language="js" tabTitle="CSF 4"
 import { defineMain } from '@storybook/web-components-vite/node';
 
 export default defineMain({
   framework: {
     name: '@storybook/web-components-vite',
     options: {
-      // ...
+      customElementsManifest: '../custom-elements.json',
     },
   },
 });

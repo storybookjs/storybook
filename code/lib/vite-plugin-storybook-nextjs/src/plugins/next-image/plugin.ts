@@ -1,12 +1,12 @@
+import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import { createRequire } from 'node:module';
 import { type FilterPattern, createFilter } from '@rollup/pluginutils';
 import type { NextConfigComplete } from 'next/dist/server/config-shared.js';
-import path from 'pathe';
+import path, { normalize } from 'pathe';
 import probeSync from 'probe-image-size/sync.js';
 import { dedent } from 'ts-dedent';
 import type { Plugin } from 'vite';
-import { decodeBase64Url, encodeBase64Url } from '../../utils/base64-url.ts';
 import { VITEST_PLUGIN_NAME, isVitestEnv } from '../../utils.ts';
 import { getAlias } from './alias/index.tsx';
 
@@ -21,13 +21,11 @@ const warnOnce = (message: string) => {
 const includePattern = /\.(png|jpg|jpeg|gif|webp|avif|ico|bmp|svg)$/;
 const excludeImporterPattern = /\.(css|scss|sass)$/;
 
-// Use null byte prefix for virtual module IDs
-// Use URL-safe base64 to encode the image path to avoid issues with special characters
-// like square brackets that are decoded by decodeURI
 const virtualImagePrefix = '\0virtual:next-image:';
 const virtualImage = 'virtual:next-image';
 const virtualNextImage = 'virtual:next/image';
 const virtualNextLegacyImage = 'virtual:next/legacy/image';
+const SHORT_HASH_LEN = 8;
 
 const require = createRequire(import.meta.url);
 
@@ -51,6 +49,23 @@ export function vitePluginNextImage(
     ],
     options.excludeFiles
   );
+
+  const imagePathByHash = new Map<string, string>();
+
+  function registerImagePath(imagePath: string): string {
+    const full = createHash('sha256').update(imagePath).digest('hex');
+    const short = full.slice(0, SHORT_HASH_LEN);
+    const existing = imagePathByHash.get(short);
+    if (existing === imagePath) {
+      return short;
+    }
+    if (existing === undefined) {
+      imagePathByHash.set(short, imagePath);
+      return short;
+    }
+    imagePathByHash.set(full, imagePath);
+    return full;
+  }
 
   return {
     name: 'vite-plugin-storybook-nextjs-image',
@@ -130,22 +145,20 @@ export function vitePluginNextImage(
                   paths: [path.dirname(importerPath)],
                 });
               } catch {
-                imagePath = source;
+                return null;
               }
             }
           }
         }
 
+        imagePath = normalize(imagePath);
         const pathForFilter = imagePath.replace(postfixRE, '');
 
         if (!filter(pathForFilter)) {
           return null;
         }
 
-        // Use null byte prefix to embed the image path in the virtual module ID
-        // Use URL-safe base64 encoding to avoid issues with special characters like
-        // square brackets that get decoded by Vite's decodeURI
-        return `${virtualImagePrefix}${encodeBase64Url(imagePath)}`;
+        return `${virtualImagePrefix}${registerImagePath(imagePath)}`;
       }
 
       if (id === 'next/image' && importer !== virtualNextImage) {
@@ -177,17 +190,19 @@ export function vitePluginNextImage(
         ).toString('utf-8');
       }
 
-      // Handle virtual image modules with null byte prefix
       if (id.startsWith(virtualImagePrefix)) {
-        // Decode the URL-safe base64 encoded image path
-        const imagePath = decodeBase64Url(id.slice(virtualImagePrefix.length));
+        const imagePath = imagePathByHash.get(id.slice(virtualImagePrefix.length));
+        if (imagePath === undefined) {
+          return null;
+        }
 
         const nextConfig = await nextConfigResolver.promise;
+        const imageImport = JSON.stringify(`${imagePath}?ignore`);
 
         try {
           if (nextConfig.images?.disableStaticImages) {
             return dedent`
-						import image from "${imagePath}?ignore";
+						import image from ${imageImport};
 						export default image;
 					`;
           }
@@ -204,7 +219,7 @@ export function vitePluginNextImage(
           const { width, height } = size;
 
           return dedent`
-						import src from "${imagePath}?ignore";
+						import src from ${imageImport};
 						export default {
 							src,
 							height: ${height},

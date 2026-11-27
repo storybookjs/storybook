@@ -1,6 +1,6 @@
 import type { InputType } from 'storybook/internal/types';
 
-import type { IconsProps } from '../components/components/icon/icon.tsx';
+import type { toolbarIcons } from './components/ToolbarIcon.tsx';
 
 export type ToolbarShortcutType = 'next' | 'previous' | 'reset';
 
@@ -15,7 +15,7 @@ export type ToolbarShortcuts = Record<ToolbarShortcutType, ToolbarShortcutConfig
 
 export interface ToolbarItem {
   value?: string;
-  icon?: IconsProps['icon'];
+  icon?: keyof typeof toolbarIcons;
   right?: string;
   title?: string;
   hideIcon?: boolean;
@@ -26,7 +26,7 @@ export interface NormalizedToolbarConfig {
   /** The label to show for this toolbar item */
   title?: string;
   /** Choose an icon to show for this toolbar item */
-  icon?: IconsProps['icon'];
+  icon?: keyof typeof toolbarIcons;
   /** Set to true to prevent default update of icon to match any present selected items icon */
   preventDynamicIcon?: boolean;
   items: ToolbarItem[];
@@ -35,10 +35,7 @@ export interface NormalizedToolbarConfig {
   dynamicTitle?: boolean;
 }
 
-export type NormalizedToolbarArgType = {
-  name: string;
-  description: string;
-  defaultValue?: any;
+export type NormalizedToolbarArgType = Omit<ToolbarArgType, 'toolbar'> & {
   toolbar: NormalizedToolbarConfig;
 };
 
@@ -49,13 +46,7 @@ export type ToolbarConfig = Omit<NormalizedToolbarConfig, 'items'> & {
 export type ToolbarArgType = {
   name?: string;
   description?: string;
-  defaultValue?: any;
   toolbar?: ToolbarConfig;
-  /**
-   * @deprecated This loose index signature has been added for compatibility with InputType, and
-   *   will be removed in Storybook 11
-   */
-  [key: string]: any;
 };
 
 export type ToolbarMenuProps = NormalizedToolbarArgType & { id: string };

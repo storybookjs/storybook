@@ -1,20 +1,27 @@
+import { fileURLToPath } from 'node:url';
+
 import { Channel, setChannel } from 'storybook/internal/channels';
 import {
   getProjectRoot,
   loadAllPresets,
   loadMainConfig,
+  normalizeBasePath,
   resolveAddonName,
   validateFrameworkName,
 } from 'storybook/internal/common';
 import { oneWayHash } from 'storybook/internal/telemetry';
-import type { BuilderOptions, CLIOptions, LoadOptions, Options } from 'storybook/internal/types';
+import type {
+  BuilderOptions,
+  CLIOptions,
+  LoadOptions,
+  Options,
+  PresetConfig,
+} from 'storybook/internal/types';
 import { applyServicesPresetOnce } from './utils/apply-services-preset-once.ts';
-
-import { global } from '@storybook/global';
 
 import { dirname, isAbsolute, join, relative, resolve } from 'pathe';
 
-import { resolvePackageDir } from '../shared/utils/module.ts';
+import { resolvePackageDir, safeResolveModule } from '../shared/utils/module.ts';
 
 export async function loadStorybook(
   options: CLIOptions &
@@ -28,6 +35,12 @@ export async function loadStorybook(
        * so addon hooks that answer requests over `options.channel` share the caller's bus.
        */
       channel?: Channel;
+      /**
+       * Presets applied after the project's `main` config and before Storybook's own override
+       * preset. A host embedding Storybook in another dev server uses them to force builder
+       * settings the project cannot know about, such as the Vite `base` it is mounted under.
+       */
+      overridePresets?: PresetConfig[];
     }
 ): Promise<Options> {
   const configDir = resolve(options.configDir);
@@ -37,6 +50,7 @@ export async function loadStorybook(
   options.configType = 'DEVELOPMENT';
   options.configDir = configDir;
   options.cacheKey = cacheKey;
+  options.basePath = normalizeBasePath(options.basePath);
 
   // Without a caller-supplied channel this is a transport-less local bus, as there is no dev
   // server to transport to.
@@ -48,9 +62,7 @@ export async function loadStorybook(
   const corePresets = [];
 
   let frameworkName = typeof framework === 'string' ? framework : framework?.name;
-  if (!options.ignorePreview) {
-    validateFrameworkName(frameworkName);
-  }
+  validateFrameworkName(frameworkName);
   if (frameworkName) {
     corePresets.push(join(frameworkName, 'preset'));
   }
@@ -62,10 +74,11 @@ export async function loadStorybook(
   // We hope to remove this in SB8
   let presets = await loadAllPresets({
     corePresets,
+    ...options,
     overridePresets: [
+      ...(options.overridePresets ?? []),
       import.meta.resolve('storybook/internal/core-server/presets/common-override-preset'),
     ],
-    ...options,
     isCritical: true,
     channel,
   });
@@ -80,9 +93,17 @@ export async function loadStorybook(
        file URL / absolute path (e.g. 'file:///.../.../dist/index.js'). For bare package names, we
        need to resolve the package directory first; for already-resolved paths, dirname works directly.
     */
-    const isResolved = builderName.startsWith('file:') || isAbsolute(builderName);
-    const builderPresetDir = isResolved ? dirname(builderName) : resolvePackageDir(builderName);
-    corePresets.push(join(builderPresetDir, 'preset.js'));
+    const builderEntry = builderName.startsWith('file:') ? fileURLToPath(builderName) : builderName;
+    const builderPresetDir = isAbsolute(builderEntry)
+      ? dirname(builderEntry)
+      : resolvePackageDir(builderEntry);
+    // Not every builder ships this preset: builder-webpack5 declares its presets on its main module
+    // instead, and only the dev server and static build load a builder module to reach them.
+    const builderPreset = safeResolveModule({ specifier: join(builderPresetDir, 'preset.js') });
+
+    if (builderPreset) {
+      corePresets.push(builderPreset);
+    }
   }
 
   // Load second pass: all presets are applied in order
@@ -93,15 +114,16 @@ export async function loadStorybook(
       ...(resolvedRenderer ? [resolvedRenderer] : []),
       ...corePresets,
     ],
+    ...options,
     overridePresets: [
+      ...(options.overridePresets ?? []),
       import.meta.resolve('storybook/internal/core-server/presets/common-override-preset'),
     ],
-    ...options,
     channel,
   });
 
   const features = await presets.apply('features');
-  global.FEATURES = features;
+  globalThis.FEATURES = features;
 
   await applyServicesPresetOnce(presets);
 

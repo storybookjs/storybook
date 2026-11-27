@@ -300,34 +300,30 @@ describe('getDocumentationTool', () => {
     });
 
     expect(response.result).toMatchInlineSnapshot(`
-			{
-			  "content": [
-			    {
-			      "text": "# Button
+      {
+        "content": [
+          {
+            "text": "# Button
 
-			ID: button
+      ID: button
 
-			A button component
+      A button component
 
-			## Props
+      ## Props
 
-			\`\`\`
-			export type Props = {
-			  /**
-			    Button style variant
-			  */
-			  variant?: "primary" | "secondary" = "primary";
-			  /**
-			    Disable the button
-			  */
-			  disabled?: boolean;
-			}
-			\`\`\`",
-			      "type": "text",
-			    },
-			  ],
-			}
-		`);
+      \`\`\`
+      export type Props = {
+        /** Button style variant */
+        variant?: "primary" | "secondary" = "primary";
+        /** Disable the button */
+        disabled?: boolean;
+      }
+      \`\`\`",
+            "type": "text",
+          },
+        ],
+      }
+    `);
   });
 
   it('should include props section when reactComponentMeta is present', async () => {
@@ -391,34 +387,128 @@ describe('getDocumentationTool', () => {
     });
 
     expect(response.result).toMatchInlineSnapshot(`
-			{
-			  "content": [
-			    {
-			      "text": "# Button
+      {
+        "content": [
+          {
+            "text": "# Button
 
-			ID: button
+      ID: button
 
-			A button component
+      A button component
 
-			## Props
+      ## Props
 
-			\`\`\`
-			export type Props = {
-			  /**
-			    Button style variant
-			  */
-			  variant?: "primary" | "secondary" = "primary";
-			  /**
-			    Disable the button
-			  */
-			  disabled?: boolean;
-			}
-			\`\`\`",
-			      "type": "text",
-			    },
-			  ],
-			}
-		`);
+      \`\`\`
+      export type Props = {
+        /** Button style variant */
+        variant?: "primary" | "secondary" = "primary";
+        /** Disable the button */
+        disabled?: boolean;
+      }
+      \`\`\`",
+            "type": "text",
+          },
+        ],
+      }
+    `);
+  });
+
+  it('should render apiDescription ahead of the stories it is applied by', async () => {
+    served[''] = {
+      componentManifest: {
+        // v0: this manifest inlines docgen/subcomponents/import, which is the inline format.
+        // Labelling it v1 would strip them — a v1 row carries those behind `$ref`s instead.
+        v: 0,
+        components: {
+          widget: {
+            id: 'widget',
+            name: 'Widget',
+            description: 'A widget.',
+            apiDescription: [
+              '## API',
+              '',
+              '```',
+              'export type WidgetApi = {',
+              '  /** @default medium */',
+              '  size?: "small" | "medium";',
+              '}',
+              '```',
+            ].join('\n'),
+            stories: [
+              {
+                id: 'widget--basic',
+                name: 'Basic',
+                snippet: '<Widget />',
+              },
+              {
+                id: 'widget--small',
+                name: 'Small',
+                snippet: '<Widget size="small" />',
+              },
+            ],
+          },
+        },
+      },
+    };
+
+    const request = {
+      jsonrpc: '2.0' as const,
+      id: 1,
+      method: 'tools/call',
+      params: {
+        name: GET_TOOL_NAME,
+        arguments: {
+          id: 'widget',
+        },
+      },
+    };
+
+    const mockHttpRequest = new Request('https://example.com/mcp');
+    const response = await server.receive(request, {
+      custom: { request: mockHttpRequest, manifestProvider },
+    });
+
+    expect(response.result).toMatchInlineSnapshot(`
+      {
+        "content": [
+          {
+            "text": "# Widget
+
+      ID: widget
+
+      A widget.
+
+      ## API
+
+      \`\`\`
+      export type WidgetApi = {
+        /** @default medium */
+        size?: "small" | "medium";
+      }
+      \`\`\`
+
+      ## Stories
+
+      ### Basic
+
+      Story ID: widget--basic
+
+      \`\`\`
+      <Widget />
+      \`\`\`
+
+      ### Small
+
+      Story ID: widget--small
+
+      \`\`\`
+      <Widget size="small" />
+      \`\`\`",
+            "type": "text",
+          },
+        ],
+      }
+    `);
   });
 
   it('should include subcomponents in get-documentation output', async () => {
@@ -481,40 +571,38 @@ describe('getDocumentationTool', () => {
     });
 
     expect(response.result).toMatchInlineSnapshot(`
-			{
-			  "content": [
-			    {
-			      "text": "# ComboBox
+      {
+        "content": [
+          {
+            "text": "# ComboBox
 
-			ID: combo-box
+      ID: combo-box
 
-			A combo box component
+      A combo box component
 
-			## Subcomponents
+      ## Subcomponents
 
-			### ComboBoxItem
+      ### ComboBoxItem
 
-			Use for individual options.
+      Use for individual options.
 
-			\`\`\`
-			import { ComboBoxItem } from "@/components";
-			\`\`\`
+      \`\`\`
+      import { ComboBoxItem } from "@/components";
+      \`\`\`
 
-			#### Props
+      #### Props
 
-			\`\`\`
-			export type ComboBoxItemProps = {
-			  /**
-			    Required when children are not plain text.
-			  */
-			  textValue?: string;
-			}
-			\`\`\`",
-			      "type": "text",
-			    },
-			  ],
-			}
-		`);
+      \`\`\`
+      export type ComboBoxItemProps = {
+        /** Required when children are not plain text. */
+        textValue?: string;
+      }
+      \`\`\`",
+            "type": "text",
+          },
+        ],
+      }
+    `);
   });
 
   describe('multi-source mode', () => {
@@ -569,7 +657,7 @@ describe('getDocumentationTool', () => {
       served.remote = { componentManifest: smallManifestFixture };
     });
 
-    it('should return schema validation error when storybookId is missing', async () => {
+    it('should default to the local source when storybookId is missing', async () => {
       const request = {
         jsonrpc: '2.0' as const,
         id: 1,
@@ -585,9 +673,12 @@ describe('getDocumentationTool', () => {
         custom: { request: mockHttpRequest, manifestProvider, sources },
       });
 
-      // storybookId is required in multi-source mode — schema validation rejects it
-      expect((response.result as any).isError).toBe(true);
-      expect((response.result as any).content[0].text).toContain('storybookId');
+      expect((response.result as any).content[0].text).toContain('# Button');
+      expect(manifestProvider).toHaveBeenCalledWith(
+        mockHttpRequest,
+        COMPONENT_MANIFEST_PATH,
+        sources[0]
+      );
     });
 
     it('should return error when storybookId is invalid', async () => {
@@ -808,6 +899,40 @@ http://remote.example.com/mcp`);
         })
       );
     });
+
+    it('should tell onGetDocumentation which source an entry found elsewhere came from', async () => {
+      served.local = { componentManifest: smallManifestFixture };
+      served.remote = { componentManifest: remoteManifest };
+
+      const handler = vi.fn();
+      const request = {
+        jsonrpc: '2.0' as const,
+        id: 1,
+        method: 'tools/call',
+        params: {
+          name: GET_TOOL_NAME,
+          arguments: { id: 'badge', storybookId: 'local' },
+        },
+      };
+
+      const mockHttpRequest = new Request('https://example.com/mcp');
+      await server.receive(request, {
+        custom: {
+          request: mockHttpRequest,
+          manifestProvider,
+          sources,
+          onGetDocumentation: handler,
+        },
+      });
+
+      expect(handler).toHaveBeenCalledWith(
+        expect.objectContaining({
+          input: { id: 'badge', storybookId: 'local' },
+          foundDocumentation: expect.objectContaining({ id: 'badge' }),
+          resolvedStorybookId: 'remote',
+        })
+      );
+    });
   });
 
   describe('docs manifest entries', () => {
@@ -942,7 +1067,7 @@ http://remote.example.com/mcp`);
     });
   });
 
-  describe('resolveEntry hook (dev / experimentalDocgenServer)', () => {
+  describe('resolveEntry hook (dev / docgenServer)', () => {
     beforeEach(() => {
       manifestProvider.mockClear();
     });
@@ -1001,14 +1126,14 @@ http://remote.example.com/mcp`);
       expect((response.result as any).content[0].text).toContain('# Welcome');
     });
 
-    it('returns not-found when resolveEntry yields nothing', async () => {
+    it('returns not-found when resolveEntry yields nothing, with close ids from the listing', async () => {
       const resolveEntry = vi.fn().mockResolvedValue(undefined);
 
       const request = {
         jsonrpc: '2.0' as const,
         id: 1,
         method: 'tools/call',
-        params: { name: GET_TOOL_NAME, arguments: { id: 'nope' } },
+        params: { name: GET_TOOL_NAME, arguments: { id: 'primary-button' } },
       };
 
       const mockHttpRequest = new Request('https://example.com/mcp');
@@ -1016,9 +1141,11 @@ http://remote.example.com/mcp`);
         custom: { request: mockHttpRequest, manifestProvider, resolveEntry },
       });
 
-      expect(manifestProvider).not.toHaveBeenCalled();
       expect((response.result as any).isError).toBe(true);
       expect((response.result as any).content[0].text).toContain('not found');
+      expect((response.result as any).content[0].text).toContain(
+        '- Button: docs-show {"id":"button"}'
+      );
     });
   });
 });

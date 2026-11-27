@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { fn } from 'storybook/test';
+import { expect, fn, screen } from 'storybook/test';
 
 import { ColorControl } from './Color';
 
@@ -84,6 +84,20 @@ export const WithMaxPresetColors: Story = {
       { color: '#6F2CAC', title: 'Purple' },
       { color: '#2A0481', title: 'Ultraviolet' },
     ],
+  },
+  play: async () => {
+    const dialog = await screen.findByRole('dialog');
+    // Cyan sits in the top right corner of the saturation area, where the handle reaches past the
+    // popover's edge.
+    const handle = dialog.querySelector('.react-colorful__saturation .react-colorful__pointer')!;
+    for (let el = handle.parentElement; el && el !== dialog; el = el.parentElement) {
+      await expect(getComputedStyle(el).overflow).toBe('visible');
+    }
+    const { top, right, bottom, left } = handle.getBoundingClientRect();
+    const topEdge = document.elementFromPoint((left + right) / 2, top + 1);
+    const rightEdge = document.elementFromPoint(right - 1, (top + bottom) / 2);
+    await expect(handle.contains(topEdge)).toBe(true);
+    await expect(handle.contains(rightEdge)).toBe(true);
   },
 };
 

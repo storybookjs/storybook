@@ -11,7 +11,15 @@
 @Component({
   selector: 'app-demo',
   imports: [LocalComponent],
-  template: `<sb-local-component [heading]="'Declared here'"></sb-local-component>`,
+  template: `<sb-local-component [heading]="'Declared here'" />`,
+})
+export class DemoComponent {}",
+      "template": "import { Component } from '@angular/core';
+
+@Component({
+  selector: 'app-demo',
+  imports: [LocalComponent],
+  template: `<sb-local-component [heading]="⟦bind heading⟫'Declared here'⟧" />`,
 })
 export class DemoComponent {}",
       "warning": "LocalComponent is declared in the story file, so the snippet references it without importing it.",

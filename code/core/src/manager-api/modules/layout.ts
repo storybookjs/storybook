@@ -7,20 +7,15 @@ import type {
   API_ViewMode,
 } from 'storybook/internal/types';
 
-import { global } from '@storybook/global';
-
 import { pick, toMerged } from 'es-toolkit/object';
 import { isEqual as deepEqual } from 'es-toolkit/predicate';
-import type { ThemeVars } from 'storybook/theming';
-import { deprecate } from 'storybook/internal/client-logger';
 import { create } from 'storybook/theming/create';
+import type { ThemeVars } from 'storybook/theming/emotion';
 
 import { isReviewManagerRoute } from '../../shared/review/routes.ts';
 import merge from '../lib/merge.ts';
 import type { ModuleFn } from '../lib/types.tsx';
 import type { State } from '../root.tsx';
-
-const { document } = global;
 
 const isFunction = (val: unknown): val is CallableFunction => typeof val === 'function';
 
@@ -138,11 +133,15 @@ export interface SubAPI {
    * @param options.select - Whether to call select() on the element after focusing it.
    * @param options.poll - Whether to poll for the element if it is not immediately available.
    *   Defaults to true. When true, polls every 50ms for up to 500ms.
+   * @param options.signal - Aborting it stops polling, resolving to false without focusing the
+   *   element even if it appears afterwards.
    * @returns Whether the element was successfully focused. Returns a Promise when polling.
    */
   focusOnUIElement: (
     elementId?: string,
-    options?: boolean | { forceFocus?: boolean; select?: boolean; poll?: boolean }
+    options?:
+      | boolean
+      | { forceFocus?: boolean; select?: boolean; poll?: boolean; signal?: AbortSignal }
   ) => boolean | Promise<boolean>;
 }
 
@@ -170,7 +169,6 @@ export const getDefaultLayoutState: () => SubState = () => {
       panelPosition: 'bottom',
       showNav: true,
       showPanel: true,
-      showTabs: true,
       showToolbar: true,
       showMobileNavigation: false,
     },
@@ -186,6 +184,7 @@ export const getDefaultLayoutState: () => SubState = () => {
 
 export const focusableUIElements = {
   addonPanel: 'storybook-panel-region',
+  previewRegion: 'storybook-preview-region',
   storySearchField: 'storybook-explorer-searchfield',
   storyListMenu: 'storybook-explorer-menu',
   storyPanelRoot: 'storybook-panel-root',
@@ -223,36 +222,14 @@ const getRecentVisibleSizes = (layoutState: API_Layout) => {
   };
 };
 
-/**
- * Merges layout options into the existing layout state and translates
- * `showNav` / `showPanel` booleans into the underlying size fields.
- *
- * Layout keys can be provided either at the top level (deprecated) or under
- * `options.layout` (preferred). Nested layout keys take precedence.
- *
- * Numeric sizes are merged in before applying show/hide flags, so
- * `recentVisibleSizes` is captured from the latest size values.
- */
 const applyLayoutOptions = (
   layoutState: API_Layout,
-  options: { layout?: Partial<API_Layout>; [key: string]: any },
+  options: Partial<API_Layout> | undefined,
   singleStory: boolean
 ) => {
-  const layoutKeys = Object.keys(layoutState);
-  const layoutAtTopLevel = pick(options, layoutKeys);
-
-  for (const key of Object.keys(layoutAtTopLevel)) {
-    deprecate(
-      `Calling \`setConfig({ ${key}: ... })\` is deprecated. Please call \`setConfig({ layout: { ${key}: ... } })\` instead.`
-    );
-  }
-
-  const mergedLayoutOptions = toMerged(layoutAtTopLevel, options.layout || {});
-  const { showPanel, showNav } = mergedLayoutOptions;
-
-  // Safety net: drop any unknown keys that aren't part of API_Layout.
-  const typedLayoutKeys = layoutKeys as (keyof API_Layout)[];
-  const nextLayoutState = toMerged(layoutState, pick(mergedLayoutOptions, typedLayoutKeys));
+  const { showPanel, showNav } = options ?? {};
+  const layoutKeys = Object.keys(layoutState) as (keyof API_Layout)[];
+  const nextLayoutState = toMerged(layoutState, pick(options ?? {}, layoutKeys));
 
   // singleStory always hides the sidebar; otherwise honor showSidebar.
   if (showNav === false || singleStory) {
@@ -274,35 +251,17 @@ const applyLayoutOptions = (
   return nextLayoutState;
 };
 
-/**
- * Merges ui options into the existing ui state.
- *
- * Ui keys can be provided either at the top level (deprecated) or under
- * `options.ui` (preferred). Nested ui keys take precedence.
- *
- * Numeric sizes are merged in before applying show/hide flags, so
- * `recentVisibleSizes` is captured from the latest size values.
- */
-const applyUiOptions = (uiState: API_UI, options: { ui?: Partial<API_UI>; [key: string]: any }) => {
-  const uiKeys = Object.keys(uiState);
-  const uiAtTopLevel = pick(options, uiKeys);
-
-  for (const key of Object.keys(uiAtTopLevel)) {
-    deprecate(
-      `Calling \`setConfig({ ${key}: ... })\` is deprecated. Please call \`setConfig({ ui: { ${key}: ... } })\` instead.`
-    );
-  }
-
-  // Safety net: drop any unknown keys that aren't part of API_UI.
-  const typedUiKeys = uiKeys as (keyof API_UI)[];
-  return toMerged(uiState, pick(toMerged(uiAtTopLevel, options.ui || {}), typedUiKeys));
+const applyUiOptions = (uiState: API_UI, options: Partial<API_UI> | undefined) => {
+  const uiKeys = Object.keys(uiState) as (keyof API_UI)[];
+  return toMerged(uiState, pick(options ?? {}, uiKeys));
 };
 
 /**
  * Whether the viewport is at or above the manager's desktop breakpoint (600px). Below it the
  * sidebar is rendered as a drawer owned by the manager UI rather than the desktop nav.
  */
-export const isDesktopViewport = () => global.matchMedia?.('(min-width: 600px)')?.matches ?? true;
+export const isDesktopViewport = () =>
+  globalThis.matchMedia?.('(min-width: 600px)')?.matches ?? true;
 
 export const init: ModuleFn<SubAPI, SubState> = ({ store, provider, singleStory }) => {
   const api = {
@@ -497,7 +456,9 @@ export const init: ModuleFn<SubAPI, SubState> = ({ store, provider, singleStory 
      */
     focusOnUIElement(
       elementId?: string,
-      options?: boolean | { forceFocus?: boolean; select?: boolean; poll?: boolean }
+      options?:
+        | boolean
+        | { forceFocus?: boolean; select?: boolean; poll?: boolean; signal?: AbortSignal }
     ): boolean | Promise<boolean> {
       // See RFC https://github.com/storybookjs/storybook/discussions/32983 for
       // ways to make this API more robust to focus-trap race conditions.
@@ -506,6 +467,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({ store, provider, singleStory 
         forceFocus = false,
         select = false,
         poll = true,
+        signal,
       } = typeof options === 'boolean' ? { select: options } : (options ?? {});
 
       if (!elementId) {
@@ -513,6 +475,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({ store, provider, singleStory 
       }
 
       const attemptFocus = () => {
+        const { document } = globalThis;
         const element = document.getElementById(elementId);
         if (!element) {
           return false;
@@ -526,6 +489,15 @@ export const init: ModuleFn<SubAPI, SubState> = ({ store, provider, singleStory 
         ) {
           element.setAttribute('tabindex', '-1');
           element.focus();
+          // Only focusable for this one visit, as react-aria does for landmarks. Otherwise a later
+          // pointer click on the element's blank space would focus it and draw its focus ring.
+          if (element === document.activeElement) {
+            element.addEventListener('blur', () => element.removeAttribute('tabindex'), {
+              once: true,
+            });
+          } else {
+            element.removeAttribute('tabindex');
+          }
         }
 
         if (element !== document.activeElement && element.id !== document.activeElement?.id) {
@@ -542,7 +514,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({ store, provider, singleStory 
         return true;
       }
 
-      if (!poll) {
+      if (!poll || signal?.aborted) {
         return false;
       }
 
@@ -552,20 +524,25 @@ export const init: ModuleFn<SubAPI, SubState> = ({ store, provider, singleStory 
         const maxDuration = 500;
         const pollInterval = 50;
 
+        const stop = (success: boolean) => {
+          clearInterval(intervalId);
+          resolve(success);
+        };
+
         const intervalId = setInterval(() => {
           const elapsed = Date.now() - startTime;
 
           if (attemptFocus()) {
-            clearInterval(intervalId);
-            resolve(true);
+            stop(true);
             return;
           }
 
           if (elapsed >= maxDuration) {
-            clearInterval(intervalId);
-            resolve(false);
+            stop(false);
           }
         }, pollInterval);
+
+        signal?.addEventListener('abort', () => stop(false), { once: true });
       });
     },
 
@@ -577,12 +554,12 @@ export const init: ModuleFn<SubAPI, SubState> = ({ store, provider, singleStory 
 
       return {
         ...defaultLayoutState,
-        layout: applyLayoutOptions(defaultLayoutState.layout, userConfig, !!singleStory),
+        layout: applyLayoutOptions(defaultLayoutState.layout, userConfig.layout, !!singleStory),
         layoutCustomisations: {
           ...defaultLayoutState.layoutCustomisations,
           ...(layoutCustomisations ?? {}),
         },
-        ui: applyUiOptions(defaultLayoutState.ui, userConfig),
+        ui: applyUiOptions(defaultLayoutState.ui, userConfig.ui),
         selectedPanel: selectedPanel || defaultLayoutState.selectedPanel,
         theme: theme || defaultLayoutState.theme,
       };
@@ -647,9 +624,9 @@ export const init: ModuleFn<SubAPI, SubState> = ({ store, provider, singleStory 
         return;
       }
 
-      const updatedLayout = applyLayoutOptions(layout, options, !!singleStory);
+      const updatedLayout = applyLayoutOptions(layout, options.layout, !!singleStory);
 
-      const updatedUi = applyUiOptions(ui, options);
+      const updatedUi = applyUiOptions(ui, options.ui);
 
       const updatedTheme = {
         ...theme,

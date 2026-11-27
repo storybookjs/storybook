@@ -1,0 +1,63 @@
+{
+  "id": "webcomponentsfixtures-lit-slots-and-css",
+  "name": "lit-slots-and-css",
+  "path": "__PATH__",
+  "stories": {
+    "webcomponentsfixtures-lit-slots-and-css--args-default-render": {
+      "id": "webcomponentsfixtures-lit-slots-and-css--args-default-render",
+      "name": "Args Default Render",
+      "snippet": "<style>
+  lit-slots-and-css::part(panel) { color: rebeccapurple; }
+</style>
+<lit-slots-and-css heading="Default render" style="--slot-panel-color: teal;">
+  Body <b>text</b>
+  <button slot="actions">Confirm</button>
+</lit-slots-and-css>",
+      "template": "<style>⟦rule panel-part selector="lit-slots-and-css::part(panel)" ~"\n"⟫
+  lit-slots-and-css::part(panel) { color: rebeccapurple; }⟧
+</style>
+<lit-slots-and-css⟦attr heading mode="field" ~" "⟫ heading="Default render"⟧ style="⟦css --slot-panel-color⟫--slot-panel-color: teal;⟧">⟦slot default-slot name="default" ~"\n  "⟫
+  Body <b>text</b>⟧⟦slot actions-slot name="actions" ~"\n  "⟫
+  <button slot="actions">Confirm</button>⟧
+</lit-slots-and-css>",
+    },
+    "webcomponentsfixtures-lit-slots-and-css--dom-node": {
+      "id": "webcomponentsfixtures-lit-slots-and-css--dom-node",
+      "name": "Dom Node",
+      "snippet": "const DomNode = () => {
+  const el = document.createElement('lit-slots-and-css');
+  el.setAttribute('heading', String('Projected'));
+  const body = document.createElement('p');
+  body.textContent = 'Default slot content';
+  const action = document.createElement('button');
+  action.slot = 'actions';
+  action.textContent = 'Confirm';
+  el.append(body, action);
+  return el;
+};",
+      "template": "const DomNode = () => {
+  const el = document.createElement('lit-slots-and-css');
+  el.setAttribute('heading', String(⟦code heading⟫'Projected'⟧));
+  const body = document.createElement('p');
+  body.textContent = 'Default slot content';
+  const action = document.createElement('button');
+  action.slot = 'actions';
+  action.textContent = 'Confirm';
+  el.append(body, action);
+  return el;
+};",
+    },
+    "webcomponentsfixtures-lit-slots-and-css--lit-template": {
+      "id": "webcomponentsfixtures-lit-slots-and-css--lit-template",
+      "name": "Lit Template",
+      "snippet": "html`<lit-slots-and-css heading=${'Projected'}>
+  <p>Default slot content</p>
+  <button slot="actions">Confirm</button>
+</lit-slots-and-css>`",
+      "template": "html`<lit-slots-and-css heading=${⟦code heading⟫'Projected'⟧}>
+  <p>Default slot content</p>
+  <button slot="actions">Confirm</button>
+</lit-slots-and-css>`",
+    },
+  },
+}

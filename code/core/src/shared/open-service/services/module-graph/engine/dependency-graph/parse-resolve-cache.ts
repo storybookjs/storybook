@@ -125,7 +125,7 @@ export class ParseResolveCache {
       const edges = await this.parseOnce(filePath);
       const deps = new Set<string>();
       for (const edge of edges) {
-        const resolved = await this.resolver.resolve(filePath, edge.specifier);
+        const resolved = await this.resolver.resolve(filePath, edge.specifier, edge.kind);
         if (resolved === null) {
           this.logger.debug(`Could not resolve ${edge.specifier} from ${filePath}`);
           continue;

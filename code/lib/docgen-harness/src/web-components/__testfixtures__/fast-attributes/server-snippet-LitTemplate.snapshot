@@ -1,0 +1,7 @@
+html`<fast-attributes
+  label=${'Count'}
+  size=${'large'}
+  ?disabled=${false}
+  max-count=${5}
+  .items=${['a']}
+></fast-attributes>`

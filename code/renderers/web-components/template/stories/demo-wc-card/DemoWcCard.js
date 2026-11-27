@@ -1,10 +1,6 @@
-import { global } from '@storybook/global';
-
 import { LitElement, html } from 'lit';
 
 import { demoWcCardStyle } from './demoWcCardStyle.css.js';
-
-const { CustomEvent } = global;
 
 /**
  * This is a container looking like a card with a back and front side you can switch
@@ -71,15 +67,15 @@ export class DemoWcCard extends LitElement {
             this.rows.length === 0
               ? html``
               : html`
-                <dl>
-                  ${this.rows.map(
-                    (row) => html`
-                      <dt>${row.header}</dt>
-                      <dd>${row.value}</dd>
-                    `
-                  )}
-                </dl>
-              `
+                  <dl>
+                    ${this.rows.map(
+                      (row) => html`
+                        <dt>${row.header}</dt>
+                        <dd>${row.value}</dd>
+                      `
+                    )}
+                  </dl>
+                `
           }
         </div>
         <div class="footer">

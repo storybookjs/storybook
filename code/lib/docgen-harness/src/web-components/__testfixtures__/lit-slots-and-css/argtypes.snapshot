@@ -1,0 +1,70 @@
+{
+  "--slot-panel-color": {
+    "description": "Panel text color.",
+    "name": "--slot-panel-color",
+    "required": false,
+    "table": {
+      "category": "css custom properties",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": undefined,
+      },
+    },
+    "type": {
+      "name": "void",
+    },
+  },
+  "actions": {
+    "description": "Action controls.",
+    "name": "actions",
+    "required": false,
+    "table": {
+      "category": "slots",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": undefined,
+      },
+    },
+    "type": {
+      "name": "string",
+    },
+  },
+  "heading": {
+    "description": "Heading above the projected content.",
+    "name": "heading",
+    "required": false,
+    "table": {
+      "category": "attributes",
+      "defaultValue": {
+        "summary": "'Details'",
+      },
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+    },
+  },
+  "panel": {
+    "description": "Outer panel.",
+    "name": "panel",
+    "required": false,
+    "table": {
+      "category": "css shadow parts",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": undefined,
+      },
+    },
+    "type": {
+      "name": "void",
+    },
+  },
+}

@@ -6,14 +6,15 @@ import * as memfs from 'memfs';
 import { vol } from 'memfs';
 import yml from 'yaml';
 
+import { STORYBOOK_PACKAGE_PATTERNS } from '../../../code/core/src/common/js-package-manager/util.ts';
 import { ROOT_DIRECTORY } from '../../utils/constants.ts';
 import { runCommand } from '../generate.ts';
 import {
   BEFORE_SANDBOX_NPM_MIN_VERSION,
-  LOCALLY_PUBLISHED_PACKAGE_PATTERNS,
   ensureNpmSupportsMinReleaseAge,
   preapproveLocallyPublishedPackages,
   refreshBeforeStorybookLockfile,
+  writeScaffoldNpmrc,
 } from './yarn.ts';
 
 vi.mock('node:fs/promises', { spy: true });
@@ -62,7 +63,7 @@ describe('preapproveLocallyPublishedPackages', () => {
     const approved: string[] = readConfig().npmPreapprovedPackages;
     // A prerelease template must not lose its own entries.
     expect(approved).toEqual(expect.arrayContaining(['next', '@next/*', 'eslint-config-next']));
-    expect(approved).toEqual(expect.arrayContaining([...LOCALLY_PUBLISHED_PACKAGE_PATTERNS]));
+    expect(approved).toEqual(expect.arrayContaining([...STORYBOOK_PACKAGE_PATTERNS]));
     expect(approved.length).toBe(new Set(approved).size);
   });
 
@@ -71,25 +72,13 @@ describe('preapproveLocallyPublishedPackages', () => {
 
     await preapproveLocallyPublishedPackages(SANDBOX);
 
-    expect(readConfig().npmPreapprovedPackages).toEqual([...LOCALLY_PUBLISHED_PACKAGE_PATTERNS]);
+    expect(readConfig().npmPreapprovedPackages).toEqual([...STORYBOOK_PACKAGE_PATTERNS]);
   });
 
   it('still writes a usable config when no .yarnrc.yml exists', async () => {
     await preapproveLocallyPublishedPackages(SANDBOX);
 
-    expect(readConfig().npmPreapprovedPackages).toEqual([...LOCALLY_PUBLISHED_PACKAGE_PATTERNS]);
-  });
-
-  it('covers the packages the local registry serves', async () => {
-    // run-registry publishes these; they are seconds old at install time.
-    expect(LOCALLY_PUBLISHED_PACKAGE_PATTERNS).toEqual(
-      expect.arrayContaining([
-        'storybook',
-        '@storybook/*',
-        'create-storybook',
-        'vite-plugin-storybook-nextjs',
-      ])
-    );
+    expect(readConfig().npmPreapprovedPackages).toEqual([...STORYBOOK_PACKAGE_PATTERNS]);
   });
 });
 
@@ -143,6 +132,13 @@ describe('refreshBeforeStorybookLockfile', () => {
     expect(yarnCommands()).toEqual(['yarn install --mode=update-lockfile']);
   });
 
+  it('sets the age gate as a duration string', async () => {
+    await refreshBeforeStorybookLockfile({ cwd: SANDBOX });
+
+    const scripts = vi.mocked(runCommand).mock.calls.map(([script]) => script);
+    expect(scripts).toContain('yarn config set npmMinimalAgeGate 3d');
+  });
+
   it('upgrades only the quarantined package, leaving every other range alone', async () => {
     failResolveSteps(quarantined('@angular/build@npm:^22.1.3'));
 
@@ -175,6 +171,31 @@ describe('refreshBeforeStorybookLockfile', () => {
     expect(yarnCommands()).toContain(
       `yarn up '@angular/build@^22.0.0' 'rxjs@^7.0.0' --mode=update-lockfile`
     );
+  });
+
+  it('names a quarantined transitive dependency instead of handing it to `yarn up`', async () => {
+    // `@expo/config-plugins` moved to `xcode: ^4.0.0` while `xcode@4.0.0` was still
+    // quarantined. Only the parent declares the range, so `yarn up xcode` cannot work.
+    failResolveSteps(quarantined('xcode@npm:^4.0.0'));
+
+    await expect(refreshBeforeStorybookLockfile({ cwd: SANDBOX })).rejects.toThrow(
+      /xcode.*not a direct dependency.*minAgeGateExemptions/s
+    );
+    expect(yarnCommands()).not.toContain(expect.stringContaining('yarn up'));
+  });
+
+  it('narrows a package once when Yarn reports it more than once', async () => {
+    const twice = Object.assign(new Error('yarn failed'), {
+      stdout: [
+        '➤ YN0016: │ rxjs@npm:~7.8.0: All versions satisfying "~7.8.0" are quarantined',
+        '➤ YN0016: │ rxjs@npm:~7.8.0: All versions satisfying "~7.8.0" are quarantined',
+      ].join('\n'),
+    });
+    failResolveSteps(twice);
+
+    await refreshBeforeStorybookLockfile({ cwd: SANDBOX });
+
+    expect(yarnCommands()).toContain(`yarn up 'rxjs@^7.0.0' --mode=update-lockfile`);
   });
 
   it('refuses to narrow a prerelease pin down to a stable release', async () => {
@@ -240,7 +261,7 @@ describe('ensureNpmSupportsMinReleaseAge', () => {
   });
 
   it(`accepts npm ${BEFORE_SANDBOX_NPM_MIN_VERSION} and newer`, async () => {
-    vi.mocked(runCommand).mockResolvedValue({ stdout: '11.10.0\n' } as never);
+    vi.mocked(runCommand).mockResolvedValue({ stdout: '11.17.0\n' } as never);
 
     await expect(ensureNpmSupportsMinReleaseAge()).resolves.toBeUndefined();
 
@@ -249,10 +270,26 @@ describe('ensureNpmSupportsMinReleaseAge', () => {
   });
 
   it('fails when npm is older than the min-release-age floor', async () => {
-    vi.mocked(runCommand).mockResolvedValue({ stdout: '10.9.8\n' } as never);
+    vi.mocked(runCommand).mockResolvedValue({ stdout: '11.10.0\n' } as never);
 
     await expect(ensureNpmSupportsMinReleaseAge()).rejects.toThrow(
-      new RegExp(`npm >= ${BEFORE_SANDBOX_NPM_MIN_VERSION}.*found 10\\.9\\.8`)
+      new RegExp(`npm >= ${BEFORE_SANDBOX_NPM_MIN_VERSION}.*found 11\\.10\\.0`)
     );
+  });
+});
+
+describe('writeScaffoldNpmrc', () => {
+  it('writes min-release-age and exclude patterns for npm scaffolds', async () => {
+    await writeScaffoldNpmrc(SANDBOX, ['@react-native-community/*', 'multitars']);
+
+    expect(vol.readFileSync(`${SANDBOX}/.npmrc`, 'utf-8')).toBe(
+      'min-release-age=3\nmin-release-age-exclude[]=@react-native-community/*\nmin-release-age-exclude[]=multitars\n'
+    );
+  });
+
+  it('does nothing when the allowlist is empty', async () => {
+    await writeScaffoldNpmrc(SANDBOX, []);
+
+    expect(vol.existsSync(`${SANDBOX}/.npmrc`)).toBe(false);
   });
 });

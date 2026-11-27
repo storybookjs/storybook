@@ -6,10 +6,9 @@ import { join } from 'node:path';
 
 import { afterAll, describe, expect, it } from 'vitest';
 
-import ts from 'typescript';
-
 import type { PropsTableMode } from '@storybook/angular-cm';
 import { AngularComponentMetaManager, extractArgTypesFromData } from '@storybook/angular-cm';
+import { loadTestTypeScript } from '@storybook/component-meta-typescript/testing';
 import type { StrictArgTypes } from '../../../../core/src/csf/story.ts';
 import { expectCurrentOrBetter } from '../compare/expect-current-or-better.ts';
 import { parseArgTypesSnapshot } from '../compare/parse-snapshot.ts';
@@ -26,7 +25,22 @@ if (BASELINE_PATH !== 'legacy') {
 
 // One manager for the whole suite: each fixture directory carries its own tsconfig.json
 // (include: ["./*.ts"]), so every component file resolves to its own per-fixture project.
-const manager = new AngularComponentMetaManager(ts);
+const manager = new AngularComponentMetaManager(await loadTestTypeScript());
+
+type LegacyArgTypesRecording = 'argtypes' | 'argtypes-filtered';
+
+const declaredLegacyDefaultOmissions: Record<
+  string,
+  Partial<Record<LegacyArgTypesRecording, readonly { arg: string; expectedSummary: string }[]>>
+> = {
+  'expression-defaults': {
+    argtypes: [{ arg: 'rows', expectedSummary: 'Math.max(1, 3)' }],
+    'argtypes-filtered': [{ arg: 'rows', expectedSummary: 'Math.max(1, 3)' }],
+  },
+  'properties-methods-noise': {
+    argtypes: [{ arg: 'loading', expectedSummary: 'signal(false)' }],
+  },
+};
 
 afterAll(() => {
   manager.dispose();
@@ -53,19 +67,29 @@ describe('angular component-meta baselines', () => {
         exportName: componentExportName,
       });
       expect(result, `extractComponentMeta found no '${componentExportName}'`).toBeDefined();
-      const { entry, json } = result!;
+      const { entry, json, context } = result!;
 
       // The same calls the docgen worker makes, so the recorded baselines represent production
-      // output: `api` is the default and `inputs` is what the deprecated flag maps onto.
+      // output: `api` is the default and `inputs` is what the deprecated flag maps onto. The
+      // context rides along the same way, which is what turns named-type types into detail text.
       const extract = (propsTable: PropsTableMode) =>
-        extractArgTypesFromData(entry, { metadataJson: json, propsTable }) as StrictArgTypes;
+        extractArgTypesFromData(entry, {
+          metadataJson: json,
+          propsTable,
+          context,
+        }) as StrictArgTypes;
 
-      const legacyGate = (prefix: string) => {
+      const legacyGate = (prefix: LegacyArgTypesRecording) => {
         const label = `${fixtureCase}/${prefix}.snapshot`;
         // Asserted to exist so deleting the legacy files can never silently disarm the parity gate.
         const committed = readCommitted(join(testDir, `${prefix}.snapshot`));
         expect(committed, `missing legacy ${label}`).toBeDefined();
-        return { committed: committed!, label, legacyBaseline: true as const };
+        return {
+          committed: committed!,
+          label,
+          legacyBaseline: true as const,
+          declaredDefaultOmissions: declaredLegacyDefaultOmissions[fixtureCase]?.[prefix] ?? [],
+        };
       };
 
       // The committed Compodoc capture is unfiltered, so `all` is the mode that can be held to it.
@@ -77,6 +101,7 @@ describe('angular component-meta baselines', () => {
         baseline: parseArgTypesSnapshot(unfiltered.committed, unfiltered.label),
         candidate: extract('all'),
         legacyBaseline: true,
+        declaredDefaultOmissions: unfiltered.declaredDefaultOmissions,
       });
 
       const recordArgTypes = async (

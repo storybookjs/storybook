@@ -20,8 +20,6 @@ export type GeneratorOptions = {
   framework: SupportedFramework;
   renderer: SupportedRenderer;
   linkable: boolean;
-  // TODO: Remove in SB11
-  pnp: boolean;
   frameworkPreviewParts?: FrameworkPreviewParts;
   // skip prompting the user
   yes: boolean;
@@ -139,7 +137,6 @@ export interface GeneratorModule {
 
 export type CommandOptions = {
   packageManager: PackageManagerName;
-  usePnp?: boolean;
   features?: Array<Feature>;
   type?: ProjectType;
   force?: any;
@@ -147,8 +144,9 @@ export type CommandOptions = {
   agent?: boolean;
   html?: boolean;
   skipInstall?: boolean;
+  /** Add `typescript` for docgen when the project has none; prompts when undefined */
+  installTypescript?: boolean;
   language?: SupportedLanguage;
-  parser?: string;
   /** Automatically answer yes to prompts */
   yes?: boolean;
   builder?: SupportedBuilder;

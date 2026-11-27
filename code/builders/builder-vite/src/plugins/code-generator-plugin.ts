@@ -11,7 +11,11 @@ import { generateImportFnScriptCode } from '../codegen-importfn-script.ts';
 import { generateModernIframeScriptCode } from '../codegen-modern-iframe-script.ts';
 import { generateAddonSetupCode } from '../codegen-set-addon-channel.ts';
 import { transformIframeHtml } from '../transform-iframe-html.ts';
-import { bundlerOptionsKey, ensureRolldownOptions } from '../utils/vite-features.ts';
+import {
+  applyChunkedPreviewRuntime,
+  bundlerOptionsKey,
+  ensureRolldownOptions,
+} from '../utils/vite-features.ts';
 import {
   SB_VIRTUAL_FILES,
   SB_VIRTUAL_FILE_IDS,
@@ -21,6 +25,7 @@ import {
 export function codeGeneratorPlugin(options: Options) {
   const iframePath = fileURLToPath(importMetaResolve('@storybook/builder-vite/input/iframe.html'));
   let iframeId: string;
+  let base = '/';
   const storyIndexGeneratorPromise: Promise<StoryIndexGenerator> =
     options.presets.apply<StoryIndexGenerator>('storyIndexGenerator');
 
@@ -57,10 +62,14 @@ export function codeGeneratorPlugin(options: Options) {
 
         // necessary rolldown specific overrides
         ensureRolldownOptions(config);
+        if (options.features?.experimentalChunkedPreviewRuntime) {
+          applyChunkedPreviewRuntime(config);
+        }
       }
     },
     configResolved(config) {
       iframeId = `${config.root}/iframe.html`;
+      base = config.base;
     },
     resolveId(source) {
       if (SB_VIRTUAL_FILE_IDS.includes(source)) {
@@ -98,7 +107,7 @@ export function codeGeneratorPlugin(options: Options) {
       if (ctx.path !== '/iframe.html') {
         return undefined;
       }
-      return transformIframeHtml(html, options);
+      return transformIframeHtml(html, options, base);
     },
   } satisfies Plugin;
 }

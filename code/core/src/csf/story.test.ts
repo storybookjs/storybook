@@ -107,20 +107,6 @@ const simpleWithReadonlyOptions: XMeta<ButtonArgs> = {
 // NOTE Various story usages
 const Simple: XStory = () => 'Simple';
 
-const CSF1Story: XStory = () => 'Named Story';
-CSF1Story.story = {
-  name: 'Another name for story',
-  tags: ['foo', 'bar'],
-  decorators: [(storyFn) => `Wrapped(${storyFn()}`],
-  parameters: { a: [1, '2', {}], b: undefined, c: Button },
-  loaders: [() => Promise.resolve({ d: '3' })],
-  async beforeEach() {
-    await doSomething();
-    return cleanup;
-  },
-  args: { a: 1 },
-};
-
 const simpleWithSubComponents: XMeta = {
   title: 'simple',
   component: Button,

@@ -12,7 +12,6 @@ import type {
   API_PreparedIndexEntry,
   API_RefStoryRuntimeData,
 } from './api-stories.ts';
-import type { SetStoriesStory, SetStoriesStoryData } from './channelApi.ts';
 import type { DocsOptions } from './core-common.ts';
 import type { StoryIndex } from './indexer.ts';
 
@@ -50,7 +49,6 @@ export interface API_Provider<API> {
     sidebar?: API_SidebarOptions<API>;
     theme?: ThemeVars;
     selectedPanel?: string;
-    StoryMapper?: API_StoryMapper;
     [k: string]: any;
   };
   [key: string]: any;
@@ -84,7 +82,6 @@ export interface API_Layout {
   panelPosition: API_PanelPositions;
   showNav: boolean;
   showPanel: boolean;
-  showTabs: boolean;
   showToolbar: boolean;
   /**
    * Whether the mobile navigation drawer is open. Below the mobile breakpoint the sidebar is a
@@ -113,7 +110,24 @@ export interface API_SidebarOptions<API = any> {
   showRoots?: boolean;
   filters?: Record<string, API_FilterFunction>;
   collapsedRoots?: string[];
-  renderLabel?: (item: API_HashEntry, api: API) => any;
+  renderAriaLabel?: (
+    item: API_HashEntry,
+    api: API,
+    // Optional so pre-existing consumers that invoke these callbacks with two arguments
+    // keep compiling; Storybook itself always passes the context.
+    context?: {
+      isMobile: boolean;
+      location: 'sidebar' | 'bottom-bar';
+    }
+  ) => string;
+  renderLabel?: (
+    item: API_HashEntry,
+    api: API,
+    context?: {
+      isMobile: boolean;
+      location: 'sidebar' | 'bottom-bar';
+    }
+  ) => any;
 }
 
 interface OnClearOptions {
@@ -145,12 +159,9 @@ type API_Versions = Record<string, string>;
 
 export type API_SetRefData = Partial<
   API_ComposedRef & {
-    setStoriesData: SetStoriesStoryData;
     storyIndex: StoryIndex;
   }
 >;
-
-export type API_StoryMapper = (ref: API_ComposedRef, story: SetStoriesStory) => SetStoriesStory;
 
 export interface API_LoadedRefData {
   index?: API_IndexHash;

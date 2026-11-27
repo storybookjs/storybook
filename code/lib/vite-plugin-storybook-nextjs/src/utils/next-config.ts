@@ -12,15 +12,32 @@ export async function loadNextConfig(
   phase: Parameters<typeof loadConfig>[0],
   dir: string
 ): Promise<NextConfigComplete> {
+  let nextConfig: NextConfigComplete;
+
   try {
-    return await loadConfig(phase, dir);
+    nextConfig = await loadConfig(phase, dir);
   } catch (error) {
     if (!isTurbopackRustReactCompilerError(error)) {
       throw error;
     }
+
+    return loadNormalizedNextConfig(phase, dir);
   }
 
-  const rawConfigModule = await loadConfig(phase, dir, { rawConfig: true });
+  if (isResolvedNextConfig(nextConfig)) {
+    return nextConfig;
+  }
+
+  return loadNormalizedNextConfig(phase, dir, nextConfig);
+}
+
+async function loadNormalizedNextConfig(
+  phase: Parameters<typeof loadConfig>[0],
+  dir: string,
+  cachedRawConfigModule?: unknown
+): Promise<NextConfigComplete> {
+  const rawConfigModule =
+    cachedRawConfigModule ?? (await loadConfig(phase, dir, { rawConfig: true }));
   const rawConfig = interopDefault(rawConfigModule);
   const normalizedConfig = await normalizeConfig(phase, rawConfig);
   const { turbopackRustReactCompiler: _turbopackRustReactCompiler, ...experimental } =
@@ -34,10 +51,18 @@ export async function loadNextConfig(
   });
 }
 
+function isResolvedNextConfig(config: NextConfigComplete): boolean {
+  return typeof config.configFileName === 'string';
+}
+
 function isTurbopackRustReactCompilerError(error: unknown): boolean {
   return error instanceof Error && error.message.startsWith(TURBOPACK_RUST_REACT_COMPILER_ERROR);
 }
 
-function interopDefault<T>(module: T | { default: T }): T {
-  return (module as { default?: T }).default ?? (module as T);
+function interopDefault(module: unknown): unknown {
+  if (typeof module === 'object' && module !== null && 'default' in module) {
+    return (module as { default: unknown }).default ?? module;
+  }
+
+  return module;
 }

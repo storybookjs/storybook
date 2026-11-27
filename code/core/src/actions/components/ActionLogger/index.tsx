@@ -4,8 +4,7 @@ import React, { Fragment, forwardRef, useEffect, useRef } from 'react';
 import { ActionBar, ScrollArea } from 'storybook/internal/components';
 
 import { Inspector } from 'react-inspector';
-import type { Theme } from 'storybook/theming';
-import { styled, withTheme } from 'storybook/theming';
+import { type Theme, styled, withTheme } from 'storybook/theming/emotion';
 
 import type { ActionDisplay } from '../../models/index.ts';
 import { Action, Counter, InspectorContainer } from './style.tsx';

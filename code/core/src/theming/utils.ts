@@ -1,10 +1,6 @@
 import { logger } from 'storybook/internal/client-logger';
 
-import { global } from '@storybook/global';
-
 import { darken, lighten, rgba } from 'polished';
-
-const { window: globalWindow } = global;
 
 export const mkColor = (color: string) => ({ color });
 
@@ -64,11 +60,11 @@ export const darkenColor = colorFactory('darken');
 // The default color scheme is light so unless the preferred color
 // scheme is set to dark we always want to use the light theme
 export const getPreferredColorScheme = () => {
-  if (!globalWindow || !globalWindow.matchMedia) {
+  if (!globalThis.matchMedia) {
     return 'light';
   }
 
-  const isDarkThemePreferred = globalWindow.matchMedia('(prefers-color-scheme: dark)').matches;
+  const isDarkThemePreferred = globalThis.matchMedia('(prefers-color-scheme: dark)').matches;
 
   if (isDarkThemePreferred) {
     return 'dark';

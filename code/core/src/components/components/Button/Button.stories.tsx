@@ -2,8 +2,8 @@ import React from 'react';
 
 import { FaceHappyIcon } from '@storybook/icons';
 
-import { expect, fn } from 'storybook/test';
-import { styled } from 'storybook/theming';
+import { expect, fn, screen, waitFor } from 'storybook/test';
+import { styled } from 'storybook/theming/emotion';
 
 import preview from '../../../../../.storybook/preview.tsx';
 import { Button } from './Button.tsx';
@@ -30,6 +30,17 @@ export const IconButton = meta.story({
     children: <FaceHappyIcon />,
     padding: 'small',
     variant: 'ghost',
+  },
+  play: async ({ canvas, userEvent }) => {
+    const button = canvas.getByRole('button', { name: 'Button' });
+
+    await userEvent.tab();
+    await expect(button).toHaveFocus();
+    await expect(await screen.findByRole('tooltip')).toHaveTextContent('Button');
+    await expect(button).not.toHaveAccessibleDescription();
+    await userEvent.keyboard('{Escape}');
+    await waitFor(() => expect(screen.queryByRole('tooltip')).not.toBeInTheDocument());
+    button.blur();
   },
 });
 
@@ -176,78 +187,6 @@ export const PseudoStates = meta.story({
       active: '#active button',
       focus: '#focus button',
       focusVisible: '#focus-visible button, #focus-visible-agentic button',
-    },
-  },
-});
-
-export const Active = meta.story({
-  name: 'Active (deprecated)',
-  args: { ariaLabel: false, active: true },
-  render: (args) => (
-    <Stack>
-      <Row>
-        <Button {...args} variant="solid">
-          Button
-        </Button>
-        <Button {...args} variant="outline">
-          Button
-        </Button>
-        <Button {...args} variant="ghost">
-          Button
-        </Button>
-      </Row>
-      <Row id="hover">
-        <Button {...args} variant="solid">
-          Hover
-        </Button>
-        <Button {...args} variant="outline">
-          Hover
-        </Button>
-        <Button {...args} variant="ghost">
-          Hover
-        </Button>
-      </Row>
-      <Row id="active">
-        <Button {...args} variant="solid">
-          active
-        </Button>
-        <Button {...args} variant="outline">
-          active
-        </Button>
-        <Button {...args} variant="ghost">
-          active
-        </Button>
-      </Row>
-      <Row id="focus">
-        <Button {...args} variant="solid">
-          Focus
-        </Button>
-        <Button {...args} variant="outline">
-          Focus
-        </Button>
-        <Button {...args} variant="ghost">
-          Focus
-        </Button>
-      </Row>
-      <Row id="focus-visible">
-        <Button {...args} variant="solid">
-          Focus Visible
-        </Button>
-        <Button {...args} variant="outline">
-          Focus Visible
-        </Button>
-        <Button {...args} variant="ghost">
-          Focus Visible
-        </Button>
-      </Row>
-    </Stack>
-  ),
-  parameters: {
-    pseudo: {
-      hover: '#hover button',
-      active: '#active button',
-      focus: '#focus button',
-      focusVisible: '#focus-visible button',
     },
   },
 });
@@ -434,6 +373,28 @@ export const Tooltip = meta.story({
     children: 'Button',
     tooltip: 'A button can be pressed to perform an action',
   },
+  play: async ({ args, canvas, canvasElement, userEvent }) => {
+    const button = canvas.getByRole('button', { name: 'Button' });
+
+    await userEvent.keyboard('{Escape}');
+    // React Aria requires pointer modality before the trigger's pointerenter event.
+    await userEvent.hover(canvasElement);
+    await userEvent.hover(button);
+    await expect(await screen.findByRole('tooltip')).toHaveTextContent(args.tooltip!);
+    await expect(button).toHaveAccessibleName('Button');
+    await expect(button).not.toHaveAccessibleDescription();
+    await userEvent.unhover(button);
+    await waitFor(() => expect(screen.queryByRole('tooltip')).not.toBeInTheDocument());
+  },
+});
+
+export const CustomTooltipPlacement = meta.story({
+  args: {
+    ariaLabel: false,
+    children: 'Button',
+    tooltip: 'A button can be pressed to perform an action',
+    tooltipPlacement: 'bottom-end',
+  },
 });
 
 export const AriaDescription = meta.story({
@@ -441,6 +402,57 @@ export const AriaDescription = meta.story({
     ariaLabel: 'Button',
     ariaDescription: 'Clicking this button allegedly makes you happy.',
     children: <FaceHappyIcon />,
+  },
+  play: async ({ args, canvas, canvasElement, userEvent }) => {
+    const button = canvas.getByRole('button', { name: 'Button' });
+    await expect(button).toHaveAccessibleDescription(args.ariaDescription!);
+
+    await userEvent.keyboard('{Escape}');
+    // React Aria requires pointer modality before the trigger's pointerenter event.
+    await userEvent.hover(canvasElement);
+    await userEvent.hover(button);
+    await expect(await screen.findByRole('tooltip')).toHaveTextContent('Button');
+    // The open tooltip neither replaces the description nor adds its text to it.
+    await expect(button).toHaveAccessibleDescription(args.ariaDescription!);
+    await userEvent.unhover(button);
+    await waitFor(() => expect(screen.queryByRole('tooltip')).not.toBeInTheDocument());
+  },
+});
+
+export const AriaDescriptionWithoutTooltip = meta.story({
+  args: {
+    ariaLabel: false,
+    ariaDescription: 'Clicking this button allegedly makes you happy.',
+    children: 'Button',
+  },
+  play: async ({ args, canvas }) => {
+    await expect(canvas.getByRole('button', { name: 'Button' })).toHaveAccessibleDescription(
+      args.ariaDescription!
+    );
+  },
+});
+
+/** Buttons that share a description text each get their own description element. */
+export const SharedAriaDescription = meta.story({
+  render: () => (
+    <Row>
+      <Button ariaLabel="First button" ariaDescription="Shared description">
+        <FaceHappyIcon />
+      </Button>
+      <Button ariaLabel="Second button" ariaDescription="Shared description">
+        <FaceHappyIcon />
+      </Button>
+    </Row>
+  ),
+  play: async ({ canvas }) => {
+    const first = canvas.getByRole('button', { name: 'First button' });
+    const second = canvas.getByRole('button', { name: 'Second button' });
+
+    await expect(first).toHaveAccessibleDescription('Shared description');
+    await expect(second).toHaveAccessibleDescription('Shared description');
+    await expect(first.getAttribute('aria-describedby')).not.toBe(
+      second.getAttribute('aria-describedby')
+    );
   },
 });
 

@@ -70,6 +70,9 @@ const BaseInlineComponentProperties = v.object({
   path: v.optional(v.string()),
   summary: v.optional(v.string()),
   import: v.optional(v.string()),
+  // Framework-authored Markdown, rendered in place of the props section derived from `react*`.
+  apiDescription: v.optional(v.string()),
+  renderer: v.optional(v.string()),
   // Mirrors the docgen-engine payloads, which the parsers narrow structurally at runtime.
   reactDocgen: v.optional(v.any()),
   reactDocgenTypescript: v.optional(v.any()),
@@ -112,6 +115,7 @@ export type DocsManifestMapV0 = v.InferOutput<typeof DocsManifestMapV0>;
 export const DocV1 = v.object({
   id: v.string(),
   name: v.string(),
+  title: v.optional(v.string()),
   summary: v.optional(v.string()),
   mdx: v.optional(JsonRef),
   error: v.optional(ManifestErrorSchema),

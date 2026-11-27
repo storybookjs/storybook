@@ -1,6 +1,5 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
-import { pathToFileURL } from 'node:url';
+import { dirname, join } from 'pathe';
 
 import { logger, prompt } from 'storybook/internal/node-logger';
 import {
@@ -11,17 +10,20 @@ import {
 import * as find from 'empathic/find';
 // eslint-disable-next-line depend/ban-dependencies
 import type { ResultPromise } from 'execa';
-import { coerce, gte } from 'semver';
+import { coerce, gte, prerelease } from 'semver';
 import { dedent } from 'ts-dedent';
-import { type Document, parseDocument } from 'yaml';
+import { Document, isMap, parseDocument } from 'yaml';
 
 import type { ExecuteCommandOptions } from '../utils/command.ts';
 import { executeCommand, executeCommandSync } from '../utils/command.ts';
 import { getProjectRoot } from '../utils/paths.ts';
 import { JsPackageManager, PackageManagerName } from './JsPackageManager.ts';
 import type { PackageJson } from './PackageJson.ts';
-import type { InstallationMetadata, PackageMetadata } from './types.ts';
+import { type OverrideSource, toOverrides } from './overrides.ts';
+import { hasAllowBuildsDecision, hasPnpm10ListDecision } from './pnpm-build-approvals.ts';
+import type { InstallationMetadata } from './types.ts';
 import {
+  findInstallationsInDependencyTree,
   getAgeInMinutes,
   getErrorLogs,
   getLatestStableVersionAdheringToMinimumAgeGate,
@@ -53,15 +55,20 @@ type PnpmListItem = {
 
 export type PnpmListOutput = PnpmListItem[];
 
-const PNPM_ERROR_REGEX = /(ELIFECYCLE|ERR_PNPM_[A-Z_]+)\s+(.*)/i;
-
 /** `pnpm dlx --allow-build` support (docs: Added in v10.2.0). */
 const PNPM_ALLOW_BUILD_DLX_MIN = '10.2.0';
 
+// `allowBuilds` in pnpm-workspace.yaml (docs: Added in v10.26.0).
+const PNPM_ALLOW_BUILDS_MIN = '10.26.0';
+
+// pnpm 11 removed the pnpm 10 build lists and stopped reading package.json's `pnpm` field.
+const PNPM_LEGACY_BUILD_LISTS_REMOVED = '11.0.0';
+
+// Storybook dependencies with a build script that pnpm 10+ refuses to run until it is approved.
+const STORYBOOK_BUILD_SCRIPT_PACKAGES = ['esbuild'];
+
 export class PNPMProxy extends JsPackageManager {
   readonly type = PackageManagerName.PNPM;
-
-  installArgs: string[] | undefined;
 
   /** Cached `pnpm --version` output; `undefined` until read, `null` if lookup failed. */
   #pnpmVersion: string | null | undefined;
@@ -115,19 +122,21 @@ export class PNPMProxy extends JsPackageManager {
     return version != null && gte(version, minimum);
   }
 
-  getInstallArgs(): string[] {
-    if (!this.installArgs) {
-      this.installArgs = [];
-
-      if (this.detectWorkspaceRoot()) {
-        this.installArgs.push('-w');
-      }
-    }
-    return this.installArgs;
+  /**
+   * `pnpm add` at a workspace root needs `-w` (pnpm 8 and 9 reject it otherwise), but `pnpm install
+   * -w` skips every other workspace project from pnpm 9 on.
+   */
+  getInstallArgs(command: 'install' | 'add'): string[] {
+    return command === 'add' && this.detectWorkspaceRoot() ? ['-w'] : [];
   }
 
   getPackageCommand(args: string[]): string {
     return `pnpm exec ${args.join(' ')}`;
+  }
+
+  getRemoteRunCommand(args: string[]): string {
+    const allowBuild = this.#pnpmGte(PNPM_ALLOW_BUILD_DLX_MIN) ? '--allow-build=esbuild ' : '';
+    return `pnpm ${allowBuild}dlx ${args.join(' ')}`;
   }
 
   public runPackageCommand({
@@ -171,14 +180,14 @@ export class PNPMProxy extends JsPackageManager {
   }
 
   public async getRegistryURL() {
-    // pnpm 10.7.1+ falls back to npm for certain config keys (including registry)
-    // https://github.com/pnpm/pnpm/pull/9346
-    // "npm config" commands are not allowed in workspaces per default
-    // https://github.com/npm/cli/issues/6099#issuecomment-1847584792
+    // pnpm 10.7.1 added npm forwarding: https://github.com/pnpm/pnpm/pull/9346
+    // pnpm 11.0.0 removed it: https://github.com/pnpm/pnpm/pull/11146
+    // --location=project bypasses that fallback to avoid npm's workspace error:
+    // https://github.com/npm/cli/issues/6099
     const childProcess = await executeCommand({
-      command: 'npm',
+      command: 'pnpm',
       cwd: this.cwd,
-      args: ['config', 'get', 'registry', '--workspaces=false', '--include-workspace-root'],
+      args: ['config', 'get', 'registry', '--location=project'],
     });
     const url = (typeof childProcess.stdout === 'string' ? childProcess.stdout : '').trim();
     return url === 'undefined' ? undefined : url;
@@ -206,50 +215,6 @@ export class PNPMProxy extends JsPackageManager {
     }
   }
 
-  // TODO: Remove pnp compatibility code in SB11
-  public async getModulePackageJSON(packageName: string): Promise<PackageJson | null> {
-    const pnpapiPath = find.any(['.pnp.js', '.pnp.cjs'], {
-      cwd: this.primaryPackageJson.operationDir,
-      last: getProjectRoot(),
-    });
-
-    if (pnpapiPath) {
-      try {
-        const pnpApi = await import(pathToFileURL(pnpapiPath).href);
-
-        const resolvedPath = pnpApi.resolveToUnqualified(packageName, this.cwd, {
-          considerBuiltins: false,
-        });
-
-        const pkgLocator = pnpApi.findPackageLocator(resolvedPath);
-        const pkg = pnpApi.getPackageInformation(pkgLocator);
-
-        const packageJSON = JSON.parse(
-          readFileSync(join(pkg.packageLocation, 'package.json'), 'utf-8')
-        );
-
-        return packageJSON;
-      } catch (error: any) {
-        if (error.code !== 'MODULE_NOT_FOUND') {
-          console.error('Error while fetching package version in PNPM PnP mode:', error);
-        }
-        return null;
-      }
-    }
-
-    const wantedPath = join('node_modules', packageName, 'package.json');
-    const packageJsonPath = find.up(wantedPath, {
-      cwd: this.primaryPackageJson.operationDir,
-      last: getProjectRoot(),
-    });
-
-    if (!packageJsonPath) {
-      return null;
-    }
-
-    return JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
-  }
-
   protected getResolutions(
     packageJson: PackageJson,
     versions: Record<string, string>
@@ -262,14 +227,10 @@ export class PNPMProxy extends JsPackageManager {
     };
   }
 
-  override async getDeclaredVersionSpecifier(packageName: string): Promise<string | null> {
-    const specifier = await super.getDeclaredVersionSpecifier(packageName);
-    if (specifier) {
-      return specifier;
-    }
-    const catalogName = this.#getCatalogName(this.getAllDependencies()[packageName]);
+  protected override getDeclaredRange(packageName: string, declared: string): string | null {
+    const catalogName = this.#getCatalogName(declared);
     if (catalogName === null) {
-      return null;
+      return super.getDeclaredRange(packageName, declared);
     }
     const workspace = this.#readWorkspaceYaml();
     if (!workspace) {
@@ -282,6 +243,47 @@ export class PNPMProxy extends JsPackageManager {
     // Catalog pins are strings, but YAML parses a bare numeric range like `vitest: 4` as a number.
     // Accept those too rather than silently dropping the pin.
     return typeof version === 'string' || typeof version === 'number' ? String(version) : null;
+  }
+
+  override writeCatalogUpgrades(
+    specifiers: string[],
+    declared: Partial<Record<string, string>>
+  ): string[] {
+    const upgrades = specifiers.map((specifier) => {
+      const at = specifier.indexOf('@', 1);
+      const name = specifier.slice(0, at);
+      return {
+        specifier,
+        name,
+        version: specifier.slice(at + 1),
+        catalog: this.#getCatalogName(declared[name]),
+      };
+    });
+    const catalogued = upgrades.filter(({ catalog }) => catalog !== null);
+    const workspace = catalogued.length > 0 ? this.#readWorkspaceYaml() : undefined;
+    if (!workspace) {
+      return specifiers;
+    }
+    for (const { name, version, catalog } of catalogued) {
+      const keyPath = [...this.#catalogKeyPath(workspace.doc, catalog!), name];
+      const current = String(workspace.doc.getIn(keyPath) ?? '');
+      const modifier =
+        /^[~^]/.test(version) || prerelease(version) ? '' : (current.match(/^[~^]/)?.[0] ?? '');
+      workspace.doc.setIn(keyPath, `${modifier}${version}`);
+    }
+    this.#writeWorkspaceYaml(workspace);
+    return upgrades.filter(({ catalog }) => catalog === null).map(({ specifier }) => specifier);
+  }
+
+  /** Adds the `overrides` of `pnpm-workspace.yaml`, which pnpm 10 reads alongside package.json. */
+  override getOverrideSources(): OverrideSource[] {
+    const sources = super.getOverrideSources();
+    const workspace = this.#readWorkspaceYaml();
+    const node = workspace?.doc.get('overrides');
+    const overrides = isMap(node) ? toOverrides(node.toJSON()) : undefined;
+    return workspace && overrides
+      ? [...sources, { path: workspace.path, field: 'overrides', overrides }]
+      : sources;
   }
 
   override applyVersionToRelatedPackages(
@@ -312,15 +314,74 @@ export class PNPMProxy extends JsPackageManager {
     return match ? match[1].trim() : null;
   }
 
-  /**
-   * Locate and parse the `pnpm-workspace.yaml` that governs this project's catalogs, walking up
-   * from the package.json we operate on. Returns null when the file is missing or malformed.
-   */
+  // From pnpm 11, an unreviewed build script fails a non-interactive install outright, and
+  // `pnpm install` has no flag to approve one, so record the approval like `pnpm approve-builds`.
+  protected allowStorybookBuildScripts(): void {
+    if (!this.#pnpmGte(PNPM_ALLOW_BUILDS_MIN)) {
+      return;
+    }
+    const workspace = this.#findWorkspaceYamlPath()
+      ? this.#readWorkspaceYaml()
+      : {
+          path: join(this.primaryPackageJson.operationDir, 'pnpm-workspace.yaml'),
+          doc: new Document(),
+        };
+    if (!workspace) {
+      logger.warn(
+        `Could not allow build scripts of ${STORYBOOK_BUILD_SCRIPT_PACKAGES.join(', ')}: pnpm-workspace.yaml is unreadable`
+      );
+      return;
+    }
+    const { path, doc } = workspace;
+    const { packageJson, operationDir } = this.primaryPackageJson;
+
+    try {
+      const settings = doc.toJS();
+      const pnpm10Settings: [settings: unknown, dir: string][] = this.#pnpmGte(
+        PNPM_LEGACY_BUILD_LISTS_REMOVED
+      )
+        ? []
+        : [
+            [settings, dirname(path)],
+            [packageJson.pnpm, operationDir],
+          ];
+      const pending = STORYBOOK_BUILD_SCRIPT_PACKAGES.filter(
+        (pkg) =>
+          !hasAllowBuildsDecision(settings, pkg) &&
+          !pnpm10Settings.some(([source, dir]) => hasPnpm10ListDecision(source, pkg, dir))
+      );
+      if (pending.length === 0) {
+        return;
+      }
+      // `setIn` cannot descend into an `allowBuilds:` key that was left empty.
+      if (doc.getIn(['allowBuilds']) == null) {
+        doc.setIn(['allowBuilds'], doc.createNode({}));
+      }
+      for (const pkg of pending) {
+        doc.setIn(['allowBuilds', pkg], true);
+      }
+      this.#writeWorkspaceYaml({ path, doc });
+      logger.info(`Approved build scripts for ${pending.join(', ')} in ${path}`);
+    } catch (e) {
+      logger.warn(
+        `Could not allow build scripts of ${STORYBOOK_BUILD_SCRIPT_PACKAGES.join(', ')} in ${path}: ${String(e)}`
+      );
+    }
+  }
+
+  #writeWorkspaceYaml({ path, doc }: { path: string; doc: Document }): void {
+    logger.debug(`Writing pnpm workspace file ${path}`);
+    writeFileSync(path, doc.toString(), 'utf8');
+  }
+
+  // pnpm reads the nearest file above the package, even past the VCS and Storybook project roots.
+  #findWorkspaceYamlPath(): string | undefined {
+    return find.up('pnpm-workspace.yaml', { cwd: this.primaryPackageJson.operationDir });
+  }
+
+  // Null when the file is missing or malformed.
   #readWorkspaceYaml(): { path: string; doc: Document } | null {
-    const path = find.up('pnpm-workspace.yaml', {
-      cwd: this.primaryPackageJson.operationDir,
-      last: getProjectRoot(),
-    });
+    const path = this.#findWorkspaceYamlPath();
     if (!path) {
       return null;
     }
@@ -390,7 +451,7 @@ export class PNPMProxy extends JsPackageManager {
       }
 
       if (changed) {
-        writeFileSync(workspace.path, workspace.doc.toString(), 'utf8');
+        this.#writeWorkspaceYaml(workspace);
       }
       return true;
     } catch (e) {
@@ -399,11 +460,22 @@ export class PNPMProxy extends JsPackageManager {
     }
   }
 
+  protected override get installUsesTerminal(): boolean {
+    return !!process.stdin.isTTY;
+  }
+
   protected runInstall(options?: { force?: boolean }) {
+    this.allowStorybookBuildScripts();
     return executeCommand({
       command: 'pnpm',
-      args: ['install', ...this.getInstallArgs(), ...(options?.force ? ['--force'] : [])],
-      stdio: prompt.getPreferredStdio(),
+      args: [
+        'install',
+        // pnpm freezes the lockfile when CI is set.
+        '--no-frozen-lockfile',
+        ...this.getInstallArgs('install'),
+        ...(options?.force ? ['--force'] : []),
+      ],
+      stdio: this.installUsesTerminal ? 'inherit' : prompt.getPreferredStdio(),
       cwd: this.cwd,
     });
   }
@@ -475,7 +547,7 @@ export class PNPMProxy extends JsPackageManager {
         dedent`
           pnpm minimumReleaseAge would block storybook@${storybookVersion} from being installed because it was released within the configured minimumReleaseAge window, so Storybook updated minimumReleaseAgeExclude for this project automatically.
 
-          Added patterns: storybook, @storybook/*, eslint-plugin-storybook, @chromatic-com/storybook
+          Added patterns: ${STORYBOOK_PACKAGE_PATTERNS.join(', ')}
 
           Read more:
           - https://pnpm.io/settings#minimumreleaseage
@@ -537,8 +609,9 @@ export class PNPMProxy extends JsPackageManager {
       args = ['-D', ...args];
     }
 
-    const commandArgs = ['add', ...args, ...this.getInstallArgs()];
+    const commandArgs = ['add', ...args, ...this.getInstallArgs('add')];
 
+    this.allowStorybookBuildScripts();
     return executeCommand({
       command: 'pnpm',
       args: commandArgs,
@@ -578,49 +651,29 @@ export class PNPMProxy extends JsPackageManager {
     }
   }
 
+  protected async runGetPeerDependencies(
+    packageSpec: string
+  ): Promise<Record<string, string> | undefined> {
+    const result = await executeCommand({
+      command: 'pnpm',
+      args: ['info', packageSpec, 'peerDependencies', '--json'],
+      cwd: this.cwd,
+      stdio: 'pipe',
+    });
+    // pnpm prints nothing when the version has no peer dependencies.
+    const output = typeof result.stdout === 'string' ? result.stdout.trim() : '';
+    return output ? JSON.parse(output) : undefined;
+  }
+
   protected mapDependencies(input: PnpmListOutput, pattern: string[]): InstallationMetadata {
-    const acc: Record<string, PackageMetadata[]> = {};
-    const existingVersions: Record<string, string[]> = {};
-    const duplicatedDependencies: Record<string, string[]> = {};
     const items: PnpmDependencies = input.reduce((curr, item) => {
       const { devDependencies, dependencies, peerDependencies } = item;
       const allDependencies = { ...devDependencies, ...dependencies, ...peerDependencies };
       return Object.assign(curr, allDependencies);
     }, {} as PnpmDependencies);
 
-    const recurse = ([name, packageInfo]: [string, PnpmDependency]): void => {
-      // transform pattern into regex where `*` is replaced with `.*`
-      if (!name || !pattern.some((p) => new RegExp(`^${p.replace(/\*/g, '.*')}$`).test(name))) {
-        return;
-      }
-
-      const value = {
-        version: packageInfo.version,
-        location: '',
-      };
-
-      if (!existingVersions[name]?.includes(value.version)) {
-        if (acc[name]) {
-          acc[name].push(value);
-        } else {
-          acc[name] = [value];
-        }
-        existingVersions[name] = [...(existingVersions[name] || []), value.version];
-
-        if (existingVersions[name].length > 1) {
-          duplicatedDependencies[name] = existingVersions[name];
-        }
-      }
-
-      if (packageInfo.dependencies) {
-        Object.entries(packageInfo.dependencies).forEach(recurse);
-      }
-    };
-    Object.entries(items).forEach(recurse);
-
     return {
-      dependencies: acc,
-      duplicatedDependencies,
+      ...findInstallationsInDependencyTree(items, pattern),
       infoCommand: 'pnpm list --depth=1',
       dedupeCommand: 'pnpm dedupe',
     };
@@ -655,7 +708,7 @@ export class PNPMProxy extends JsPackageManager {
   private async getPackageReleaseTime(packageName: string, version: string): Promise<Date | null> {
     const result = await this.runInternalCommand(
       'view',
-      ['--json', packageName, `time[${version}]`],
+      ['--json', packageName, 'time'],
       undefined,
       'pipe'
     );
@@ -665,7 +718,8 @@ export class PNPMProxy extends JsPackageManager {
       return null;
     }
 
-    return parseReleaseTime(JSON.parse(normalizedValue));
+    const timeMap = parsePackageTimeMap(JSON.parse(normalizedValue));
+    return parseReleaseTime(timeMap?.[version]);
   }
 
   private async getLatestStableVersionAdheringToMinimumReleaseAge(

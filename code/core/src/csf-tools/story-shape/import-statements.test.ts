@@ -11,7 +11,7 @@ import {
 import { collectImportBindings } from './imports.ts';
 
 const bindingsOf = (code: string) =>
-  collectImportBindings(loadCsf(code, { makeTitle: (title) => title ?? 'title' })._file.path);
+  collectImportBindings(loadCsf(code, { makeTitle: (title) => title ?? 'title' }).program);
 
 const resolve = (code: string, componentName: string) =>
   resolveComponentImport(componentName, bindingsOf(code));
@@ -323,6 +323,70 @@ describe('buildImportStatements', () => {
           "import * as A from 'my-design-system';",
         ]
       `);
+    });
+  });
+
+  describe('a name bound by both a component and an arg value', () => {
+    // Component refs are rewritten to the package; arg refs keep their source and come after.
+    const statementsWithArgs = (code: string, components: string[], argNames: string[]) => {
+      const bindings = bindingsOf(code);
+      return buildImportStatements({
+        refs: [
+          ...components.map((name) => resolveComponentImport(name, bindings)),
+          ...argNames.map((name) => ({
+            ...resolveComponentImport(name, bindings),
+            isPackage: true,
+          })),
+        ],
+        packageName: 'my-lib',
+      });
+    };
+
+    it.each([
+      {
+        shape: 'named',
+        code: `import { Button } from './Button'; import { Icon } from './Icon';`,
+        components: ['Button', 'Icon'],
+        args: ['Icon'],
+        expected: [`import { Button, Icon } from 'my-lib';`],
+      },
+      {
+        shape: 'aliased',
+        code: `import { Button } from './Button'; import { Icon as Glyph } from './Icon';`,
+        components: ['Button', 'Glyph'],
+        args: ['Glyph'],
+        expected: [`import { Button, Icon as Glyph } from 'my-lib';`],
+      },
+      {
+        shape: 'default',
+        code: `import { Button } from './Button'; import Icon from './Icon';`,
+        components: ['Button', 'Icon'],
+        args: ['Icon'],
+        expected: [`import { Button, Icon } from 'my-lib';`],
+      },
+      {
+        shape: 'namespace member',
+        code: `import { Button } from './Button'; import * as Icons from './icons';`,
+        components: ['Button', 'Icons.Check'],
+        args: ['Icons'],
+        expected: [`import { Button, Check } from 'my-lib';`, `import * as Icons from './icons';`],
+      },
+      {
+        shape: 'deep namespace path',
+        code: `import { Button } from './Button'; import * as Icons from './icons';`,
+        components: ['Button', 'Icons.Solid.Check'],
+        args: ['Icons'],
+        expected: [`import * as Icons from 'my-lib';`, `import { Button } from 'my-lib';`],
+      },
+      {
+        shape: 'non-JSX value',
+        code: `import { Button } from './Button'; import { Icon } from './Icon';`,
+        components: ['Button'],
+        args: ['Icon'],
+        expected: [`import { Button } from 'my-lib';`, `import { Icon } from './Icon';`],
+      },
+    ])('declares a $shape import once', ({ code, components, args, expected }) => {
+      expect(statementsWithArgs(code, components, args)).toEqual(expected);
     });
   });
 

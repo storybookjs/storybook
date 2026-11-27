@@ -7,24 +7,10 @@ import { run } from './a11yRunner.ts';
 import { afterEach } from './preview.tsx';
 import { getIsVitestRunning, getIsVitestStandaloneRun } from './utils.ts';
 
-const mocks = vi.hoisted(() => {
-  return {
-    getIsVitestRunning: vi.fn(),
-    getIsVitestStandaloneRun: vi.fn(),
-  };
-});
-
 vi.mock(import('./a11yRunner.ts'));
-vi.mock(import('./utils.ts'), async (importOriginal) => {
-  const mod = await importOriginal(); // type is inferred
-  return {
-    ...mod,
-    getIsVitestRunning: mocks.getIsVitestRunning,
-    getIsVitestStandaloneRun: mocks.getIsVitestStandaloneRun,
-  };
-});
+vi.mock(import('./utils.ts'), { spy: true });
 
-const mockedRun = vi.mocked(run);
+const mockedRun = vi.mocked(run, { partial: true });
 
 const violations = [
   {
@@ -108,7 +94,10 @@ describe('afterEach', () => {
 
     await expect(() => afterEach(context)).rejects.toThrow();
 
-    expect(mockedRun).toHaveBeenCalledWith(context.parameters.a11y, context.id);
+    expect(mockedRun).toHaveBeenCalledWith(
+      { ...context.parameters.a11y, options: { resultTypes: ['violations', 'incomplete'] } },
+      context.id
+    );
 
     expect(context.reporting.addReport).toHaveBeenCalledWith({
       type: 'a11y',
@@ -125,7 +114,7 @@ describe('afterEach', () => {
     };
 
     mockedRun.mockResolvedValue(result as any);
-    mocks.getIsVitestStandaloneRun.mockReturnValue(false);
+    vi.mocked(getIsVitestStandaloneRun).mockReturnValue(false);
 
     await afterEach(context);
 
@@ -152,7 +141,7 @@ describe('afterEach', () => {
     };
 
     mockedRun.mockResolvedValue(result as any);
-    mocks.getIsVitestStandaloneRun.mockReturnValue(false);
+    vi.mocked(getIsVitestStandaloneRun).mockReturnValue(false);
 
     await afterEach(context);
 
@@ -175,7 +164,10 @@ describe('afterEach', () => {
 
     await afterEach(context);
 
-    expect(mockedRun).toHaveBeenCalledWith(context.parameters.a11y, context.id);
+    expect(mockedRun).toHaveBeenCalledWith(
+      { ...context.parameters.a11y, options: { resultTypes: ['violations', 'incomplete'] } },
+      context.id
+    );
     expect(context.reporting.addReport).toHaveBeenCalledWith({
       type: 'a11y',
       version: 1,
@@ -183,6 +175,52 @@ describe('afterEach', () => {
       status: 'passed',
     });
   });
+
+  it('applies standalone defaults without changing the input parameters', async () => {
+    const a11y = {
+      context: '#storybook-root',
+      config: { rules: [{ id: 'region', enabled: false }] },
+      options: { runOnly: ['button-name'] },
+    };
+    const original = structuredClone(a11y);
+    const context = createContext({ parameters: { a11y } });
+    mockedRun.mockResolvedValue({ violations: [] });
+
+    await afterEach(context);
+
+    expect(mockedRun).toHaveBeenCalledWith(
+      { ...a11y, options: { runOnly: ['button-name'], resultTypes: ['violations', 'incomplete'] } },
+      context.id
+    );
+    expect(a11y).toEqual(original);
+  });
+
+  it.each([undefined, {}, { options: { resultTypes: undefined } }])(
+    'applies standalone defaults when resultTypes is omitted: %j',
+    async (a11y) => {
+      const context = createContext({ parameters: { a11y } });
+      mockedRun.mockResolvedValue({ violations: [] });
+
+      await afterEach(context);
+
+      expect(mockedRun).toHaveBeenCalledWith(
+        { options: { resultTypes: ['violations', 'incomplete'] } },
+        context.id
+      );
+    }
+  );
+
+  it.each([{ resultTypes: ['passes'] }, { resultTypes: [] }])(
+    'preserves explicit standalone resultTypes: $resultTypes',
+    async ({ resultTypes }) => {
+      const context = createContext({ parameters: { a11y: { options: { resultTypes } } } });
+      mockedRun.mockResolvedValue({ violations: [] });
+
+      await afterEach(context);
+
+      expect(mockedRun).toHaveBeenCalledWith(context.parameters.a11y, context.id);
+    }
+  );
 
   it('should not run accessibility checks when disable is true', async () => {
     const context = createContext({
@@ -235,8 +273,12 @@ describe('afterEach', () => {
     mockedRun.mockRejectedValue(error);
 
     await expect(() => afterEach(context)).rejects.toThrow();
+    expect(getIsVitestStandaloneRun).toHaveBeenCalledTimes(1);
 
-    expect(mockedRun).toHaveBeenCalledWith(context.parameters.a11y, context.id);
+    expect(mockedRun).toHaveBeenCalledWith(
+      { ...context.parameters.a11y, options: { resultTypes: ['violations', 'incomplete'] } },
+      context.id
+    );
     expect(context.reporting.addReport).toHaveBeenCalledWith({
       type: 'a11y',
       version: 1,

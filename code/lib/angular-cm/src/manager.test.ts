@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 
 import { afterAll, describe, expect, it } from 'vitest';
 
-import ts from 'typescript';
+import { DOCGEN_TS_API, loadTestTypeScript } from '@storybook/component-meta-typescript/testing';
 
 import { AngularComponentMetaManager } from './manager.ts';
 import type { AngularComponentMetaResult } from './types.ts';
@@ -15,7 +15,7 @@ const normalize = (fileName: string) => fileName.replace(/\\/g, '/');
 const togglePath = normalize(join(fixturesDir, 'toggle.component.ts'));
 
 // One manager for the whole suite: building programs is expensive, and it matches production.
-const manager = new AngularComponentMetaManager(ts);
+const manager = new AngularComponentMetaManager(await loadTestTypeScript());
 
 const scratchDirs: string[] = [];
 afterAll(async () => {
@@ -89,7 +89,7 @@ describe('AngularComponentMetaManager', () => {
     expect(names).toContain('disabled'); // @Input() inherited from ./base-toggle.ts
 
     const label = inputs.find((input) => input.name === 'label');
-    expect(label?.defaultValue).toContain('Toggle');
+    expect(label?.initializer?.text).toContain('Toggle');
   });
 
   it('exposes program source files (component and base) for directory watching', () => {
@@ -115,6 +115,38 @@ describe('AngularComponentMetaManager', () => {
     expect(inputsOf(result).map((input) => input.name)).toContain('note');
   });
 
+  it('attaches TypeScript JSDoc info for default-exported components', () => {
+    const namedDefault = manager.extractComponentMeta(
+      normalize(join(fixturesDir, 'default-export.component.ts')),
+      { exportName: 'default' }
+    );
+    const aliasedDefault = manager.extractComponentMeta(
+      normalize(join(fixturesDir, 'aliased-default.component.ts')),
+      { exportName: 'default' }
+    );
+
+    expect(namedDefault?.jsDocInfo).toMatchInlineSnapshot(`
+      {
+        "description": "Default export docs.",
+        "jsDocTags": {
+          "summary": [
+            "Named default summary.",
+          ],
+        },
+      }
+    `);
+    expect(aliasedDefault?.jsDocInfo).toMatchInlineSnapshot(`
+      {
+        "description": "Aliased default docs.",
+        "jsDocTags": {
+          "summary": [
+            "Aliased default summary.",
+          ],
+        },
+      }
+    `);
+  });
+
   it('resolves a component behind a star barrel to its defining file', () => {
     const barrelPath = normalize(join(fixturesDir, 'barrel-star.ts'));
     const result = manager.extractComponentMeta(barrelPath, { exportName: 'ToggleComponent' });
@@ -130,6 +162,31 @@ describe('AngularComponentMetaManager', () => {
 
     expect(result?.entry.name).toBe('ToggleComponent');
     expect(result?.entry.file).toBe(togglePath);
+  });
+
+  it.each(['button.component.d.ts', 'index.d.ts'])(
+    'reads a component compiled into a .d.ts, extracting from %s',
+    (entryFile) => {
+      const result = manager.extractComponentMeta(
+        normalize(join(fixturesDir, 'declarations', entryFile)),
+        { exportName: 'ButtonComponent' }
+      );
+
+      expect(result?.entry).toMatchObject({
+        name: 'ButtonComponent',
+        type: 'component',
+        file: normalize(join(fixturesDir, 'declarations', 'button.component.d.ts')),
+        selector: 'my-button, [my-button]',
+        standalone: false,
+      });
+      expect(inputsOf(result).map((input) => input.name)).toEqual(['disabled', 'label']);
+    }
+  );
+
+  it('still extracts nothing for a plain .d.ts class re-exported by a declaration barrel', () => {
+    const barrelPath = normalize(join(fixturesDir, 'declarations', 'index.d.ts'));
+
+    expect(manager.extractComponentMeta(barrelPath, { exportName: 'ButtonTheme' })).toBeUndefined();
   });
 
   it('falls back to localName when the export name matches no class', () => {
@@ -249,18 +306,72 @@ describe('AngularComponentMetaManager', () => {
     expect(inputsOf(result).map((input) => input.name)).toContain('extra');
   });
 
+  it('picks up an edit made before the file was first extracted, without a change event', async () => {
+    const componentPath = await makeScratchCopy('sb-acm-first-read-');
+    manager.extractComponentMeta(componentPath, { exportName: 'ToggleComponent' });
+    const defaultPath = normalize(join(dirname(componentPath), 'default-export.component.ts'));
+
+    await editFile(defaultPath, "heading = ''", "heading = 'Edited'");
+
+    const result = manager.extractComponentMeta(defaultPath, { exportName: 'default' });
+    expect(inputsOf(result).find((input) => input.name === 'heading')?.initializer?.text).toContain(
+      'Edited'
+    );
+  });
+
+  // TypeScript 6's LanguageService keeps a failed module resolution until the importer changes.
+  it.skipIf(DOCGEN_TS_API !== 'native')(
+    'resolves an import whose file is created later, through its change event',
+    async () => {
+      const componentPath = await makeScratchCopy('sb-acm-late-import-');
+      const dir = dirname(componentPath);
+      await writeFile(
+        join(dir, 'tsconfig.json'),
+        JSON.stringify({
+          compilerOptions: { experimentalDecorators: true, moduleResolution: 'bundler', types: [] },
+          files: ['host.component.ts'],
+        })
+      );
+      const hostPath = normalize(join(dir, 'host.component.ts'));
+      await writeFile(
+        hostPath,
+        [
+          "import { Component, Input } from '@angular/core';",
+          "import { LATER } from './later';",
+          '',
+          "@Component({ selector: 'sb-host', template: '' })",
+          'export class HostComponent {',
+          '  @Input() value = LATER;',
+          '}',
+          '',
+        ].join('\n')
+      );
+      const typeOfValue = () =>
+        inputsOf(manager.extractComponentMeta(hostPath, { exportName: 'HostComponent' })).find(
+          (input) => input.name === 'value'
+        )?.type;
+      expect(typeOfValue()).toBe('any');
+
+      const laterPath = normalize(join(dir, 'later.ts'));
+      await writeFile(laterPath, "export const LATER: string = 'later';\n");
+      manager.onFilesChanged([{ filePath: laterPath, type: 'created' }]);
+
+      expect(typeOfValue()).toBe('string');
+    }
+  );
+
   it('picks up an on-disk change through ensureFresh without a change event', async () => {
     const componentPath = await makeScratchCopy('sb-acm-fresh-');
 
     const before = manager.extractComponentMeta(componentPath, { exportName: 'ToggleComponent' });
-    expect(inputsOf(before).find((input) => input.name === 'label')?.defaultValue).toContain(
+    expect(inputsOf(before).find((input) => input.name === 'label')?.initializer?.text).toContain(
       'Toggle'
     );
 
     await editFile(componentPath, "label = 'Toggle'", "label = 'Switched'");
 
     const after = manager.extractComponentMeta(componentPath, { exportName: 'ToggleComponent' });
-    expect(inputsOf(after).find((input) => input.name === 'label')?.defaultValue).toContain(
+    expect(inputsOf(after).find((input) => input.name === 'label')?.initializer?.text).toContain(
       'Switched'
     );
   });

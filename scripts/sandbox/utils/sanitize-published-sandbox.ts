@@ -73,7 +73,6 @@ export const STRIP_KEYS = [
   // prerelease allowlist. Left behind next to a stripped gate it is dead
   // config, and it would quietly widen a consumer's own gate.
   'npmPreapprovedPackages',
-  'pnpFallbackMode',
   'enableGlobalCache',
   'checksumBehavior',
 ] as const;
@@ -88,8 +87,6 @@ export const EXCLUDE_GLOBS = [
   '**/.yarn/install-state.gz',
   '**/.yarn/build-state.yml',
   '**/.yarn/unplugged/**',
-  '**/.pnp.cjs',
-  '**/.pnp.loader.mjs',
   '**/node_modules/**',
   '**/.cache/**',
   '**/storybook-static/**',

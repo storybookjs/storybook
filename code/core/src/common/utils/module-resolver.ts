@@ -8,6 +8,8 @@ export interface ModuleResolverOptions {
   extensions?: string[];
   mainFields?: string[];
   conditionNames?: string[];
+  /** Extensions to try in place of a written one, such as `{ '.js': ['.ts', '.js'] }`. */
+  extensionAlias?: Record<string, string[]>;
   /** Honor `paths`/`baseUrl` from a tsconfig. `'auto'` walks up from the resolution origin. */
   tsconfig?: 'auto' | { configFile: string };
 }
@@ -19,8 +21,20 @@ export interface ModuleResolver {
   resolveSync(fromDirectory: string, specifier: string): string;
 }
 
+/**
+ * Resolve the same files the preview bundles: the browser build's resolve conditions, trimmed to
+ * what oxc-resolver understands.
+ *
+ * oxc-resolver defaults to no conditions at all, which would make exports maps without an
+ * unconditional entry unresolvable.
+ */
+export const defaultResolveConditionNames = ['storybook', 'import', 'module', 'default'];
+
 export function createModuleResolver(options: ModuleResolverOptions = {}): ModuleResolver {
-  const factory = new ResolverFactory(options);
+  const factory = new ResolverFactory({
+    ...options,
+    conditionNames: options.conditionNames ?? defaultResolveConditionNames,
+  });
 
   const unwrap = (
     result: { path?: string | null; error?: string | null },

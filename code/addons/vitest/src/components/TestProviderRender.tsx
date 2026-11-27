@@ -13,9 +13,9 @@ import { EyeIcon, InfoIcon, PlayHollowIcon, StopAltIcon } from '@storybook/icons
 
 import { store } from '#manager-store';
 import { announce } from '@react-aria/live-announcer';
-import { addons } from 'storybook/manager-api';
 import type { API } from 'storybook/manager-api';
-import { styled } from 'storybook/theming';
+import { addons } from 'storybook/manager-api';
+import { styled } from 'storybook/theming/emotion';
 
 import {
   A11Y_ADDON_ID,
@@ -325,7 +325,7 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
           {entry ? (
             <ActionList.Text>Interactions</ActionList.Text>
           ) : (
-            <ActionList.Action as="label" readOnly>
+            <ActionList.Action as="label" readOnly ariaLabel={false}>
               <ActionList.Icon>
                 <Form.Checkbox name="Interactions" checked disabled />
               </ActionList.Icon>

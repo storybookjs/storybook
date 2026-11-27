@@ -1,0 +1,88 @@
+{
+  "children": {
+    "control": false,
+    "description": "Alert body.",
+    "name": "children",
+    "table": {
+      "category": "slots",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "Snippet<[]>",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": false,
+      "value": "Snippet<[]>",
+    },
+  },
+  "dismissible": {
+    "control": {
+      "type": "boolean",
+    },
+    "description": "Shows a close button.",
+    "name": "dismissible",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": "false",
+      },
+      "type": {
+        "summary": "boolean",
+      },
+    },
+    "type": {
+      "name": "boolean",
+      "required": false,
+    },
+  },
+  "level": {
+    "description": "Severity level.",
+    "name": "level",
+    "options": [
+      "info",
+      "warning",
+      "error",
+    ],
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": ""info"",
+      },
+      "type": {
+        "summary": ""info" | "warning" | "error"",
+      },
+    },
+    "type": {
+      "name": "enum",
+      "required": false,
+      "value": [
+        "info",
+        "warning",
+        "error",
+      ],
+    },
+  },
+  "title": {
+    "control": {
+      "type": "text",
+    },
+    "description": "Alert heading.",
+    "name": "title",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+      "required": true,
+    },
+  },
+}

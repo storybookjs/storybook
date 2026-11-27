@@ -1,6 +1,5 @@
 {
   "node": {
-    "defaultValue": undefined,
     "description": "Root node of the tree.",
     "name": "node",
     "table": {

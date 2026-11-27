@@ -3,9 +3,10 @@ import type { StoryIndex } from 'storybook/internal/types';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { OpenServiceUnknownStoryIdsError } from '../../../../server-errors.ts';
-import { clearRegistry } from '../../server.ts';
+import { clearRegistry, registerService } from '../../server.ts';
+import { moduleGraphServiceDef } from '../module-graph/definition.ts';
 import { reviewServiceDef } from './definition.ts';
-import { registerReviewService } from './server.ts';
+import { registerReviewService, subscribeReviewToModuleGraphChanges } from './server.ts';
 
 const storyEntry = {
   type: 'story',
@@ -136,8 +137,7 @@ describe('registerReviewService', () => {
     expect(service.queries.current.get(undefined)).toEqual({ ...review, createdAt: 1_000 });
     expect(getIndex).toHaveBeenCalledOnce();
 
-    now = 12_000;
-    await service.commands.markStale(undefined);
+    await service.commands.markStale({ changedAt: 2_000 });
     expect(service.queries.current.get(undefined)).toEqual({
       ...review,
       createdAt: 1_000,
@@ -225,20 +225,20 @@ describe('registerReviewService', () => {
     expect(service.queries.pending.get(undefined)).toBeNull();
   });
 
-  it('does not mark the review stale inside the grace window', async () => {
+  it('ignores changes made before publishing that the module graph reports after it', async () => {
     const service = registerReviewService({ getIndex });
     await service.commands.setReview(review);
 
-    now = 5_000;
-    await service.commands.markStale(undefined);
+    await service.commands.markStale({ changedAt: 900 });
+    await service.commands.markStale({ changedAt: 1_000 });
 
-    expect(service.queries.current.get(undefined)).toEqual({ ...review, createdAt: 1_000 });
+    expect(service.queries.current.get(undefined)?.stale).toBeUndefined();
   });
 
   it('ignores markStale when no review is active', async () => {
     const service = registerReviewService({ getIndex });
 
-    await service.commands.markStale(undefined);
+    await service.commands.markStale({ changedAt: 2_000 });
 
     expect(service.queries.current.get(undefined)).toBeNull();
   });
@@ -275,11 +275,9 @@ describe('registerReviewService', () => {
     await service.commands.setReview(review);
     expect(service.queries.bannerKind.get(undefined)).toBeNull();
 
-    now = 12_000;
-    await service.commands.markStale(undefined);
+    await service.commands.markStale({ changedAt: 2_000 });
     expect(service.queries.bannerKind.get(undefined)).toBe('stale');
 
-    now = 13_000;
     await service.commands.setReview({ ...review, title: 'Updated review' });
     expect(service.queries.bannerKind.get(undefined)).toBe('pending-update');
 
@@ -288,32 +286,53 @@ describe('registerReviewService', () => {
     expect(service.queries.bannerKind.get(undefined)).toBeNull();
   });
 
-  it('marks the current review stale on module-graph changes after the grace window', async () => {
-    let onChange: (() => void) | undefined;
-    const unsubscribe = vi.fn();
-    const service = registerReviewService({
-      getIndex,
-      subscribeToModuleGraphChanges: (handler) => {
-        onChange = handler;
-        return unsubscribe;
-      },
-    });
+  it('marks a pending review stale only on changes made after it was published', async () => {
+    const service = registerReviewService({ getIndex });
+    await service.commands.setReview(review);
+    now = 2_000;
+    await service.commands.setReview({ ...review, title: 'Updated review' });
+
+    await service.commands.markStale({ changedAt: 1_500 });
+    expect(service.queries.current.get(undefined)?.stale).toBe(true);
+    expect(service.queries.pending.get(undefined)?.stale).toBeUndefined();
+
+    await service.commands.markStale({ changedAt: 3_000 });
+    expect(service.queries.pending.get(undefined)?.stale).toBe(true);
+
+    await service.commands.acceptPending(undefined);
+    expect(service.queries.bannerKind.get(undefined)).toBe('stale');
+  });
+
+  it('does not subscribe to module-graph changes on registration', async () => {
+    const moduleGraph = registerService(moduleGraphServiceDef);
+    const service = registerReviewService({ getIndex });
     await service.commands.setReview(review);
 
-    now = 5_000;
-    onChange?.();
-    await vi.waitFor(() => {
-      expect(service.queries.current.get(undefined)).toEqual({ ...review, createdAt: 1_000 });
+    now = 12_000;
+    await moduleGraph.commands._applyGraphUpdate({
+      bumpedStoryFiles: ['./src/Button.stories.tsx'],
     });
 
+    expect(service.queries.current.get(undefined)).toEqual({ ...review, createdAt: 1_000 });
+  });
+
+  it('marks the review stale on module-graph changes once subscribed', async () => {
+    const moduleGraph = registerService(moduleGraphServiceDef);
+    const service = registerReviewService({ getIndex });
+    subscribeReviewToModuleGraphChanges();
+    await service.commands.setReview(review);
+
     now = 12_000;
-    onChange?.();
-    await vi.waitFor(() => {
+    await moduleGraph.commands._applyGraphUpdate({
+      bumpedStoryFiles: ['./src/Button.stories.tsx'],
+    });
+
+    await vi.waitFor(() =>
       expect(service.queries.current.get(undefined)).toEqual({
         ...review,
         createdAt: 1_000,
         stale: true,
-      });
-    });
+      })
+    );
   });
 });

@@ -1,10 +1,11 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   fetchManifests as getManifests,
   parseManifestRef,
   resolveComponentEntry,
   resolveComponentStories,
   resolveDocEntry as resolveDoc,
+  sourceUrlManifestProvider,
 } from './access-provider.ts';
 import { createCompositionDocsSources, listSources } from './multi-source.ts';
 import { ManifestGetError, RequiresOwnMcpError, type Source } from './sources.ts';
@@ -130,10 +131,6 @@ function createManifestProviderMock(responses: {
 describe('getManifest', () => {
   beforeEach(() => {
     vi.stubGlobal('fetch', vi.fn());
-  });
-
-  afterEach(() => {
-    vi.unstubAllGlobals();
   });
 
   describe('error cases', () => {
@@ -327,6 +324,31 @@ Invalid key: Expected "components" but received undefined]`);
       expect(global.fetch).toHaveBeenCalledTimes(2);
       expect(global.fetch).toHaveBeenCalledWith('https://example.com/manifests/components.json');
       expect(global.fetch).toHaveBeenCalledWith('https://example.com/manifests/docs.json');
+    });
+
+    it('should keep the title of a shallow docs row', async () => {
+      const docsManifest = {
+        v: 1,
+        docs: {
+          'guides-spacing--docs': {
+            id: 'guides-spacing--docs',
+            name: 'Docs',
+            title: 'Guides/Spacing',
+            mdx: { $ref: '../services/addon-docs/mdx/guides-spacing--docs.json#/components/x' },
+          },
+        },
+      };
+      vi.stubGlobal(
+        'fetch',
+        createFetchMock({
+          components: { v: 1, components: { button: { id: 'button', name: 'Button' } } },
+          docs: docsManifest,
+        })
+      );
+
+      const result = await getManifests(createMockRequest('https://example.com/mcp'));
+
+      expect(result.docsManifest).toEqual(docsManifest);
     });
 
     it.each([
@@ -675,6 +697,53 @@ describe('parseManifestRef', () => {
     expect(parseManifestRef('../x.json#/a~1b/c~0d')).toEqual({
       path: './x.json',
       pointer: ['a/b', 'c~d'],
+    });
+  });
+});
+
+describe('sourceUrlManifestProvider', () => {
+  const source: Source = { id: 'ds', title: 'DS', url: 'https://ds.example.com/sub/' };
+
+  beforeEach(() => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => new Response('{}', { headers: { 'content-type': 'application/json' } }))
+    );
+  });
+
+  it('fetches under the source url, keeping its sub-path', async () => {
+    await sourceUrlManifestProvider(undefined, './manifests/components.json', source);
+
+    expect(fetch).toHaveBeenCalledWith('https://ds.example.com/sub/manifests/components.json', {
+      signal: expect.any(AbortSignal),
+    });
+  });
+
+  it('keeps a $ref with a scheme-like segment under the source url', async () => {
+    const { path } = parseManifestRef('../http:169.254.169.254/latest/x.json#/');
+
+    await sourceUrlManifestProvider(undefined, path, source);
+
+    expect(fetch).toHaveBeenCalledWith(
+      'https://ds.example.com/sub/http:169.254.169.254/latest/x.json',
+      { signal: expect.any(AbortSignal) }
+    );
+  });
+
+  it('lists a source that answers 401 as a notice pointing at its own MCP endpoint', async () => {
+    vi.mocked(fetch).mockResolvedValue(new Response('{}', { status: 401 }));
+
+    const [listing] = await listSources(
+      createCompositionDocsSources({
+        sources: [source],
+        manifestProvider: sourceUrlManifestProvider,
+      }),
+      { withStoryIds: false }
+    );
+
+    expect(listing).toEqual({
+      source,
+      notice: { kind: 'requires-own-mcp', endpoint: 'https://ds.example.com/sub/mcp' },
     });
   });
 });

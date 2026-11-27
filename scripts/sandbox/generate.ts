@@ -38,6 +38,7 @@ import {
   preapproveLocallyPublishedPackages,
   refreshBeforeStorybookLockfile,
   setupYarn,
+  writeScaffoldNpmrc,
 } from './utils/yarn.ts';
 
 const isCI = process.env.GITHUB_ACTIONS === 'true' || process.env.CI === 'true';
@@ -133,7 +134,8 @@ const addStorybook = async ({
     }
 
     // This install is the only step that runs package code, so it keeps the
-    // 7-day gate inherited from before-storybook. The locally published
+    // age gate inherited from before-storybook (`BEFORE_SANDBOX_MIN_AGE_GATE`).
+    // The locally published
     // Storybook packages are seconds old and can never satisfy it, so they are
     // allowlisted by name rather than the gate being switched off.
     await preapproveLocallyPublishedPackages(tmpDir);
@@ -268,22 +270,20 @@ const runGenerators = async (
 
           // We do the creation inside a temp dir to avoid yarn container problems
           createBaseDir = await temporaryDirectory();
-          if (!script.includes('pnp')) {
-            try {
-              await setupYarn({ cwd: createBaseDir });
-            } catch (error) {
-              const message = `❌ Failed to setup yarn in template: ${name} (${dirName})`;
-              if (isCI) {
-                ghActions.error(dedent`${message}
-                  ${formatCommandError(error)}`);
-              } else {
-                console.error(message);
-                console.error(error);
-              }
-              throw new Error(message, {
-                cause: error,
-              });
+          try {
+            await setupYarn({ cwd: createBaseDir });
+          } catch (error) {
+            const message = `❌ Failed to setup yarn in template: ${name} (${dirName})`;
+            if (isCI) {
+              ghActions.error(dedent`${message}
+                ${formatCommandError(error)}`);
+            } else {
+              console.error(message);
+              console.error(error);
             }
+            throw new Error(message, {
+              cause: error,
+            });
           }
 
           const createBeforeDir = join(createBaseDir, BEFORE_DIR_NAME);
@@ -296,6 +296,14 @@ const runGenerators = async (
             YARN_NPM_MINIMAL_AGE_GATE: BEFORE_SANDBOX_MIN_AGE_GATE,
             NPM_CONFIG_MIN_RELEASE_AGE: String(BEFORE_SANDBOX_NPM_MIN_RELEASE_AGE_DAYS),
           };
+
+          const scaffoldCwd = script.includes('{{beforeDir}}') ? createBaseDir : createBeforeDir;
+          if (minAgeGateExemptions?.length) {
+            if (scaffoldCwd === createBeforeDir) {
+              await mkdir(createBeforeDir, { recursive: true });
+            }
+            await writeScaffoldNpmrc(scaffoldCwd, minAgeGateExemptions);
+          }
 
           // Some tools refuse to run inside an existing directory and replace the contents,
           // where as others are very picky about what directories can be called. So we need to
@@ -334,7 +342,8 @@ const runGenerators = async (
 
           await localizeYarnConfigFiles(createBaseDir, createBeforeDir);
 
-          // Refresh the lockfile to a Yarn 4 one with a 7-day npmMinimalAgeGate
+          // Refresh the lockfile to a Yarn 4 one with the
+          // `BEFORE_SANDBOX_MIN_AGE_GATE` npmMinimalAgeGate
           // so consumers who clone the published sandbox install a reproducible,
           // non-freshly-quarantined dependency tree.
           //
@@ -435,9 +444,9 @@ const runGenerators = async (
     if (hasGenerationErrors) {
       console.log('failed:');
       console.log(
-        generationResults
-          .filter((result) => result.status === 'rejected')
-          .map((_, index) => generators[index].name)
+        generationResults.flatMap((result, index) =>
+          result.status === 'rejected' ? [generators[index].name] : []
+        )
       );
       throw new Error(`Some sandboxes failed to generate`, {
         cause: generationResults

@@ -3,7 +3,6 @@ import React from 'react';
 import { Button } from 'storybook/internal/components';
 import type { Addon_BaseType } from 'storybook/internal/types';
 
-import { global } from '@storybook/global';
 import { EditorIcon } from '@storybook/icons';
 
 import { Consumer, types, useStorybookApi } from 'storybook/manager-api';
@@ -26,8 +25,8 @@ export const openInEditorTool: Addon_BaseType = {
   title: 'open-in-editor',
   id: 'open-in-editor',
   type: types.TOOL,
-  match: ({ viewMode, tabId }) =>
-    global.CONFIG_TYPE === 'DEVELOPMENT' && (viewMode === 'story' || viewMode === 'docs') && !tabId,
+  match: ({ viewMode }) =>
+    globalThis.CONFIG_TYPE === 'DEVELOPMENT' && (viewMode === 'story' || viewMode === 'docs'),
   render: () => (
     <Consumer filter={mapper}>
       {({ importPath, isCompositionStory }) => {

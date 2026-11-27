@@ -29,6 +29,102 @@ describe('get-known-packages', () => {
   });
 
   describe('analyzeEcosystemPackages', () => {
+    it('reports general test runners separately from image snapshot testing', async () => {
+      const result = await analyzeEcosystemPackages({
+        devDependencies: {
+          '@playwright/test': '^1.0.0',
+          jest: '^1.0.0',
+          'jest-image-snapshot': '^1.0.0',
+        },
+      });
+
+      expect(result.testPackages).toEqual({
+        '@playwright/test': '1.0.0',
+        jest: '1.0.0',
+      });
+      expect(result.vrtPackages).toEqual({ 'jest-image-snapshot': '1.0.0' });
+    });
+
+    it('reports VRT packages across dependency groups with resolved versions', async () => {
+      const result = await analyzeEcosystemPackages({
+        dependencies: { '@percy/cli': '^1.0.0' },
+        devDependencies: { chromatic: '^2.0.0', '@vizzly-testing/vitest': '^1.0.0' },
+        peerDependencies: { '@vizzly-testing/honeydiff': '^3.0.0' },
+      });
+
+      expect(result.vrtPackages).toEqual({
+        '@percy/cli': '1.0.0',
+        chromatic: '1.0.0',
+        '@vizzly-testing/honeydiff': '1.0.0',
+        '@vizzly-testing/vitest': '1.0.0',
+      });
+      expect(result.testPackages).toBeUndefined();
+    });
+
+    it('keeps playwright and vitest VRT adapters out of the test group', async () => {
+      const result = await analyzeEcosystemPackages({
+        devDependencies: {
+          '@playwright/test': '^1.0.0',
+          vitest: '^1.0.0',
+          '@chromatic-com/vitest': '^1.0.0',
+          '@vizzly-testing/vitest': '^1.0.0',
+          '@percy/playwright': '^1.0.0',
+          '@lambdatest/playwright-node-sdk': '^1.0.0',
+          '@saucelabs/testcomposer': '^1.0.0',
+        },
+      });
+
+      expect(result.testPackages).toEqual({
+        '@playwright/test': '1.0.0',
+        vitest: '1.0.0',
+        '@lambdatest/playwright-node-sdk': '1.0.0',
+      });
+      expect(result.vrtPackages).toEqual({
+        '@chromatic-com/vitest': '1.0.0',
+        '@vizzly-testing/vitest': '1.0.0',
+        '@percy/playwright': '1.0.0',
+      });
+    });
+
+    it('reports Chromatic packages in the VRT group without adding a test group', async () => {
+      const result = await analyzeEcosystemPackages({
+        devDependencies: { chromatic: '^2.0.0', '@chromatic-com/storybook': '^1.0.0' },
+      });
+
+      expect(result).toEqual({
+        vrtPackages: { chromatic: '1.0.0', '@chromatic-com/storybook': '1.0.0' },
+      });
+    });
+
+    it('falls back to sanitized declared versions for unresolved VRT packages', async () => {
+      vi.mocked(getActualPackageVersion).mockImplementation(async (name) => ({
+        name,
+        version: null,
+      }));
+
+      const result = await analyzeEcosystemPackages({
+        devDependencies: {
+          '@percy/cli': '^1.2.3',
+          'happo.io': 'workspace:*',
+          'lost-pixel': 'latest',
+        },
+      });
+
+      expect(result.vrtPackages).toEqual({
+        '@percy/cli': '^1.2.3',
+        'happo.io': 'custom-protocol',
+        'lost-pixel': 'latest',
+      });
+    });
+
+    it('omits the VRT group when no VRT packages match', async () => {
+      const result = await analyzeEcosystemPackages({
+        devDependencies: { vitest: '^1.0.0', '@percy-extra/cli': '^1.0.0' },
+      });
+
+      expect(result).not.toHaveProperty('vrtPackages');
+    });
+
     it('should analyze test packages with actual versions', async () => {
       const packageJson: PackageJson = {
         dependencies: {
@@ -36,7 +132,6 @@ describe('get-known-packages', () => {
           vitest: '1.0.0',
           playwright: '1.30.0',
           '@testing-library/react': '1.0.0',
-          '@chromatic-com/vitest': '1.0.0',
         },
       };
 
@@ -49,7 +144,27 @@ describe('get-known-packages', () => {
         vitest: '1.0.0',
         playwright: '1.0.0',
         '@testing-library/react': '1.0.0',
-        '@chromatic-com/vitest': '1.0.0',
+      });
+    });
+
+    it('should analyze bundler packages with actual versions', async () => {
+      const packageJson: PackageJson = {
+        devDependencies: {
+          webpack: '5.90.0',
+          vite: '^5.0.0',
+          '@rsbuild/core': '1.0.0',
+          '@parcel/core': '2.0.0',
+          eslint: '9.0.0',
+        },
+      };
+
+      const result = await analyzeEcosystemPackages(packageJson);
+
+      expect(result.bundlerPackages).toEqual({
+        webpack: '1.0.0',
+        vite: '1.0.0',
+        '@rsbuild/core': '1.0.0',
+        '@parcel/core': '1.0.0',
       });
     });
 
@@ -60,6 +175,8 @@ describe('get-known-packages', () => {
           tailwindcss: '3.0.0',
           'styled-components': '6.0.0',
           emotion: '11.0.0',
+          '@stylexjs/stylex': '0.15.4',
+          '@stylexjs/postcss-plugin': '0.15.4',
           // state management
           redux: '4.0.0',
           'react-redux': '8.0.0',
@@ -90,6 +207,8 @@ describe('get-known-packages', () => {
         emotion: '11.0.0',
         tailwindcss: '3.0.0',
         'styled-components': '6.0.0',
+        '@stylexjs/stylex': '0.15.4',
+        '@stylexjs/postcss-plugin': '0.15.4',
       });
 
       expect(result.stateManagementPackages).toEqual({

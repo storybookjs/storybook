@@ -1,6 +1,4 @@
-import type { PartialStoryFn, PlayFunctionContext, StoryContext } from 'storybook/internal/types';
-
-import { global as globalThis } from '@storybook/global';
+import type { PartialStoryFn, StoryContext } from 'storybook/internal/types';
 
 import { expect, within } from 'storybook/test';
 
@@ -18,7 +16,7 @@ export const Inheritance = {
     (storyFn: PartialStoryFn, context: StoryContext) =>
       storyFn({ args: { object: context.globals } }),
   ],
-  play: async ({ canvasElement }: PlayFunctionContext<any>) => {
+  play: async ({ canvasElement }: StoryContext<any>) => {
     await expect(JSON.parse(within(canvasElement).getByTestId('pre').innerText)).toMatchObject({
       foo: 'fooValue',
       bar: 'barValue',
@@ -34,7 +32,7 @@ export const Events = {
     (storyFn: PartialStoryFn, context: StoryContext) =>
       storyFn({ args: { text: context.globals.foo } }),
   ],
-  play: async ({ canvasElement }: PlayFunctionContext<any>) => {
+  play: async ({ canvasElement }: StoryContext<any>) => {
     const channel = globalThis.__STORYBOOK_ADDONS_CHANNEL__;
     await channel.emit('updateGlobals', { globals: { foo: 'fooValue' } });
     await within(canvasElement).findByText('fooValue');
@@ -60,7 +58,7 @@ export const Overrides1 = {
     foo: 'fooOverridden1',
     baz: 'bazOverridden1',
   },
-  play: async ({ canvasElement }: PlayFunctionContext<any>) => {
+  play: async ({ canvasElement }: StoryContext<any>) => {
     await expect(JSON.parse(within(canvasElement).getByTestId('pre').innerText)).toMatchObject({
       foo: 'fooOverridden1',
       bar: 'barValue',
@@ -79,7 +77,7 @@ export const Overrides2 = {
     foo: 'fooOverridden2',
     baz: 'bazOverridden2',
   },
-  play: async ({ canvasElement }: PlayFunctionContext<any>) => {
+  play: async ({ canvasElement }: StoryContext<any>) => {
     await expect(JSON.parse(within(canvasElement).getByTestId('pre').innerText)).toMatchObject({
       foo: 'fooOverridden2',
       bar: 'barValue',

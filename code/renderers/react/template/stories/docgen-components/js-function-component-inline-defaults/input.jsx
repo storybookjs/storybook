@@ -1,12 +1,32 @@
 import React from 'react';
 
-import PropTypes from 'prop-types';
-
 import { imported } from '../imported';
 
 const local = 'local-value';
 
-/** A component that renders its props */
+/**
+ * A component that renders its props
+ *
+ * @param {object} props
+ * @param {number} props.numberRequired Description
+ * @param {number} [props.numberOptional]
+ * @param {string} props.stringRequired
+ * @param {string} [props.stringOptional]
+ * @param {boolean} props.booleanRequired
+ * @param {boolean} [props.booleanOptional]
+ * @param {string[]} props.arrayRequired
+ * @param {string[]} [props.arrayOptional]
+ * @param {object} props.objectRequired
+ * @param {object} [props.objectOptional]
+ * @param {() => string} props.functionRequired
+ * @param {() => string} [props.functionOptional]
+ * @param {Date} props.dateRequired
+ * @param {Date} [props.dateOptional]
+ * @param {string} [props.localReference]
+ * @param {string} [props.importedReference]
+ * @param {*} [props.globalReference]
+ * @param {string} [props.stringGlobalName]
+ */
 export const PropsWriter = ({
   numberOptional = 1,
   stringOptional = 'stringOptional',
@@ -36,26 +56,5 @@ export const PropsWriter = ({
     })}
   </pre>
 );
-
-PropsWriter.propTypes = {
-  numberRequired: PropTypes.number.isRequired,
-  numberOptional: PropTypes.number,
-  stringRequired: PropTypes.string.isRequired,
-  stringOptional: PropTypes.string,
-  booleanRequired: PropTypes.bool.isRequired,
-  booleanOptional: PropTypes.bool,
-  arrayRequired: PropTypes.arrayOf(PropTypes.string.isRequired).isRequired,
-  arrayOptional: PropTypes.arrayOf(PropTypes.string.isRequired),
-  objectRequired: PropTypes.shape({}).isRequired,
-  objectOptional: PropTypes.shape({}),
-  functionRequired: PropTypes.func.isRequired,
-  functionOptional: PropTypes.func,
-  dateRequired: PropTypes.instanceOf(Date).isRequired,
-  dateOptional: PropTypes.instanceOf(Date),
-  localReference: PropTypes.string,
-  importedReference: PropTypes.string,
-  globalReference: PropTypes.any,
-  stringGlobalName: PropTypes.string,
-};
 
 export const component = PropsWriter;

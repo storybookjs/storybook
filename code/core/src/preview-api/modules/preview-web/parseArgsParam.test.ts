@@ -54,6 +54,23 @@ describe('parseArgsParam', () => {
     expect(args).toStrictEqual({ hsl: 'hsl(45, 99%, 70%)', hsla: 'hsla(45, 99%, 70%, 0.5)' });
   });
 
+  it('keeps the alpha of color values as written', () => {
+    const args = parseArgsParam(
+      'rgb:!rgb(255,71,133,0.5);rgba:!rgba(255,71,133);hsl:!hsl(45,99,70,0.5);hsla:!hsla(45,99,70)'
+    );
+    expect(args).toStrictEqual({
+      rgb: 'rgb(255, 71, 133, 0.5)',
+      rgba: 'rgba(255, 71, 133)',
+      hsl: 'hsl(45, 99%, 70%, 0.5)',
+      hsla: 'hsla(45, 99%, 70%)',
+    });
+  });
+
+  it('parses color values regardless of case', () => {
+    const args = parseArgsParam('rgb:!Rgb(255,71,133);hsla:!Hsla(45,99,70,0.5)');
+    expect(args).toStrictEqual({ rgb: 'Rgb(255, 71, 133)', hsla: 'Hsla(45, 99%, 70%, 0.5)' });
+  });
+
   it('parses Date', () => {
     const args = parseArgsParam('key:!date(2001-02-03T04:05:06.789Z)');
     expect(args).toStrictEqual({ key: new Date('2001-02-03T04:05:06.789Z') });
@@ -87,6 +104,16 @@ describe('parseArgsParam', () => {
   it('parses multiple values', () => {
     const args = parseArgsParam('one:A;two:B;three:C');
     expect(args).toStrictEqual({ one: 'A', two: 'B', three: 'C' });
+  });
+
+  it('parses an empty value as an empty string', () => {
+    const args = parseArgsParam('label:');
+    expect(args).toStrictEqual({ label: '' });
+  });
+
+  it('parses an empty value next to a non-empty one', () => {
+    const args = parseArgsParam('label:;primary:!false');
+    expect(args).toStrictEqual({ label: '', primary: false });
   });
 
   it('parses arrays', () => {
@@ -257,6 +284,19 @@ describe('parseArgsParam', () => {
       expect(parseArgsParam('key:1.')).toStrictEqual({});
       expect(parseArgsParam('key:.2')).toStrictEqual({});
       expect(parseArgsParam('key:1.2.3')).toStrictEqual({});
+    });
+
+    it('keeps a numeric string when converting it to a number would change it', () => {
+      expect(parseArgsParam('key:007')).toStrictEqual({ key: '007' });
+      expect(parseArgsParam('key:1.0')).toStrictEqual({ key: '1.0' });
+      expect(parseArgsParam('key:9.90')).toStrictEqual({ key: '9.90' });
+      expect(parseArgsParam('key:-0')).toStrictEqual({ key: '-0' });
+      expect(parseArgsParam('key:12345678901234567890')).toStrictEqual({
+        key: '12345678901234567890',
+      });
+      expect(parseArgsParam('key:0')).toStrictEqual({ key: 0 });
+      expect(parseArgsParam('key:0.5')).toStrictEqual({ key: 0.5 });
+      expect(parseArgsParam('key:-10')).toStrictEqual({ key: -10 });
     });
 
     it('also applies to nested object and array values', () => {

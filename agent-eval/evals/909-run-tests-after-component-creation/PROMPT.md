@@ -1,6 +1,6 @@
 Create a new `StatusPill` UI component and Storybook stories.
 
-Before writing stories, call the Storybook MCP tool `get-storybook-story-instructions` and follow its guidance.
+Before writing stories, get Storybook's UI workflow instructions and follow them.
 
 Requirements:
 

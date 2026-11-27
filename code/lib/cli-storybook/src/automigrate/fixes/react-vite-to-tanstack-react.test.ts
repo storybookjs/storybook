@@ -5,11 +5,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 // eslint-disable-next-line depend/ban-dependencies
 import { globby } from 'globby';
 import type { JsPackageManager } from 'storybook/internal/common';
-import { transformImportFiles } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
+
+import { fs, vol } from 'memfs';
 import { writeText } from 'tinyclip';
 
-import type { CheckOptions } from './index.ts';
+import { checkFix, runFix } from '../helpers/fix-test-utils.ts';
+import type { CheckOptions, RunOptions } from '../types.ts';
 import {
   REACT_VITE_PACKAGE,
   TANSTACK_REACT_PACKAGE,
@@ -18,12 +20,8 @@ import {
 
 vi.mock('node:fs/promises', { spy: true });
 vi.mock('storybook/internal/node-logger', { spy: true });
-vi.mock('storybook/internal/common', { spy: true });
 vi.mock('globby', { spy: true });
 vi.mock('tinyclip', { spy: true });
-
-const mockReadFile = vi.mocked(readFile);
-const mockWriteFile = vi.mocked(writeFile);
 
 describe('react-vite-to-tanstack-react', () => {
   const mockPackageManager = {
@@ -36,12 +34,11 @@ describe('react-vite-to-tanstack-react', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    // Reset default behaviours for spied modules so spies don't call through to real impls.
-    mockReadFile.mockResolvedValue('');
-    mockWriteFile.mockResolvedValue(undefined);
+    vol.reset();
+    vi.mocked(readFile).mockImplementation(fs.promises.readFile as typeof readFile);
+    vi.mocked(writeFile).mockImplementation(fs.promises.writeFile as typeof writeFile);
     vi.mocked(globby).mockResolvedValue([]);
     vi.mocked(writeText).mockResolvedValue(undefined);
-    vi.mocked(transformImportFiles).mockResolvedValue([]);
     vi.mocked(logger.step).mockImplementation(() => {});
     vi.mocked(logger.debug).mockImplementation(() => {});
     vi.mocked(logger.warn).mockImplementation(() => {});
@@ -54,14 +51,25 @@ describe('react-vite-to-tanstack-react', () => {
   });
 
   describe('check function', () => {
+    const project = {
+      mainConfigPath: '/project/.storybook/main.ts',
+      configDir: '/project/.storybook',
+      storiesPaths: [],
+    };
+
+    beforeEach(() => {
+      vol.fromJSON({ '/project/.storybook/main.ts': 'export default {};' });
+    });
+
     it('returns null if @storybook/react-vite is not installed', async () => {
       vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({
         '@tanstack/react-router': '^1.0.0',
       });
 
-      const result = await reactViteToTanstackReact.check({
+      const result = await checkFix(reactViteToTanstackReact, {
+        ...project,
         packageManager: mockPackageManager,
-      } as CheckOptions);
+      } as unknown as CheckOptions);
 
       expect(result).toBeNull();
     });
@@ -71,9 +79,10 @@ describe('react-vite-to-tanstack-react', () => {
         [REACT_VITE_PACKAGE]: '^9.0.0',
       });
 
-      const result = await reactViteToTanstackReact.check({
+      const result = await checkFix(reactViteToTanstackReact, {
+        ...project,
         packageManager: mockPackageManager,
-      } as CheckOptions);
+      } as unknown as CheckOptions);
 
       expect(result).toBeNull();
     });
@@ -84,10 +93,11 @@ describe('react-vite-to-tanstack-react', () => {
         '@tanstack/react-router': '^1.0.0',
       });
 
-      const result = await reactViteToTanstackReact.check({
+      const result = await checkFix(reactViteToTanstackReact, {
+        ...project,
         packageManager: mockPackageManager,
         previewConfigPath: undefined,
-      } as CheckOptions);
+      } as unknown as CheckOptions);
 
       expect(result).toEqual({
         hasTanstackRouterDecorator: false,
@@ -100,8 +110,9 @@ describe('react-vite-to-tanstack-react', () => {
         '@tanstack/react-router': '^1.0.0',
       });
 
-      // preview file
-      mockReadFile.mockResolvedValueOnce(`
+      vol.fromJSON({
+        '/project/.storybook/main.ts': 'export default {};',
+        '/project/.storybook/preview.tsx': `
         import { RouterProvider, createMemoryHistory, createRouter } from '@tanstack/react-router';
 
         export const decorators = [
@@ -110,47 +121,63 @@ describe('react-vite-to-tanstack-react', () => {
             return <RouterProvider router={router}><Story /></RouterProvider>;
           },
         ];
-      `);
+      `,
+      });
 
-      const result = await reactViteToTanstackReact.check({
+      const result = await checkFix(reactViteToTanstackReact, {
+        ...project,
         packageManager: mockPackageManager,
         previewConfigPath: '/project/.storybook/preview.tsx',
-      } as CheckOptions);
+      } as unknown as CheckOptions);
 
       expect(result?.hasTanstackRouterDecorator).toBe(true);
     });
 
-    it('detects a tanstack router decorator that lives in a separate config file', async () => {
+    it('looks past an unreadable story for the decorator', async () => {
+      vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({
+        [REACT_VITE_PACKAGE]: '^10.0.0',
+        '@tanstack/react-router': '^1.0.0',
+      });
+      vol.fromJSON({
+        '/project/.storybook/main.ts': 'export default {};',
+        '/project/src/Page.stories.tsx': `
+        import { RouterProvider, createRouter } from '@tanstack/react-router';
+        export default { decorators: [(Story) => <RouterProvider router={createRouter({})} />] };
+      `,
+      });
+
+      const result = await checkFix(reactViteToTanstackReact, {
+        ...project,
+        packageManager: mockPackageManager,
+        storiesPaths: ['/project/src/Missing.stories.tsx', '/project/src/Page.stories.tsx'],
+      } as unknown as CheckOptions);
+
+      expect(result?.hasTanstackRouterDecorator).toBe(true);
+    });
+
+    it('detects a manual tanstack router decorator in a story file', async () => {
       vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({
         [REACT_VITE_PACKAGE]: '^10.0.0',
         '@tanstack/react-router': '^1.0.0',
       });
 
-      vi.mocked(globby).mockResolvedValueOnce([
-        '/project/.storybook/preview.tsx',
-        '/project/.storybook/decorators.tsx',
-      ]);
-
-      // preview.tsx — only imports the decorator, no router markers itself
-      mockReadFile.mockResolvedValueOnce(`
-        import { withRouter } from './decorators';
-        export const decorators = [withRouter];
-      `);
-      // decorators.tsx — the actual router setup lives here
-      mockReadFile.mockResolvedValueOnce(`
+      vol.fromJSON({
+        '/project/.storybook/main.ts': 'export default {};',
+        '/project/src/Page.stories.tsx': `
         import { RouterProvider, createRouter, createMemoryHistory } from '@tanstack/react-router';
 
-        export const withRouter = (Story) => {
-          const router = createRouter({ history: createMemoryHistory() });
-          return <RouterProvider router={router}><Story /></RouterProvider>;
+        export default {
+          decorators: [
+            (Story) => <RouterProvider router={createRouter({ history: createMemoryHistory() })} />,
+          ],
         };
-      `);
+      `,
+      });
 
-      const result = await reactViteToTanstackReact.check({
+      const result = await checkFix(reactViteToTanstackReact, {
+        ...project,
         packageManager: mockPackageManager,
-        previewConfigPath: '/project/.storybook/preview.tsx',
-        configDir: '/project/.storybook',
-        storiesPaths: [],
+        storiesPaths: ['/project/src/Page.stories.tsx'],
       } as unknown as CheckOptions);
 
       expect(result?.hasTanstackRouterDecorator).toBe(true);
@@ -166,95 +193,72 @@ describe('react-vite-to-tanstack-react', () => {
   });
 
   describe('run function', () => {
-    it('updates dependencies and rewrites the framework string in main config', async () => {
-      mockReadFile.mockResolvedValueOnce(`
-        import { defineMain } from '${REACT_VITE_PACKAGE}/node';
-        export default defineMain({ framework: '${REACT_VITE_PACKAGE}' });
-      `);
+    const runOptions = {
+      result: { hasTanstackRouterDecorator: false },
+      packageManager: mockPackageManager,
+      mainConfigPath: '/project/.storybook/main.ts',
+      previewConfigPath: '/project/.storybook/preview.tsx',
+      storiesPaths: ['/project/src/Button.stories.tsx'],
+      configDir: '/project/.storybook',
+      storybookVersion: '10.1.0',
+    } as Omit<RunOptions<{ hasTanstackRouterDecorator: boolean }>, 'files'>;
 
-      await reactViteToTanstackReact.run!({
-        result: {
-          hasTanstackRouterDecorator: false,
-        },
-        dryRun: false,
-        packageManager: mockPackageManager,
-        mainConfigPath: '/project/.storybook/main.ts',
-        previewConfigPath: '/project/.storybook/preview.tsx',
-        storiesPaths: [],
-        configDir: '.storybook',
-        storybookVersion: '10.1.0',
-      } as any);
+    beforeEach(() => {
+      vol.fromJSON({
+        '/project/.storybook/main.ts': `import { defineMain } from '${REACT_VITE_PACKAGE}/node';\nexport default defineMain({ framework: '${REACT_VITE_PACKAGE}' });`,
+        '/project/.storybook/preview.tsx': `import { definePreview } from '${REACT_VITE_PACKAGE}';`,
+        '/project/src/Button.stories.tsx': `import type { Meta } from '${REACT_VITE_PACKAGE}';`,
+      });
+    });
+
+    it('updates dependencies and rewrites the framework package in main config, preview, and stories', async () => {
+      await runFix(reactViteToTanstackReact, runOptions);
 
       expect(mockPackageManager.removeDependencies).toHaveBeenCalledWith([REACT_VITE_PACKAGE]);
       expect(mockPackageManager.addDependencies).toHaveBeenCalledWith(
         { type: 'devDependencies', skipInstall: true },
         [`${TANSTACK_REACT_PACKAGE}@10.1.0`]
       );
-      expect(mockWriteFile).toHaveBeenCalledWith(
-        '/project/.storybook/main.ts',
-        expect.stringContaining(TANSTACK_REACT_PACKAGE)
-      );
-      // Ensure no leftover @storybook/react-vite reference (handles CSF factories /node export too)
-      const writtenContent = mockWriteFile.mock.calls[0]?.[1] as string;
-      expect(writtenContent).not.toContain(REACT_VITE_PACKAGE);
-      expect(writtenContent).toContain(`${TANSTACK_REACT_PACKAGE}/node`);
+      expect(vol.toJSON()).toEqual({
+        '/project/.storybook/main.ts': `import { defineMain } from '${TANSTACK_REACT_PACKAGE}/node';\nexport default defineMain({ framework: '${TANSTACK_REACT_PACKAGE}' });`,
+        '/project/.storybook/preview.tsx': `import { definePreview } from '${TANSTACK_REACT_PACKAGE}';`,
+        '/project/src/Button.stories.tsx': `import type { Meta } from '${TANSTACK_REACT_PACKAGE}';`,
+      });
     });
 
-    it('skips writes in dry run mode', async () => {
-      await reactViteToTanstackReact.run!({
-        result: {
-          hasTanstackRouterDecorator: false,
-        },
-        dryRun: true,
-        packageManager: mockPackageManager,
-        mainConfigPath: '/project/.storybook/main.ts',
-        previewConfigPath: '/project/.storybook/preview.tsx',
-        storiesPaths: [],
-        configDir: '.storybook',
-        storybookVersion: '10.1.0',
-      } as any);
+    it('fails before changing dependencies when the main config cannot be migrated', async () => {
+      vol.unlinkSync('/project/.storybook/main.ts');
 
+      const failures = await runFix(reactViteToTanstackReact, runOptions);
+
+      expect(failures).toEqual([
+        {
+          file: '/project/.storybook/main.ts',
+          kind: 'main',
+          message: expect.stringContaining('ENOENT'),
+        },
+      ]);
+      expect(vol.toJSON()['/project/src/Button.stories.tsx']).not.toContain(TANSTACK_REACT_PACKAGE);
       expect(mockPackageManager.removeDependencies).not.toHaveBeenCalled();
-      expect(mockPackageManager.addDependencies).not.toHaveBeenCalled();
     });
 
     it('asks the user for an AI prompt when a decorator is detected', async () => {
       vi.mocked(prompt.confirm).mockResolvedValueOnce(true);
 
-      mockReadFile.mockResolvedValueOnce('export default {};');
-
-      await reactViteToTanstackReact.run!({
-        result: {
-          hasTanstackRouterDecorator: true,
-        },
-        dryRun: false,
-        packageManager: mockPackageManager,
-        mainConfigPath: '/project/.storybook/main.ts',
-        previewConfigPath: '/project/.storybook/preview.tsx',
-        storiesPaths: [],
-        configDir: '.storybook',
-        storybookVersion: '10.1.0',
-      } as any);
+      await runFix(reactViteToTanstackReact, {
+        ...runOptions,
+        result: { hasTanstackRouterDecorator: true },
+      });
 
       expect(prompt.confirm).toHaveBeenCalled();
     });
 
     it('does not prompt for AI when --yes is passed', async () => {
-      mockReadFile.mockResolvedValueOnce('export default {};');
-
-      await reactViteToTanstackReact.run!({
-        result: {
-          hasTanstackRouterDecorator: true,
-        },
-        dryRun: false,
-        packageManager: mockPackageManager,
-        mainConfigPath: '/project/.storybook/main.ts',
-        previewConfigPath: '/project/.storybook/preview.tsx',
-        storiesPaths: [],
-        configDir: '.storybook',
-        storybookVersion: '10.1.0',
+      await runFix(reactViteToTanstackReact, {
+        ...runOptions,
+        result: { hasTanstackRouterDecorator: true },
         yes: true,
-      } as any);
+      });
 
       expect(prompt.confirm).not.toHaveBeenCalled();
     });

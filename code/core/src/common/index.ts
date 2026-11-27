@@ -4,13 +4,19 @@ import versions from './versions.ts';
 
 export { jsTsSourceExtensions } from '../shared/constants/extensions.ts';
 export * from './presets.ts';
+export * from './utils/base-path.ts';
 export * from './utils/cache.ts';
 export * from './utils/cli.ts';
 export * from './utils/check-addon-order.ts';
 export * from './utils/envs.ts';
+export * from './utils/blocked-network.ts';
+export * from './utils/find-storybook-package-root.ts';
 export * from './utils/common-glob-options.ts';
+export * from './utils/deep-merge.ts';
 export * from './utils/framework.ts';
 export * from './utils/get-builder-options.ts';
+export * from './utils/get-pkg-pr-new-package-specifier.ts';
+export * from './utils/resolve-storybook-version-specifier.ts';
 export * from './utils/get-framework-name.ts';
 export * from './utils/get-renderer-name.ts';
 export * from './utils/get-storybook-configuration.ts';
@@ -30,7 +36,15 @@ export * from './utils/normalize-stories.ts';
 export * from './utils/paths.ts';
 export * from './utils/read-dependency-manifest.ts';
 export * from './utils/readTemplate.ts';
+export {
+  type ExportOrigin,
+  type ExportReader,
+  followBinding,
+  followExport,
+} from './utils/follow-export.ts';
+export * from './utils/component-path-from-story.ts';
 export * from './utils/resolve-meta-component.ts';
+export * from './utils/subcomponents.ts';
 export * from './utils/remove.ts';
 export * from './utils/resolve-path-in-sb-cache.ts';
 export * from './utils/symlinks.ts';
@@ -38,13 +52,16 @@ export * from './utils/template.ts';
 export * from './utils/tsconfig.ts';
 export * from './utils/validate-config.ts';
 export * from './utils/validate-configuration-files.ts';
-export * from './utils/satisfies.ts';
 export * from './utils/babel.ts';
 export * from './utils/formatter.ts';
 export * from './utils/get-story-id.ts';
 export * from './utils/component-id.ts';
 export * from './utils/select-component-entry.ts';
 export * from './utils/lazy-docgen-middleware.ts';
+export * from './utils/typescript-for-docgen.ts';
+export * from './utils/typescript-7-1-stable.ts';
+export * from './utils/typescript-7-react-docgen-fallback.ts';
+export * from './utils/builder-docgen-packages.ts';
 export * from './utils/posix.ts';
 export * from './utils/sync-main-preview-addons.ts';
 export * from './utils/setup-addon-in-config.ts';
@@ -58,6 +75,7 @@ export * from './utils/get-addon-names.ts';
 export * from './utils/utils.ts';
 export * from './utils/command.ts';
 export * from './utils/file-lock.ts';
+export * from './utils/process-ancestry.ts';
 export * from './node-version.ts';
 
 export { versions };

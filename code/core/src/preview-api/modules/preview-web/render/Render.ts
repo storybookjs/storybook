@@ -18,7 +18,7 @@ export interface Render<TRenderer extends Renderer> {
   isPreparing: () => boolean;
   isEqual: (other: Render<TRenderer>) => boolean;
   disableKeyListeners: boolean;
-  teardown?: (options: { viewModeChanged: boolean }) => Promise<void>;
+  teardown?: (options: { viewModeChanged: boolean; keepRenderedDom?: boolean }) => Promise<void>;
   torndown: boolean;
   renderToElement: (
     canvasElement: TRenderer['canvasElement'],

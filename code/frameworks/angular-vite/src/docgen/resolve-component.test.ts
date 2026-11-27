@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { ResolvedMetaComponent } from 'storybook/internal/common';
 import { createMetaComponentResolver } from 'storybook/internal/common';
-import { resolveStoryComponent } from './resolve-component.ts';
+import { resolveStoryComponents } from './resolve-component.ts';
 
 const resolveMetaComponent = createMetaComponentResolver();
 
@@ -27,6 +27,7 @@ describe('resolveMetaComponent', () => {
       {
         localName: 'ButtonComponent',
         importId: './button.component',
+        importer: storyPath,
         exportName: 'ButtonComponent',
         path: join(fixtures, 'button.component.ts'),
       },
@@ -39,6 +40,7 @@ describe('resolveMetaComponent', () => {
       {
         localName: 'Btn',
         importId: './button.component',
+        importer: storyPath,
         exportName: 'ButtonComponent',
         path: join(fixtures, 'button.component.ts'),
       },
@@ -51,6 +53,7 @@ describe('resolveMetaComponent', () => {
       {
         localName: 'ButtonComponent',
         importId: './button.component',
+        importer: storyPath,
         exportName: 'ButtonComponent',
         path: join(fixtures, 'button.component.ts'),
       },
@@ -62,6 +65,7 @@ describe('resolveMetaComponent', () => {
       {
         localName: 'Button',
         importId: './default-button.component',
+        importer: storyPath,
         exportName: 'default',
         path: join(fixtures, 'default-button.component.ts'),
       },
@@ -75,6 +79,7 @@ describe('resolveMetaComponent', () => {
       {
         localName: 'AliasedButtonComponent',
         importId: '@ui/aliased-button.component',
+        importer: storyPath,
         exportName: 'AliasedButtonComponent',
         path: join(fixtures, 'aliased', 'aliased-button.component.ts'),
       },
@@ -94,8 +99,36 @@ describe('resolveMetaComponent', () => {
       {
         localName: 'ButtonComponent',
         importId: './nope.component',
+        importer: storyPath,
         exportName: 'ButtonComponent',
         path: undefined,
+      },
+    ],
+    [
+      // A namespace import's export is the same import written another way.
+      'an export read off a namespace import',
+      `import * as Buttons from './button.component';
+       export default { component: Buttons.ButtonComponent };`,
+      {
+        localName: 'ButtonComponent',
+        importId: './button.component',
+        importer: storyPath,
+        exportName: 'ButtonComponent',
+        path: join(fixtures, 'button.component.ts'),
+      },
+    ],
+    [
+      // The shape vmware-clarity/ng-clarity writes: the meta is composed from a config object a
+      // sibling module owns.
+      'a component named by a config object another module owns',
+      `import * as internal from './button.internal';
+       export default { component: internal.config.component };`,
+      {
+        localName: 'ButtonComponent',
+        importId: './button.component',
+        importer: join(fixtures, 'button.internal.ts'),
+        exportName: 'ButtonComponent',
+        path: join(fixtures, 'button.component.ts'),
       },
     ],
   ];
@@ -104,59 +137,66 @@ describe('resolveMetaComponent', () => {
     expect(resolveMetaComponent(parse(source), storyPath)).toEqual({ component: expected });
   });
 
-  const unresolvedCases: [name: string, source: string, reason: string][] = [
+  const unresolvedCases: [name: string, source: string, expected: object][] = [
     [
       'a file that declares no meta.component',
       `export default { title: 'Button' };`,
-      'no-meta-component',
+      { reason: 'no-meta-component' },
     ],
     [
       'a type-only import, which binds no class Compodoc could document',
       `import type { ButtonComponent } from './button.component';
        export default { component: ButtonComponent };`,
-      'no-component-import',
+      { reason: 'no-component-import' },
     ],
     [
-      'a namespace import',
+      'a namespace import, whose module object is not a class',
       `import * as ButtonComponent from './button.component';
        export default { component: ButtonComponent };`,
-      'no-component-import',
+      { reason: 'no-component-import' },
     ],
     [
-      // Matching the printed source text instead would resolve to a story-local `ButtonComponent`.
-      'a member expression, which names no binding to follow',
-      `import * as Buttons from './button.component';
-       export default { component: Buttons.ButtonComponent };`,
-      'no-meta-component',
-    ],
-    [
-      'a call expression, which static analysis cannot follow to a class',
+      'a call expression, which only running the story could evaluate',
       `import { makeButton } from './button.component';
        export default { component: makeButton() };`,
-      'no-meta-component',
+      { reason: 'unreadable-component-expression', expression: 'makeButton()' },
+    ],
+    [
+      'a property access whose module does not resolve',
+      `import * as internal from './nope.internal';
+       export default { component: internal.config.component };`,
+      {
+        reason: 'unreadable-component-expression',
+        expression: 'internal.config.component',
+      },
     ],
   ];
 
-  it.each(unresolvedCases)('reports %s', (_name, source, reason) => {
-    expect(resolveMetaComponent(parse(source), storyPath)).toEqual({ reason });
+  it.each(unresolvedCases)('reports %s', (_name, source, expected) => {
+    expect(resolveMetaComponent(parse(source), storyPath)).toEqual(expected);
   });
 });
 
-describe('resolveStoryComponent', () => {
+describe('resolveStoryComponents', () => {
   it('parses the story file off disk', () => {
-    expect(resolveStoryComponent(storyPath)).toEqual({
+    expect(resolveStoryComponents(storyPath)).toEqual({
       component: {
-        localName: 'ButtonComponent',
-        importId: './button.component',
-        exportName: 'ButtonComponent',
-        path: join(fixtures, 'button.component.ts'),
+        component: {
+          localName: 'ButtonComponent',
+          importId: './button.component',
+          importer: storyPath,
+          exportName: 'ButtonComponent',
+          path: join(fixtures, 'button.component.ts'),
+        },
       },
+      subcomponents: [],
     });
   });
 
   it('reports no component for a file that cannot be read', () => {
-    expect(resolveStoryComponent(join(fixtures, 'missing.stories.ts'))).toEqual({
-      reason: 'no-meta-component',
+    expect(resolveStoryComponents(join(fixtures, 'missing.stories.ts'))).toEqual({
+      component: { reason: 'no-meta-component' },
+      subcomponents: [],
     });
   });
 });

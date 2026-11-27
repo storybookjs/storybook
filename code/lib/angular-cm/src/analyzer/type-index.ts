@@ -1,4 +1,9 @@
 import type * as tsModule from 'typescript';
+import type {
+  DocgenNodeRewriter,
+  DocgenTypeChecker,
+  DocgenTypeScript,
+} from '@storybook/component-meta-typescript';
 
 import type { EnumType, EnumTypeChild, TypeAlias } from '../types.ts';
 import type { AngularFileMeta } from '../types.ts';
@@ -10,6 +15,8 @@ export const stripImportQualifiers = (text: string): string =>
   text.replace(/import\("[^"]*"\)\./g, '');
 
 const collapseWhitespace = (text: string): string => text.replace(/\s+/g, ' ').trim();
+
+const printedWithoutSubstitution = new WeakMap<tsModule.TypeNode, string>();
 
 /**
  * Renders type text and records the named types that text mentions.
@@ -24,8 +31,8 @@ export class TypeIndex {
   private readonly aliasCycleGuard = new Set<string>();
 
   constructor(
-    private readonly ts: typeof tsModule,
-    private readonly checker: tsModule.TypeChecker
+    private readonly ts: DocgenTypeScript,
+    private readonly checker: DocgenTypeChecker
   ) {}
 
   /**
@@ -103,9 +110,100 @@ export class TypeIndex {
     return collapseWhitespace(typeNode.getText());
   }
 
+  /** Render a checker type without losing aliases or truncating its spelling. */
+  renderCheckerType(type: tsModule.Type, node: tsModule.Node): string {
+    this.addFromType(type);
+    return stripImportQualifiers(
+      this.checker.typeToString(type, node, this.ts.TypeFormatFlags.NoTruncation)
+    );
+  }
+
+  /** Preserve a union, but widen a lone literal before rendering a value-facing type. */
+  renderValueType(type: tsModule.Type, node: tsModule.Node): string {
+    const widened = type.isUnion() ? type : this.checker.getBaseTypeOfLiteralType(type);
+    return this.renderCheckerType(widened, node);
+  }
+
+  /**
+   * Render a type node after substituting class type parameters by symbol identity.
+   *
+   * A source-level transform type is not represented by the class property's checker type, so
+   * inherited decorator transforms take this path instead. Symbol identity leaves method-local
+   * binders with the same spelling untouched.
+   */
+  renderInstantiated(
+    typeNode: tsModule.TypeNode,
+    substitutions: ReadonlyMap<tsModule.Symbol, tsModule.TypeNode>
+  ): string {
+    if (substitutions.size === 0) {
+      return this.render(typeNode);
+    }
+
+    this.addFromTypeNode(typeNode);
+    for (const replacement of substitutions.values()) {
+      this.addFromTypeNode(replacement);
+    }
+
+    if (!this.referencesAny(typeNode, substitutions)) {
+      let printed = printedWithoutSubstitution.get(typeNode);
+      if (printed === undefined) {
+        printed = this.printInstantiated(typeNode, substitutions);
+        printedWithoutSubstitution.set(typeNode, printed);
+      }
+      return printed;
+    }
+    return this.printInstantiated(typeNode, substitutions);
+  }
+
+  private referencesAny(
+    node: tsModule.Node,
+    substitutions: ReadonlyMap<tsModule.Symbol, tsModule.TypeNode>
+  ): boolean {
+    if (this.ts.isTypeReferenceNode(node) && this.ts.isIdentifier(node.typeName)) {
+      const symbol = this.checker.getSymbolAtLocation(node.typeName);
+      if (symbol && substitutions.has(symbol)) {
+        return true;
+      }
+    }
+    return !!this.ts.forEachChild(
+      node,
+      (child) => this.referencesAny(child, substitutions) || undefined
+    );
+  }
+
+  private printInstantiated(
+    typeNode: tsModule.TypeNode,
+    substitutions: ReadonlyMap<tsModule.Symbol, tsModule.TypeNode>
+  ): string {
+    const resolving = new Set<tsModule.Symbol>();
+    const visit: DocgenNodeRewriter = (node, visitChildren) => {
+      if (this.ts.isTypeReferenceNode(node) && this.ts.isIdentifier(node.typeName)) {
+        const symbol = this.checker.getSymbolAtLocation(node.typeName);
+        const replacement = symbol && substitutions.get(symbol);
+        if (symbol && replacement && !resolving.has(symbol)) {
+          resolving.add(symbol);
+          const resolved = visit(replacement, visitChildren);
+          resolving.delete(symbol);
+          return resolved;
+        }
+      }
+      if (
+        this.ts.isLiteralTypeNode(node) &&
+        (this.ts.isStringLiteral(node.literal) ||
+          this.ts.isNoSubstitutionTemplateLiteral(node.literal))
+      ) {
+        return this.ts.factory.createLiteralTypeNode(
+          this.ts.factory.createStringLiteral(node.literal.text)
+        );
+      }
+      return visitChildren(node);
+    };
+    return collapseWhitespace(this.ts.printNode(typeNode, visit));
+  }
+
   /** Widen and render a declaration's inferred type, as the legacy pipeline did (`'v1'` to `string`). */
   infer(node: tsModule.NamedDeclaration): string | undefined {
-    const { checker, ts } = this;
+    const { checker } = this;
     if (!node.name) {
       return undefined;
     }
@@ -114,8 +212,7 @@ export class TypeIndex {
       return undefined;
     }
     const type = checker.getBaseTypeOfLiteralType(checker.getTypeOfSymbolAtLocation(symbol, node));
-    this.addFromType(type);
-    return stripImportQualifiers(checker.typeToString(type, node, ts.TypeFormatFlags.NoTruncation));
+    return this.renderCheckerType(type, node);
   }
 
   // Checker-derived types have no TypeNode to walk, so the type's own symbol and each union
@@ -133,6 +230,19 @@ export class TypeIndex {
         feed(constituent);
       }
     }
+  }
+
+  private addFromTypeNode(typeNode: tsModule.TypeNode): void {
+    const visit = (node: tsModule.Node): void => {
+      if (this.ts.isTypeReferenceNode(node)) {
+        const symbol = this.checker.getSymbolAtLocation(node.typeName);
+        if (symbol) {
+          this.addFromSymbol(symbol, node.typeName.getText());
+        }
+      }
+      this.ts.forEachChild(node, visit);
+    };
+    visit(typeNode);
   }
 
   addDeclaration(declaration: tsModule.Declaration, referencedAs?: string): void {
@@ -192,7 +302,10 @@ export class TypeIndex {
       return;
     }
     this.aliasCycleGuard.add(name);
-    const rawtype = this.render(declaration.type);
+    const rendered = this.render(declaration.type);
+    const rawtype = this.enumResolvableAsWritten(declaration.type)
+      ? rendered
+      : (this.literalUnionFromChecker(declaration.type) ?? rendered);
     this.aliasCycleGuard.delete(name);
     this.typealiases.set(name, {
       name,
@@ -200,8 +313,51 @@ export class TypeIndex {
       subtype: 'typealias',
       rawtype,
       file: declaration.getSourceFile().fileName,
-      kind: declaration.type.kind,
     });
+  }
+
+  // What the extractor's enum path can resolve without help: it splits `rawtype` on `|` and
+  // JSON-parses each member, recursing only into a whole-string alias name.
+  private enumResolvableAsWritten(typeNode: tsModule.TypeNode): boolean {
+    const { ts } = this;
+    if (ts.isLiteralTypeNode(typeNode)) {
+      return true;
+    }
+    if (ts.isTypeReferenceNode(typeNode)) {
+      return !typeNode.typeArguments?.length;
+    }
+    if (ts.isUnionTypeNode(typeNode)) {
+      return typeNode.types.every(
+        (member) => ts.isLiteralTypeNode(member) || member.kind === ts.SyntaxKind.UndefinedKeyword
+      );
+    }
+    return false;
+  }
+
+  private literalUnionFromChecker(typeNode: tsModule.TypeNode): string | undefined {
+    const { checker, ts } = this;
+    const type = checker.getTypeAtLocation(typeNode);
+    if (!type.isUnion()) {
+      return undefined;
+    }
+    const literal =
+      ts.TypeFlags.StringLiteral |
+      ts.TypeFlags.NumberLiteral |
+      ts.TypeFlags.BooleanLiteral |
+      ts.TypeFlags.Undefined |
+      ts.TypeFlags.Null;
+    const allLiteral = type.types.every(
+      (member) => member.flags & literal && !(member.flags & ts.TypeFlags.EnumLiteral)
+    );
+    if (!allLiteral) {
+      return undefined;
+    }
+    // InTypeAlias stops the printer from answering with the alias's own name.
+    return checker.typeToString(
+      type,
+      typeNode,
+      ts.TypeFormatFlags.NoTruncation | ts.TypeFormatFlags.InTypeAlias
+    );
   }
 
   // Numeric initializers stay numbers, so a `0` member is falsy and correctly disables the

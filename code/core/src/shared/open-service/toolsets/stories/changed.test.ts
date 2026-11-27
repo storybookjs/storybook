@@ -45,6 +45,15 @@ const index: StoryIndex = {
       importPath: './src/Card.stories.tsx',
       tags: ['story'],
     },
+    'card--docs': {
+      type: 'docs',
+      id: 'card--docs',
+      name: 'Docs',
+      title: 'Card',
+      importPath: './src/Card.stories.tsx',
+      storiesImports: [],
+      tags: ['autodocs'],
+    },
   },
 };
 
@@ -80,6 +89,22 @@ describe('getChangedStories', () => {
 
     expect(result.stories.map((s) => s.storyId)).toEqual(['button--primary']);
     expect(result.counts).toEqual({ new: 1, modified: 0, affected: 0 });
+  });
+
+  it('leaves out docs entries, which cannot be reviewed', () => {
+    const statuses: StatusesByStoryIdAndTypeId = {
+      'card--basic': {
+        [CHANGE_DETECTION_STATUS_TYPE_ID]: status('card--basic', 'status-value:modified'),
+      },
+      'card--docs': {
+        [CHANGE_DETECTION_STATUS_TYPE_ID]: status('card--docs', 'status-value:modified'),
+      },
+    };
+
+    const result = getChangedStories({ statuses, index });
+
+    expect(result.stories.map((s) => s.storyId)).toEqual(['card--basic']);
+    expect(result.counts).toEqual({ new: 0, modified: 1, affected: 0 });
   });
 
   it('sorts by priority new → modified → affected, then storyId', () => {

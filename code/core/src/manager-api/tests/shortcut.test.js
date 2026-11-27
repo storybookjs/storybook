@@ -1,11 +1,8 @@
 // @vitest-environment happy-dom
 import { describe, expect, it } from 'vitest';
 
-import { global } from '@storybook/global';
-
 import { eventToShortcut, keyToSymbol } from '../lib/shortcut';
 
-const { KeyboardEvent } = global;
 const ev = (attr) => new KeyboardEvent('keydown', { ...attr });
 
 describe('eventToShortcut', () => {
@@ -82,9 +79,9 @@ describe('keyToSymbol', () => {
     const result = keyToSymbol(' ');
     expect(result).toEqual('SPACE');
   });
-  it('escape returns esc', () => {
+  it('escape returns ESCAPE', () => {
     const result = keyToSymbol('escape');
-    expect(result).toEqual('');
+    expect(result).toEqual('ESCAPE');
   });
   it('ArrowUp returns ↑​​​', () => {
     const result = keyToSymbol('ArrowUp');

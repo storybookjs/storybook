@@ -1,0 +1,5 @@
+<script>
+  import UnionLiteral from './UnionLiteral.svelte';
+</script>
+
+<UnionLiteral size="large" tone="warn" level={3} mode={false} />

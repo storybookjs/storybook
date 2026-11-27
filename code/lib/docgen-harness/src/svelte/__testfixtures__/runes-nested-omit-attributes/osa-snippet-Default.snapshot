@@ -1,0 +1,5 @@
+<script>
+  import Checkbox from './Checkbox.svelte';
+</script>
+
+<Checkbox checked disabled />

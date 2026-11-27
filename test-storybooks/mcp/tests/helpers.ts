@@ -1,4 +1,5 @@
 import { x } from 'tinyexec';
+import { mkdir, open } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 
 export const STORYBOOK_DIR = fileURLToPath(new URL('..', import.meta.url));
@@ -84,17 +85,25 @@ export async function killPort(port: number): Promise<void> {
 	}
 }
 
-export function startStorybook(
+const STORYBOOK_LOG_DIR = new URL('../storybook-logs/', import.meta.url);
+
+export async function startStorybook(
 	configDir: string,
 	port: number,
 	env?: Record<string, string>,
-): ReturnType<typeof x> {
-	return x('yarn', ['storybook', '--config-dir', configDir, '--port', String(port)], {
+): Promise<{ storybookProcess: ReturnType<typeof x> }> {
+	await mkdir(STORYBOOK_LOG_DIR, { recursive: true });
+	const log = await open(new URL(`${configDir.replace(/^\./, '')}-${port}.log`, STORYBOOK_LOG_DIR), 'w');
+	const storybookProcess = x('yarn', ['storybook', '--config-dir', configDir, '--port', String(port)], {
 		nodeOptions: {
 			cwd: STORYBOOK_DIR,
+			stdio: ['pipe', log.fd, log.fd],
 			...(env ? { env: { ...process.env, ...env } } : {}),
 		},
 	});
+	await log.close();
+	// Wrapped because tinyexec's result is a thenable that resolves when the process exits.
+	return { storybookProcess };
 }
 
 export async function stopStorybook(storybookProcess: ReturnType<typeof x> | null): Promise<void> {

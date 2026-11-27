@@ -1,5 +1,5 @@
 import type { ComponentProps, FunctionComponent } from 'react';
-import React from 'react';
+import React, { useMemo } from 'react';
 
 import type { SupportedLanguage, SyntaxHighlighterProps } from 'storybook/internal/components';
 import { SyntaxHighlighter } from 'storybook/internal/components';
@@ -11,9 +11,10 @@ import {
   styled,
   themes,
   useTheme,
-} from 'storybook/theming';
+} from 'storybook/theming/emotion';
 
 import { EmptyBlock } from './EmptyBlock';
+import { SnippetWarning } from './SnippetWarning';
 
 const StyledSyntaxHighlighter: React.FunctionComponent<SyntaxHighlighterProps> = styled(
   SyntaxHighlighter
@@ -52,7 +53,24 @@ export interface SourceCodeProps {
 export interface SourceProps extends SourceCodeProps {
   isLoading?: boolean;
   error?: SourceError;
+  /** Why the snippet is an incomplete example, when it is one; see `StoryDoc.warning`. */
+  warning?: string;
 }
+
+/**
+ * Top-right rather than bottom-right: the copy action bar already owns the bottom-right corner of a
+ * copyable block.
+ */
+const PositionedSnippetWarning = styled(SnippetWarning)({
+  position: 'absolute',
+  top: 4,
+  right: 4,
+  zIndex: 1,
+});
+
+const SourceWrapper = styled.div({
+  position: 'relative',
+});
 
 const SourceSkeletonWrapper = styled.div(({ theme }) => ({
   background: theme.background.content,
@@ -94,9 +112,21 @@ const Source: FunctionComponent<SourceProps> = ({
   dark,
   format = true,
   copyable = true,
+  warning,
   ...rest
 }) => {
   const { typography } = useTheme();
+  // A theme object made on every render would re-render the whole highlighter through the theme
+  // context.
+  const snippetTheme = useMemo(
+    () =>
+      convert({
+        ...(dark ? themes.dark : themes.light),
+        fontCode: typography.fonts.mono,
+        fontBase: typography.fonts.base,
+      }),
+    [dark, typography.fonts.base, typography.fonts.mono]
+  );
   if (isLoading) {
     return <SourceSkeleton />;
   }
@@ -104,7 +134,7 @@ const Source: FunctionComponent<SourceProps> = ({
     return <EmptyBlock>{error}</EmptyBlock>;
   }
 
-  const syntaxHighlighter = (
+  const highlighter = (
     <StyledSyntaxHighlighter
       bordered
       copyable={copyable}
@@ -116,21 +146,19 @@ const Source: FunctionComponent<SourceProps> = ({
       {code}
     </StyledSyntaxHighlighter>
   );
+
+  const syntaxHighlighter = warning ? (
+    <SourceWrapper>
+      {highlighter}
+      <PositionedSnippetWarning warning={warning} />
+    </SourceWrapper>
+  ) : (
+    highlighter
+  );
   if (typeof dark === 'undefined') {
     return syntaxHighlighter;
   }
-  const overrideTheme = dark ? themes.dark : themes.light;
-  return (
-    <ThemeProvider
-      theme={convert({
-        ...overrideTheme,
-        fontCode: typography.fonts.mono,
-        fontBase: typography.fonts.base,
-      })}
-    >
-      {syntaxHighlighter}
-    </ThemeProvider>
-  );
+  return <ThemeProvider theme={snippetTheme}>{syntaxHighlighter}</ThemeProvider>;
 };
 
 export { Source, StyledSyntaxHighlighter };

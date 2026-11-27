@@ -21,6 +21,6 @@ export const Primary: Story = {
     setup() {
       return { args };
     },
-    template: '<TemplateUnsupportedPanel v-if="args.hidden" v-bind="args" />',
+    template: '<TemplateUnsupportedPanel v-bind="{ ...args }" />',
   }),
 };

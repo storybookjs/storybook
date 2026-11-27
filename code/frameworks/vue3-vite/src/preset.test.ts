@@ -1,5 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import {
+  getTypeScriptForDocgenError,
+  isDocgenServerDisabledInMainConfig,
+} from 'storybook/internal/common';
+import { deprecate } from 'storybook/internal/node-logger';
+import { TypeScriptWithoutCompilerApiError } from 'storybook/internal/server-errors';
+
 import type { Options } from 'storybook/internal/types';
 
 import { vueComponentMeta } from './plugins/vue-component-meta.ts';
@@ -13,7 +20,12 @@ vi.mock('./plugins/vue-template.ts', { spy: true });
 vi.mock('./plugins/vue-component-meta.ts', { spy: true });
 vi.mock('./plugins/vue-docgen.ts', { spy: true });
 
+vi.mock('storybook/internal/node-logger', { spy: true });
+vi.mock('storybook/internal/common', { spy: true });
+
 beforeEach(() => {
+  vi.mocked(deprecate).mockImplementation(() => {});
+  vi.mocked(isDocgenServerDisabledInMainConfig).mockResolvedValue(true);
   vi.mocked(templateCompilation).mockResolvedValue({ name: 'template' });
   vi.mocked(vueComponentMeta).mockResolvedValue({ name: 'vue-component-meta' });
   vi.mocked(vueDocgen).mockResolvedValue({ name: 'vue-docgen-api' });
@@ -48,27 +60,70 @@ describe('viteFinal', () => {
     expect(await pluginNames(docgen)).toEqual(['template', expected]);
   });
 
-  // The service extracts the same metadata, so leaving the plugin on would compile every component
-  // twice and put a `__docgenInfo` in the preview bundle that nothing reads.
-  it('omits the vue-component-meta plugin when the docgen service is on', async () => {
-    expect(await pluginNames('vue-component-meta', { experimentalDocgenServer: true })).toEqual([
-      'template',
-    ]);
+  it('uses vue-docgen-api instead of vue-component-meta when typescript is unusable', async () => {
+    vi.mocked(getTypeScriptForDocgenError).mockReturnValueOnce(
+      new TypeScriptWithoutCompilerApiError({ version: '7.0.2' })
+    );
+    expect(await pluginNames('vue-component-meta')).toEqual(['template', 'vue-docgen-api']);
+    expect(vueComponentMeta).not.toHaveBeenCalled();
   });
 
-  // vue-docgen-api has no worker-side extractor, so the feature flag must not strip its plugin —
-  // that would leave these projects with no docgen at all.
-  it.each(['vue-docgen-api' as const, undefined])(
-    'keeps the docgen plugin for docgen: %s even when the docgen service is on',
+  it.each(['vue-component-meta' as const, 'vue-docgen-api' as const, undefined, false as const])(
+    'omits the legacy docgen plugin for docgen: %s when the server is on',
     async (docgen) => {
-      expect(await pluginNames(docgen, { experimentalDocgenServer: true })).toEqual([
-        'template',
-        'vue-docgen-api',
-      ]);
+      expect(await pluginNames(docgen, { docgenServer: true })).toEqual(['template']);
     }
   );
 
   it('keeps template compilation when docgen is disabled', async () => {
     expect(await pluginNames(false)).toEqual(['template']);
+  });
+
+  it('runs no builder docgen and stays quiet in a test build, which turns the server off', async () => {
+    const { viteFinal } = await import('./preset.ts');
+    const options = {
+      ...optionsWith(undefined, { docgenServer: false }),
+      build: { test: { disableDocgen: true } },
+    } as Options;
+
+    const config = await viteFinal!({}, options);
+
+    expect((config.plugins ?? []).map((plugin) => (plugin as { name: string }).name)).toEqual([
+      'template',
+    ]);
+    expect(vi.mocked(deprecate)).not.toHaveBeenCalled();
+  });
+});
+
+describe('builder docgen deprecation', () => {
+  it.each([undefined, true as const, 'vue-docgen-api' as const, 'vue-component-meta' as const])(
+    'warns for docgen: %s',
+    async (docgen) => {
+      await pluginNames(docgen);
+      expect(vi.mocked(deprecate).mock.calls.map(([message]) => message)).toMatchInlineSnapshot(`
+        [
+          "Builder docgen (the \`docgen\` option of \`@storybook/vue3-vite\`, with \`vue-docgen-api\` or \`vue-component-meta\`) is deprecated and will be removed in Storybook 12. It runs because your Storybook main config sets \`features.docgenServer: false\`. Remove that setting to use server-side docgen.",
+        ]
+      `);
+    }
+  );
+
+  it.each([
+    [false as const, {}],
+    [undefined, { docgenServer: true }],
+  ])('stays quiet for docgen: %s with features %o', async (docgen, features) => {
+    await pluginNames(docgen, features);
+    expect(vi.mocked(deprecate)).not.toHaveBeenCalled();
+  });
+
+  describe('when the main config does not set docgenServer', () => {
+    beforeEach(() => {
+      vi.mocked(isDocgenServerDisabledInMainConfig).mockResolvedValue(false);
+    });
+
+    it('runs builder docgen without the deprecation', async () => {
+      await expect(pluginNames(undefined)).resolves.toContain('vue-docgen-api');
+      expect(vi.mocked(deprecate)).not.toHaveBeenCalled();
+    });
   });
 });

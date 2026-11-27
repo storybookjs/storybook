@@ -1,20 +1,16 @@
 import type { RenderContext } from 'storybook/internal/types';
 
-import { global } from '@storybook/global';
-
 import { dedent } from 'ts-dedent';
 
 import type { EmberRenderer, OptionsArgs } from './types.ts';
 
-const { document } = global;
-
 declare let Ember: any;
 
-const rootEl = document.getElementById('storybook-root');
+const rootEl = globalThis.document.getElementById('storybook-root');
 
 function loadEmberApp() {
-  const config = global.require(`${global.STORYBOOK_NAME}/config/environment`);
-  return global.require(`${global.STORYBOOK_NAME}/app`).default.create({
+  const config = globalThis.require(`${globalThis.STORYBOOK_NAME}/config/environment`);
+  return globalThis.require(`${globalThis.STORYBOOK_NAME}/app`).default.create({
     autoboot: false,
     rootElement: rootEl,
     ...config.APP,
@@ -69,14 +65,14 @@ function render(options: OptionsArgs, el: EmberRenderer['canvasElement']) {
 }
 
 export function renderToCanvas(
-  { storyFn, kind, name, showMain, showError }: RenderContext<EmberRenderer>,
+  { storyFn, title, name, showMain, showError }: RenderContext<EmberRenderer>,
   canvasElement: EmberRenderer['canvasElement']
 ) {
   const element = storyFn();
 
   if (!element) {
     showError({
-      title: `Expecting a Ember element from the story: "${name}" of "${kind}".`,
+      title: `Expecting a Ember element from the story: "${name}" of "${title}".`,
       description: dedent`
         Did you forget to return the Ember element from the story?
         Use "() => hbs('{{component}}')" or "() => { return {

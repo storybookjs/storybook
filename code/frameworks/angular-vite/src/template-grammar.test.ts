@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
-import { formatInputValue, formatTemplateMarkup } from './template-grammar.ts';
+import type { BuildTemplateInput } from './template-grammar.ts';
+import {
+  buildComponentOutletTemplate,
+  buildTemplate,
+  formatInputValue,
+  formatTemplateMarkup,
+} from './template-grammar.ts';
 
 describe('formatInputValue', () => {
   it('renders primitives as their literal text and strings single-quoted', () => {
@@ -43,10 +49,109 @@ describe('formatInputValue', () => {
   });
 });
 
+describe('buildTemplate', () => {
+  const short: BuildTemplateInput = { inputs: [{ name: 'label', expression: "'x'" }], outputs: [] };
+  const long: BuildTemplateInput = {
+    inputs: [{ name: 'label', expression: "'a label long enough to push the tag past the limit'" }],
+    outputs: ['clicked'],
+  };
+
+  it('keeps the closing tag when the caller does not opt in', () => {
+    expect(buildTemplate('sb-button', short)).toBe(`<sb-button [label]="'x'"></sb-button>`);
+  });
+
+  it('self-closes a dashed element that fits on one line', () => {
+    expect(buildTemplate('sb-button', { ...short, selfClosing: true })).toBe(
+      `<sb-button [label]="'x'" />`
+    );
+  });
+
+  it('puts the bracket on its own line when the tag breaks over lines', () => {
+    expect(buildTemplate('sb-shape-button', { ...long, selfClosing: true })).toBe(
+      [
+        '<sb-shape-button',
+        `    [label]="'a label long enough to push the tag past the limit'"`,
+        '    (clicked)="clicked($event)"',
+        '/>',
+      ].join('\n')
+    );
+  });
+
+  it('keeps the closing tag for a selector naming an element with an attribute', () => {
+    expect(buildTemplate('button[sb-button]', { ...short, selfClosing: true })).toBe(
+      `<button sb-button [label]="'x'"></button>`
+    );
+  });
+
+  it('keeps the closing tag for a selector that names no element', () => {
+    expect(buildTemplate('.card', { ...short, selfClosing: true })).toBe(
+      `<div class="card" [label]="'x'"></div>`
+    );
+  });
+
+  it('keeps a void element inline when it fits on one line', () => {
+    expect(buildTemplate('input[appInput]', { ...short, selfClosing: true })).toBe(
+      `<input appInput [label]="'x'" />`
+    );
+  });
+
+  it('moves the bracket of a broken void element onto its own line only under the opt-in', () => {
+    expect(buildTemplate('input[appInput]', { ...long, selfClosing: true })).toBe(
+      [
+        '<input appInput',
+        `    [label]="'a label long enough to push the tag past the limit'"`,
+        '    (clicked)="clicked($event)"',
+        '/>',
+      ].join('\n')
+    );
+    expect(buildTemplate('input[appInput]', long)).toBe(
+      [
+        '<input appInput',
+        `    [label]="'a label long enough to push the tag past the limit'"`,
+        '    (clicked)="clicked($event)" />',
+      ].join('\n')
+    );
+  });
+
+  it('keeps the closing tag when the element carries inner content', () => {
+    expect(buildTemplate('sb-button', { ...short, innerTemplate: 'hi', selfClosing: true })).toBe(
+      `<sb-button [label]="'x'">hi</sb-button>`
+    );
+  });
+});
+
+describe('buildComponentOutletTemplate', () => {
+  it('keeps the closing tag when the caller does not opt in', () => {
+    expect(buildComponentOutletTemplate('ButtonComponent')).toBe(
+      '<ng-container *ngComponentOutlet="ButtonComponent"></ng-container>'
+    );
+  });
+
+  it('self-closes the outlet under the opt-in', () => {
+    expect(buildComponentOutletTemplate('ButtonComponent', { selfClosing: true })).toBe(
+      '<ng-container *ngComponentOutlet="ButtonComponent" />'
+    );
+  });
+});
+
 describe('formatTemplateMarkup', () => {
   it('moves nested elements onto their own lines', () => {
     expect(formatTemplateMarkup('<div class="bound"><sb-button></sb-button></div>')).toBe(
       ['<div class="bound">', '    <sb-button></sb-button>', '</div>'].join('\n')
+    );
+  });
+
+  it('breaks attributes written without a space between them one per line', () => {
+    const title = 'a fairly long title attribute value';
+    expect(
+      formatTemplateMarkup(`<sb-button title="${title}"data-test="another long value"></sb-button>`)
+    ).toBe(
+      [
+        '<sb-button',
+        `    title="${title}"`,
+        '    data-test="another long value">',
+        '</sb-button>',
+      ].join('\n')
     );
   });
 

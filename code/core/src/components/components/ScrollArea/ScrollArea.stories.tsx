@@ -1,7 +1,7 @@
 import type { ReactElement } from 'react';
 import React, { Fragment } from 'react';
 
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/emotion';
 
 import { ScrollArea } from './ScrollArea.tsx';
 

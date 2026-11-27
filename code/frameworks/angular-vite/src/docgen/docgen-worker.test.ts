@@ -163,7 +163,27 @@ describe('createDocgenProvider', () => {
     const [manager] = analyzer.instances;
     expect(manager.startWatching).toHaveBeenCalledOnce();
     expect(manager.recycleIfHeapPressured).toHaveBeenCalledTimes(2);
-    expect((manager.typescript as { version?: unknown }).version).toBeTypeOf('string');
+    expect(manager.typescript).toMatchObject({
+      api: 'compiler',
+      typescript: { version: expect.any(String) },
+    });
+  });
+
+  describe('with a docgenSpecifier', () => {
+    beforeEach(() => {
+      vi.mocked(buildDocgenPayload).mockReturnValue(ours);
+    });
+
+    it('runs the analyzer on the TypeScript it names', async () => {
+      const provider = createDocgenProvider({
+        propsTable: 'api',
+        typeScriptSpecifier: { specifier: 'typescript-native', configDir: import.meta.dirname },
+      })(passthrough);
+
+      await provider({ entry });
+
+      expect(analyzer.instances[0].typescript).toMatchObject({ api: 'native' });
+    });
   });
 
   it('threads a structured-cloneable options bag and the manager into the payload builder', async () => {
@@ -198,8 +218,12 @@ describe('createDocgenProvider', () => {
     expect(analyzer.constructions).toBe(1);
     expect(next).toHaveBeenCalledTimes(2);
     expect(buildDocgenPayload).not.toHaveBeenCalled();
-    expect(logger.warn).toHaveBeenCalledWith(
-      expect.stringContaining('Angular docgen is unavailable')
-    );
+    expect(vi.mocked(logger.warn).mock.calls).toMatchInlineSnapshot(`
+      [
+        [
+          "Angular docgen is unavailable: the component meta analyzer could not be created. the analyzer refused to start",
+        ],
+      ]
+    `);
   });
 });

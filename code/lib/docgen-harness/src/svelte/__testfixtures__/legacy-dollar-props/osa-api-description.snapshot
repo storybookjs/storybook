@@ -1,0 +1,27 @@
+## Props
+
+```
+export type LeoButtonProps = {
+  id?: string | null;
+  class?: ClassValue | null;
+  disabled?: boolean | null;
+  type?: "button" | "submit" | "reset" | null;
+  /** Button kind. */
+  kind?: "filled" | "outline" = "filled";
+  /** Button size. */
+  size?: "small" | "large" = "small";
+  /** Click callback. */
+  onClick?: (e: MouseEvent) => void;
+}
+```
+
+## Slots
+
+Each slot is typed with the props it passes to its content.
+
+```
+export type LeoButtonSlots = {
+  "icon-before": {};
+  default: {};
+}
+```

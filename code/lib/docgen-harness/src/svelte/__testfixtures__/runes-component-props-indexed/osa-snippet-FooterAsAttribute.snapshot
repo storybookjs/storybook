@@ -1,0 +1,7 @@
+<script>
+  import Modal from './Modal.svelte';
+</script>
+
+<Modal footer={sharedFooter} id="modal-footer-attr" open />
+
+{#snippet sharedFooter()}<small>Shared footer</small>{/snippet}

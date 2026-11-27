@@ -3,7 +3,6 @@
 <!-- RULE-CATEGORIES:START -->
 
 **Included in these configurations**: N/A
-
 <!-- RULE-CATEGORIES:END -->
 
 ## Rule Details

@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
-import type { NgModule } from '@angular/core';
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import type { NgModule, Type } from '@angular/core';
+import { Component, Directive, EventEmitter, Input, Output, inject } from '@angular/core';
 import { describe, expect, it } from 'vitest';
 
 import { TestBed } from '@angular/core/testing';
@@ -28,10 +28,10 @@ describe('StorybookModule', () => {
       })
       class FooComponent {
         @Input()
-        public input: string;
+        public input?: string;
 
         @Input('inputBindingPropertyName')
-        public localPropertyName: string;
+        public localPropertyName?: string;
 
         @Input()
         public set setter(value: string) {
@@ -44,7 +44,7 @@ describe('StorybookModule', () => {
         @Output('outputBindingPropertyName')
         public localOutput = new EventEmitter<string>();
 
-        public localProperty: string;
+        public localProperty?: string;
 
         public localFunction = () => '';
 
@@ -71,7 +71,7 @@ describe('StorybookModule', () => {
 
         const { fixture } = await configureTestingModule({
           imports: [application],
-          providers: [storyPropsProvider(new BehaviorSubject<ICollection>(props))],
+          providers: [storyPropsProvider(new BehaviorSubject<ICollection | undefined>(props))],
         });
         fixture.detectChanges();
 
@@ -88,8 +88,8 @@ describe('StorybookModule', () => {
       });
 
       it('should initialize outputs', async () => {
-        let expectedOutputValue: string;
-        let expectedOutputBindingValue: string;
+        let expectedOutputValue: string | undefined;
+        let expectedOutputBindingValue: string | undefined;
         const props = {
           output: (value: string) => {
             expectedOutputValue = value;
@@ -111,7 +111,7 @@ describe('StorybookModule', () => {
 
         const { fixture } = await configureTestingModule({
           imports: [application],
-          providers: [storyPropsProvider(new BehaviorSubject<ICollection>(props))],
+          providers: [storyPropsProvider(new BehaviorSubject<ICollection | undefined>(props))],
         });
         fixture.detectChanges();
 
@@ -127,7 +127,7 @@ describe('StorybookModule', () => {
           input: 'input',
           inputBindingPropertyName: '',
         };
-        const storyProps$ = new BehaviorSubject<ICollection>(initialProps);
+        const storyProps$ = new BehaviorSubject<ICollection | undefined>(initialProps);
 
         const analyzedMetadata = new PropertyExtractor({}, FooComponent);
         await analyzedMetadata.init();
@@ -184,7 +184,7 @@ describe('StorybookModule', () => {
             expectedOutputBindingValue = value;
           },
         };
-        const storyProps$ = new BehaviorSubject<ICollection>(initialProps);
+        const storyProps$ = new BehaviorSubject<ICollection | undefined>(initialProps);
 
         const analyzedMetadata = new PropertyExtractor({}, FooComponent);
         await analyzedMetadata.init();
@@ -226,7 +226,7 @@ describe('StorybookModule', () => {
           color: 'red',
           input: 'input',
         };
-        const storyProps$ = new BehaviorSubject<ICollection>(initialProps);
+        const storyProps$ = new BehaviorSubject<ICollection | undefined>(initialProps);
 
         const analyzedMetadata = new PropertyExtractor({}, FooComponent);
         await analyzedMetadata.init();
@@ -265,7 +265,7 @@ describe('StorybookModule', () => {
         const initialProps = {
           setter: 'init',
         };
-        const storyProps$ = new BehaviorSubject<ICollection>(initialProps);
+        const storyProps$ = new BehaviorSubject<ICollection | undefined>(initialProps);
 
         const analyzedMetadata = new PropertyExtractor({}, FooComponent);
         await analyzedMetadata.init();
@@ -295,11 +295,106 @@ describe('StorybookModule', () => {
       });
     });
 
+    describe('with host directive inputs', () => {
+      @Directive({ standalone: true })
+      class HostDirective {
+        @Input() value = 'unset';
+        @Input('directiveAlias') aliasedValue = 'unset';
+      }
+
+      @Component({
+        selector: 'host-inputs',
+        template:
+          '<p id="value">{{ directive.value }}</p><p id="alias">{{ directive.aliasedValue }}</p>',
+        hostDirectives: [
+          { directive: HostDirective, inputs: ['value', 'directiveAlias: publicValue'] },
+        ],
+      })
+      class HostComponent {
+        directive = inject(HostDirective);
+      }
+
+      @Component({
+        selector: 'inherited-host-inputs',
+        template:
+          '<p id="value">{{ directive.value }}</p><p id="alias">{{ directive.aliasedValue }}</p>',
+      })
+      class ChildComponent extends HostComponent {}
+
+      it.each([
+        { component: HostComponent, label: 'direct' },
+        { component: ChildComponent, label: 'inherited' },
+      ])('initializes and updates $label host directive inputs', async ({ component }) => {
+        const props = { value: 'initial', publicValue: 'initial alias' };
+        const storyProps$ = new BehaviorSubject<ICollection | undefined>(props);
+        const analyzedMetadata = new PropertyExtractor({}, component);
+        await analyzedMetadata.init();
+        const application = getApplication({
+          storyFnAngular: { props },
+          component,
+          targetSelector: 'my-selector',
+          analyzedMetadata,
+        });
+        const { fixture } = await configureTestingModule({
+          imports: [application],
+          providers: [storyPropsProvider(storyProps$)],
+        });
+        fixture.detectChanges();
+        expect(fixture.nativeElement.querySelector('#value').textContent).toEqual('initial');
+        expect(fixture.nativeElement.querySelector('#alias').textContent).toEqual('initial alias');
+
+        storyProps$.next({ value: 'updated', publicValue: 'updated alias' });
+        fixture.detectChanges();
+        expect(fixture.nativeElement.querySelector('#value').textContent).toEqual('updated');
+        expect(fixture.nativeElement.querySelector('#alias').textContent).toEqual('updated alias');
+      });
+    });
+
+    describe('with host directive outputs', () => {
+      @Directive({ standalone: true, host: { '(click)': "opened.emit('from directive')" } })
+      class HostDirective {
+        @Output() opened = new EventEmitter<string>();
+      }
+
+      @Component({
+        selector: 'host-outputs',
+        template: '<p id="trigger">trigger</p>',
+        hostDirectives: [{ directive: HostDirective, outputs: ['opened: publicOpened'] }],
+      })
+      class HostComponent {}
+
+      @Component({ selector: 'inherited-host-outputs', template: '<p id="trigger">trigger</p>' })
+      class ChildComponent extends HostComponent {}
+
+      it.each([
+        { component: HostComponent, label: 'direct' },
+        { component: ChildComponent, label: 'inherited' },
+      ])('calls the story handler for $label host directive outputs', async ({ component }) => {
+        const emitted: string[] = [];
+        const props = { publicOpened: (value: string) => emitted.push(value) };
+        const analyzedMetadata = new PropertyExtractor({}, component);
+        await analyzedMetadata.init();
+        const application = getApplication({
+          storyFnAngular: { props },
+          component,
+          targetSelector: 'my-selector',
+          analyzedMetadata,
+        });
+        const { fixture } = await configureTestingModule({
+          imports: [application],
+          providers: [storyPropsProvider(new BehaviorSubject<ICollection | undefined>(props))],
+        });
+        fixture.detectChanges();
+
+        fixture.nativeElement.querySelector('#trigger').click();
+
+        expect(emitted).toEqual(['from directive']);
+      });
+    });
+
     describe('with component without selector', () => {
       @Component({
-        template: `
-          The content
-        `,
+        template: ` The content `,
       })
       class WithoutSelectorComponent {}
 
@@ -325,7 +420,7 @@ describe('StorybookModule', () => {
 
         const { fixture } = await configureTestingModule({
           imports: [application],
-          providers: [storyPropsProvider(new BehaviorSubject<ICollection>(props))],
+          providers: [storyPropsProvider(new BehaviorSubject<ICollection | undefined>(props))],
         });
         fixture.detectChanges();
 
@@ -336,9 +431,7 @@ describe('StorybookModule', () => {
     it('should keep template with an empty value', async () => {
       @Component({
         selector: 'foo',
-        template: `
-          Should not be displayed
-        `,
+        template: ` Should not be displayed `,
       })
       class FooComponent {}
 
@@ -354,7 +447,7 @@ describe('StorybookModule', () => {
 
       const { fixture } = await configureTestingModule({
         imports: [application],
-        providers: [storyPropsProvider(new BehaviorSubject<ICollection>({}))],
+        providers: [storyPropsProvider(new BehaviorSubject<ICollection | undefined>({}))],
       });
       fixture.detectChanges();
 
@@ -362,10 +455,10 @@ describe('StorybookModule', () => {
     });
   });
 
-  async function configureTestingModule(ngModule: NgModule) {
+  async function configureTestingModule(ngModule: NgModule & { imports: [Type<unknown>] }) {
     await TestBed.configureTestingModule(ngModule).compileComponents();
 
-    const fixture = TestBed.createComponent(ngModule.imports[0] as any);
+    const fixture = TestBed.createComponent(ngModule.imports[0]);
 
     return {
       fixture,

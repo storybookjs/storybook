@@ -8,14 +8,14 @@ import * as v from 'valibot';
 
 /**
  * The in-repo writer only emits `not-installed` and `ready`; `starting` and `error` may appear on
- * records from older writers / external wrappers and must keep being dispatched here.
+ * records from older writers / external wrappers and must keep parsing.
  */
 export const McpStatusSchema = v.picklist(['not-installed', 'starting', 'ready', 'error']);
 export type McpStatus = v.InferOutput<typeof McpStatusSchema>;
 
 /**
- * A single Storybook runtime record written under the registry dir (default
- * `~/.storybook/instances`). One file per running `storybook dev` instance.
+ * A single Storybook runtime record written under the registry dir (`$XDG_STATE_HOME/storybook/instances`,
+ * or `~/.storybook/instances` when unset). One file per running `storybook dev` instance.
  * Spec: storybookjs/storybook#34826.
  */
 export const StorybookInstanceRecordSchema = v.object({
@@ -31,8 +31,25 @@ export const StorybookInstanceRecordSchema = v.object({
   configDir: v.optional(v.string()),
   url: v.string(),
   port: v.pipe(v.number(), v.minValue(1), v.maxValue(65535), v.integer()),
+  /**
+   * Token authenticating clients against the instance's WebSocket channel. Optional: records
+   * written by older Storybooks lack it.
+   */
+  token: v.optional(v.string()),
   agent: v.optional(v.string()),
   storybookVersion: v.optional(v.string()),
+  /**
+   * Realpathed root of the `storybook` package the dev server actually runs, recorded by the
+   * server from its own module location. The caller attaches in-process when this equals its own
+   * root, and spawns its child host from this root otherwise. Optional: records written by older
+   * Storybooks lack it, which makes attach refuse.
+   */
+  storybookPath: v.optional(v.string()),
+  /**
+   * The process namespace of the dev server on Linux. `pid` can only be checked from that
+   * namespace. Optional: other systems and older Storybooks do not record it.
+   */
+  pidNamespace: v.optional(v.string()),
   startedAt: v.optional(v.string()),
   updatedAt: v.optional(v.string()),
   mcp: v.object({
@@ -41,10 +58,3 @@ export const StorybookInstanceRecordSchema = v.object({
   }),
 });
 export type StorybookInstanceRecord = v.InferOutput<typeof StorybookInstanceRecordSchema>;
-
-export type InterceptReason =
-  | 'no-instance'
-  | 'port-mismatch'
-  | 'addon-missing'
-  | 'mcp-starting'
-  | 'mcp-error';

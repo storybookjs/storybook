@@ -1,6 +1,6 @@
 import { dedent } from 'ts-dedent';
 
-import { UniversalStoreFollowerTimeoutError } from '../../manager-errors.ts';
+import { isFirstPartyStoreId } from './first-party-store-ids.ts';
 import { instances } from './instances.ts';
 import type {
   Actor,
@@ -78,7 +78,6 @@ const ProgressState = {
  * @throws {Error} If constructed directly instead of using `create()`
  * @throws {Error} If created without setting a channel first
  * @throws {Error} If a follower is created with initial state
- * @throws {Error} If a follower cannot find its leader within 1 second
  */
 export class UniversalStore<
   State,
@@ -106,6 +105,11 @@ export class UniversalStore<
     UNKNOWN: 'UNKNOWN',
     MOCK: 'MOCK',
   } as const;
+
+  /** The environment this realm was prepared as, or `undefined` before `__prepare`. */
+  public static get preparedEnvironment(): EnvironmentType | undefined {
+    return UniversalStore.preparation.environment;
+  }
 
   /**
    * Internal event types used for store synchronization
@@ -207,8 +211,8 @@ export class UniversalStore<
    * A promise that resolves when the store is fully ready. A leader will be ready when the store
    * has been prepared by Storybook, which is almost instantly.
    *
-   * A follower will be ready when the state has been synced with the leader's state, within a few
-   * hundred milliseconds.
+   * A follower will be ready when the state has been synced with the leader's state. It waits for
+   * as long as that takes.
    */
   public untilReady() {
     // A store that already has its own channel and environment is prepared (e.g. an isolated
@@ -224,14 +228,12 @@ export class UniversalStore<
   /**
    * The syncing construct is used to keep track of if the instance's state has been synced with the
    * other instances. A leader will immediately have the promise resolved. A follower will initially
-   * be in a PENDING state, and resolve when the leader has sent the existing state, or reject if no
-   * leader has responded before the timeout.
+   * be in a PENDING state, and resolve when the leader has sent the existing state.
    */
   private syncing?: {
     state: (typeof ProgressState)[keyof typeof ProgressState];
     promise?: Promise<void>;
     resolve?: () => void;
-    reject?: (error: Error) => void;
   };
 
   private channelEventName: string;
@@ -290,8 +292,7 @@ export class UniversalStore<
       // Set up the syncing promise for followers, that will be resolved when the state
       // is synced with the leader
       let syncingResolve: () => void;
-      let syncingReject: (error: Error) => void;
-      const syncingPromise = new Promise<void>((resolve, reject) => {
+      const syncingPromise = new Promise<void>((resolve) => {
         syncingResolve = () => {
           if (this.syncing!.state !== ProgressState.PENDING) {
             return;
@@ -299,19 +300,11 @@ export class UniversalStore<
           this.syncing!.state = ProgressState.RESOLVED;
           resolve();
         };
-        syncingReject = (reason) => {
-          if (this.syncing!.state !== ProgressState.PENDING) {
-            return;
-          }
-          this.syncing!.state = ProgressState.REJECTED;
-          reject(reason);
-        };
       });
       this.syncing = {
         state: ProgressState.PENDING,
         promise: syncingPromise,
         resolve: syncingResolve!,
-        reject: syncingReject!,
       };
     }
 
@@ -354,6 +347,11 @@ export class UniversalStore<
   >(options: StoreOptions<State>): UniversalStore<State, CustomEvent> {
     if (!options || typeof options?.id !== 'string') {
       throw new TypeError('id is required and must be a string, when creating a UniversalStore');
+    }
+    if (!isFirstPartyStoreId(options.id)) {
+      throw new TypeError(
+        `UniversalStore is internal to Storybook and cannot create a store with id "${options.id}"`
+      );
     }
     if (options.debug) {
       console.debug(
@@ -552,15 +550,10 @@ export class UniversalStore<
         { type: UniversalStore.InternalEventType.FOLLOWER_CREATED },
         { actor: this.actor }
       );
-      // 1. Emit a request for the existing state
       this.emitToChannel(
         { type: UniversalStore.InternalEventType.EXISTING_STATE_REQUEST },
         { actor: this.actor }
       );
-      // 2. Wait 1 sec for a response, then reject the syncing promise if not already resolved
-      setTimeout(() => {
-        this.syncing!.reject!(new UniversalStoreFollowerTimeoutError(this.id));
-      }, 1000);
     }
   }
 

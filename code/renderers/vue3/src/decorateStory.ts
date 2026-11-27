@@ -54,9 +54,6 @@ export function decorateStory(
 
       const decoratedStory: VueRenderer['storyResult'] = decorator((update) => {
         const sanitizedUpdate = sanitizeStoryContextUpdate(update);
-        // update the args in a reactive way
-
-        // update the args in a reactive way
         if (update) {
           sanitizedUpdate.args = Object.assign(context.args, sanitizedUpdate.args);
         }

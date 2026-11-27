@@ -5,8 +5,10 @@ import { dirname, join } from 'node:path';
 import { globalsNameReferenceMap } from 'storybook/internal/preview/globals';
 import type { Options } from 'storybook/internal/types';
 
+import { previewRuntimePath } from '../utils/preview-runtime-path.ts';
+
 import * as pkg from 'empathic/package';
-import { init, parse } from 'es-module-lexer';
+import { type ImportSpecifier, init, parse } from 'es-module-lexer';
 import MagicString from 'magic-string';
 import type { Alias, Plugin } from 'vite';
 
@@ -57,7 +59,7 @@ export async function storybookExternalGlobalsPlugin(options: Options): Promise<
   const { mergeAlias } = await import('vite');
 
   const globalsList = Object.keys(externals);
-  const globalsCodeFilter = new RegExp(globalsList.map(escapeKeys).join('|'));
+  const globalReferences = Object.values(externals);
 
   return {
     name: 'storybook:external-globals-plugin',
@@ -93,30 +95,54 @@ export async function storybookExternalGlobalsPlugin(options: Options): Promise<
     },
     // Replace imports with variables destructured from global scope
     transform: {
-      filter: { code: globalsCodeFilter },
+      filter: { code: { include: [...globalsList, ...globalReferences] } },
       async handler(code: string, id: string) {
-        if (globalsList.every((glob) => !code.includes(glob))) {
+        // Optimized deps inline the dev-only alias files, so they read a global without an import.
+        const readsInlinedGlobal =
+          this.environment.mode === 'dev' &&
+          globalReferences.some((reference) => code.includes(reference));
+
+        let imports: readonly ImportSpecifier[];
+        try {
+          [imports] = parse(code);
+        } catch {
+          // Leave invalid code (e.g. JSX in a .js file) to the plugins that report syntax errors
           return undefined;
         }
-
-        const [imports] = parse(code);
         const src = new MagicString(code);
+        let didRewrite = false;
         imports.forEach(({ n: path, ss: startPosition, se: endPosition }) => {
           const packageName = path;
           if (packageName && globalsList.includes(packageName)) {
             const importStatement = src.slice(startPosition, endPosition);
             const transformedImport = rewriteImport(importStatement, externals, packageName);
             src.update(startPosition, endPosition, transformedImport);
+            didRewrite = true;
           }
         });
 
+        const rewritten = src.toString();
         return {
-          code: src.toString(),
+          code:
+            didRewrite || readsInlinedGlobal
+              ? ensurePreviewRuntimePrecedesGlobals(rewritten, id)
+              : rewritten,
           map: null,
         };
       },
     },
   } satisfies Plugin;
+}
+
+const bundledPreviewRuntimePattern = /[/\\]dist[/\\]preview[/\\]/;
+
+// Call setup() so init still runs when side-effect imports of this package are dropped.
+export function ensurePreviewRuntimePrecedesGlobals(code: string, id: string) {
+  if (bundledPreviewRuntimePattern.test(id.split('?')[0])) {
+    return code;
+  }
+
+  return `import { setup as __sbInitializePreviewGlobals } from ${JSON.stringify(previewRuntimePath)};\n__sbInitializePreviewGlobals();\n${code}`;
 }
 
 function getDefaultImportReplacement(match: string) {

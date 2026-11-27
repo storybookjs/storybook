@@ -16,6 +16,7 @@ const createSender = () =>
     connected: true,
     send: vi.fn((_event: unknown, written: () => void) => written()),
     unref: vi.fn(),
+    kill: vi.fn(),
     channel: { unref: vi.fn() } as { unref: () => void } | undefined,
   });
 
@@ -30,6 +31,7 @@ beforeEach(() => {
 
 afterEach(() => {
   sender.connected = false;
+  vi.useRealTimers();
   vi.unstubAllEnvs();
 });
 
@@ -104,19 +106,34 @@ it('still waits for the event to be written when the local event cache cannot be
   expect(resolved).toBe(true);
 });
 
-it('resolves when the process exits before it has read the event', async () => {
+it('stops waiting, and stops the process, when it does not take the event within two seconds', async () => {
+  vi.useFakeTimers();
   sender.send.mockImplementationOnce(() => {});
-  const sent = sendTelemetry({ eventType: 'dev', payload: {} });
+  let resolved = false;
+  const sent = sendTelemetry({ eventType: 'dev', payload: {} }).then(() => {
+    resolved = true;
+  });
 
-  sender.emit('exit', 1, null);
+  await vi.advanceTimersByTimeAsync(1999);
+  expect(resolved).toBe(false);
+  expect(sender.kill).not.toHaveBeenCalled();
 
-  await expect(sent).resolves.toBeUndefined();
+  await vi.advanceTimersByTimeAsync(1);
+  await sent;
+  expect(resolved).toBe(true);
+  expect(sender.kill).toHaveBeenCalled();
 });
 
-it('stops listening for the exit of the process once the event is written', async () => {
-  await sendTelemetry({ eventType: 'dev', payload: {} });
+it('leaves no timer behind, whether the event is written or cannot be sent', async () => {
+  vi.useFakeTimers();
 
-  expect(sender.listenerCount('exit')).toBe(0);
+  await sendTelemetry({ eventType: 'dev', payload: {} });
+  sender.send.mockImplementationOnce(() => {
+    throw new TypeError('Converting circular structure to JSON');
+  });
+  await sendTelemetry({ eventType: 'build', payload: {} });
+
+  expect(vi.getTimerCount()).toBe(0);
 });
 
 it('saves the event it sends to the local event cache', async () => {
@@ -155,25 +172,30 @@ it('starts a new process when the last one is gone', async () => {
   );
 });
 
-it('starts the process without the debugger flags of this one, and keeps its other options', async () => {
+it('starts the process without the options that would make it wait for a debugger or never exit', async () => {
   vi.stubEnv(
     'NODE_OPTIONS',
     [
       '--inspect-brk=0',
       '"--inspect-brk=0"',
+      '--inspect_wait',
+      '--watch',
       '--require /my--inspect-app/.pnp.cjs',
       '--require "/my dir/--inspect app/preload.cjs"',
+      '--inspect-port 9229',
       '--use-openssl-ca',
       '--inspect',
     ].join(' ')
   );
+  vi.stubEnv('BUN_OPTIONS', "'--inspect-wait=0' --hot --smol --watch");
 
   await sendTelemetry({ eventType: 'dev', payload: {} });
 
   const [, , options] = vi.mocked(spawn).mock.calls[0];
-  expect(options.env?.NODE_OPTIONS?.trim()).toBe(
-    '--require /my--inspect-app/.pnp.cjs --require "/my dir/--inspect app/preload.cjs" --use-openssl-ca'
+  expect(options.env?.NODE_OPTIONS?.split(' ').filter(Boolean).join(' ')).toBe(
+    '--require /my--inspect-app/.pnp.cjs --require "/my dir/--inspect app/preload.cjs" --inspect-port 9229 --use-openssl-ca'
   );
+  expect(options.env?.BUN_OPTIONS?.trim()).toBe('--smol');
 });
 
 it('still resolves when the process cannot be started', async () => {
@@ -185,10 +207,15 @@ it('still resolves when the process cannot be started', async () => {
   expect(saveToCache).toHaveBeenCalledWith('dev', expect.objectContaining({ eventType: 'dev' }));
 });
 
-it('does not crash when the process fails after it was started', async () => {
+it('does not crash when the process fails after it was started, and starts a new one', async () => {
   await sendTelemetry({ eventType: 'dev', payload: {} });
 
   expect(() => sender.emit('error', new Error('spawn ENOENT'))).not.toThrow();
+
+  // Node keeps calling a process that could not be started connected.
+  expect(sender.connected).toBe(true);
+  await sendTelemetry({ eventType: 'build', payload: {} });
+  expect(spawn).toHaveBeenCalledTimes(2);
 });
 
 it('still resolves when building the event throws', async () => {

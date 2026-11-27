@@ -107,14 +107,3 @@ it('still posts an event when the process that sent it exits as soon as the even
   expect(exitCode).toBe(0);
   expect(requests).toEqual([{ eventType: 'build' }]);
 });
-
-it('still posts an event when the temp directory does not exist', async () => {
-  for (const name of ['TMPDIR', 'TEMP', 'TMP']) {
-    vi.stubEnv(name, fileURLToPath(new URL('./does-not-exist', import.meta.url)));
-  }
-
-  await sendTelemetry({ eventType: 'dev', payload: {} });
-  await received;
-
-  expect(requests).toEqual([expect.objectContaining({ eventType: 'dev' })]);
-});

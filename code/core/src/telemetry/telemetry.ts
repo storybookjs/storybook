@@ -95,6 +95,7 @@ export async function sendTelemetry(data: TelemetryData, options: Partial<Option
 // Resolves when the event is written. That is asynchronous on Windows, and elsewhere for an event
 // larger than the pipe buffer, so an exit right after the call would lose the event.
 async function handOver(event: TelemetryEvent) {
+  let limit: ReturnType<typeof setTimeout> | undefined;
   try {
     // On globalThis, because this module can load more than once in one process. Every copy sends
     // an unchanged TelemetryEvent, which the child posts as it is.
@@ -102,16 +103,18 @@ async function handOver(event: TelemetryEvent) {
       ? globalThis.SB_TELEMETRY_SENDER
       : (globalThis.SB_TELEMETRY_SENDER = startSender());
     await new Promise<void>((resolve) => {
-      const done = () => {
-        sender.off('exit', done);
+      // A child that does not read must not keep this process waiting, and the unfinished write
+      // would keep this process from exiting. So that child is stopped.
+      limit = setTimeout(() => {
+        sender.kill();
         resolve();
-      };
-      // Bun never calls back when the child died before it read the event.
-      sender.once('exit', done);
-      sender.send(event, done);
+      }, 2000);
+      sender.send(event, () => resolve());
     });
   } catch {
     //
+  } finally {
+    clearTimeout(limit);
   }
 }
 
@@ -120,24 +123,34 @@ async function handOver(event: TelemetryEvent) {
 function startSender() {
   const script = fileURLToPath(importMetaResolve('storybook/internal/telemetry/sender'));
   const child = spawn(process.execPath, [script], {
-    // With an inherited --inspect-brk the child would wait for a debugger forever. An option can
-    // be quoted, in whole ("--inspect-brk") or in part (--require "/a path/preload.js").
     env: {
       ...process.env,
-      NODE_OPTIONS: process.env.NODE_OPTIONS?.replace(/(?:"(?:\\.|[^"])*"|[^\s"])+/g, (option) =>
-        option.replaceAll('"', '').startsWith('--inspect') ? '' : option
-      ),
+      NODE_OPTIONS: withoutPausingOptions(process.env.NODE_OPTIONS),
+      BUN_OPTIONS: withoutPausingOptions(process.env.BUN_OPTIONS),
     },
     detached: true,
     stdio: ['ignore', 'ignore', 'ignore', 'ipc'],
     windowsHide: true,
   });
-  // Without a listener, a spawn that fails later would crash this process.
-  child.on('error', () => {});
-  // Every event that is being written listens for the child's exit.
-  child.setMaxListeners(0);
+  // Without a listener, a spawn that fails later would crash this process. Node still calls such
+  // a child connected, so it is forgotten here and the next event starts another.
+  child.on('error', () => {
+    if (globalThis.SB_TELEMETRY_SENDER === child) {
+      globalThis.SB_TELEMETRY_SENDER = undefined;
+    }
+  });
   // Neither the child nor its channel may keep this process from exiting. Bun has no channel.unref.
   child.unref();
   child.channel?.unref?.();
   return child;
+}
+
+// Removes the options that make a process wait for a debugger or never exit, which the child
+// would inherit. An option can be quoted, in whole ("--inspect-brk") or in part
+// (--require "/a path/preload.js"). Options that only take effect with those, such as
+// --inspect-port, stay: their value can be a separate word.
+function withoutPausingOptions(options: string | undefined) {
+  return options?.replace(/(?:"(?:\\.|[^"])*"|'[^']*'|[^\s"'])+/g, (option) =>
+    /^--(inspect([-_](brk|wait))?|watch|hot)(=|$)/.test(option.replace(/["']/g, '')) ? '' : option
+  );
 }

@@ -1,10 +1,11 @@
 // @vitest-environment happy-dom
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, onTestFinished, vi } from 'vitest';
 
 import type {
   Args,
   DecoratorFunction,
   Globals,
+  LegacyStoryFn,
   RenderContext,
   StoryContext,
   StrictArgTypes,
@@ -19,7 +20,9 @@ import {
   KeepAlive,
   nextTick,
   onActivated,
+  onDeactivated,
   reactive,
+  ref,
   resolveComponent,
   type VNode,
 } from 'vue';
@@ -245,34 +248,68 @@ describe('renderToCanvas', () => {
 });
 
 describe('decorateStory', () => {
-  const storyContext = { args: {}, globals: {} } as unknown as StoryContext<VueRenderer>;
   const mountDecorated = (
-    story: VueRenderer['storyResult'],
+    storyFn: LegacyStoryFn<VueRenderer>,
     decorator: DecoratorFunction<VueRenderer>
   ) => {
-    const decorated = decorateStory(() => story, [decorator])(storyContext);
+    const storyContext = { args: {}, globals: {} } as unknown as StoryContext<VueRenderer>;
+    const decorated = decorateStory(storyFn, [decorator])(storyContext);
     const canvasElement = document.createElement('div');
     const app = createApp({ render: () => h(decorated) });
     app.mount(canvasElement);
-    return { canvasElement, unmount: () => app.unmount() };
+    onTestFinished(() => app.unmount());
+    return canvasElement;
   };
 
   it('keeps the story alive when a decorator wraps it in <KeepAlive>', async () => {
     const calls: string[] = [];
     const story = defineComponent({
       setup() {
+        const count = ref(0);
         onActivated(() => calls.push('activated'));
-        return () => h('p', 'story');
+        onDeactivated(() => calls.push('deactivated'));
+        return () => h('button', { onClick: () => count.value++ }, String(count.value));
       },
     });
+    const Placeholder = defineComponent({ render: () => h('span', 'hidden') });
+    const showStory = ref(true);
 
-    const { unmount } = mountDecorated(story, () => ({
-      render: () => h(KeepAlive, null, [h(resolveComponent('story'))]),
-    }));
+    const canvasElement = mountDecorated(
+      () => story,
+      () => ({
+        render: () =>
+          h(KeepAlive, null, [showStory.value ? h(resolveComponent('story')) : h(Placeholder)]),
+      })
+    );
+    await nextTick();
+    canvasElement.querySelector('button')!.click();
     await nextTick();
 
-    expect(calls).toEqual(['activated']);
-    unmount();
+    showStory.value = false;
+    await nextTick();
+    expect(canvasElement.textContent).toBe('hidden');
+
+    showStory.value = true;
+    await nextTick();
+    expect(canvasElement.textContent).toBe('1');
+    expect(calls).toEqual(['activated', 'deactivated', 'activated']);
+  });
+
+  it('renders the story returned by a storyFn call made in the decorator setup', () => {
+    // The story reads its args when storyFn runs, so only the story from the latest call has them.
+    const storyFn: LegacyStoryFn<VueRenderer> = ({ args }) => {
+      const label = args.label ?? 'initial';
+      return { render: () => h('p', label) };
+    };
+
+    const canvasElement = mountDecorated(storyFn, (decoratedStoryFn) => ({
+      setup() {
+        decoratedStoryFn({ args: { label: 'updated' } });
+      },
+      render: () => h(resolveComponent('story')),
+    }));
+
+    expect(canvasElement.textContent).toBe('updated');
   });
 
   it('passes only class, style and listeners from the story tag to the story', () => {
@@ -283,17 +320,19 @@ describe('decorateStory', () => {
       },
     });
 
-    const { canvasElement, unmount } = mountDecorated(story, () => ({
-      render: () =>
-        h(resolveComponent('story'), {
-          class: 'wrapped',
-          style: 'color: red',
-          onClick: () => {},
-          title: 'not passed',
-        }),
-    }));
+    const canvasElement = mountDecorated(
+      () => story,
+      () => ({
+        render: () =>
+          h(resolveComponent('story'), {
+            class: 'wrapped',
+            style: 'color: red',
+            onClick: () => {},
+            title: 'not passed',
+          }),
+      })
+    );
 
     expect(canvasElement.textContent).toBe('class,onClick,style');
-    unmount();
   });
 });

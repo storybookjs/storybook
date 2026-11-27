@@ -51,9 +51,13 @@ function prepare(
 
   `inheritAttrs: false` and the filter keep the attribute fallthrough the functional wrapper had:
   only `class`, `style` and `on*` listeners reach the story.
+
+  `getStory` is read on every render, so a decorator that calls `storyFn` again (for example in
+  `setup()` with new args) renders the story that call returned.
  */
-function wrapInnerStory(story: VueRenderer['storyResult']): ConcreteComponent {
+function wrapInnerStory(getStory: () => VueRenderer['storyResult']): ConcreteComponent {
   return {
+    name: 'Story',
     inheritAttrs: false,
     render() {
       const fallthrough = Object.fromEntries(
@@ -61,7 +65,7 @@ function wrapInnerStory(story: VueRenderer['storyResult']): ConcreteComponent {
           ([key]) => key === 'class' || key === 'style' || /^on[^a-z]/.test(key)
         )
       );
-      return h(story, fallthrough);
+      return h(getStory(), fallthrough);
     },
   };
 }
@@ -91,7 +95,10 @@ export function decorateStory(
         return story;
       }
 
-      return prepare(decoratedStory, wrapInnerStory(story!)) as VueRenderer['storyResult'];
+      return prepare(
+        decoratedStory,
+        wrapInnerStory(() => story!)
+      ) as VueRenderer['storyResult'];
     },
     (context) => prepare(storyFn(context)) as LegacyStoryFn<VueRenderer>
   );

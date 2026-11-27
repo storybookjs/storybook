@@ -4,8 +4,7 @@ import type { Meta, StoryObj, VueRenderer } from '@storybook/vue3';
 
 import { useArgs } from 'storybook/preview-api';
 import { expect, within } from 'storybook/test';
-import { h, onActivated, ref } from 'vue';
-import { computed } from 'vue';
+import { computed, h, onActivated, ref } from 'vue';
 
 const { Button, Pre } = (globalThis as any).__TEMPLATE_COMPONENTS__;
 
@@ -160,7 +159,6 @@ const KeepAliveWrapper = () => ({
 // A decorator that wraps the story in <KeepAlive> must keep the story alive, so the story's
 // onActivated hook runs (https://github.com/storybookjs/storybook/issues/27149).
 export const KeepAliveDecorator: Story = {
-  args: { label: 'Inside KeepAlive' },
   render: () => ({
     setup() {
       const activated = ref(false);

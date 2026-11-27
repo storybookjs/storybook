@@ -193,6 +193,14 @@ export class ChangeDetectionService {
     }
   }
 
+  /**
+   * Reads the story index as the baseline for new stories. Call it when the server starts if
+   * `start()` follows later, so that a story added in between still counts as new.
+   */
+  captureIndexBaseline(): void {
+    this.getIndexBaselineService().captureIndex();
+  }
+
   start(): void {
     const moduleGraph = this.getModuleGraph();
     this.unsubscribeModuleGraphStatus = moduleGraph.queries.status.subscribe(

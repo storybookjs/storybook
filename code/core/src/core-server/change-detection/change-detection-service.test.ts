@@ -33,7 +33,7 @@ import { IndexingError, MultipleIndexingError } from '../utils/IndexingError.ts'
 import { ChangeDetectionFailureError, ChangeDetectionUnavailableError } from './errors.ts';
 import type { GitDiffResult } from './GitDiffProvider.ts';
 import { GitDiffProvider } from './GitDiffProvider.ts';
-import type { IndexBaselineService } from './IndexBaselineService.ts';
+import { IndexBaselineService } from './IndexBaselineService.ts';
 import {
   getChangeDetectionReadiness,
   resetChangeDetectionReadiness as internal_resetChangeDetectionReadiness,
@@ -426,6 +426,62 @@ describe('ChangeDetectionService', () => {
     expect(getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID).getAll()).toEqual({
       'new-button--primary': {},
     });
+    await service.dispose();
+  });
+
+  it('marks a story added between captureIndexBaseline() and start() as new', async () => {
+    installDependencyGraphMocks(
+      buildReverseIndex([['/repo/src/Button.stories.tsx', '/repo/src/Button.stories.tsx', 0]])
+    );
+    const primary = {
+      storyId: 'button--primary',
+      importPath: './src/Button.stories.tsx',
+      title: 'Button',
+    };
+    const storyIndexGeneratorPromise = Promise.resolve({
+      getIndex: vi
+        .fn()
+        .mockResolvedValueOnce(createStoryIndex([primary]))
+        .mockResolvedValue(createStoryIndex([primary, { ...primary, storyId: 'button--added' }])),
+    } as never);
+    const { getStatusStoreByTypeId } = createStatusStore({
+      universalStatusStore: new MockUniversalStore(UNIVERSAL_STATUS_STORE_OPTIONS),
+      environment: 'server',
+    });
+    const gitDiffProvider = createMockGitDiffProvider((provider) => {
+      provider.isWorkingTreeCleanMock.mockResolvedValue(false);
+      provider.getChangedFilesMock.mockResolvedValue({
+        changed: new Set(['src/Button.stories.tsx']),
+        new: new Set(),
+      });
+    });
+    const { adapter } = createMockAdapter();
+    const { service, graph } = createWiredChangeDetection({
+      storyIndexGeneratorPromise,
+      statusStore: getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID),
+      gitDiffProvider,
+      indexBaselineService: new IndexBaselineService({
+        storyIndexGeneratorPromise,
+        gitDiffProvider,
+        onBaselineUpdated: vi.fn(),
+        cache: { get: async () => undefined, set: async () => undefined },
+      }),
+      workingDir,
+    });
+
+    service.captureIndexBaseline();
+    await vi.runAllTimersAsync();
+    graph.start(adapter);
+    service.start();
+    await vi.runAllTimersAsync();
+
+    const statuses = getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID).getAll();
+    expect(statuses['button--added'][CHANGE_DETECTION_STATUS_TYPE_ID].value).toBe(
+      'status-value:new'
+    );
+    expect(statuses['button--primary'][CHANGE_DETECTION_STATUS_TYPE_ID].value).toBe(
+      'status-value:modified'
+    );
     await service.dispose();
   });
 

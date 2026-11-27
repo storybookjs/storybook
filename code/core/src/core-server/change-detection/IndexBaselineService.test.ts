@@ -132,6 +132,75 @@ describe('IndexBaselineService', () => {
     expect(await service.getBaselineEntryIds()).toEqual(new Set(['dirty']));
   });
 
+  it('keeps the index captured before a dirty startup as the snapshot', async () => {
+    const gitDiffProvider = new MockGitDiffProvider();
+    gitDiffProvider.clean = false;
+    const { cache } = createCache();
+    const generator = createStoryIndexGenerator([
+      createStoryIndex(['existing']),
+      createStoryIndex(['existing', 'added-before-startup']),
+    ]);
+
+    const service = new IndexBaselineService({
+      storyIndexGeneratorPromise: Promise.resolve(generator),
+      gitDiffProvider,
+      cache,
+      onBaselineUpdated: vi.fn(),
+    });
+
+    service.captureIndex();
+    await service.start();
+
+    expect(generator.getIndex).toHaveBeenCalledTimes(1);
+    expect(await service.getBaselineEntryIds()).toEqual(new Set(['existing']));
+  });
+
+  it('reads the index at a dirty startup when the index could not be captured before', async () => {
+    const gitDiffProvider = new MockGitDiffProvider();
+    gitDiffProvider.clean = false;
+    const { cache } = createCache();
+    const generator = {
+      getIndex: vi
+        .fn()
+        .mockRejectedValueOnce(new Error('Unable to index ./broken.stories.ts'))
+        .mockResolvedValue(createStoryIndex(['fixed'])),
+    } as unknown as StoryIndexGenerator;
+
+    const service = new IndexBaselineService({
+      storyIndexGeneratorPromise: Promise.resolve(generator),
+      gitDiffProvider,
+      cache,
+      onBaselineUpdated: vi.fn(),
+    });
+
+    service.captureIndex();
+    await service.start();
+
+    expect(await service.getBaselineEntryIds()).toEqual(new Set(['fixed']));
+  });
+
+  it('reads the index of the commit at a clean startup, whatever was captured before', async () => {
+    const gitDiffProvider = new MockGitDiffProvider();
+    const { cache } = createCache();
+    const generator = createStoryIndexGenerator([
+      createStoryIndex(['previous-commit']),
+      createStoryIndex(['checked-out-commit']),
+    ]);
+
+    const service = new IndexBaselineService({
+      storyIndexGeneratorPromise: Promise.resolve(generator),
+      gitDiffProvider,
+      cache,
+      onBaselineUpdated: vi.fn(),
+    });
+
+    service.captureIndex();
+    await service.start();
+
+    expect(cache.set).toHaveBeenCalledWith('sha-1', { entryIds: ['checked-out-commit'] });
+    expect(await service.getBaselineEntryIds()).toEqual(new Set(['checked-out-commit']));
+  });
+
   it('regenerates and persists when git state becomes clean', async () => {
     const gitDiffProvider = new MockGitDiffProvider();
     gitDiffProvider.clean = false;

@@ -59,6 +59,7 @@ export class ModuleGraphEngine {
   private reverseIndex: ReverseIndexImpl | undefined;
   private storyFiles: Set<string> = new Set();
   private refreshInFlight = false;
+  private invalidatedDuringBuild = false;
   /**
    * Resolves once {@link startInternal} finishes (success or handled failure). The initial build
    * does not go through {@link patchQueue}, so {@link whenSettled} awaits this first.
@@ -259,16 +260,25 @@ export class ModuleGraphEngine {
     });
 
     this.mirrorSnapshot();
+
+    if (this.invalidatedDuringBuild) {
+      this.onStoryIndexInvalidated();
+    }
   }
 
   onStoryIndexInvalidated(): void {
+    if (!this.incrementalPatcher) {
+      // A build in flight may have read the index before this invalidation.
+      this.invalidatedDuringBuild = true;
+      return;
+    }
     // Single-flight: a reconciliation already running will pick up this invalidation's changes when
     // its getIndex() reads the (already-nulled) index cache, so we don't start a second. Track the
     // running reconciliation in refreshSettled so whenSettled() can wait for it to enqueue its
     // add/unlink patches before snapshotting the patch tail. The guard lives here (not inside
     // refreshStoryFiles) so a dropped second invalidation can't overwrite refreshSettled with a
     // resolved no-op and let the barrier skip the real in-flight reconciliation.
-    if (!this.refreshInFlight && this.incrementalPatcher) {
+    if (!this.refreshInFlight) {
       this.refreshInFlight = true;
       this.refreshSettled = this.refreshStoryFiles()
         .catch(() => undefined)

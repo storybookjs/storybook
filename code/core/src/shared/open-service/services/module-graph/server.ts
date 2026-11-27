@@ -62,10 +62,9 @@ export function resetChangeDetectionAdapterForTests(): void {
 
 /**
  * Registers `core/module-graph`, constructs the graph engine, wires state mirroring into the service
- * commands, and listens for story-index invalidation on the server channel. The engine starts once
- * {@link resolveChangeDetectionAdapter} provides the builder adapter, or once the first
- * `_waitForSettledEngine` call obtains one through
- * {@link RegisterModuleGraphServiceOptions.getAdapter}.
+ * commands, and listens for story-index invalidation on the server channel. The engine starts on
+ * the first `_waitForSettledEngine` call, with the adapter {@link resolveChangeDetectionAdapter}
+ * provided or else the one {@link RegisterModuleGraphServiceOptions.getAdapter} obtains.
  *
  * The engine lives for the entire dev-server process, so there is no teardown path: the OS reclaims
  * everything when the process exits.
@@ -201,8 +200,6 @@ export function registerModuleGraphService(options: RegisterModuleGraphServiceOp
   options.channel.on(STORY_INDEX_INVALIDATED, () => {
     engine!.onStoryIndexInvalidated();
   });
-
-  void adapterPromise.then(applyAdapter);
 
   return runtime;
 }

@@ -529,13 +529,30 @@ describe('module-graph open service', () => {
       });
 
       resolveChangeDetectionAdapter(adapter);
-      await vi.waitFor(() => {
-        expect(runtime.queries.status.get(undefined)).toEqual({ value: 'ready' });
-      });
-      expect(getAdapter).not.toHaveBeenCalled();
 
-      await runtime.queries.status.loaded(undefined);
+      expect(await runtime.queries.status.loaded(undefined)).toEqual({ value: 'ready' });
       expect(getAdapter).not.toHaveBeenCalled();
+    });
+
+    it('leaves the graph unbuilt when the host resolves the adapter, until it is first asked for', async () => {
+      const { buildSpy } = installDependencyGraphMocks(buildReverseIndex([]));
+      const { adapter } = createMockAdapter({ resolveConfig: { projectRoot: '/repo' } });
+      const runtime = registerModuleGraphService({
+        channel: { on: vi.fn(() => () => undefined), emit: vi.fn() } as never,
+        getIndex: vi.fn().mockResolvedValue(createStoryIndex([])),
+        workingDir: '/repo',
+      });
+
+      resolveChangeDetectionAdapter(adapter);
+      await new Promise((resolve) => setImmediate(resolve));
+
+      expect(buildSpy).not.toHaveBeenCalled();
+      expect(runtime.queries.status.get(undefined)).toEqual({ value: 'booting' });
+
+      await runtime.commands.storiesForFiles({ files: [] });
+
+      expect(buildSpy).toHaveBeenCalledOnce();
+      expect(runtime.queries.status.get(undefined)).toEqual({ value: 'ready' });
     });
 
     it('calls getAdapter once when two settle waits overlap', async () => {
@@ -709,9 +726,7 @@ describe('module-graph open service', () => {
 
       resolveChangeDetectionAdapter(adapter);
 
-      await vi.waitFor(() => {
-        expect(runtime.queries.status.get(undefined)).toEqual({ value: 'ready' });
-      });
+      expect(await runtime.queries.status.loaded(undefined)).toEqual({ value: 'ready' });
 
       await expect(
         runtime.commands.storiesForFiles({ files: ['/repo/src/Button.tsx'] })

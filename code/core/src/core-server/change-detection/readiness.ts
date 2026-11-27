@@ -28,8 +28,8 @@ let hostStarted: Promise<void> | undefined;
 
 /**
  * Install a one-shot starter the first {@link getChangeDetectionReadiness} call runs. The CLI uses
- * this so git/status scanning does not start at bootstrap; the dev server starts the service itself
- * and never installs a host.
+ * this so git/status scanning does not start at bootstrap; the dev server, so a readiness request
+ * does not wait for its deferred start.
  */
 export function setChangeDetectionHost(next?: ChangeDetectionHost): void {
   host = next;

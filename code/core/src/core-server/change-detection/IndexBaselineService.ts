@@ -32,6 +32,7 @@ export function extractBaselineEntryIds(storyIndex: StoryIndex): Set<string> {
 
 export class IndexBaselineService {
   private baselineEntryIds = new Set<string>();
+  private capturedIndex: Promise<StoryIndex | undefined> | undefined;
   private initializePromise: Promise<void> | undefined;
   private syncInFlight = false;
   private cache: BaselineCache;
@@ -50,6 +51,12 @@ export class IndexBaselineService {
         basePath: resolvePathInStorybookCache(DEFAULT_CACHE_KEY),
         ns: 'storybook',
       });
+  }
+
+  // The baseline of a dirty working tree is the index as the server found it. A host that starts
+  // this service later reads that index here, before a first edit changes it.
+  captureIndex(): void {
+    this.capturedIndex = this.getIndex().catch(() => undefined);
   }
 
   start(): Promise<void> {
@@ -90,7 +97,8 @@ export class IndexBaselineService {
   private async initialize(): Promise<void> {
     const isClean = await this.options.gitDiffProvider.isWorkingTreeClean();
     if (!isClean) {
-      await this.refreshBaseline();
+      const storyIndex = (await this.capturedIndex) ?? (await this.getIndex());
+      this.baselineEntryIds = extractBaselineEntryIds(storyIndex);
       return;
     }
 
@@ -104,14 +112,13 @@ export class IndexBaselineService {
     await this.refreshBaseline(headCommit);
   }
 
-  private async refreshBaseline(persistenceKey?: string): Promise<void> {
-    const storyIndexGenerator = await this.options.storyIndexGeneratorPromise;
-    const storyIndex = await storyIndexGenerator.getIndex();
-    const entryIds = Array.from(extractBaselineEntryIds(storyIndex)).sort();
+  private async refreshBaseline(headCommit: string): Promise<void> {
+    const entryIds = Array.from(extractBaselineEntryIds(await this.getIndex())).sort();
     this.baselineEntryIds = new Set(entryIds);
+    await this.cache.set(headCommit, { entryIds });
+  }
 
-    if (persistenceKey) {
-      await this.cache.set(persistenceKey, { entryIds });
-    }
+  private async getIndex(): Promise<StoryIndex> {
+    return (await this.options.storyIndexGeneratorPromise).getIndex();
   }
 }

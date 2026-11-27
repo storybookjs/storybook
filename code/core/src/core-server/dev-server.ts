@@ -11,6 +11,7 @@ import type { ChangeDetectionAdapter } from '../shared/open-service/services/mod
 import { resolveChangeDetectionAdapter } from '../shared/open-service/services/module-graph/server.ts';
 import { isTelemetryModuleEnabled, telemetry } from '../telemetry/index.ts';
 import { ChangeDetectionService } from './change-detection/change-detection-service.ts';
+import { deferChangeDetectionStart } from './change-detection/deferred-start.ts';
 import { getStatusStoreByTypeId } from './stores/status.ts';
 import type { StoryIndexGenerator } from './utils/StoryIndexGenerator.ts';
 import { doTelemetry } from './utils/doTelemetry.ts';
@@ -58,7 +59,10 @@ export async function storybookDevServer(
     workingDir,
   });
 
+  let cancelDeferredChangeDetectionStart = () => {};
+
   const disposeChangeDetectionRuntime = async () => {
+    cancelDeferredChangeDetectionStart();
     await changeDetectionService.dispose().catch(() => undefined);
   };
 
@@ -169,9 +173,14 @@ export async function storybookDevServer(
     logger.debug(err instanceof Error ? (err.stack ?? err.message) : String(err));
   }
 
-  resolveChangeDetectionAdapter(adapter);
-
-  changeDetectionService.start();
+  changeDetectionService.captureIndexBaseline();
+  const deferredChangeDetectionStart = deferChangeDetectionStart({
+    channel: options.channel,
+    adapter,
+    start: () => changeDetectionService.start(),
+  });
+  cancelDeferredChangeDetectionStart = deferredChangeDetectionStart.cancel;
+  resolveChangeDetectionAdapter(deferredChangeDetectionStart.recordingAdapter);
 
   const listening = new Promise<void>((resolve, reject) => {
     server.once('error', reject);

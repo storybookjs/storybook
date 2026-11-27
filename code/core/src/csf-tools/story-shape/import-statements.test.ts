@@ -16,10 +16,18 @@ const bindingsOf = (code: string) =>
 const resolve = (code: string, componentName: string) =>
   resolveComponentImport(componentName, bindingsOf(code));
 
-const statementsFor = (code: string, componentNames: string[], packageName?: string) => {
+const statementsFor = (
+  code: string,
+  componentNames: string[],
+  packageName?: string,
+  options?: { isPackage?: boolean }
+) => {
   const bindings = bindingsOf(code);
   return buildImportStatements({
-    refs: componentNames.map((name) => resolveComponentImport(name, bindings)),
+    refs: componentNames.map((name) => ({
+      ...resolveComponentImport(name, bindings),
+      ...(options?.isPackage === undefined ? {} : { isPackage: options.isPackage }),
+    })),
     packageName,
   });
 };
@@ -265,6 +273,87 @@ describe('buildImportStatements', () => {
         .toMatchInlineSnapshot(`
         [
           "import { Button } from 'my-design-system';",
+        ]
+      `);
+    });
+
+    it('keeps an unresolved package specifier', () => {
+      expect(
+        statementsFor(
+          `import { MemoryRouter } from 'react-router-dom';`,
+          ['MemoryRouter'],
+          'my-design-system',
+          { isPackage: true }
+        )
+      ).toMatchInlineSnapshot(`
+        [
+          "import { MemoryRouter } from 'react-router-dom';",
+        ]
+      `);
+    });
+
+    it('keeps an unresolved mixed-case package specifier', () => {
+      expect(
+        statementsFor(
+          dedent`
+            import { Button } from '@Company/ui';
+            import JSONStream from 'JSONStream';
+          `,
+          ['Button', 'JSONStream'],
+          'my-design-system',
+          { isPackage: true }
+        )
+      ).toMatchInlineSnapshot(`
+        [
+          "import { Button } from '@Company/ui';",
+          "import JSONStream from 'JSONStream';",
+        ]
+      `);
+    });
+
+    it('keeps an unresolved package subpath', () => {
+      expect(
+        statementsFor(`import format from 'date-fns/format';`, ['format'], 'my-design-system', {
+          isPackage: true,
+        })
+      ).toMatchInlineSnapshot(`
+        [
+          "import format from 'date-fns/format';",
+        ]
+      `);
+    });
+
+    it('rewrites an absolute path to the package name', () => {
+      expect(
+        statementsFor(
+          dedent`
+            import Button from '/Users/me/Button';
+            import WinButton from 'C:/Users/me/Button';
+            import PosixButton from 'c:/users/me/button';
+          `,
+          ['Button', 'WinButton', 'PosixButton'],
+          'my-design-system'
+        )
+      ).toMatchInlineSnapshot(`
+        [
+          "import { Button, WinButton, PosixButton } from 'my-design-system';",
+        ]
+      `);
+    });
+
+    it('rewrites a tilde or hash alias to the package name', () => {
+      expect(
+        statementsFor(
+          dedent`
+            import { Button } from '~/components/Button';
+            import Btn from '#Button';
+          `,
+          ['Button', 'Btn'],
+          'my-design-system'
+        )
+      ).toMatchInlineSnapshot(`
+        [
+          "import { Button, Btn } from 'my-design-system';",
         ]
       `);
     });

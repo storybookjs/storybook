@@ -509,217 +509,6 @@ test('Side-effect-only import is ignored', async () => {
   );
 });
 
-// New tests for packageName behavior
-
-test('Converts default relative import to import override when provided', async () => {
-  const code = dedent`
-    import Button from './Button';
-
-    const meta = {};
-    export default meta;
-    export const S = <Button/>;
-  `;
-  expect(
-    await getImports(code, 'my-package', '/app/src/stories/Button.stories.tsx')
-  ).toMatchInlineSnapshot(
-    `
-    {
-      "components": [
-        {
-          "componentName": "Button",
-          "importId": "./Button",
-          "importName": "default",
-          "importOverride": "import { Button } from '@design-system/components/override';",
-          "isPackage": false,
-          "jsxDepth": 0,
-          "localImportName": "Button",
-          "path": "./src/stories/Button.tsx",
-        },
-      ],
-      "imports": [
-        "import { Button } from '@design-system/components/override';",
-      ],
-    }
-  `
-  );
-});
-
-test('Keeps relative import when packageName is missing', async () => {
-  const code = dedent`
-    import { Button } from './components/Button';
-
-    const meta = {};
-    export default meta;
-    export const S = <Button/>;
-  `;
-  expect(await getImports(code)).toMatchInlineSnapshot(
-    `
-    {
-      "components": [
-        {
-          "componentName": "Button",
-          "importId": "./components/Button",
-          "importName": "Button",
-          "isPackage": false,
-          "jsxDepth": 0,
-          "localImportName": "Button",
-        },
-      ],
-      "imports": [
-        "import { Button } from './components/Button';",
-      ],
-    }
-  `
-  );
-});
-
-test('Non-relative import remains unchanged even if packageName provided', async () => {
-  const code = dedent`
-    import { Header } from '@ds/header';
-
-    const meta = {};
-    export default meta;
-    export const S = <Header/>;
-  `;
-  expect(await getImports(code, 'my-package')).toMatchInlineSnapshot(
-    `
-    {
-      "components": [
-        {
-          "componentName": "Header",
-          "importId": "@ds/header",
-          "importName": "Header",
-          "importOverride": undefined,
-          "isPackage": true,
-          "jsxDepth": 0,
-          "localImportName": "Header",
-          "path": "./src/stories/Header.tsx",
-        },
-      ],
-      "imports": [
-        "import { Header } from '@ds/header';",
-      ],
-    }
-  `
-  );
-});
-
-test('Rewrites tilde-prefixed source to packageName', async () => {
-  const code = dedent`
-    import { Button } from '~/components/Button';
-
-    const meta = {};
-    export default meta;
-    export const S = <Button/>;
-  `;
-  expect(await getImports(code, 'pkg')).toMatchInlineSnapshot(
-    `
-    {
-      "components": [
-        {
-          "componentName": "Button",
-          "importId": "~/components/Button",
-          "importName": "Button",
-          "isPackage": false,
-          "jsxDepth": 0,
-          "localImportName": "Button",
-        },
-      ],
-      "imports": [
-        "import { Button } from 'pkg';",
-      ],
-    }
-  `
-  );
-});
-
-test('Rewrites hash-prefixed source to packageName', async () => {
-  const code = dedent`
-    import Btn from '#Button';
-
-    const meta = {};
-    export default meta;
-    export const S = <Btn/>;
-  `;
-  expect(await getImports(code, 'my-package')).toMatchInlineSnapshot(
-    `
-    {
-      "components": [
-        {
-          "componentName": "Btn",
-          "importId": "#Button",
-          "importName": "default",
-          "isPackage": false,
-          "jsxDepth": 0,
-          "localImportName": "Btn",
-        },
-      ],
-      "imports": [
-        "import { Btn } from 'my-package';",
-      ],
-    }
-  `
-  );
-});
-
-test('Does not rewrite scoped package subpath (valid bare specifier)', async () => {
-  const code = dedent`
-    import { Button } from '@scope/ui/components';
-
-    const meta = {};
-    export default meta;
-    export const S = <Button/>;
-  `;
-  expect(await getImports(code, 'pkg')).toMatchInlineSnapshot(
-    `
-    {
-      "components": [
-        {
-          "componentName": "Button",
-          "importId": "@scope/ui/components",
-          "importName": "Button",
-          "isPackage": false,
-          "jsxDepth": 0,
-          "localImportName": "Button",
-        },
-      ],
-      "imports": [
-        "import { Button } from 'pkg';",
-      ],
-    }
-  `
-  );
-});
-
-test('Does not rewrite unscoped package subpath (valid bare specifier)', async () => {
-  const code = dedent`
-    import { Button } from 'ui/components';
-
-    const meta = {};
-    export default meta;
-    export const S = <Button/>;
-  `;
-  expect(await getImports(code, 'pkg')).toMatchInlineSnapshot(
-    `
-    {
-      "components": [
-        {
-          "componentName": "Button",
-          "importId": "ui/components",
-          "importName": "Button",
-          "isPackage": false,
-          "jsxDepth": 0,
-          "localImportName": "Button",
-        },
-      ],
-      "imports": [
-        "import { Button } from 'pkg';",
-      ],
-    }
-  `
-  );
-});
-
 // Merging imports from same package
 
 test('Merges multiple imports from the same package (defaults and named)', async () => {
@@ -743,7 +532,7 @@ test('Merges multiple imports from the same package (defaults and named)', async
           "componentName": "Banner",
           "importId": "@primer/react",
           "importName": "Banner",
-          "isPackage": false,
+          "isPackage": true,
           "jsxDepth": 1,
           "localImportName": "Banner",
         },
@@ -751,7 +540,7 @@ test('Merges multiple imports from the same package (defaults and named)', async
           "componentName": "CopilotIcon",
           "importId": "@primer/octicons-react",
           "importName": "CopilotIcon",
-          "isPackage": false,
+          "isPackage": true,
           "jsxDepth": 1,
           "localImportName": "CopilotIcon",
         },
@@ -759,7 +548,7 @@ test('Merges multiple imports from the same package (defaults and named)', async
           "componentName": "Dialog",
           "importId": "@primer/react",
           "importName": "Dialog",
-          "isPackage": false,
+          "isPackage": true,
           "jsxDepth": 1,
           "localImportName": "Dialog",
         },
@@ -767,7 +556,7 @@ test('Merges multiple imports from the same package (defaults and named)', async
           "componentName": "Heading",
           "importId": "@primer/react",
           "importName": "Heading",
-          "isPackage": false,
+          "isPackage": true,
           "jsxDepth": 1,
           "localImportName": "Heading",
         },
@@ -775,7 +564,7 @@ test('Merges multiple imports from the same package (defaults and named)', async
           "componentName": "Link",
           "importId": "@primer/react",
           "importName": "default",
-          "isPackage": false,
+          "isPackage": true,
           "jsxDepth": 1,
           "localImportName": "Link",
         },
@@ -783,7 +572,7 @@ test('Merges multiple imports from the same package (defaults and named)', async
           "componentName": "Stack",
           "importId": "@primer/react",
           "importName": "Stack",
-          "isPackage": false,
+          "isPackage": true,
           "jsxDepth": 1,
           "localImportName": "Stack",
         },
@@ -815,7 +604,7 @@ test('Handle namespace with default and separates named for same package', async
           "componentName": "Banner",
           "importId": "@primer/react",
           "importName": "Banner",
-          "isPackage": false,
+          "isPackage": true,
           "jsxDepth": 1,
           "localImportName": "Banner",
         },
@@ -831,7 +620,7 @@ test('Handle namespace with default and separates named for same package', async
           "componentName": "PR.Box",
           "importId": "@primer/react",
           "importName": "Box",
-          "isPackage": false,
+          "isPackage": true,
           "jsxDepth": 1,
           "localImportName": "PR",
           "member": "Box",

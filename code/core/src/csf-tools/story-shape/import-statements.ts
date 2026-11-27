@@ -13,7 +13,7 @@ export interface ImportRef {
   namespace?: string;
   /** Import statement replacing the derived source and specifier, e.g. from an `@import` tag. */
   importOverride?: string;
-  /** Whether `importId` already resolves as a package, which suppresses `packageName` rewriting. */
+  /** When true, `importId` is a package import and is not rewritten to `packageName`. */
   isPackage?: boolean;
 }
 

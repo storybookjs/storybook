@@ -35,4 +35,13 @@ export const resolvedReact = async (existing: any) => {
   }
 };
 
-export const optimizeViteDeps = ['preact/compat/jsx-runtime'];
+export const optimizeViteDeps = [
+  // The renderer's entry preview imports `preact` by its bare specifier. Vite's dependency scan
+  // skips files under `dist/` (the default `build.outDir`), so it never registers that import, and
+  // Vite does not discover deps imported from `node_modules` at runtime either. Without this entry
+  // the renderer loads raw `preact` while stories that import `preact/hooks` get a pre-bundled copy
+  // of Preact, and every hook throws `Cannot read properties of null (reading '__H')`. Projects
+  // using `@preact/preset-vite` were unaffected because that plugin pre-bundles `preact` itself.
+  'preact',
+  'preact/compat/jsx-runtime',
+];

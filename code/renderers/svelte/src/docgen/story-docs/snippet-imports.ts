@@ -316,7 +316,84 @@ function markupReferences(markup: string, typescript: boolean) {
 
 function freeNames(code: string, statement: boolean, typescript: boolean) {
   const editor = new SourceEditor(statement ? code : `(${code})`, scriptFile(typescript));
-  return { values: [...editor.scopes.unbound], types: typeReferences(editor.program) };
+  if (!typescript) {
+    return { values: [...editor.scopes.unbound], types: [] };
+  }
+  const valueNames = valueReferences(editor.program);
+  return {
+    values: [...editor.scopes.unbound].filter((name) => valueNames.has(name)),
+    types: typeReferences(editor.program),
+  };
+}
+
+const TYPE_ONLY_NODES = new Set([
+  'TSTypeAnnotation',
+  'TSTypeParameterDeclaration',
+  'TSTypeParameterInstantiation',
+  'TSInterfaceDeclaration',
+  'TSTypeAliasDeclaration',
+  'TSInterfaceHeritage',
+  'TSClassImplements',
+  'TSDeclareFunction',
+]);
+
+// Identifiers appearing in runtime value positions (plus `typeof` queries and computed keys inside
+// types), used to filter TypeScript-only names out of `editor.scopes.unbound`.
+function valueReferences(root: Node): Set<string> {
+  const names = new Set<string>();
+
+  const collectTypeValues = (typeNode: Node): void => {
+    walkEstree(typeNode, (child) => {
+      if (child.type === 'TSTypeQuery') {
+        let name: Node | undefined = child.exprName;
+        while (name?.type === 'TSQualifiedName') name = name.left;
+        if (name?.type === 'Identifier') names.add(name.name);
+        return false;
+      }
+      if (
+        (child.type === 'TSPropertySignature' || child.type === 'TSMethodSignature') &&
+        child.computed
+      ) {
+        collectValues(child.key);
+      }
+    });
+  };
+
+  const collectValues = (node: Node): void => {
+    walkEstree(node, (child, parent) => {
+      if (
+        child.type === 'TSAsExpression' ||
+        child.type === 'TSSatisfiesExpression' ||
+        child.type === 'TSTypeAssertion'
+      ) {
+        collectValues(child.expression);
+        collectTypeValues(child.typeAnnotation);
+        return false;
+      }
+      if (TYPE_ONLY_NODES.has(child.type)) {
+        collectTypeValues(child);
+        return false;
+      }
+      if (child.type !== 'Identifier') return;
+      if (parent?.type === 'MemberExpression' && parent.property === child && !parent.computed) {
+        return;
+      }
+      if (
+        (parent?.type === 'Property' ||
+          parent?.type === 'MethodDefinition' ||
+          parent?.type === 'PropertyDefinition') &&
+        parent.key === child &&
+        !parent.computed &&
+        !('shorthand' in parent && parent.shorthand)
+      ) {
+        return;
+      }
+      names.add(child.name);
+    });
+  };
+
+  collectValues(root);
+  return names;
 }
 
 function typeReferences(node: Node): string[] {

@@ -335,3 +335,39 @@ it('applies the meta import override to the meta component only', () => {
     "<script>\n  import { Button as LocalButton } from 'my-ds';\n  import Icon from './Icon.svelte';\n</script>"
   );
 });
+
+it('does not report TypeScript library types in `as` or `satisfies` as unresolved', () => {
+  const result = buildSnippetImportBlock(
+    "{#each ['sm', 'md'] satisfies ReadonlyArray<string> as size (size)}<Tag label={labels[size]} />{/each}",
+    {
+      bindings: bindings("import Tag from './Tag.svelte';"),
+      moduleScript: "const labels = { sm: 'Small', md: 'Medium' } as Record<string, string>;",
+      typescript: true,
+    }
+  );
+  expect(result.unresolved).toEqual([]);
+  expect(result.unresolvedIdentifiers).toBeUndefined();
+});
+
+it('does not report interface method signature names or parameters as unresolved', () => {
+  const result = buildSnippetImportBlock("<Tag label={labeller.label('md')} />", {
+    bindings: bindings("import Tag from './Tag.svelte';"),
+    moduleScript:
+      'interface Labeller { label(size: string): string; } const labeller: Labeller = { label: (size) => size.toUpperCase() };',
+    typescript: true,
+  });
+  expect(result.block).toContain('interface Labeller');
+  expect(result.unresolved).toEqual([]);
+  expect(result.unresolvedIdentifiers).toBeUndefined();
+});
+
+it('still resolves `typeof` value references and reports unknown values beside TypeScript types', () => {
+  const result = buildSnippetImportBlock('{missing as Record<string, string>}{value}', {
+    bindings: bindings(''),
+    moduleScript:
+      "const helper = () => 'ok'; type Helper = typeof helper; const value: Helper = helper;",
+    typescript: true,
+  });
+  expect(result.block).toContain("const helper = () => 'ok';");
+  expect(result.unresolvedIdentifiers).toEqual(['missing']);
+});

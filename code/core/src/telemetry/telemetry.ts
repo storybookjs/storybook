@@ -120,10 +120,13 @@ async function handOver(event: TelemetryEvent) {
 function startSender() {
   const script = fileURLToPath(importMetaResolve('storybook/internal/telemetry/sender'));
   const child = spawn(process.execPath, [script], {
-    // With an inherited --inspect-brk the child would wait for a debugger forever.
+    // With an inherited --inspect-brk the child would wait for a debugger forever. An option can
+    // be quoted, in whole ("--inspect-brk") or in part (--require "/a path/preload.js").
     env: {
       ...process.env,
-      NODE_OPTIONS: process.env.NODE_OPTIONS?.replace(/(?<=^|\s)--inspect\S*/g, ''),
+      NODE_OPTIONS: process.env.NODE_OPTIONS?.replace(/(?:"(?:\\.|[^"])*"|[^\s"])+/g, (option) =>
+        option.replaceAll('"', '').startsWith('--inspect') ? '' : option
+      ),
     },
     detached: true,
     stdio: ['ignore', 'ignore', 'ignore', 'ipc'],

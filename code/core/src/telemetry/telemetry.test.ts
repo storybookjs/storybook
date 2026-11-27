@@ -158,14 +158,21 @@ it('starts a new process when the last one is gone', async () => {
 it('starts the process without the debugger flags of this one, and keeps its other options', async () => {
   vi.stubEnv(
     'NODE_OPTIONS',
-    '--inspect-brk=0 --require /my--inspect-app/.pnp.cjs --use-openssl-ca --inspect'
+    [
+      '--inspect-brk=0',
+      '"--inspect-brk=0"',
+      '--require /my--inspect-app/.pnp.cjs',
+      '--require "/my dir/--inspect app/preload.cjs"',
+      '--use-openssl-ca',
+      '--inspect',
+    ].join(' ')
   );
 
   await sendTelemetry({ eventType: 'dev', payload: {} });
 
   const [, , options] = vi.mocked(spawn).mock.calls[0];
   expect(options.env?.NODE_OPTIONS?.trim()).toBe(
-    '--require /my--inspect-app/.pnp.cjs --use-openssl-ca'
+    '--require /my--inspect-app/.pnp.cjs --require "/my dir/--inspect app/preload.cjs" --use-openssl-ca'
   );
 });
 

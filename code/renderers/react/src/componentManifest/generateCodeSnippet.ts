@@ -6,8 +6,10 @@ import {
   type ImportRef,
   type RenderResolution,
   type StoryArgsResolver,
+  type StoryConstants,
   textOf,
   collectImportBindings,
+  collectStoryConstants,
   createStoryArgsResolver,
   detachedTextOf,
   isCanonicalCsf2BindCall,
@@ -15,6 +17,7 @@ import {
   lineIndent,
   metaObject,
   normalizeStoryDeclaration,
+  parseExpression,
   parseModule,
   reindent,
   resolveRenderFunction,
@@ -66,7 +69,12 @@ export function getCodeSnippet(
   componentName?: string,
   resolver: StoryArgsResolver = createStoryArgsResolver(csf)
 ): CodeSnippet {
-  const { args, imports, unresolved } = resolver.resolve(storyName);
+  const { args: resolved, imports, unresolved } = resolver.resolve(storyName);
+  const constants = collectStoryConstants(resolved, resolver.ctx, {
+    taken: nestedNames(csf),
+    jsx: true,
+  });
+  const args = boundToConstants(resolved, constants);
   const importedBind = importedBoundStory(csf, storyName, args);
   // All code the snippet prints, so none of it is read as a mark.
   const sources = [csf.editor.code, ...Object.values(args).map(detachedTextOf)];
@@ -74,7 +82,11 @@ export function getCodeSnippet(
   const marked = importedBind
     ? importedBind.print(marks.mark)
     : buildSnippet(csf, storyName, componentName, args, resolver, marks.mark);
-  const holes = marks.toTemplate(marked);
+  const printed = marks.toTemplate(marked);
+  invariant(printed, 'A place an arg prints was printed inside another.');
+  const declared = declaredConstants(constants, stripHoles(printed));
+  const holes =
+    declared.size > 0 ? marks.toTemplate(declarationsOf(constants, declared) + marked) : printed;
   invariant(holes, 'A place an arg prints was printed inside another.');
   const template = withHoleSpace(
     holes,
@@ -85,8 +97,65 @@ export function getCodeSnippet(
     snippet: stripHoles(template),
     template,
     imports: importedBind ? [...imports, importedBind.importRef] : imports,
-    unresolved,
+    unresolved: unresolved.filter((name) => !declared.has(name)),
   };
+}
+
+// An arg equal to a declared constant prints as its name, as `users={[user]}` reads `user`.
+function boundToConstants(args: Args, constants: StoryConstants): Args {
+  return Object.fromEntries(
+    Object.entries(args).map(([key, value]) => {
+      const constant = constants.declaredAs(value);
+      return [key, constant === undefined ? value : parseExpression(constant)];
+    })
+  );
+}
+
+const nestedNamesCache = new WeakMap<CsfFile, Set<string>>();
+
+// Names declared inside functions the snippet prints as written, which would shadow a constant.
+function nestedNames(csf: CsfFile): Set<string> {
+  const cached = nestedNamesCache.get(csf);
+  if (cached) {
+    return cached;
+  }
+  const { scopes } = csf.editor;
+  const names = new Set<string>();
+  nestedNamesCache.set(csf, names);
+  walk(csf.program, (node) => {
+    const binding = node.type === 'Identifier' ? scopes.bindingOf(node) : undefined;
+    if (binding && binding.scope !== scopes.program) {
+      names.add(binding.name);
+    }
+  });
+  return names;
+}
+
+// A match in a string or comment counts, which at worst declares an unused constant.
+function declaredConstants(constants: StoryConstants, snippet: string): Set<string> {
+  const declared = new Set<string>();
+  const declare = (name: string): void => {
+    if (!declared.has(name)) {
+      declared.add(name);
+      constants.declarations.get(name)?.uses.forEach(declare);
+    }
+  };
+  for (const name of constants.names) {
+    // Not a member name (`.lines`), but a spread (`...lines`) is a read.
+    const read = `(?<![\\w$])(?<![^.]\\.)(?<!^\\.)${name.replace(/\$/g, '\\$')}(?![\\w$])`;
+    if (new RegExp(read).test(snippet)) {
+      declare(name);
+    }
+  }
+  return declared;
+}
+
+function declarationsOf(constants: StoryConstants, declared: ReadonlySet<string>): string {
+  return [...declared]
+    .map((name) => [name, constants.declarations.get(name)!] as const)
+    .sort(([, a], [, b]) => a.start - b.start)
+    .map(([name, { value }]) => `const ${name} = ${detachedTextOf(value)};\n\n`)
+    .join('');
 }
 
 type Args = Record<string, Node>;

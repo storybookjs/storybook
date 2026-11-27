@@ -108,7 +108,17 @@ When you set the `component` annotation of the meta (or default export) of your 
 
 </If>
 
-<If renderer={[ 'html', 'svelte', 'preact', 'qwik', 'solid' ]}>
+<If renderer="solid">
+
+By default, Storybook will choose a control for each arg based on its initial value. This will work well with specific arg types (e.g., `boolean` or `string`). To enable them, add the `component` annotation to the meta (or default export) of your story file, and it will be used to infer the controls and auto-generate the matching [`argTypes`](../api/arg-types.mdx) for your component using **solid-component-meta** — a TypeScript extractor aligned with Storybook's `react-component-meta` format.
+
+<CodeSnippets path="button-story-default-export-with-component.md" />
+
+Docgen is enabled by default. To disable it, set `framework.options.docgen` to `false` in your [main config](../api/main-config/main-config-framework.mdx).
+
+</If>
+
+<If renderer={[ 'html', 'svelte', 'preact', 'qwik' ]}>
 
 By default, Storybook will choose a control for each arg based on its initial value. This will work well with specific arg types (e.g., `boolean` or `string`). To enable them, add the `component` annotation to the meta (or default export) of your story file, and it will be used to infer the controls and auto-generate the matching [`argTypes`](../api/arg-types.mdx) for your component provided by the framework you've chosen to use.
 

@@ -4,13 +4,13 @@ sidebar:
   order: 4
 ---
 
-<If notRenderer={['react', 'vue', 'angular', 'svelte', 'web-components']}>
+<If notRenderer={['react', 'vue', 'angular', 'svelte', 'web-components', 'solid']}>
 
 The `/write-stories` skill gives your agent the rules for the stories of your project, so every component it creates or changes gets stories. It isn't available for your framework yet. See [supported frameworks](../connect.mdx#supported-frameworks).
 
 </If>
 
-<If renderer={['react', 'vue', 'angular', 'svelte', 'web-components']}>
+<If renderer={['react', 'vue', 'angular', 'svelte', 'web-components', 'solid']}>
 
 The `/write-stories` skill gives your agent the rules for the stories of your project: which states get a story, and how to write the imports, play functions, and mocks. Every component your agent creates or changes gets stories that show its states and test its behavior.
 

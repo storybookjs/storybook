@@ -4,13 +4,13 @@ sidebar:
   order: 3
 ---
 
-<If notRenderer={['react', 'vue', 'angular', 'svelte', 'web-components']}>
+<If notRenderer={['react', 'vue', 'angular', 'svelte', 'web-components', 'solid']}>
 
 The `/component-docs` skill lets your agent look up your components, with their props and usage examples, so it will use them correctly and can answer questions about them. It needs a [components manifest](../reference/manifests.mdx), which your framework doesn't generate yet. See [framework support](../reference/manifests.mdx#framework-support).
 
 </If>
 
-<If renderer={['react', 'vue', 'angular', 'svelte', 'web-components']}>
+<If renderer={['react', 'vue', 'angular', 'svelte', 'web-components', 'solid']}>
 
 The `/component-docs` skill lets your agent look up the components in your Storybook, with their props and usage examples. Your agent will then use the components you have instead of building new ones, use only the props and attributes they support, and answer questions about how to use them.
 

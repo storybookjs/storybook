@@ -4,13 +4,13 @@ sidebar:
   order: 2
 ---
 
-<If notRenderer={['react', 'vue', 'angular', 'svelte', 'web-components']}>
+<If notRenderer={['react', 'vue', 'angular', 'svelte', 'web-components', 'solid']}>
 
 The Storybook MCP server lets your agent look up your components, write and test stories, and create a review of its work. It isn't available for your framework yet. See [supported frameworks](../connect.mdx#supported-frameworks).
 
 </If>
 
-<If renderer={['react', 'vue', 'angular', 'svelte', 'web-components']}>
+<If renderer={['react', 'vue', 'angular', 'svelte', 'web-components', 'solid']}>
 
 The Storybook MCP server gives your agent the same capabilities as the [skills](../connect.mdx#install-the-skills) through the [Model Context Protocol](https://modelcontextprotocol.io/). Use it when you want your agent to call Storybook through MCP tools instead of CLI commands. Your agent still needs to run shell commands: the server tells it to read each step of the workflow with `npx storybook skills <id> --mcp`. For most setups, we recommend skills.
 

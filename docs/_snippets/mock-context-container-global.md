@@ -57,9 +57,7 @@ const context = {
 };
 
 const AppDecorator = (storyFn) => {
-  return (
-    <GlobalContainerContext.Provider value={context}>{storyFn()}</GlobalContainerContext.Provider>
-  );
+  return <GlobalContainerContext value={context}>{storyFn()}</GlobalContainerContext>;
 };
 export const decorators = [AppDecorator];
 ```
@@ -73,9 +71,7 @@ const context = {
 };
 
 const AppDecorator = (storyFn) => {
-  return (
-    <GlobalContainerContext.Provider value={context}>{storyFn()}</GlobalContainerContext.Provider>
-  );
+  return <GlobalContainerContext value={context}>{storyFn()}</GlobalContainerContext>;
 };
 
 const preview: Preview = {

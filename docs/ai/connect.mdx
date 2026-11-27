@@ -4,13 +4,13 @@ sidebar:
   order: 1
 ---
 
-<If notRenderer={['react', 'vue', 'angular', 'svelte', 'web-components']}>
+<If notRenderer={['react', 'vue', 'angular', 'svelte', 'web-components', 'solid']}>
 
 Storybook's skills and MCP server let your agent set up Storybook, reuse your components, write and test stories, and create a review of its work. Neither is available for your framework yet.
 
 </If>
 
-<If renderer={['react', 'vue', 'angular', 'svelte', 'web-components']}>
+<If renderer={['react', 'vue', 'angular', 'svelte', 'web-components', 'solid']}>
 
 Connect your coding agent to Storybook so it can use your components, stories, and tests. We recommend [skills](#install-the-skills), which work with any agent that can run shell commands. Use the [MCP server](#mcp-server) if you want your agent to call Storybook through MCP tools instead of CLI commands.
 
@@ -98,14 +98,15 @@ You can also connect your agent to a published Storybook instead of running it l
 
 Skills are available for these frameworks:
 
-| Renderer                | Frameworks                                          | [Setup](./skills/setup.mdx) | [AGENTS.md section](./agents-md.mdx) |
-| ----------------------- | --------------------------------------------------- | --------------------------- | ------------------------------------ |
-| React (Setup supported) | `react-vite`, `nextjs-vite`, `tanstack-react`       | Yes                         | Yes                                  |
-| React (other)           | `react-webpack5`, `nextjs`, `react-native-web-vite` | No                          | Yes                                  |
-| Vue 3                   | `vue3-vite`                                         | Yes                         | Yes                                  |
-| Angular                 | `angular-vite`                                      | Yes                         | Yes                                  |
-| Svelte                  | `svelte-vite`, `sveltekit`                          | No                          | Yes                                  |
-| Web Components          | `web-components-vite`                               | No                          | Yes                                  |
+| Renderer                | Frameworks                                                                 | [Setup](./skills/setup.mdx) | [AGENTS.md section](./agents-md.mdx) |
+| ----------------------- | -------------------------------------------------------------------------- | --------------------------- | ------------------------------------ |
+| React (Setup supported) | `react-vite`, `nextjs-vite`, `tanstack-react`                              | Yes                         | Yes                                  |
+| React (other)           | `react-webpack5`, `nextjs`, `react-native-web-vite`                        | No                          | Yes                                  |
+| Vue 3                   | `vue3-vite`                                                                | Yes                         | Yes                                  |
+| Angular                 | `angular-vite`                                                             | Yes                         | Yes                                  |
+| Svelte                  | `svelte-vite`, `sveltekit`                                                 | No                          | Yes                                  |
+| Web Components          | `web-components-vite`                                                      | No                          | Yes                                  |
+| SolidJS                 | [`storybook-solidjs-vite`](https://github.com/solidjs-community/storybook) | No                          | Yes                                  |
 
 Skills may also be supported in community-maintained frameworks. Please check with those frameworks' maintainers for up-to-date support information.
 

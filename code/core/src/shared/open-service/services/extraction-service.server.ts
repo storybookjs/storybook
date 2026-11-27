@@ -35,11 +35,7 @@ type RunningExtraction = { state: object; extraction: Promise<unknown> };
 
 type RegisteredExtraction = {
   idsToExtractAgain: Set<string>;
-  /**
-   * Extractions still running, by component id. A call joins the one running for its component in
-   * the same runtime, so a manager and a preview that load it at once extract it once. A refresh
-   * never joins, so it reads the files as they are now.
-   */
+  // By component id. A call joins the one running in its runtime; a refresh never joins.
   running: Map<string, RunningExtraction>;
   storySignature: (entry: IndexEntry) => string;
   isExtracted: (id: string) => boolean;

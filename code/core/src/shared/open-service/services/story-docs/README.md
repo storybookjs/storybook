@@ -89,7 +89,7 @@ The `liveSnippet` query fills one story's template with the args that changed, a
 `{ snippet, warning }`. Its input is a change set: `args` holds only the args that differ from those
 the story is written with, and `unset` names the args the story no longer has. Every other arg keeps
 its text from the static snippet. The manager, the preview and the docs blocks compute the change
-set with `argChanges` from `storybook/internal/docs-tools`, which compares by value and counts an arg
+set with `argChanges` from `storybook/internal/docs-tools/snippets`, which compares by value and counts an arg
 set to `undefined` as unset. With no change, the query returns the static snippet. It runs in every runtime: the server, the manager and the preview each
 register `core/story-docs`, and each fills with the `PrintHole` registered in that runtime. It has
 no load of its own, so a new `args` input never extracts the story docs again; its `.loaded()`

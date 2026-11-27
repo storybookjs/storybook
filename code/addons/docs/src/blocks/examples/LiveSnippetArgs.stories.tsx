@@ -4,7 +4,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { useArgs } from 'storybook/preview-api';
 
-import { TagList } from './TagList';
+import { TagList } from './TagList.tsx';
 
 /**
  * Args a story changes while it runs, to a value no snippet can show: a Set, or another function.

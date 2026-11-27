@@ -18,6 +18,7 @@ const codePanelStoryPath = join(
 
 /** Story id for the Default export in the Code Panel demo (see internal Storybook index). */
 const storyPath = '/story/addons-docs-codepanel--default';
+const withoutTransformStoryPath = '/story/addons-docs-codepanel--without-transform';
 const docsPath = '/docs/addons-docs-codepanel--docs';
 const liveSourceDocsPath = '/docs/addons-docs-codepanel--live-source';
 const defaultStoryBlockId = 'story--addons-docs-codepanel--default';
@@ -233,11 +234,13 @@ test.describe('story-docs open service', () => {
       await expect(source).not.toContainText(E2E_STORY_DOCS_HOT_UPDATE_LABEL_BEFORE);
     });
 
+    // The internal Storybook has a `transform` for every story, which only the preview can run, so
+    // the manager fills the snippet of a story without one.
     test('the Code panel follows the controls without the snippet the preview sends', async ({
       page,
     }) => {
       await dropPreviewSnippets(page);
-      await gotoCodePanelStory(page);
+      await gotoStory(page, withoutTransformStoryPath);
 
       await page.getByRole('tab', { name: 'Controls' }).click();
       await page.locator('#storybook-panel-root textarea[name=label]').fill(LIVE_LABEL);
@@ -261,6 +264,27 @@ test.describe('story-docs open service', () => {
       await expect(panel).toContainText(
         'this comment has been added via parameters.docs.source.transform!'
       );
+    });
+
+    // Without the preview's snippet, the panel of a story with a `transform` stays empty: it never
+    // shows a snippet the manager filled, which would be the one before the `transform`.
+    test('the Code panel does not fill a story with a transform itself', async ({ page }) => {
+      await dropPreviewSnippets(page);
+      await gotoStory(page, withoutTransformStoryPath);
+      await openCodePanel(page);
+      const panel = page.getByRole('tabpanel', { name: 'Code' });
+      await expect(panel).toContainText('Without transform', { timeout: PREVIEW_STORY_TIMEOUT });
+
+      await page.locator(`[data-item-id="${componentId}--default"]`).click();
+      await waitForPreviewReady(page);
+      // The manager has the story's parameters once it shows the story's controls.
+      await page.getByRole('tab', { name: 'Controls' }).click();
+      await expect(page.locator('#storybook-panel-root textarea[name=label]')).toHaveValue(
+        E2E_STORY_DOCS_HOT_UPDATE_LABEL_BEFORE
+      );
+
+      await openCodePanel(page);
+      await expect(panel).not.toContainText(E2E_STORY_DOCS_HOT_UPDATE_LABEL_BEFORE);
     });
 
     test.describe('args no snippet can show', () => {

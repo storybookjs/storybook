@@ -107,7 +107,9 @@ bundles the module with its own copy of `storybook/internal/docs-tools`.
 - **Code panel:** fills in the manager with the change set of the manager's `args` and
   `initialArgs`, which the preview sends through the channel. The channel drops functions and the entries of a Map or Set, so the manager cannot run a
   `parameters.docs.source.transform`, and cannot see a function, Map or Set arg the preview changed. For such a
-  story the preview marks its emit `previewOnly`, and the panel shows the emitted snippet.
+  story the panel shows the emitted snippet. The preview sets `parameters.__hasSourceTransform` on a
+  story with a `transform`, so the manager never fills that story; for the args it marks its emit
+  `previewOnly`.
 - **Docs blocks:** Canvas › Show code and `<Source>` fill in the preview.
 - **Server:** agents and tools can fill with `liveSnippet`. Its `.loaded()` loads the story docs
   first, which on the server extracts them on every call; to fill more than once, load them once

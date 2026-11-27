@@ -18,9 +18,14 @@ const LiveSnippetCodePanel = (props: Omit<Parameters<typeof CodePanel>[0], 'live
   // Read through the hook, so an args change renders this again: the panel's `render` does not run
   // again for it.
   const story = useStorybookApi().getCurrentStoryData();
-  // A story of a composed Storybook has its story docs in that Storybook.
+  // A story of a composed Storybook has its story docs in that Storybook. A story with a
+  // `parameters.docs.source.transform` shows the snippet the preview emits: only the preview can
+  // run that function.
   const isStory =
-    story?.type === 'story' && !story.refId && !shouldSkipStoryDocsEmit(story.parameters);
+    story?.type === 'story' &&
+    !story.refId &&
+    !shouldSkipStoryDocsEmit(story.parameters) &&
+    !story.parameters?.__hasSourceTransform;
   const componentId = isStory ? story.id.split('--')[0] : undefined;
 
   // Loads only missing story docs: in dev the server's story docs sync to the manager, and a load

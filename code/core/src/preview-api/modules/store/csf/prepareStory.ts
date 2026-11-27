@@ -228,6 +228,10 @@ function preparePartialAnnotations<TRenderer extends Renderer>(
       projectAnnotations.render;
 
     parameters.__isArgsStory = render && render.length > 0;
+    // The channel drops functions, so this tells the manager that the story has a `transform`.
+    if (typeof parameters.docs?.source?.transform === 'function') {
+      parameters.__hasSourceTransform = true;
+    }
   }
 
   // Pull out args[X] into initialArgs for argTypes enhancers

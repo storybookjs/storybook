@@ -10,14 +10,15 @@ import {
   SET_CURRENT_STORY,
   SET_FILTER,
   SET_INDEX,
-  SET_STORIES,
   SIDEBAR_FILTER_CHANGED,
   STORY_ARGS_UPDATED,
   STORY_CHANGED,
+  STORY_FINISHED,
   STORY_INDEX_INVALIDATED,
   STORY_MISSING,
   STORY_PREPARED,
   STORY_SPECIFIED,
+  type StoryFinishedPayload,
   UPDATE_STORY_ARGS,
 } from 'storybook/internal/core-events';
 import { sanitize, toId } from 'storybook/internal/csf';
@@ -38,11 +39,10 @@ import type {
   Args,
   ComponentTitle,
   DocsPreparedPayload,
-  SetStoriesPayload,
+  SelectStoryPayload,
   StatusValue,
   StoryId,
   StoryIndex,
-  StoryKind,
   StoryName,
   StoryPreparedPayload,
   Tag,
@@ -50,7 +50,6 @@ import type {
 } from 'storybook/internal/types';
 import { isReviewManagerRoute } from '../../shared/review/routes.ts';
 
-import { global } from '@storybook/global';
 import { throttle } from 'es-toolkit/function';
 
 import { BUILT_IN_FILTERS } from '../../shared/constants/tags.ts';
@@ -58,9 +57,9 @@ import { countStatusesByValue } from '../../shared/status-store/index.ts';
 import { getEventMetadata } from '../lib/events.ts';
 import {
   addPreparedStories,
-  denormalizeStoryParameters,
   getComponentLookupList,
   getStoriesLookupList,
+  isOwnEntry,
   transformStoryIndexToStoriesHash,
 } from '../lib/stories.ts';
 import type { ModuleFn } from '../lib/types.tsx';
@@ -76,7 +75,34 @@ import {
   serializeTagsParam,
 } from './tags.ts';
 
-const { fetch } = global;
+/** Sent by composed Storybooks built with 10.x or earlier (their addon-links). */
+type LegacySelectStoryPayload = {
+  /** @deprecated Use `title`. */
+  kind?: ComponentTitle;
+  /** @deprecated Use `name`. */
+  story?: StoryName;
+  viewMode?: API_ViewMode;
+  scrollTo?: string;
+};
+
+/**
+ * Accepts the deprecated `kind`/`story` keys so cross-story links inside composed
+ * Storybooks built with 10.x or earlier keep navigating; everything downstream is modern-only.
+ */
+type SelectStoryEvent = SelectStoryPayload | LegacySelectStoryPayload;
+
+const normalizeSelectStoryPayload = (payload: SelectStoryEvent): SelectStoryPayload => {
+  if ('storyId' in payload) {
+    return payload;
+  }
+  const { viewMode, scrollTo } = payload;
+  const title =
+    ('title' in payload && payload.title) || ('kind' in payload ? payload.kind : undefined);
+  const name =
+    ('name' in payload && payload.name) || ('story' in payload ? payload.story : undefined);
+  return { title, name, viewMode, scrollTo };
+};
+
 const STORY_INDEX_PATH = './index.json';
 
 const TAGS_FILTER = 'tags-filter';
@@ -127,6 +153,15 @@ export interface SubAPI {
    */
   resolveStory: (storyId: StoryId, refsId?: string) => API_HashEntry | undefined;
   /**
+   * Resolves an entry ID to the first docs or story entry that qualifies as its child.
+   * Use this to implement preloading or navigating from a group/component entry.
+   *
+   * @param {StoryId} entryId - The ID of the entry to resolve.
+   * @param {string} [refId] - The ID of the ref the entry belongs to.
+   * @returns {API_LeafEntry | undefined} The first qualifying child for `entryId`.
+   */
+  resolveLeafEntry: (entryId: StoryId, refId?: string) => API_LeafEntry | undefined;
+  /**
    * Selects the first story to display in the Storybook UI.
    *
    * @returns {void}
@@ -169,13 +204,14 @@ export interface SubAPI {
   setIndex: (index: API_PreparedStoryIndex) => Promise<void>;
 
   /**
-   * Jumps to the next or previous component in the index.
+   * Jumps to the first entry of the next or previous component, or to the next or previous
+   * unattached docs page.
    *
-   * @param {Direction} direction - The direction to jump. Use -1 to jump to the previous component,
-   *   and 1 to jump to the next component.
+   * @param {Direction} direction - The direction to jump. Use -1 to jump backwards and 1 to jump
+   *   forwards.
    * @returns {void}
    */
-  jumpToComponent: (direction: Direction) => void;
+  jumpToSubtree: (direction: Direction) => void;
   /**
    * Jumps to the next or previous story in the story index.
    *
@@ -317,24 +353,14 @@ export interface SubAPI {
    */
   setPreviewInitialized: (ref?: ComposedRef) => Promise<void>;
   /**
-   * Updates the filtering of the index.
-   *
-   * @deprecated Use `experimental_setFilters` instead.
-   * @param {string} addonId - The ID of the addon to update.
-   * @param {API_FilterFunction} filterFunction - A function that returns a boolean based on the
-   *   story, index and status.
-   * @returns {Promise<void>} A promise that resolves when the state has been updated.
+   * Registers one sidebar filter. A story or docs entry shows only when every registered filter
+   * passes. Pass a function that always returns true to stop filtering for that id.
    */
-  experimental_setFilter: (addonId: string, filterFunction: API_FilterFunction) => Promise<void>;
+  setFilter: (id: string, filterFunction: API_FilterFunction) => Promise<void>;
   /**
-   * Updates the filtering of the index for multiple filters at once, then re-applies the index
-   * (and the indexes of composed refs) so the new filters take effect.
-   *
-   * @param {Record<string, API_FilterFunction>} filters - A map of filter IDs to filter functions.
-   *   Each function returns a boolean based on the story, index and status.
-   * @returns {Promise<void>} A promise that resolves when the state has been updated.
+   * Registers several sidebar filters at once, then re-applies the story index.
    */
-  experimental_setFilters: (filters: Record<string, API_FilterFunction>) => Promise<void>;
+  setFilters: (filters: Record<string, API_FilterFunction>) => Promise<void>;
 
   /** Resets tag filters in the sidebar to the default filters. */
   resetTagFilters(): Promise<void>;
@@ -480,9 +506,8 @@ export const init: ModuleFn<SubAPI, SubState> = ({
     const includedTags = (state.includedTagFilters ?? []).filter((id) => BUILT_IN_TAG_IDS.has(id));
     const excludedTags = (state.excludedTagFilters ?? []).filter((id) => BUILT_IN_TAG_IDS.has(id));
 
-    const changeDetectionEnabled = !!globalThis?.FEATURES?.changeDetection;
-    const includedStatuses = changeDetectionEnabled ? (state.includedStatusFilters ?? []) : [];
-    const excludedStatuses = changeDetectionEnabled ? (state.excludedStatusFilters ?? []) : [];
+    const includedStatuses = state.includedStatusFilters ?? [];
+    const excludedStatuses = state.excludedStatusFilters ?? [];
 
     const storyCounts: Record<string, number> = {};
     const entries = state.internal_index ? Object.values(state.internal_index.entries) : [];
@@ -506,6 +531,18 @@ export const init: ModuleFn<SubAPI, SubState> = ({
       activeStatusFilters: { included: includedStatuses, excluded: excludedStatuses },
       storyCounts,
     });
+  };
+
+  // The one lookup behind a component jump and its preload, so that the two cannot drift apart.
+  const findSubtreeJumpTarget = (direction: Direction): StoryId | undefined => {
+    const { filteredIndex, storyId, refs, refId } = store.getState();
+    const hash = refId ? refs[refId]?.filteredIndex : filteredIndex;
+
+    // cannot navigate when there's no current selection
+    if (!hash || !api.getData(storyId, refId)) {
+      return undefined;
+    }
+    return api.findSiblingStoryId(storyId, hash, direction, true);
   };
 
   const api: SubAPI = {
@@ -533,6 +570,15 @@ export const init: ModuleFn<SubAPI, SubState> = ({
         return refs?.[refId]?.index?.[storyId] ?? undefined;
       }
       return index ? index[storyId] : undefined;
+    },
+    resolveLeafEntry: (entryId, refId) => {
+      const { refs, index, filteredIndex } = store.getState();
+      const entry = (refId ? refs[refId]?.index : index)?.[entryId];
+      if (entry?.type === 'docs' || entry?.type === 'story') {
+        return entry;
+      }
+      const filteredHash = refId ? refs[refId]?.filteredIndex : filteredIndex;
+      return entry && filteredHash ? api.findLeafEntry(filteredHash, entryId) : undefined;
     },
     getCurrentStoryData: () => {
       const { storyId, refId } = store.getState();
@@ -567,25 +613,11 @@ export const init: ModuleFn<SubAPI, SubState> = ({
       // so this strange logic needs to be here until various client code is updated.
       return parameters || undefined;
     },
-    jumpToComponent: (direction) => {
-      const { filteredIndex, storyId, refs, refId } = store.getState();
-      const story = api.getData(storyId, refId);
-
-      // cannot navigate when there's no current selection
-      if (!story) {
-        return;
-      }
-
-      const hash = refId ? refs[refId].filteredIndex || {} : filteredIndex;
-
-      if (!hash) {
-        return;
-      }
-
-      const result = api.findSiblingStoryId(storyId, hash, direction, true);
+    jumpToSubtree: (direction) => {
+      const result = findSubtreeJumpTarget(direction);
 
       if (result) {
-        api.selectStory(result, undefined, { ref: refId });
+        api.selectStory(result, undefined, { ref: store.getState().refId });
       }
     },
     jumpToStory: (direction) => {
@@ -661,16 +693,20 @@ export const init: ModuleFn<SubAPI, SubState> = ({
 
       if (!name) {
         // Find the entry (group, component, story or docs) that is referred to
-        const entry = titleOrId ? hash[titleOrId] || hash[sanitize(titleOrId)] : hash[kindSlug];
+        const entry = titleOrId
+          ? hash[titleOrId] ||
+            hash[sanitize(titleOrId)] ||
+            // Unattached docs pages have no entry keyed by their title
+            Object.values(hash).find(
+              (e) => e.type === 'docs' && sanitize(e.title) === sanitize(titleOrId)
+            )
+          : hash[kindSlug];
 
         if (!entry) {
           throw new Error(`Unknown id or title: '${titleOrId}'`);
         }
 
-        if (!gotoStory(entry)) {
-          // If the entry is not a story or docs, find the first descendant entry that is
-          gotoStory(api.findLeafEntry(filteredHash, entry.id));
-        }
+        gotoStory(api.resolveLeafEntry(entry.id, ref));
       } else if (!titleOrId) {
         // Navigate to a named story/docs within the current component (i.e. "kind")
         // This is a slugified version of the kind, but that's OK, our toId function is idempotent
@@ -698,8 +734,12 @@ export const init: ModuleFn<SubAPI, SubState> = ({
         return entry;
       }
 
-      const childStoryId = entry.children.find((childId) => index[childId]);
-      return childStoryId ? api.findLeafEntry(index, childStoryId) : undefined;
+      const ownEntryId =
+        entry.type === 'component'
+          ? entry.children.find((childId) => isOwnEntry(entry, index[childId]))
+          : undefined;
+      const childId = ownEntryId ?? entry.children.find((childId) => index[childId]);
+      return childId ? api.findLeafEntry(index, childId) : undefined;
     },
     findLeafStoryId(index, storyId) {
       return api.findLeafEntry(index, storyId)?.id;
@@ -780,12 +820,6 @@ export const init: ModuleFn<SubAPI, SubState> = ({
         }
 
         const storyIndex = (await result.json()) as StoryIndex;
-
-        // We can only do this if the stories.json is a proper storyIndex
-        if (storyIndex.v < 3) {
-          logger.warn(`Skipping story index with version v${storyIndex.v}, awaiting SET_STORIES.`);
-          return;
-        }
 
         await api.setIndex(storyIndex);
       } catch (err: any) {
@@ -917,11 +951,11 @@ export const init: ModuleFn<SubAPI, SubState> = ({
       }
     },
 
-    experimental_setFilter: async (id, filterFunction) => {
-      await api.experimental_setFilters({ [id]: filterFunction });
+    setFilter: async (id, filterFunction) => {
+      await api.setFilters({ [id]: filterFunction });
     },
 
-    experimental_setFilters: async (filters) => {
+    setFilters: async (filters) => {
       await store.setState((state) => ({ filters: { ...state.filters, ...filters } }));
       if (!(await applyCurrentFilters())) {
         return;
@@ -1091,14 +1125,14 @@ export const init: ModuleFn<SubAPI, SubState> = ({
 
   const recomputeTagsFilter = () => {
     const { includedTagFilters, excludedTagFilters } = store.getState();
-    return api.experimental_setFilters({
+    return api.setFilters({
       [TAGS_FILTER]: computeTagsFilterFn(includedTagFilters, excludedTagFilters),
     });
   };
 
   const recomputeStatusFilter = () => {
     const { includedStatusFilters, excludedStatusFilters } = store.getState();
-    return api.experimental_setFilters({
+    return api.setFilters({
       [STATUS_FILTER]: computeStatusFilterFn(
         includedStatusFilters ?? [],
         excludedStatusFilters ?? []
@@ -1131,7 +1165,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
         const stateHasSelection = state.viewMode && state.storyId;
         const stateSelectionDifferent = state.viewMode !== viewMode || state.storyId !== storyId;
         const { type } = state.index?.[state.storyId] || {};
-        const isStory = !(type === 'root' || type === 'component' || type === 'group');
+        const isLeaf = type === 'story' || type === 'docs';
 
         /**
          * When storybook starts, we want to navigate to the first story. But there are a few
@@ -1164,7 +1198,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
             }
           }
 
-          if (stateHasSelection && stateSelectionDifferent && isStory) {
+          if (stateHasSelection && stateSelectionDifferent && isLeaf) {
             // The manager state is correct, the preview state is lagging behind
             provider.channel?.emit(SET_CURRENT_STORY, {
               storyId: state.storyId,
@@ -1203,7 +1237,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
   provider.channel?.on(
     STORY_PREPARED,
     function handler(this: any, { id, ...update }: StoryPreparedPayload) {
-      const { ref, sourceType } = getEventMetadata(this, fullAPI)!;
+      const { ref } = getEventMetadata(this, fullAPI)!;
       api.updateStory(id, { ...update, prepared: true }, ref);
 
       if (!ref) {
@@ -1213,26 +1247,38 @@ export const init: ModuleFn<SubAPI, SubState> = ({
           store.setState({ hasCalledSetOptions: true });
         }
       }
+    }
+  );
 
-      if (sourceType === 'local') {
-        const { storyId, index, refId } = store.getState();
-
-        if (!index) {
+  // Preloading sibling components is a speculative performance optimization. It shouldn't compete
+  // with actual story rendering for resources, so delay it until the story is done loading.
+  provider.channel?.on(
+    STORY_FINISHED,
+    function handler(this: any, { storyId: finishedStoryId }: StoryFinishedPayload) {
+      const { sourceType } = getEventMetadata(this, fullAPI)!;
+      if (sourceType !== 'local') {
+        return;
+      }
+      const preloadSiblings = () => {
+        const { storyId, refId } = store.getState();
+        if (storyId !== finishedStoryId) {
           return;
         }
-
-        // create a list of related stories to be preloaded
         const toBePreloaded = Array.from(
-          new Set([
-            api.findSiblingStoryId(storyId, index, 1, true),
-            api.findSiblingStoryId(storyId, index, -1, true),
-          ])
+          new Set([findSubtreeJumpTarget(1), findSubtreeJumpTarget(-1)])
         ).filter(Boolean);
-
-        provider.channel?.emit(PRELOAD_ENTRIES, {
-          ids: toBePreloaded,
-          options: { target: refId },
-        });
+        if (toBePreloaded.length > 0) {
+          provider.channel?.emit(PRELOAD_ENTRIES, {
+            ids: toBePreloaded,
+            source: 'sibling',
+            options: { target: refId },
+          });
+        }
+      };
+      if (typeof globalThis.requestIdleCallback === 'function') {
+        globalThis.requestIdleCallback(preloadSiblings);
+      } else {
+        setTimeout(preloadSiblings, 1);
       }
     }
   );
@@ -1257,47 +1303,20 @@ export const init: ModuleFn<SubAPI, SubState> = ({
     }
   });
 
-  // For composition back-compatibilty
-  provider.channel?.on(SET_STORIES, function handler(this: any, data: SetStoriesPayload) {
+  provider.channel?.on(SELECT_STORY, function handler(this: any, rawPayload: SelectStoryEvent) {
     const { ref } = getEventMetadata(this, fullAPI)!;
-    const setStoriesData = data.v ? denormalizeStoryParameters(data) : data.stories;
+    const payload = normalizeSelectStoryPayload(rawPayload);
 
-    if (!ref) {
-      throw new Error('Cannot call SET_STORIES for local frame');
+    if ('storyId' in payload) {
+      const { storyId, viewMode, scrollTo } = payload;
+      fullAPI.selectStory(storyId, undefined, { viewMode, scrollTo, ref: ref?.id });
+    } else if (payload.title || payload.name) {
+      const { title, name, viewMode, scrollTo } = payload;
+      fullAPI.selectStory(title, name, { viewMode, scrollTo, ref: ref?.id });
     } else {
-      fullAPI.setRef(ref.id, { ...ref, setStoriesData }, true);
+      logger.warn('Received a SELECT_STORY event without storyId, title or name; ignoring it.');
     }
   });
-
-  provider.channel?.on(
-    SELECT_STORY,
-    function handler(
-      this: any,
-      {
-        kind,
-        title = kind,
-        story,
-        name = story,
-        storyId,
-        ...rest
-      }: {
-        kind?: StoryKind;
-        title?: ComponentTitle;
-        story?: StoryName;
-        name?: StoryName;
-        storyId: string;
-        viewMode: API_ViewMode;
-      }
-    ) {
-      const { ref } = getEventMetadata(this, fullAPI)!;
-
-      if (!ref) {
-        fullAPI.selectStory(storyId || title, name, rest);
-      } else {
-        fullAPI.selectStory(storyId || title, name, { ...rest, ref: ref.id });
-      }
-    }
-  );
 
   provider.channel?.on(
     STORY_ARGS_UPDATED,
@@ -1322,8 +1341,6 @@ export const init: ModuleFn<SubAPI, SubState> = ({
   });
 
   provider.channel?.on(SET_CONFIG, async () => {
-    const config = provider.getConfig();
-    const configFilters = config?.sidebar?.filters || {};
     const {
       includedTagFilters,
       excludedTagFilters,
@@ -1332,9 +1349,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
       tagPresets,
     } = store.getState();
 
-    // Config sidebar filters first, then our managed filters override any conflicts
-    await api.experimental_setFilters({
-      ...configFilters,
+    await api.setFilters({
       [STATIC_FILTER]: computeStaticFilterFn(tagPresets),
       [TAGS_FILTER]: computeTagsFilterFn(includedTagFilters, excludedTagFilters),
       [STATUS_FILTER]: computeStatusFilterFn(includedStatusFilters, excludedStatusFilters),
@@ -1347,11 +1362,8 @@ export const init: ModuleFn<SubAPI, SubState> = ({
     })
   );
 
-  const config = provider.getConfig();
-  const configFilters = config?.sidebar?.filters || {};
-
   // Compute default tag filter values from presets
-  const tagPresets: TagsOptions = global.TAGS_OPTIONS || {};
+  const tagPresets: TagsOptions = globalThis.TAGS_OPTIONS || {};
   const defaultTags = getDefaultTagsFromPreset(tagPresets);
 
   const { tags, statuses } = queryFromLocation(location ?? ({ search: '' } as any));
@@ -1364,9 +1376,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
   const initialIncludedStatuses: StatusValue[] = parsedStatuses.included;
   const initialExcludedStatuses: StatusValue[] = parsedStatuses.excluded;
 
-  // Build initial filters: config sidebar filters first, then our managed filters take priority
   const initialFilters: Record<string, API_FilterFunction> = {
-    ...configFilters,
     [STATIC_FILTER]: computeStaticFilterFn(tagPresets),
     [TAGS_FILTER]: computeTagsFilterFn(initialIncluded, initialExcluded),
     [STATUS_FILTER]: computeStatusFilterFn(initialIncludedStatuses, initialExcludedStatuses),
@@ -1401,10 +1411,8 @@ export const init: ModuleFn<SubAPI, SubState> = ({
       const hasBuiltInTagFilters =
         initialIncluded.some((id) => BUILT_IN_TAG_IDS.has(id)) ||
         initialExcluded.some((id) => BUILT_IN_TAG_IDS.has(id));
-      const changeDetectionEnabled = !!globalThis?.FEATURES?.changeDetection;
       const hasStatusFilters =
-        changeDetectionEnabled &&
-        (initialIncludedStatuses.length > 0 || initialExcludedStatuses.length > 0);
+        initialIncludedStatuses.length > 0 || initialExcludedStatuses.length > 0;
 
       if (hasBuiltInTagFilters || hasStatusFilters) {
         emitFilterTelemetry('url');

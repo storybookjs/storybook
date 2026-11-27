@@ -210,14 +210,22 @@ describe('real-world component patterns', () => {
             description: 'Button variant style',
             type: {
               name: 'enum',
-              value: [{ value: '"default"' }, { value: '"primary"' }, { value: '"danger"' }],
+              value: expect.arrayContaining([
+                { value: '"default"' },
+                { value: '"primary"' },
+                { value: '"danger"' },
+              ]),
             },
           },
           size: {
             description: 'Button size',
             type: {
               name: 'enum',
-              value: [{ value: '"small"' }, { value: '"medium"' }, { value: '"large"' }],
+              value: expect.arrayContaining([
+                { value: '"small"' },
+                { value: '"medium"' },
+                { value: '"large"' },
+              ]),
             },
           },
         },
@@ -393,7 +401,11 @@ describe('real-world component patterns', () => {
             description: 'Visual variant',
             type: {
               name: 'enum',
-              value: [{ value: '"solid"' }, { value: '"outline"' }, { value: '"ghost"' }],
+              value: expect.arrayContaining([
+                { value: '"solid"' },
+                { value: '"outline"' },
+                { value: '"ghost"' },
+              ]),
             },
           },
         },

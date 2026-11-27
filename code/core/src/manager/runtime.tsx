@@ -5,12 +5,11 @@ import { createBrowserChannel } from 'storybook/internal/channels';
 import { CHANNEL_CREATED, CHANNEL_WS_DISCONNECT } from 'storybook/internal/core-events';
 import type { Addon_Config, Addon_Types } from 'storybook/internal/types';
 
-import { global } from '@storybook/global';
 import { FailedIcon } from '@storybook/icons';
 
 import type { API, AddonStore } from 'storybook/manager-api';
 import { addons, types } from 'storybook/manager-api';
-import { color } from 'storybook/theming';
+import { color } from 'storybook/theming/emotion';
 
 import { ToolbarManager } from '../toolbar/components/ToolbarManager.tsx';
 import { TOOLBAR_ID } from '../toolbar/constants.ts';
@@ -24,7 +23,6 @@ addons.register(TOOLBAR_ID, () =>
   addons.add(TOOLBAR_ID, {
     title: TOOLBAR_ID,
     type: types.TOOL,
-    match: ({ tabId }) => !tabId,
     render: () => <ToolbarManager />,
   })
 );
@@ -70,7 +68,6 @@ class ReactProvider extends Provider {
   }
 }
 
-const { document } = global;
 const rootEl = document.getElementById('root');
 
 // We need to wait for the script tag containing the global objects

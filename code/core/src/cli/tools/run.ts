@@ -1,8 +1,10 @@
 import { versions } from 'storybook/internal/common';
+import { logger } from 'storybook/internal/node-logger';
 
 import type { ToolsetMethodReport } from '../../shared/open-service/toolset-definition.ts';
 import { parseToolsetMethodId, toCliMethodName } from '../../shared/open-service/toolset-names.ts';
 import type { StorybookInstanceRecord } from './instances/types.ts';
+import { formatRequiresAttach } from './sdk/attach-messages.ts';
 import {
   attachGateReasonFromError,
   createTools,
@@ -16,6 +18,7 @@ import {
   type ToolsClientInfo,
   type ToolsHostKind,
   type ToolsMode,
+  type ToolsetJsonSchema,
 } from './sdk/index.ts';
 import {
   discoverRunningInstance,
@@ -29,7 +32,9 @@ import {
 } from './help.ts';
 import {
   parsePort,
+  keepTypedText,
   parseToolsTokens,
+  withPositionals,
   type ParsedToolsTokens,
   type ToolsOutputFlags,
 } from './tool-tokens.ts';
@@ -192,7 +197,7 @@ export async function runToolsCommand(
   };
 
   // `-o/--output` applies to whatever the run produced — help, intercepts, and tool results
-  // alike — matching the ai CLI, where the output file always receives the printed text.
+  // alike.
   const result = (
     partial: Omit<ToolsRunResult, 'outputPath' | 'attachMode' | 'requestedMode'>
   ): ToolsRunResult => ({
@@ -242,7 +247,8 @@ export async function runToolsCommand(
       requestedMode: tools.requestedMode,
       attachMode: tools.mode,
       host: tools.host,
-      fallbackNotice: tools.fallbackNotice,
+      // The dev-server intercept states the attach failure itself, and nothing fell back.
+      ...(requiresDevServerIntercept(dispatched) ? {} : { fallbackNotice: tools.fallbackNotice }),
       fallbackReason: tools.fallbackReason,
       ...(tools.storybook.siblings?.length
         ? { multiInstanceNotice: formatMultiInstanceNotice(tools.storybook), multipleMatches: true }
@@ -251,6 +257,10 @@ export async function runToolsCommand(
   } finally {
     await tools.close();
   }
+}
+
+function requiresDevServerIntercept({ outcome }: Pick<ToolsRunResult, 'outcome'>): boolean {
+  return outcome.kind === 'intercept' && outcome.reason === 'requires-dev-server';
 }
 
 async function dispatchTools(
@@ -318,25 +328,48 @@ async function dispatchTools(
   if (parsed.help) {
     return result({
       exitCode: 0,
-      output: renderMethodHelpFromCatalog(entry, method),
+      output: renderMethodHelpFromCatalog(method),
       outcome: { kind: 'help' },
     });
   }
 
   const { methodName } = parseToolsetMethodId(method.ref);
-  const commandPath = `npx storybook tools ${entry.id} ${toCliMethodName(methodName)}`;
+  const toolPath = `${entry.id} ${toCliMethodName(methodName)}`;
+  const commandPath = `npx storybook tools ${toolPath}`;
 
-  if (tools.mode === 'local' && method.requiresDevServer) {
-    const discovery = await (deps.discoverInstance ?? discoverRunningInstance)(invocation.target);
+  const args = withPositionals(keepTypedText(parsed, method.input), method.positional);
+  if (!args.ok) {
     return result({
       exitCode: 1,
-      output: formatRequiresDevServer(commandPath, discovery, requestedMode),
+      output: `Unexpected argument \`${args.unexpected}\`. \`${commandPath}\` takes no bare arguments: pass tool arguments as \`--key value\` flags (or via \`--input '<object>'\`).`,
+      outcome: { kind: 'intercept', reason: 'invalid-arguments' },
+    });
+  }
+
+  if (tools.mode === 'local' && method.requiresDevServer) {
+    const output = tools.attachFailure
+      ? formatRequiresAttach(commandPath, tools.attachFailure)
+      : formatRequiresDevServer(
+          commandPath,
+          await (deps.discoverInstance ?? discoverRunningInstance)(invocation.target),
+          requestedMode
+        );
+    return result({
+      exitCode: 1,
+      output,
       outcome: { kind: 'intercept', reason: 'requires-dev-server' },
     });
   }
 
+  // Warnings logged while a tool runs, such as an empty stories glob, would print on stdout ahead of
+  // the result. They are muted only at the default level, and only in-process: a child host's
+  // stderr, its errors included, is forwarded at warn level and has to stay visible.
+  const previousLogLevel = logger.getLogLevel();
+  if (previousLogLevel === 'info' && tools.host === 'in-process') {
+    logger.setLogLevel('error');
+  }
   try {
-    const outcome = await tools.call(method.ref, parsed.args, {
+    const outcome = await tools.call(method.ref, args.args, {
       ...(tools.storybook.url ? { origin: tools.storybook.url } : {}),
     });
     const output = parsed.json
@@ -352,7 +385,7 @@ async function dispatchTools(
     if (isInvalidInputError(error)) {
       return result({
         exitCode: 1,
-        output: formatValidationIssues(commandPath, error.data.issues ?? []),
+        output: formatValidationIssues(toolPath, error.data.issues ?? [], method.input),
         outcome: { kind: 'intercept', reason: 'invalid-arguments' },
       });
     }
@@ -364,6 +397,8 @@ async function dispatchTools(
       output: error instanceof Error ? error.message : String(error),
       outcome: { kind: 'error', error },
     });
+  } finally {
+    logger.setLogLevel(previousLogLevel);
   }
 }
 
@@ -405,12 +440,8 @@ function formatRequiresDevServer(
   if (discovery.currentRecord && requestedMode === 'local') {
     return `Found your Storybook running at ${discovery.currentRecord.url}, but \`${commandPath}\` cannot run from a local tools host. Re-run without \`--no-attach\` to attach to that instance.`;
   }
-  if (discovery.currentRecord) {
-    return `Found your Storybook running at ${discovery.currentRecord.url}, but \`${commandPath}\` could not attach to it. Start or restart that Storybook, then re-run this command.`;
-  }
-
   const lines = [
-    `\`${commandPath}\` requires a running Storybook dev server, and none was found for this project. Start it first (for example \`npm run storybook\`), then re-run this command.`,
+    `\`${commandPath}\` requires a running Storybook dev server, and none was found for this project. Start it first with the Storybook script in its \`package.json\`, then re-run this command.`,
   ];
   if (discovery.records.length > 0) {
     const candidates = discovery.records
@@ -430,18 +461,39 @@ type ValidationIssues = ReadonlyArray<{
   path?: ReadonlyArray<PropertyKey | { key?: unknown }>;
 }>;
 
-function formatValidationIssues(commandPath: string, issues: ValidationIssues): string {
+const TARGET_OPTIONS = ['cwd', 'config-dir', 'port'];
+
+function formatValidationIssues(
+  toolPath: string,
+  issues: ValidationIssues,
+  input: ToolsetJsonSchema | undefined
+): string {
+  const commandPath = `npx storybook tools ${toolPath}`;
+  const declaredKeys = input?.properties
+    ? Object.keys(input.properties as Record<string, unknown>)
+    : undefined;
+  let hasUnknownKey = false;
   const lines = issues.map((issue) => {
-    const path = issue.path
-      ?.map((segment) =>
+    const segments =
+      issue.path?.map((segment) =>
         typeof segment === 'object' && segment !== null ? String(segment.key) : String(segment)
-      )
-      .join('.');
+      ) ?? [];
+    const [key] = segments;
+    if (declaredKeys && segments.length === 1 && !declaredKeys.includes(key)) {
+      hasUnknownKey = true;
+      return TARGET_OPTIONS.includes(key)
+        ? `- Unknown flag \`--${key}\`. It selects the target Storybook, so it goes before the toolset name: \`npx storybook tools --${key} <value> ${toolPath}\`.`
+        : `- Unknown flag \`--${key}\`.`;
+    }
+    const path = segments.join('.');
     return path ? `- \`${path}\`: ${issue.message}` : `- ${issue.message}`;
   });
+  const validFlags = !declaredKeys?.length
+    ? 'This tool takes no arguments.'
+    : `Valid flags: ${declaredKeys.map((key) => `\`--${key}\``).join(', ')}.`;
   return `Invalid arguments for \`${commandPath}\`:
 
 ${lines.join('\n')}
-
+${hasUnknownKey ? `\n${validFlags}\n` : ''}
 Run \`${commandPath} --help\` for the expected arguments.`;
 }

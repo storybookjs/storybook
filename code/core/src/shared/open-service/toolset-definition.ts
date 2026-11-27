@@ -87,6 +87,11 @@ export type ToolsetObjectOutputSchema = StandardSchemaV1<
   Record<string, unknown>
 >;
 
+/** The keys of an input that take a list of strings: what the CLI fills from bare arguments. */
+type StringListKey<TInput> = {
+  [K in keyof TInput & string]-?: string[] extends NonNullable<TInput[K]> ? K : never;
+}[keyof TInput & string];
+
 /**
  * One public method: description, input schema, optional output schema, and one handler.
  *
@@ -107,7 +112,12 @@ export type ToolsetMethod<
   title: string;
   description: ToolsetMethodDescription;
   input: TSchema;
-  /** Published as the MCP tool's `outputSchema`. Must describe a JSON object. */
+  /**
+   * Published as the MCP tool's `outputSchema`. Must describe a JSON object.
+   *
+   * A client may hand the model only this structured data and drop the text, so it has to carry
+   * everything `markdown` says, next-step instructions included.
+   */
   output?: ToolsetObjectOutputSchema;
   /**
    * Marks a method that can only do its job against a running Storybook dev server — because it
@@ -116,6 +126,13 @@ export type ToolsetMethod<
    * start the dev server first. Adapters that always have a dev server (MCP) ignore the trait.
    */
   requiresDevServer?: true;
+  /**
+   * The input key, an array, that the `storybook tools` CLI also takes as bare arguments:
+   * `npx storybook tools test run Button Card` is `--files Button Card`. The CLI passes the values
+   * as typed; what they mean is up to the handler. Other transports have no bare arguments and
+   * ignore the trait.
+   */
+  positional?: StringListKey<StandardSchemaV1.InferInput<TSchema>>;
   handler: (
     input: StandardSchemaV1.InferOutput<TSchema>,
     context: ToolsetCtx
@@ -143,9 +160,8 @@ export type AnyToolsetDefinition = ToolsetDefinition;
 /**
  * What a handler may return when its method publishes an `output`: outcomes whose `data` —
  * on both branches, since adapters validate failure data into `structuredContent` too — carries at
- * least the schema's declared shape. The open record keeps the data-superset pattern legal: the
- * rendered Markdown may use fields the public contract does not ship. Intersecting with
- * `Record<string, unknown>` keeps handler `data` an object.
+ * least the schema's declared shape. Intersecting with `Record<string, unknown>` keeps handler
+ * `data` an object.
  */
 type SchemaBoundData<TSchema extends AnySchema> = StandardSchemaV1.InferInput<TSchema> &
   Record<string, unknown>;
@@ -156,15 +172,35 @@ type MethodOutcomeContract<TMethod> = TMethod extends {
   ? ToolsetOutcome<SchemaBoundData<TOut>> | Promise<ToolsetOutcome<SchemaBoundData<TOut>>>
   : unknown;
 
+// An object type, so a wrong key fails on its own line instead of collapsing the whole method.
+type PositionalContract<TMethod> = TMethod extends {
+  input: infer TInput extends AnySchema;
+  positional: infer TKey;
+}
+  ? TKey extends StringListKey<StandardSchemaV1.InferInput<TInput>>
+    ? unknown
+    : { error: 'positional must name an input key that takes a list of strings' }
+  : unknown;
+
+// Brackets make a ternary input fail when either branch is not strict.
+type StrictInputContract<TInput> = [TInput] extends [{ '~standard': { vendor: 'valibot' } }]
+  ? [TInput] extends [{ type: 'strict_object' }]
+    ? unknown
+    : 'Declare toolset inputs with v.strictObject so undeclared arguments are rejected'
+  : unknown;
+
 /**
  * Second contextual-typing pass for the methods literal: `handler` input comes from that method's
  * own `input`, and its outcome data from the method's `output` where one is declared — so
- * renaming or removing a published field is a compile error at the definition site. Intersecting
+ * renaming or removing a published field is a compile error at the definition site. `positional`
+ * is checked against the same `input`: it must name a key that takes a list of strings. Intersecting
  * this with the inferred map is what makes the flow work on both the stable and the native
  * TypeScript compiler — inferring a separate record does not.
  */
 type MethodContracts<TMethods extends ToolsetMethods> = {
   [TKey in keyof TMethods]: {
+    input: StrictInputContract<TMethods[TKey]['input']>;
+    positional?: PositionalContract<TMethods[TKey]>;
     handler: (
       input: StandardSchemaV1.InferOutput<TMethods[TKey]['input']>,
       context: ToolsetCtx
@@ -172,14 +208,28 @@ type MethodContracts<TMethods extends ToolsetMethods> = {
   };
 };
 
+/**
+ * Types each method's handler from its own `input` and `output` schemas.
+ *
+ * @throws When a valibot method `input` is not a `v.strictObject`.
+ */
 export function defineToolset<
   const TId extends string,
   const TMethods extends ToolsetMethods,
 >(definition: {
   id: TId;
   description: string;
-  methods: TMethods & MethodContracts<TMethods>;
+  methods: MethodContracts<TMethods> & TMethods;
 }): ToolsetDefinition<TId, TMethods> {
+  for (const [methodName, method] of Object.entries(definition.methods)) {
+    const input: AnySchema & { type?: unknown } = method.input;
+    if (input['~standard'].vendor === 'valibot' && input.type !== 'strict_object') {
+      // eslint-disable-next-line local-rules/no-uncategorized-errors -- portable toolsets-docs path
+      throw new Error(
+        `Toolset method "${definition.id}.${methodName}" must declare its input with v.strictObject, got a valibot "${String(input.type)}" schema. Undeclared arguments would otherwise be silently dropped or passed through instead of rejected.`
+      );
+    }
+  }
   return definition;
 }
 

@@ -1,11 +1,14 @@
+import type { ChannelLike } from 'storybook/internal/channels';
 import { getStoryImportPathFromEntry } from '../../../../common/utils/select-component-entry.ts';
 import type { StoryIndex } from '../../../../types/modules/indexer.ts';
-import { registerExtractionService } from '../extraction-service.server.ts';
+import {
+  registerExtractionService,
+  subscribeExtractionServiceToModuleGraphChanges,
+} from '../extraction-service.server.ts';
 import { docgenServiceDef } from './definition.ts';
 import type { DocgenProvider } from './types.ts';
 
 export type RegisterDocgenServiceOptions = {
-  workingDir?: string;
   /**
    * Returns the current story index when a service needs it. Callers should bind this to a
    * pre-resolved generator so each call does not re-await generator initialization.
@@ -18,9 +21,8 @@ export type RegisterDocgenServiceOptions = {
 /** Registers the `core/docgen` open service against the process-global registry. */
 export function registerDocgenService(options: RegisterDocgenServiceOptions) {
   return registerExtractionService(docgenServiceDef, {
-    workingDir: options.workingDir ?? process.cwd(),
     getIndex: options.getIndex,
-    provider: options.docgenProvider,
+    provider: ({ entry }) => options.docgenProvider({ entry }),
     buildErrorPayload: ({ id, entry, error }) => ({
       id,
       name: entry.title,
@@ -29,7 +31,20 @@ export function registerDocgenService(options: RegisterDocgenServiceOptions) {
       error,
     }),
     queryName: 'docgen',
+    toQueryInput: (id) => ({ id }),
     extractCommand: 'extractDocgen',
     extractAllCommand: 'extractAllDocgen',
+  });
+}
+
+export function subscribeDocgenToModuleGraphChanges(options: {
+  channel: ChannelLike;
+  getIndex: () => Promise<StoryIndex>;
+  workingDir: string;
+}) {
+  subscribeExtractionServiceToModuleGraphChanges(docgenServiceDef, {
+    ...options,
+    allQueryName: 'docgenForAllComponents',
+    extractCommand: 'extractDocgen',
   });
 }

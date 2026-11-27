@@ -24,7 +24,8 @@ import { DOUBLE_SPACES } from './vitest-manager.ts';
 
 const setTestNamePattern = vi.hoisted(() => vi.fn());
 const vitest = vi.hoisted(() => ({
-  projects: [{}],
+  projects: [{ config: { env: {} }, matchesTestGlob: vi.fn(() => false) }] as any[],
+  standalone: vi.fn(),
   init: vi.fn(),
   close: vi.fn(),
   onCancel: vi.fn(),
@@ -34,6 +35,8 @@ const vitest = vi.hoisted(() => ({
   provide: vi.fn(),
   runTestSpecifications: vi.fn(),
   cancelCurrentRun: vi.fn(),
+  enableCoverage: vi.fn(),
+  disableCoverage: vi.fn(),
   globTestSpecifications: vi.fn(),
   getModuleProjects: vi.fn(() => []),
   setGlobalTestNamePattern: setTestNamePattern,
@@ -52,10 +55,14 @@ const vitest = vi.hoisted(() => ({
   },
 }));
 
+const mockVitestVersion = vi.hoisted(() => ({ value: '4.1.6' }));
 const mockCreateVitest = vi.fn();
 
 vi.mock('vitest/node', () => ({
   createVitest: mockCreateVitest,
+  get version() {
+    return mockVitestVersion.value;
+  },
 }));
 
 // Use the mock function directly
@@ -63,11 +70,9 @@ const createVitest = mockCreateVitest;
 
 beforeEach(() => {
   vi.clearAllMocks();
-  mockStore.setState(() => ({
-    ...storeOptions.initialState,
-    index: mockIndex,
-  }));
-  vitest.projects = [{}];
+  mockVitestVersion.value = '4.1.6';
+  mockStore.setState(() => storeOptions.initialState);
+  vitest.projects = [{ config: { env: {} }, matchesTestGlob: vi.fn(() => false) }];
   vitest.config.coverage.enabled = false;
   createVitest.mockResolvedValue(vitest);
 });
@@ -133,16 +138,13 @@ const mockIndex = {
   },
 } as StoryIndex;
 
-const mockStore = new experimental_MockUniversalStore<StoreState, StoreEvent>(
-  {
-    ...storeOptions,
-    initialState: {
-      ...storeOptions.initialState,
-      index: mockIndex,
-    },
-  },
-  vi
-);
+const mockStore = new experimental_MockUniversalStore<StoreState, StoreEvent>(storeOptions, vi);
+const startWithIndex = async () => {
+  const testManager = await TestManager.start(options);
+  testManager.storyIndex = mockIndex;
+  return testManager;
+};
+
 const mockComponentTestStatusStore: StatusStoreByTypeId = {
   set: vi.fn(),
   getAll: vi.fn(),
@@ -196,9 +198,32 @@ const options: TestManagerOptions = {
   storybookOptions: {
     configDir: '.storybook',
   } as Options,
+  previewAnnotations: [],
 };
 
 describe('TestManager', () => {
+  it('initializes Vitest without running tests', async () => {
+    await TestManager.start(options);
+    expect(vitest.standalone).toHaveBeenCalledOnce();
+    expect(vitest.init).not.toHaveBeenCalled();
+    expect(vitest.runTestSpecifications).not.toHaveBeenCalled();
+  });
+
+  it.each(['3.2.4', '4.0.0'])(
+    'initializes Vitest %s without standalone or running tests',
+    async (version) => {
+      mockVitestVersion.value = version;
+      const { standalone, ...legacyVitest } = vitest;
+      createVitest.mockResolvedValue(legacyVitest);
+
+      await TestManager.start(options);
+
+      expect(legacyVitest.init).toHaveBeenCalledOnce();
+      expect(standalone).not.toHaveBeenCalled();
+      expect(legacyVitest.runTestSpecifications).not.toHaveBeenCalled();
+    }
+  );
+
   it('should create a vitest instance', async () => {
     new TestManager(options);
     await vi.waitFor(() => {
@@ -214,7 +239,7 @@ describe('TestManager', () => {
   });
 
   it('TestManager.start should start vitest and resolve when ready', async () => {
-    const testManager = await TestManager.start(options);
+    const testManager = await startWithIndex();
 
     expect(testManager).toBeInstanceOf(TestManager);
     expect(createVitest).toHaveBeenCalled();
@@ -222,7 +247,7 @@ describe('TestManager', () => {
 
   it('should handle run request', async () => {
     vitest.globTestSpecifications.mockImplementation(() => tests);
-    const testManager = await TestManager.start(options);
+    const testManager = await startWithIndex();
     expect(createVitest).toHaveBeenCalledTimes(1);
 
     await testManager.handleTriggerRunEvent({
@@ -239,9 +264,191 @@ describe('TestManager', () => {
     expect(vitest.runTestSpecifications).toHaveBeenCalledWith(tests, true);
   });
 
+  describe('story files Vitest has not picked up yet', () => {
+    // A story file created outside the Vite root after startup: Storybook indexes it, but Vitest's
+    // cached test file list doesn't contain it because its watcher never reported the file.
+    const newFile = path.join(process.cwd(), 'path/to/new/file');
+    const indexWithNewFile = {
+      ...mockIndex,
+      entries: {
+        ...mockIndex.entries,
+        'new--story': {
+          type: 'story',
+          subtype: 'story',
+          id: 'new--story',
+          name: 'Story',
+          title: 'new',
+          importPath: 'path/to/new/file',
+          tags: [Tag.TEST],
+        },
+      },
+    } as StoryIndex;
+
+    /** A project that, like Vitest's, adds matching files to its cached test file list. */
+    const createProject = (
+      env: Record<string, string>,
+      {
+        initialFiles = [],
+        matches = () => true,
+      }: { initialFiles?: string[]; matches?: (moduleId: string) => boolean } = {}
+    ) => {
+      const files = new Set(initialFiles);
+      const project: any = {
+        config: { env, root: process.cwd(), setupFiles: [] },
+        files,
+        matchesTestGlob: vi.fn((moduleId: string) => {
+          if (files.has(moduleId)) {
+            return true;
+          }
+          if (!matches(moduleId)) {
+            return false;
+          }
+          files.add(moduleId);
+          return true;
+        }),
+        vite: {
+          moduleGraph: {
+            getModuleById: vi.fn(),
+            getModulesByFile: vi.fn(() => []),
+            invalidateModule: vi.fn(),
+          },
+          transformRequest: vi.fn(),
+        },
+      };
+      return project;
+    };
+    const storybookEnv = { __STORYBOOK_URL__: 'http://localhost:6006' };
+    const knownFiles = tests.map((test) => test.moduleId);
+
+    const useProjects = (...projects: any[]) => {
+      vitest.projects = projects;
+      // One spec per project and file, like Vitest's own globTestSpecifications
+      vitest.globTestSpecifications.mockImplementation(() =>
+        projects.flatMap((project) =>
+          [...project.files].map((moduleId: string) => ({ project, moduleId }))
+        )
+      );
+    };
+
+    it('runs a story file that was added to the index after startup', async () => {
+      const project = createProject(storybookEnv, { initialFiles: knownFiles });
+      useProjects(project);
+      const testManager = await startWithIndex();
+
+      testManager.storyIndex = indexWithNewFile;
+      expect(project.matchesTestGlob).toHaveBeenCalledWith(newFile);
+
+      await testManager.handleTriggerRunEvent({
+        type: 'TRIGGER_RUN',
+        payload: { storyIds: ['story--one', 'new--story'], triggeredBy: 'global' },
+      });
+
+      expect(vitest.runTestSpecifications).toHaveBeenCalledWith(
+        [
+          { project, moduleId: knownFiles[0] },
+          { project, moduleId: newFile },
+        ],
+        true
+      );
+    });
+
+    it('registers the new file with every Storybook project, not just the first one', async () => {
+      // The file is already cached by the first Storybook project and by a non-Storybook project
+      const first = createProject(storybookEnv, { initialFiles: [...knownFiles, newFile] });
+      const second = createProject(storybookEnv, { initialFiles: knownFiles });
+      const other = createProject({}, { initialFiles: [newFile] });
+      useProjects(first, second, other);
+      const testManager = await startWithIndex();
+
+      testManager.storyIndex = indexWithNewFile;
+      expect(other.matchesTestGlob).not.toHaveBeenCalled();
+
+      await testManager.handleTriggerRunEvent({
+        type: 'TRIGGER_RUN',
+        payload: { storyIds: ['new--story'], triggeredBy: 'global' },
+      });
+
+      expect(vitest.runTestSpecifications).toHaveBeenCalledWith(
+        [
+          { project: first, moduleId: newFile },
+          { project: second, moduleId: newFile },
+        ],
+        true
+      );
+    });
+
+    it('does not run an indexed file that the Vitest test globs exclude', async () => {
+      const project = createProject(storybookEnv, {
+        initialFiles: knownFiles,
+        matches: (moduleId) => moduleId !== newFile,
+      });
+      useProjects(project);
+      const testManager = await startWithIndex();
+
+      testManager.storyIndex = indexWithNewFile;
+
+      await testManager.handleTriggerRunEvent({
+        type: 'TRIGGER_RUN',
+        payload: { storyIds: ['new--story'], triggeredBy: 'global' },
+      });
+
+      expect(vitest.runTestSpecifications).toHaveBeenCalledWith([], true);
+    });
+
+    it('keeps going when checking one file against the test globs throws', async () => {
+      const project = createProject(storybookEnv, { initialFiles: knownFiles });
+      const matchesTestGlob = project.matchesTestGlob;
+      project.matchesTestGlob = vi.fn((moduleId: string) => {
+        if (moduleId === newFile) {
+          throw new Error('ENOENT: no such file or directory');
+        }
+        return matchesTestGlob(moduleId);
+      });
+      useProjects(project);
+      const testManager = await startWithIndex();
+
+      expect(() => {
+        testManager.storyIndex = indexWithNewFile;
+      }).not.toThrow();
+
+      await testManager.handleTriggerRunEvent({
+        type: 'TRIGGER_RUN',
+        payload: { storyIds: ['story--one', 'new--story'], triggeredBy: 'global' },
+      });
+
+      expect(vitest.runTestSpecifications).toHaveBeenCalledWith(
+        [{ project, moduleId: knownFiles[0] }],
+        true
+      );
+    });
+
+    it('includes the new file when a watch-mode change reruns all tests', async () => {
+      const previewFile = path.join(process.cwd(), '.storybook/preview.ts');
+      const project = createProject(storybookEnv, { initialFiles: knownFiles });
+      useProjects(project);
+      const testManager = await TestManager.start({
+        ...options,
+        previewAnnotations: [previewFile],
+      });
+      testManager.storyIndex = mockIndex;
+      mockStore.setState((s) => ({ ...s, watching: true }));
+      vi.spyOn(testManager.vitestManager as any, 'getTestDependencies').mockResolvedValue(
+        new Set()
+      );
+
+      testManager.storyIndex = indexWithNewFile;
+      // Changing a preview annotation affects every story, so all tests rerun
+      await testManager.vitestManager.runAffectedTestsAfterChange(previewFile, 'change');
+
+      expect(vitest.runTestSpecifications).toHaveBeenLastCalledWith(
+        expect.arrayContaining([{ project, moduleId: newFile }]),
+        false
+      );
+    });
+  });
   it('should provide merged config override before running tests', async () => {
     vitest.globTestSpecifications.mockImplementation(() => tests);
-    const testManager = await TestManager.start(options);
+    const testManager = await startWithIndex();
 
     await testManager.handleTriggerRunEvent({
       type: 'TRIGGER_RUN',
@@ -283,7 +490,7 @@ describe('TestManager', () => {
       },
     ] as any;
 
-    const testManager = await TestManager.start(options);
+    const testManager = await startWithIndex();
 
     await testManager.handleTriggerRunEvent({
       type: 'TRIGGER_RUN',
@@ -311,7 +518,7 @@ describe('TestManager', () => {
   });
 
   it('should persist all reports on TEST_RUN_COMPLETED without writing them into currentRun', async () => {
-    const testManager = await TestManager.start(options);
+    const testManager = await startWithIndex();
     const passedResult = {
       state: 'passed',
       errors: [],
@@ -364,7 +571,7 @@ describe('TestManager', () => {
   });
 
   it('keeps per-flush synced state bounded and materializes full results at run end', async () => {
-    const testManager = await TestManager.start(options);
+    const testManager = await startWithIndex();
     const passedResult = {
       state: 'passed',
       errors: [],
@@ -426,7 +633,7 @@ describe('TestManager', () => {
   });
 
   it('should describe failures with the source-mapped frames rather than the raw browser stack', async () => {
-    const testManager = await TestManager.start(options);
+    const testManager = await startWithIndex();
     const failedResult = {
       state: 'failed',
       errors: [
@@ -465,9 +672,97 @@ describe('TestManager', () => {
     ]);
   });
 
+  it('runs the story files Vitest matches for file filters, without a test name pattern', async () => {
+    vitest.globTestSpecifications.mockImplementation((filters?: string[]) =>
+      filters ? tests.slice(0, 1) : tests
+    );
+    const testManager = await startWithIndex();
+
+    await testManager.handleTriggerRunEvent({
+      type: 'TRIGGER_RUN',
+      payload: { fileFilters: ['to/file'], triggeredBy: 'global' },
+    });
+
+    expect(vitest.globTestSpecifications).toHaveBeenLastCalledWith(['to/file']);
+    expect(vitest.runTestSpecifications).toHaveBeenCalledWith(tests.slice(0, 1), true);
+    expect(setTestNamePattern.mock.calls.map(([pattern]) => pattern)).not.toContainEqual(
+      expect.any(RegExp)
+    );
+    expect(mockStore.getState().currentRun).toMatchObject({
+      storyIds: ['story--one', 'story--two'],
+      matchedFileCount: 1,
+    });
+    expect(mockComponentTestStatusStore.unset).toHaveBeenLastCalledWith([
+      'story--one',
+      'story--two',
+    ]);
+    expect(mockComponentTestStatusStore.unset).not.toHaveBeenCalledWith(undefined);
+  });
+
+  it('selects by test name only the requested stories inside the story files that match', async () => {
+    vitest.globTestSpecifications.mockImplementation((filters?: string[]) =>
+      filters ? tests.slice(0, 1) : tests
+    );
+    const testManager = await startWithIndex();
+
+    await testManager.handleTriggerRunEvent({
+      type: 'TRIGGER_RUN',
+      payload: {
+        fileFilters: ['to/file'],
+        storyIds: ['story--one', 'another--two'],
+        triggeredBy: 'global',
+      },
+    });
+
+    expect(setTestNamePattern).toHaveBeenCalledWith(new RegExp('^One$'));
+    expect(vitest.runTestSpecifications).toHaveBeenCalledWith(tests.slice(0, 1), true);
+    expect(mockStore.getState().currentRun.storyIds).toEqual(['story--one']);
+  });
+
+  it('runs exactly the given story files, without a test name pattern', async () => {
+    vitest.globTestSpecifications.mockImplementation(() => tests);
+    const testManager = await startWithIndex();
+
+    await testManager.handleTriggerRunEvent({
+      type: 'TRIGGER_RUN',
+      payload: { storyFiles: ['path/to/another/file'], triggeredBy: 'global' },
+    });
+
+    expect(vitest.runTestSpecifications).toHaveBeenCalledWith(tests.slice(1), true);
+    expect(setTestNamePattern.mock.calls.map(([pattern]) => pattern)).not.toContainEqual(
+      expect.any(RegExp)
+    );
+    expect(mockStore.getState().currentRun).toMatchObject({
+      storyIds: ['another--one', 'another--two'],
+      matchedFileCount: undefined,
+    });
+  });
+
+  it('runs the given story files among the ones the file filters match, and counts the matched ones', async () => {
+    vitest.globTestSpecifications.mockImplementation((filters?: string[]) =>
+      filters ? tests : []
+    );
+    const testManager = await startWithIndex();
+
+    await testManager.handleTriggerRunEvent({
+      type: 'TRIGGER_RUN',
+      payload: {
+        fileFilters: ['file'],
+        storyFiles: ['path/to/another/file'],
+        triggeredBy: 'global',
+      },
+    });
+
+    expect(vitest.runTestSpecifications).toHaveBeenCalledWith(tests.slice(1), true);
+    expect(mockStore.getState().currentRun).toMatchObject({
+      storyIds: ['another--one', 'another--two'],
+      matchedFileCount: 2,
+    });
+  });
+
   it('should filter tests', async () => {
     vitest.globTestSpecifications.mockImplementation(() => tests);
-    const testManager = await TestManager.start(options);
+    const testManager = await startWithIndex();
 
     await testManager.handleTriggerRunEvent({
       type: 'TRIGGER_RUN',
@@ -482,7 +777,7 @@ describe('TestManager', () => {
 
   it('should trigger a single story render test', async () => {
     vitest.globTestSpecifications.mockImplementation(() => tests);
-    const testManager = await TestManager.start(options);
+    const testManager = await startWithIndex();
 
     await testManager.handleTriggerRunEvent({
       type: 'TRIGGER_RUN',
@@ -495,9 +790,13 @@ describe('TestManager', () => {
     expect(setTestNamePattern).toHaveBeenCalledWith(new RegExp(`^One$`));
   });
 
-  it('should trigger a single story test', async () => {
+  it.each([
+    ['4.1.6', ' '],
+    ['5.0.0', ' > '],
+  ])('should trigger a single story test with Vitest %s', async (version, separator) => {
+    mockVitestVersion.value = version;
     vitest.globTestSpecifications.mockImplementation(() => tests);
-    const testManager = await TestManager.start(options);
+    const testManager = await startWithIndex();
 
     await testManager.handleTriggerRunEvent({
       type: 'TRIGGER_RUN',
@@ -508,13 +807,13 @@ describe('TestManager', () => {
     });
     // regex should be Parent Story Name + Test Name
     expect(setTestNamePattern).toHaveBeenCalledWith(
-      new RegExp(`^Parent story${DOUBLE_SPACES} Test name$`)
+      new RegExp(`^Parent story${DOUBLE_SPACES}${separator}Test name$`)
     );
   });
 
   it('should trigger all tests of a story', async () => {
     vitest.globTestSpecifications.mockImplementation(() => tests);
-    const testManager = await TestManager.start(options);
+    const testManager = await startWithIndex();
 
     await testManager.handleTriggerRunEvent({
       type: 'TRIGGER_RUN',
@@ -528,7 +827,7 @@ describe('TestManager', () => {
 
   it('should trigger only selected stories in the same file', async () => {
     vitest.globTestSpecifications.mockImplementation(() => tests);
-    const testManager = await TestManager.start(options);
+    const testManager = await startWithIndex();
 
     await testManager.handleTriggerRunEvent({
       type: 'TRIGGER_RUN',
@@ -552,7 +851,7 @@ describe('TestManager', () => {
 
   it('should trigger only selected stories across multiple files', async () => {
     vitest.globTestSpecifications.mockImplementation(() => tests);
-    const testManager = await TestManager.start(options);
+    const testManager = await startWithIndex();
 
     await testManager.handleTriggerRunEvent({
       type: 'TRIGGER_RUN',
@@ -575,7 +874,7 @@ describe('TestManager', () => {
   });
 
   it('should ignore non-requested same-name story results after run', async () => {
-    const testManager = await TestManager.start(options);
+    const testManager = await startWithIndex();
     const passedResult = {
       state: 'passed',
       errors: [],
@@ -610,7 +909,7 @@ describe('TestManager', () => {
   });
 
   it('should keep child test results when parent story is requested', async () => {
-    const testManager = await TestManager.start(options);
+    const testManager = await startWithIndex();
     const passedResult = {
       state: 'passed',
       errors: [],
@@ -637,9 +936,15 @@ describe('TestManager', () => {
     expect(mockStore.getState().currentRun.totalTestCount).toBe(1);
   });
 
-  it('should restart Vitest before a test run if coverage is enabled', async () => {
-    const testManager = await TestManager.start(options);
+  it('should enable coverage without restarting Vitest before a test run', async () => {
+    const testManager = await startWithIndex();
     expect(createVitest).toHaveBeenCalledTimes(1);
+    expect(createVitest).toHaveBeenCalledWith(
+      Tag.TEST,
+      expect.objectContaining({
+        coverage: expect.objectContaining({ enabled: false, reportsDirectory: expect.any(String) }),
+      })
+    );
     createVitest.mockClear();
 
     mockStore.setState((s) => ({
@@ -654,17 +959,51 @@ describe('TestManager', () => {
       },
     });
 
-    expect(createVitest).toHaveBeenCalledTimes(1);
-    expect(createVitest).toHaveBeenCalledWith(
-      Tag.TEST,
-      expect.objectContaining({
-        coverage: expect.objectContaining({ enabled: true }),
-      })
+    expect(createVitest).not.toHaveBeenCalled();
+    expect(vitest.close).not.toHaveBeenCalled();
+    expect(vitest.enableCoverage).toHaveBeenCalledTimes(1);
+    expect(vitest.enableCoverage.mock.invocationCallOrder[0]).toBeGreaterThan(
+      vitest.cancelCurrentRun.mock.invocationCallOrder[0]
     );
+    expect(vitest.runTestSpecifications).toHaveBeenCalledTimes(1);
+
+    await testManager.handleTriggerRunEvent({
+      type: 'TRIGGER_RUN',
+      payload: {
+        triggeredBy: 'global',
+      },
+    });
+
+    expect(vitest.enableCoverage).toHaveBeenCalledTimes(1);
+  });
+
+  it('should disable coverage without restarting Vitest when coverage is turned off', async () => {
+    const testManager = await startWithIndex();
+    mockStore.setState((s) => ({
+      ...s,
+      config: { coverage: true, a11y: false },
+    }));
+    await testManager.handleTriggerRunEvent({
+      type: 'TRIGGER_RUN',
+      payload: { triggeredBy: 'global' },
+    });
+    createVitest.mockClear();
+
+    mockStore.setState((s) => ({
+      ...s,
+      config: { coverage: false, a11y: false },
+    }));
+    await testManager.handleTriggerRunEvent({
+      type: 'TRIGGER_RUN',
+      payload: { triggeredBy: 'global' },
+    });
+
+    expect(createVitest).not.toHaveBeenCalled();
+    expect(vitest.disableCoverage).toHaveBeenCalledTimes(1);
   });
 
   it('should not restart with coverage enabled Vitest before a focused test run', async () => {
-    const testManager = await TestManager.start(options);
+    const testManager = await startWithIndex();
     expect(createVitest).toHaveBeenCalledTimes(1);
     createVitest.mockClear();
 
@@ -682,5 +1021,24 @@ describe('TestManager', () => {
     });
 
     expect(createVitest).not.toHaveBeenCalled();
+    expect(vitest.enableCoverage).not.toHaveBeenCalled();
   });
+
+  it.each([{ fileFilters: ['to/file'] }, { storyFiles: ['path/to/file'] }])(
+    'should not enable coverage for a run of story files: %o',
+    async (selection) => {
+      const testManager = await startWithIndex();
+      mockStore.setState((s) => ({
+        ...s,
+        config: { coverage: true, a11y: false },
+      }));
+
+      await testManager.handleTriggerRunEvent({
+        type: 'TRIGGER_RUN',
+        payload: { ...selection, triggeredBy: 'global' },
+      });
+
+      expect(vitest.enableCoverage).not.toHaveBeenCalled();
+    }
+  );
 });

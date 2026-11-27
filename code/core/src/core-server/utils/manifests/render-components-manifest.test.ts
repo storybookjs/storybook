@@ -1,9 +1,18 @@
 import { describe, expect, it } from 'vitest';
 
 import type { ComponentsManifestForRenderer } from './render-components-manifest.ts';
-import { renderComponentsManifest } from './render-components-manifest.ts';
+import {
+  parseReactComponentMeta,
+  parseReactDocgenTypescript,
+  renderComponentsManifest,
+} from './render-components-manifest.ts';
 
 type RendererComponent = ComponentsManifestForRenderer['components'][string];
+
+const parseDocgenTypescript = (input: unknown) =>
+  parseReactDocgenTypescript(input as Parameters<typeof parseReactDocgenTypescript>[0]);
+const parseComponentMeta = (input: unknown) =>
+  parseReactComponentMeta(input as Parameters<typeof parseReactComponentMeta>[0]);
 
 const component = (overrides: Partial<RendererComponent> = {}): RendererComponent => ({
   id: 'component',
@@ -215,5 +224,85 @@ describe('renderComponentsManifest snippet warnings', () => {
 
     expect(html).not.toContain('incomplete example');
     expect(html).not.toContain('incomplete snippets');
+  });
+});
+
+describe.each([
+  ['parseReactDocgenTypescript (copy)', parseDocgenTypescript],
+  ['parseReactComponentMeta (copy)', parseComponentMeta],
+])('%s named-alias enums (#35778)', (_parserName, parse) => {
+  it('renders the full union for a named-alias enum whose raw is only the alias name', () => {
+    const result = parse({
+      displayName: 'Button',
+      filePath: 'src/Button.tsx',
+      description: '',
+      methods: [],
+      props: {
+        size: {
+          name: 'size',
+          description: 'Visual size',
+          type: {
+            name: 'enum',
+            raw: 'Size',
+            value: [{ value: '"small"' }, { value: '"medium"' }, { value: '"large"' }],
+          },
+          defaultValue: null,
+          required: false,
+        },
+      },
+    });
+    expect(result.props.size!.type).toBe('"small" | "medium" | "large"');
+  });
+
+  it('joins inline union members back to the exact string raw already holds', () => {
+    const raw = '"primary" | "secondary" | "danger"';
+    const result = parse({
+      displayName: 'Button',
+      filePath: 'src/Button.tsx',
+      description: '',
+      methods: [],
+      props: {
+        variant: {
+          name: 'variant',
+          description: 'The variant',
+          type: {
+            name: 'enum',
+            raw,
+            value: [{ value: '"primary"' }, { value: '"secondary"' }, { value: '"danger"' }],
+          },
+          defaultValue: null,
+          required: false,
+        },
+      },
+    });
+    // Byte-identical to the previous `raw` output for inline unions.
+    expect(result.props.variant!.type).toBe(raw);
+  });
+
+  it('keeps flat type.name for non-enum props', () => {
+    const result = parse({
+      displayName: 'Button',
+      filePath: 'src/Button.tsx',
+      description: '',
+      methods: [],
+      props: {
+        label: {
+          name: 'label',
+          description: 'The label',
+          type: { name: 'string' },
+          defaultValue: null,
+          required: true,
+        },
+        onClick: {
+          name: 'onClick',
+          description: 'Click handler',
+          type: { name: '(event: MouseEvent) => void' },
+          defaultValue: null,
+          required: true,
+        },
+      },
+    });
+    expect(result.props.label!.type).toBe('string');
+    expect(result.props.onClick!.type).toBe('(event: MouseEvent) => void');
   });
 });

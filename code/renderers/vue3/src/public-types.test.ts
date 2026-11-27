@@ -1,7 +1,6 @@
 // this file tests Typescript types that's why there are no assertions
 import { describe, it } from 'vitest';
 
-import { satisfies } from 'storybook/internal/common';
 import type { Canvas, ComponentAnnotations, StoryAnnotations } from 'storybook/internal/types';
 
 import { expectTypeOf } from 'expect-type';
@@ -12,6 +11,8 @@ import BaseLayout from './__tests__/BaseLayout.vue';
 import Button from './__tests__/Button.vue';
 import Decorator2TsVue from './__tests__/Decorator2.vue';
 import DecoratorTsVue from './__tests__/Decorator.vue';
+import GenericComponent from './__tests__/GenericComponent.vue';
+import VaporButton from './__tests__/VaporButton.vue';
 import type { ComponentPropsAndSlots, Decorator, Meta, StoryObj } from './public-types.ts';
 import type { VueRenderer } from './types.ts';
 
@@ -63,10 +64,10 @@ describe('Meta', () => {
 
 describe('StoryObj', () => {
   it('✅ Required args may be provided partial in meta and the story', () => {
-    const meta = satisfies<Meta<typeof Button>>()({
+    const meta = {
       component: Button,
       args: { label: 'good' },
-    });
+    } satisfies Meta<typeof Button>;
 
     type Actual = StoryObj<typeof meta>;
     type Expected = StoryAnnotations<VueRenderer, ButtonProps, SetOptional<ButtonProps, 'label'>>;
@@ -75,16 +76,16 @@ describe('StoryObj', () => {
 
   it('❌ The combined shape of meta args and story args must match the required args.', () => {
     {
-      const meta = satisfies<Meta<typeof Button>>()({ component: Button });
+      const meta = { component: Button } satisfies Meta<typeof Button>;
 
       type Expected = StoryAnnotations<VueRenderer, ButtonProps, ButtonProps>;
       expectTypeOf<StoryObj<typeof meta>>().toMatchTypeOf<Expected>();
     }
     {
-      const meta = satisfies<Meta<typeof Button>>()({
+      const meta = {
         component: Button,
         args: { label: 'good' },
-      });
+      } satisfies Meta<typeof Button>;
       // @ts-expect-error disabled not provided ❌
       const Basic: StoryObj<typeof meta> = {};
 
@@ -92,7 +93,7 @@ describe('StoryObj', () => {
       expectTypeOf(Basic).toMatchTypeOf<Expected>();
     }
     {
-      const meta = satisfies<Meta<{ label: string; disabled: boolean }>>()({ component: Button });
+      const meta = { component: Button } satisfies Meta<{ label: string; disabled: boolean }>;
       const Basic: StoryObj<typeof meta> = {
         // @ts-expect-error disabled not provided ❌
         args: { label: 'good' },
@@ -110,19 +111,75 @@ describe('StoryObj', () => {
   });
 });
 
+describe('Function-typed components (Vapor and generic SFCs)', () => {
+  type VaporButtonProps = ComponentPropsAndSlots<typeof VaporButton>;
+
+  it('Meta accepts the component in every form', () => {
+    const annotated: Meta<typeof VaporButton> = { component: VaporButton };
+    const satisfiesTyped = { component: VaporButton } satisfies Meta<typeof VaporButton>;
+    const satisfiesUntyped = { component: VaporButton } satisfies Meta;
+    const generic = { component: GenericComponent } satisfies Meta<typeof GenericComponent>;
+
+    expectTypeOf(annotated).toMatchTypeOf<Meta<typeof VaporButton>>();
+    expectTypeOf(satisfiesTyped).toMatchTypeOf<Meta<typeof VaporButton>>();
+    expectTypeOf(satisfiesUntyped).toMatchTypeOf<Meta>();
+    expectTypeOf(generic).toMatchTypeOf<Meta<typeof GenericComponent>>();
+  });
+
+  it('✅ Required args may be provided partial in meta and the story', () => {
+    const meta = {
+      component: VaporButton,
+      args: { label: 'good' },
+    } satisfies Meta<typeof VaporButton>;
+
+    const Basic: StoryObj<typeof meta> = { args: { disabled: false } };
+
+    type Expected = StoryAnnotations<
+      VueRenderer,
+      VaporButtonProps,
+      SetOptional<VaporButtonProps, 'label'>
+    >;
+    expectTypeOf(Basic).toMatchTypeOf<Expected>();
+  });
+
+  it('❌ Required args must still be provided', () => {
+    const meta = {
+      component: VaporButton,
+      args: { label: 'good' },
+    } satisfies Meta<typeof VaporButton>;
+
+    // @ts-expect-error disabled not provided ❌
+    const Basic: StoryObj<typeof meta> = {};
+
+    expectTypeOf(Basic).toMatchTypeOf<StoryObj<typeof meta>>();
+  });
+
+  it('Events are inferred from component', () => {
+    const Basic: StoryObj<typeof VaporButton> = {
+      args: {
+        onMyClickEvent: (value) => {
+          expectTypeOf(value).toMatchTypeOf<number>();
+        },
+      },
+    };
+
+    expectTypeOf(Basic).toMatchTypeOf<StoryObj<typeof VaporButton>>();
+  });
+});
+
 type ThemeData = 'light' | 'dark';
 
 describe('Story args can be inferred', () => {
   it('Correct args are inferred when type is widened for render function', () => {
     type Props = ButtonProps & { theme: ThemeData };
 
-    const meta = satisfies<Meta<Props>>()({
+    const meta = {
       component: Button,
       args: { disabled: false },
       render: (args) => {
         return h('div', [h('div', `Use the theme ${args.theme}`), h(Button, args)]);
       },
-    });
+    } satisfies Meta<Props>;
 
     const Basic: StoryObj<typeof meta> = { args: { theme: 'light', label: 'good' } };
 
@@ -138,11 +195,11 @@ describe('Story args can be inferred', () => {
   it('Correct args are inferred when type is widened for decorators', () => {
     type Props = ButtonProps & { decoratorArg: string };
 
-    const meta = satisfies<Meta<Props>>()({
+    const meta = {
       component: Button,
       args: { disabled: false },
       decorators: [withDecorator],
-    });
+    } satisfies Meta<Props>;
 
     const Basic: StoryObj<typeof meta> = { args: { decoratorArg: 'title', label: 'good' } };
 
@@ -161,11 +218,11 @@ describe('Story args can be inferred', () => {
       { args: { decoratorArg2 } }
     ) => h(Decorator2TsVue, { decoratorArg2 }, h(storyFn()));
 
-    const meta = satisfies<Meta<Props>>()({
+    const meta = {
       component: Button,
       args: { disabled: false },
       decorators: [withDecorator, secondDecorator],
-    });
+    } satisfies Meta<Props>;
 
     const Basic: StoryObj<typeof meta> = {
       args: { decoratorArg: '', decoratorArg2: '', label: 'good' },

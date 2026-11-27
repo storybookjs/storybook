@@ -3,7 +3,7 @@ npx storybook@7.6.6 upgrade
 ```
 
 ```shell renderer="common" packageManager="pnpm"
-pnpm dlx storybook@7.6.6 upgrade
+pnpm --allow-build=esbuild dlx storybook@7.6.6 upgrade
 ```
 
 ```shell renderer="common" packageManager="yarn"

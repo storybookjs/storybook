@@ -13,6 +13,7 @@ import { PREVIEW_STORY_TIMEOUT, waitForPreviewReady } from './helpers.ts';
  */
 
 const storybookUrl = process.env.STORYBOOK_URL || 'http://localhost:6006';
+const runsAgainstDevServer = !['build', 'static'].includes(process.env.STORYBOOK_TYPE || 'dev');
 
 /** Stable core template story shipped with the internal UI. */
 const STORY_PATH = '/story/core-basics--basic';
@@ -29,5 +30,15 @@ test.describe('internal Storybook UI', () => {
     await expect(preview.getByRole('button', { name: 'Click Me!' })).toBeVisible({
       timeout: PREVIEW_STORY_TIMEOUT,
     });
+  });
+
+  test('restricts which pages can embed the manager and the preview', async ({ request }) => {
+    test.skip(!runsAgainstDevServer, 'Only the dev server sets frame-ancestors');
+
+    const manager = await request.get(`${storybookUrl}/`);
+    expect(manager.headers()['content-security-policy']).toContain("frame-ancestors 'self'");
+
+    const preview = await request.get(`${storybookUrl}/iframe.html`);
+    expect(preview.headers()['content-security-policy']).toContain("frame-ancestors 'self'");
   });
 });

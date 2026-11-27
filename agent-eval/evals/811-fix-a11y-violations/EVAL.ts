@@ -1,8 +1,10 @@
 import {
   expectFinalResponseMatches,
+  expectFocusedTestRun,
   expectStoryTestsRanAndPassed,
   getWorkflowCalls,
   getWorkflowToolResults,
+  runStoryTestsInSandbox,
 } from '#test-utils';
 import { readFileSync } from 'node:fs';
 import { describe, expect, test } from 'vitest';
@@ -21,8 +23,8 @@ describe('fixing Button accessibility violations', () => {
     ).toBeGreaterThanOrEqual(2);
   });
 
-  test('fixes the semantic button-name violation', () => {
-    expectStoryTestsRanAndPassed({ covering: ['button'] });
+  test('fixes the semantic button-name violation', async () => {
+    await expectStoryTestsRanAndPassed({ covering: ['button'] });
 
     // The violation must have been observed before it can count as fixed — a
     // run that never evaluates accessibility cannot claim the fix.
@@ -32,8 +34,8 @@ describe('fixing Button accessibility violations', () => {
       'Expected some test-run result to surface the seeded button-name violation'
     ).toBe(true);
     expect(
-      results.at(-1)?.output,
-      'Final test-run result must no longer report the button-name violation'
+      (await runStoryTestsInSandbox()).output,
+      'The final test run must no longer report the button-name violation'
     ).not.toMatch(/button-name/);
 
     // The violation must be gone because the icon-only rendering gained an
@@ -59,5 +61,10 @@ describe('fixing Button accessibility violations', () => {
   // fine, but the final response has to tell the user about it either way.
   test('addresses the contrast violation', () => {
     expectFinalResponseMatches([/contrast/i]);
+  });
+
+  // The workflow names the test command itself, so a request to run the tests needs no skill.
+  test('runs the Button tests through Storybook', () => {
+    expectFocusedTestRun();
   });
 });

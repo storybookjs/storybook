@@ -7,13 +7,13 @@ import { installDeps } from './lib/package-manager.ts';
 import { ensureSourceClone } from './lib/prepare-trial.ts';
 import { PROJECTS, type Project } from './lib/projects.ts';
 import {
+  NODE_EVAL_SYNC_STORYBOOK_VERSION_SCRIPT,
+  REPOS_DIR,
   createLogger,
   formatHelp,
   formatTable,
   getProjectPath,
   getStorybookDir,
-  NODE_EVAL_SYNC_STORYBOOK_VERSION_SCRIPT,
-  REPOS_DIR,
   toPosixPath,
 } from './lib/utils.ts';
 

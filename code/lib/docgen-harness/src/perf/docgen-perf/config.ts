@@ -46,13 +46,15 @@ export interface ReactScenarioConfig {
   saves: number;
 }
 
-export interface VueScenarioConfig {
-  name: 'flat' | 'workspace' | 'base-type-touch';
+// Shared by the Vue and Svelte engines, so their rows run over the same projects.
+export interface WorkspaceScenarioConfig {
+  name: 'flat' | 'workspace' | 'base-type-touch' | 'large-program';
   packages: number;
   componentsPerPackage: number;
   chainDepth: number;
   fanOut: number;
   heavyLib: boolean;
+  libModules?: number;
   saves: number;
 }
 
@@ -65,7 +67,9 @@ export interface SuiteProfile {
   n: number;
   comparable: boolean;
   react: ReactScenarioConfig[];
-  vue: VueScenarioConfig[];
+  workspace: WorkspaceScenarioConfig[];
+  // Svelte's scenarios beyond the shared workspace ones.
+  svelte: WorkspaceScenarioConfig[];
   angular: AngularScenarioConfig;
 }
 
@@ -77,7 +81,7 @@ export const DEFAULT_PROFILE: SuiteProfile = {
     // Same project size; only the cold pass and save target differ, so the rows are comparable.
     { shape: 'first-story', components: 300, variants: 4, props: 10, saves: 10 },
   ],
-  vue: [
+  workspace: [
     {
       name: 'flat',
       packages: 1,
@@ -106,6 +110,18 @@ export const DEFAULT_PROFILE: SuiteProfile = {
       saves: 10,
     },
   ],
+  svelte: [
+    {
+      name: 'large-program',
+      packages: 1,
+      componentsPerPackage: 100,
+      chainDepth: 3,
+      fanOut: 4,
+      heavyLib: true,
+      libModules: 4000,
+      saves: 10,
+    },
+  ],
   angular: { components: 100, props: 8 },
 };
 
@@ -116,7 +132,7 @@ export const QUICK_PROFILE: SuiteProfile = {
     { shape: 'whole-index', components: 20, variants: 2, props: 4, saves: 4 },
     { shape: 'first-story', components: 20, variants: 2, props: 4, saves: 3 },
   ],
-  vue: [
+  workspace: [
     {
       name: 'flat',
       packages: 1,
@@ -142,6 +158,18 @@ export const QUICK_PROFILE: SuiteProfile = {
       chainDepth: 2,
       fanOut: 2,
       heavyLib: true,
+      saves: 3,
+    },
+  ],
+  svelte: [
+    {
+      name: 'large-program',
+      packages: 1,
+      componentsPerPackage: 10,
+      chainDepth: 2,
+      fanOut: 2,
+      heavyLib: true,
+      libModules: 400,
       saves: 3,
     },
   ],

@@ -17,8 +17,8 @@ export const exportedConstant = 'An exported constant';
 export type ButtonSize = 'small' | 'medium' | 'large' | 'xlarge';
 
 export enum ButtonAccent {
-  'Normal' = 'Normal',
-  'High' = 'High',
+  Normal = 'Normal',
+  High = 'High',
 }
 
 export interface ISomeInterface {

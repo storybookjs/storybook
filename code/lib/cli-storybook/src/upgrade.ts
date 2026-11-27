@@ -1,11 +1,18 @@
+import {
+  hasAddonVitest,
+  hasStorybookSkills,
+  installSkills,
+  refreshAgentInstructions,
+} from 'storybook/internal/cli';
 import { PackageManagerName } from 'storybook/internal/common';
 import {
   HandledError,
+  type JsPackageManager,
   JsPackageManagerFactory,
-  isCI,
   isCorePackage,
+  isNpmPeerResolutionError,
   resolveStorybookVersionSpecifier,
-  getProcessAncestry,
+  runStorybookInstallPrecheck,
 } from 'storybook/internal/common';
 import {
   CLI_COLORS,
@@ -16,7 +23,6 @@ import {
 } from 'storybook/internal/node-logger';
 import type { LogLevel } from 'storybook/internal/node-logger';
 import {
-  MinimumReleaseAgeHandledError,
   UpgradeStorybookToLowerVersionError,
   UpgradeStorybookUnknownCurrentVersionError,
 } from 'storybook/internal/server-errors';
@@ -65,35 +71,7 @@ export const getStorybookVersion = (line: string) => {
   };
 };
 
-const deprecatedPackages = [
-  {
-    minVersion: '6.0.0-alpha.0',
-    url: 'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#60-deprecations',
-    deprecations: [
-      '@storybook/addon-notes',
-      '@storybook/addon-info',
-      '@storybook/addon-contexts',
-      '@storybook/addon-options',
-      '@storybook/addon-centered',
-    ],
-  },
-  {
-    minVersion: '11.0.0',
-    url: 'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#nextjs-storybooknextjs-is-deprecated',
-    deprecations: ['@storybook/nextjs'],
-  },
-];
-
 const formatPackage = (pkg: Package) => `${pkg.package}@${pkg.version}`;
-
-const getStorybookVersionSpecifierFromCli = (): string | undefined => {
-  try {
-    return resolveStorybookVersionSpecifier(getProcessAncestry());
-  } catch {
-    // Ignore ancestry lookup failures and fall back to the dispatcher env var or embedded versions.
-    return resolveStorybookVersionSpecifier([]);
-  }
-};
 
 const warnPackages = (pkgs: Package[]) => pkgs.map((pkg) => `- ${formatPackage(pkg)}`).join('\n');
 
@@ -121,19 +99,6 @@ export const checkVersionConsistency = () => {
       ${warnPackages(outdated)}`
     );
   }
-
-  deprecatedPackages.forEach(({ minVersion, url, deprecations }) => {
-    if (semver.gte(latestVersion, minVersion)) {
-      const deprecated = storybookPackages.filter((pkg) => deprecations.includes(pkg.package));
-      if (deprecated.length > 0) {
-        logger.warn(
-          dedent`Found ${deprecated.length} deprecated packages since ${minVersion}
-          See ${url}
-          ${warnPackages(deprecated)}`
-        );
-      }
-    }
-  });
   logger.debug('End of version consistency check');
 };
 
@@ -158,7 +123,7 @@ function getUpgradeResults(
   doctorResults: Record<string, ProjectDoctorResults>
 ) {
   const successfulProjects: string[] = [];
-  const failedProjects: string[] = [];
+  const failedProjects: { configDir: string; failedFixIds: string[] }[] = [];
   const projectsWithNoFixes: string[] = [];
 
   const allProjects = Object.entries(projectResults).map(([configDir, resultData]) => {
@@ -173,9 +138,13 @@ function getUpgradeResults(
       }
     );
 
-    const hasFailures = automigrationResults.some(
-      (fix) => fix.status === FixStatus.FAILED || fix.status === FixStatus.CHECK_FAILED
-    );
+    const failedFixIds = new Set([
+      ...automigrationResults
+        .filter((fix) => fix.status === FixStatus.FAILED || fix.status === FixStatus.CHECK_FAILED)
+        .map((fix) => fix.fixId),
+      ...resultData.fileFailures.map((failure) => failure.fixId),
+    ]);
+    const hasFailures = failedFixIds.size > 0;
     const hasSuccessfulFixes = automigrationResults.some(
       (fix) => fix.status === FixStatus.SUCCEEDED || fix.status === FixStatus.MANUAL_SUCCEEDED
     );
@@ -189,7 +158,7 @@ function getUpgradeResults(
 
     // Categorize this project
     if (hasFailures) {
-      failedProjects.push(configDir);
+      failedProjects.push({ configDir, failedFixIds: [...failedFixIds] });
     } else if (migratedSuccessfully) {
       successfulProjects.push(configDir);
     } else if (noFixesNeeded) {
@@ -248,9 +217,14 @@ function logUpgradeResults(
       logger.log(`${CLI_COLORS.success('Successfully upgraded:')}\n${successfulProjectsList}`);
     }
 
-    const failedProjectsList = failedProjects.map((dir) => `  • ${shortenPath(dir)}`).join('\n');
+    const failedProjectsList = failedProjects
+      .map(
+        ({ configDir, failedFixIds }) =>
+          `  • ${shortenPath(configDir)} (${failedFixIds.join(', ')})`
+      )
+      .join('\n');
     logger.log(
-      `${CLI_COLORS.error('Failed to upgrade:')}\nSome automigrations failed, please check the logs in the log file for more details.\n${failedProjectsList}`
+      `${CLI_COLORS.error('Failed to upgrade:')}\nSome automigrations failed or skipped files. Review the upgrade output for details.\n${failedProjectsList}`
     );
 
     if (projectsWithNoFixes.length > 0) {
@@ -351,7 +325,7 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
     throw new HandledError('--features cannot be combined with --skip-automigrations');
   }
 
-  const storybookVersionSpecifier = getStorybookVersionSpecifierFromCli();
+  const storybookVersionSpecifier = resolveStorybookVersionSpecifier();
   const projectsResult = await getProjects(options);
 
   if (projectsResult === undefined || projectsResult.selectedProjects.length === 0) {
@@ -359,7 +333,7 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
     return;
   }
 
-  const { allProjects, selectedProjects: storybookProjects } = projectsResult;
+  const { allProjects, selectedProjects: storybookProjects, unreadProjects } = projectsResult;
 
   if (storybookProjects.length > 1) {
     logger.info(`Upgrading the following projects:
@@ -418,21 +392,11 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
     // Update dependencies in package.jsons for all projects
     if (!options.dryRun) {
       for (const project of storybookProjects) {
-        try {
-          await project.packageManager.precheckStorybookPackageInstall({
-            storybookVersion: project.currentCLIVersion,
-            nonInteractive: !!options.yes || !process.stdout.isTTY || !!isCI(),
-            installContext: 'upgrade',
-          });
-        } catch (error) {
-          if (error instanceof MinimumReleaseAgeHandledError) {
-            throw error;
-          }
-
-          logger.debug(
-            `Skipping minimum-release-age precheck for ${project.configDir} after an unexpected failure: ${error}`
-          );
-        }
+        await runStorybookInstallPrecheck(project.packageManager, {
+          storybookVersion: project.currentCLIVersion,
+          installContext: 'upgrade',
+          yes: !!options.yes,
+        });
       }
 
       const task = prompt.taskLog({
@@ -466,6 +430,10 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
       }
     }
 
+    // Read before the automigrations, so skills that the skills automigration installs are not
+    // installed a second time below.
+    const hadSkills = await hasStorybookSkills();
+
     // Run automigrations for all projects (unless explicitly skipped)
     let automigrationResults: Record<string, AutomigrationResult> = {};
     let detectedAutomigrations: AutomigrationCheckResult[] = [];
@@ -484,44 +452,40 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
         ? JsPackageManagerFactory.getPackageManager({ force: options.packageManager })
         : storybookProjects[0].packageManager;
 
-    if (rootPackageManager.type === 'npm') {
-      // see https://github.com/npm/cli/issues/8059 for more details
-      await rootPackageManager.installDependencies({ force: true });
-    } else {
-      await rootPackageManager.installDependencies();
-    }
-
-    if (
-      rootPackageManager.type !== PackageManagerName.YARN1 &&
-      rootPackageManager.isStorybookInMonorepo()
-    ) {
-      logger.warn(
-        `Since you are in a monorepo, we advise you to deduplicate your dependencies. We can do this for you but it might take some time.`
+    if (!options.dryRun) {
+      await withNpmForceFallback(rootPackageManager, (installOptions) =>
+        rootPackageManager.installDependencies(installOptions)
       );
 
-      const dedupe =
-        options.yes ||
-        (await prompt.confirm({
-          message: `Execute ${rootPackageManager.getRunCommand('dedupe')}?`,
-          initialValue: true,
-        }));
-
-      if (dedupe) {
-        if (rootPackageManager.type === 'npm') {
-          // see https://github.com/npm/cli/issues/8059 for more details
-          await rootPackageManager.dedupeDependencies({ force: true });
-        } else {
-          await rootPackageManager.dedupeDependencies();
-        }
-      } else {
-        logger.log(
-          `If you find any issues running Storybook, you can run ${rootPackageManager.getRunCommand('dedupe')} manually to deduplicate your dependencies and try again.`
+      if (
+        rootPackageManager.type !== PackageManagerName.YARN1 &&
+        rootPackageManager.isStorybookInMonorepo()
+      ) {
+        logger.warn(
+          `Since you are in a monorepo, we advise you to deduplicate your dependencies. We can do this for you but it might take some time.`
         );
+
+        const dedupe =
+          options.yes ||
+          (await prompt.confirm({
+            message: `Execute ${rootPackageManager.getRunCommand('dedupe')}?`,
+            initialValue: true,
+          }));
+
+        if (dedupe) {
+          await withNpmForceFallback(rootPackageManager, (dedupeOptions) =>
+            rootPackageManager.dedupeDependencies(dedupeOptions)
+          );
+        } else {
+          logger.log(
+            `If you find any issues running Storybook, you can run ${rootPackageManager.getRunCommand('dedupe')} manually to deduplicate your dependencies and try again.`
+          );
+        }
       }
     }
 
-    // Configure addons that automigrations added but deferred (e.g. addon-vitest / addon-a11y from
-    // the angular-to-angular-vite migration). Their postinstall hooks can only be resolved now that
+    // Configure addons that automigrations added but deferred (e.g. addon-vitest from the
+    // angular-to-angular-vite migration). Their postinstall hooks can only be resolved now that
     // dependencies have been installed above, mirroring CLI init's install-then-configure ordering.
     if (!options.dryRun && !options.skipInstall) {
       for (const project of storybookProjects) {
@@ -548,12 +512,39 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
       }
     }
 
+    // Every Storybook of a monorepo shares the AGENTS.md of the project root, so the section has a
+    // test step when one of them can run story tests. The main configs were read before the
+    // automigrations, so an addon-vitest that one of them added counts too. With `--config-dir`,
+    // or when a Storybook could not be read, a test step that another one put in the section stays.
+    const agentInstructions = {
+      testSupported:
+        allProjects.some(({ mainConfig }) => hasAddonVitest(mainConfig)) ||
+        storybookProjects.some(({ configDir }) =>
+          automigrationResults[configDir]?.addonsToPostinstall?.includes('@storybook/addon-vitest')
+        ),
+      sawEveryStorybook: !options.configDir?.length && unreadProjects === 0,
+    };
+    const skills =
+      !options.dryRun && hadSkills
+        ? await installSkills({
+            packageManager: rootPackageManager,
+            source: 'refresh',
+            ...agentInstructions,
+          })
+        : undefined;
+    // The skills of a plugin, or installed by hand, come with an AGENTS.md section that promises
+    // the same updates.
+    if (!options.dryRun && !hadSkills) {
+      await refreshAgentInstructions(agentInstructions);
+    }
+
     // Run doctor for each project
     const doctorProjects: ProjectDoctorData[] = storybookProjects.map((project) => ({
       configDir: project.configDir,
       packageManager: project.packageManager,
       storybookVersion: project.currentCLIVersion,
       mainConfig: project.mainConfig,
+      warnedFixIds: automigrationResults[project.configDir]?.warnedFixIds,
     }));
 
     logger.step('Checking the health of your project(s)..');
@@ -605,6 +596,7 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
         doctorResults: doctorResults[project.configDir]?.diagnostics || {},
         doctorFailureCount,
         doctorErrorCount,
+        skills,
       });
     }
 
@@ -614,9 +606,41 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
       projectResults: automigrationResults,
       doctorResults,
     });
+
+    if (getUpgradeResults(automigrationResults, doctorResults).failedProjects.length > 0) {
+      throw new HandledError(
+        'Some automigrations failed or skipped files. Review the upgrade output.'
+      );
+    }
   } finally {
     // Clean up signal handlers
     process.removeListener('SIGINT', handleInterruption);
     process.removeListener('SIGTERM', handleInterruption);
   }
 }
+
+export const withNpmForceFallback = async (
+  packageManager: JsPackageManager,
+  operation: (options?: { force?: boolean; legacyPeerDeps?: boolean }) => Promise<void>
+) => {
+  try {
+    await operation();
+  } catch (error) {
+    if (
+      error instanceof HandledError ||
+      packageManager.type !== PackageManagerName.NPM ||
+      !isNpmPeerResolutionError(error)
+    ) {
+      throw error;
+    }
+    try {
+      // --legacy-peer-deps resolves the conflict without forced resolution, so try it first:
+      // npm/cli#8059 shows --force can spin on large trees, making it only a last resort.
+      logger.warn('Peer dependency conflict detected; retrying with --legacy-peer-deps');
+      await operation({ legacyPeerDeps: true });
+    } catch {
+      logger.warn('Retry with --legacy-peer-deps failed; retrying with --force');
+      await operation({ force: true });
+    }
+  }
+};

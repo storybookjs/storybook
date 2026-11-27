@@ -1,8 +1,7 @@
 import React from 'react';
 
 import { Link } from 'storybook/internal/components';
-import { global } from '@storybook/global';
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/emotion';
 
 import { useChecklist } from '../components/sidebar/useChecklist.ts';
 import { Checklist } from './Checklist/Checklist.tsx';
@@ -53,7 +52,7 @@ export const GuidePage = () => {
         <AiSetupBlock item={aiSetupItem} reset={checklist.reset} skip={checklist.skip} />
       )}
       <Checklist {...checklist} forceCollapsed={aiSetupItem?.isOpen} />
-      {global.FEATURES?.sidebarOnboardingChecklist !== false && (
+      {globalThis.FEATURES?.sidebarOnboardingChecklist !== false && (
         <>
           {checklist.openItems.length === 0 ? (
             <center>Your work here is done!</center>

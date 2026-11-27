@@ -3,8 +3,27 @@ import { dedent } from 'ts-dedent';
 import type { ProjectInfo } from '../../project-info.ts';
 import { getDocsMarkdownUrl } from '../setup-utils/docs-markdown-url.ts';
 import { ext } from '../setup-utils/ext.ts';
+import { isReactProject } from '../setup-utils/is-react-project.ts';
 import { listDOD, listRules, listSteps } from '../setup-utils/markdown.ts';
-import type { SetupInstructionsContext } from './types.ts';
+import {
+  cssCheckDOD,
+  optionalTestInfrastructureDOD,
+  sharedPreviewDOD,
+  storyTagsV1DOD,
+  typeCheckPassesStrictDOD,
+  vitestPassesStrictDOD,
+} from './partials/dod.ts';
+import {
+  batchTestsRule,
+  editOverWriteRule,
+  keepUserWorkRule,
+  monorepoRule,
+  nodeModuleReadsRule,
+  noPolishRule,
+  packageManagerRule,
+  preferSharedFixesRule,
+  readBudgetRule,
+} from './partials/rules.ts';
 import {
   buildPortalStep,
   buildSharedPreviewStep,
@@ -16,36 +35,21 @@ import {
   verifyStep,
   writeStoriesStep,
 } from './partials/steps.ts';
-import {
-  batchTestsRule,
-  editOverWriteRule,
-  monorepoRule,
-  nodeModuleReadsRule,
-  noPolishRule,
-  packageManagerRule,
-  preferSharedFixesRule,
-  readBudgetRule,
-  toolsVsShellRule,
-} from './partials/rules.ts';
-import {
-  cssCheckDOD,
-  sharedPreviewDOD,
-  storyTagsV1DOD,
-  typeCheckPassesStrictDOD,
-  vitestPassesStrictDOD,
-} from './partials/dod.ts';
+import type { SetupInstructionsContext } from './types.ts';
 
 export function instructions(projectInfo: ProjectInfo): string {
   const { configDir, language, needsUserOnboarding, packageManager, packageManagerName } =
     projectInfo;
-  const tsx = ext(language, true);
+  const tsx = ext(language, isReactProject(projectInfo));
   const ts = ext(language, false);
   const docsUrl = (path: string) => getDocsMarkdownUrl(path, projectInfo);
-  const mswInstall = packageManager.getInstallCommand(['msw', 'mockdate'], true);
+  const mswInstall = packageManager.getInstallCommand(['msw'], true);
+  const mockDateInstall = packageManager.getInstallCommand(['mockdate'], true);
 
   const ctx: SetupInstructionsContext = {
     configDir,
     docsUrl,
+    mockDateInstall,
     mswInstall,
     needsUserOnboarding,
     packageManager,
@@ -55,16 +59,16 @@ export function instructions(projectInfo: ProjectInfo): string {
   };
 
   return dedent`
-    Your goal is to make Storybook fully functional in this project: configure \`${configDir}/preview.${tsx}\` with the right decorators, add MSW for data, and write up to 10 colocated \`*.stories.${tsx}\` files. Add \`play\` functions only where they prove something non-trivial.
+    Your goal is to make Storybook fully functional in this project: configure \`${configDir}/preview.${tsx}\` with the right decorators, add MSW or MockDate (when selected stories need them), and write up to 10 colocated \`*.stories.${tsx}\` files. Add \`play\` functions only where they prove something non-trivial.
 
     ## Rules of engagement (follow strictly — these are time budgets, not suggestions)
 
     ${listRules([
-      toolsVsShellRule(ctx),
       nodeModuleReadsRule(ctx),
       monorepoRule(projectInfo),
       readBudgetRule(ctx),
       editOverWriteRule(ctx),
+      keepUserWorkRule(ctx),
       batchTestsRule(ctx),
       packageManagerRule(ctx),
       preferSharedFixesRule(ctx),
@@ -96,6 +100,7 @@ export function instructions(projectInfo: ProjectInfo): string {
       vitestPassesStrictDOD(ctx),
       typeCheckPassesStrictDOD(ctx),
       sharedPreviewDOD(ctx),
+      optionalTestInfrastructureDOD(ctx),
     ])}
 
     ## Reference (only fetch if stuck)
@@ -104,7 +109,7 @@ export function instructions(projectInfo: ProjectInfo): string {
     - Writing stories: ${docsUrl('writing-stories')}
     - Decorators: ${docsUrl('writing-stories/decorators')}
     - Play functions: ${docsUrl('writing-stories/play-function')}
-    - Vitest integration: ${docsUrl('writing-tests/vitest-plugin')}
+    - Vitest integration: ${docsUrl('writing-tests/integrations/vitest-addon')}
 
     Append \`?codeOnly=true\` to any docs URL for code-only snippets. Don't fetch unless a specific question can't be answered from this prompt.
   `;

@@ -3,7 +3,6 @@ import React, { type ReactNode, useCallback, useRef, useState } from 'react';
 import { Button } from 'storybook/internal/components';
 import { REVIEW_STATUS_TYPE_ID } from 'storybook/internal/types';
 
-import { global } from '@storybook/global';
 import { CloseIcon, SearchIcon } from '@storybook/icons';
 
 import type { DownshiftState, StateChangeOptions } from 'downshift';
@@ -11,8 +10,9 @@ import Downshift from 'downshift';
 import type { FuseOptions } from 'fuse.js';
 import Fuse from 'fuse.js';
 import { shortcutToHumanString, useStorybookApi } from 'storybook/manager-api';
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/emotion';
 
+import { isOwnEntry } from '../../../manager-api/lib/stories.ts';
 import { useLandmark } from '../../hooks/useLandmark.ts';
 import { getGroupStatus, getMostCriticalStatusValue } from '../../utils/status.tsx';
 import { scrollIntoView, searchItem } from '../../utils/tree.ts';
@@ -28,7 +28,7 @@ import type {
 } from './types.ts';
 import { isExpandType, isSearchResult } from './types.ts';
 
-const { document } = global;
+import { resolveHighlightRanges } from './SearchResults.utils.ts';
 
 const DEFAULT_MAX_SEARCH_RESULTS = 50;
 
@@ -53,7 +53,6 @@ const options = {
 const SearchBar = styled.div({
   display: 'flex',
   flexDirection: 'row',
-  columnGap: 6,
 });
 
 const ScreenReaderLabel = styled.label({
@@ -156,7 +155,14 @@ const Actions = styled.div({
   gap: 2,
 });
 
-const FocusContainer = styled.div({ outline: 0 });
+// Fill the remaining sidebar height. The virtualized tree inside scrolls itself.
+const FocusContainer = styled.div({
+  outline: 0,
+  flex: '1 1 auto',
+  minHeight: 0,
+  display: 'flex',
+  flexDirection: 'column',
+});
 
 export type SearchProps = {
   children: SearchChildrenFn;
@@ -164,7 +170,6 @@ export type SearchProps = {
   enableShortcuts?: boolean;
   getLastViewed: () => Selection[];
   initialQuery?: string;
-  searchBarContent?: ReactNode;
   searchFieldContent?: ReactNode;
   belowSearchContent?: ReactNode;
 };
@@ -175,12 +180,13 @@ export const Search = React.memo<SearchProps>(function Search({
   enableShortcuts = true,
   getLastViewed,
   initialQuery = '',
-  searchBarContent,
   searchFieldContent,
   belowSearchContent,
 }) {
   const api = useStorybookApi();
   const inputRef = useRef<HTMLInputElement>(null);
+  // The explorer's focus target (also focusableUIElements.storyListMenu).
+  const menuRef = useRef<HTMLDivElement>(null);
   const [inputPlaceholder, setPlaceholder] = useState('Find components');
   const [allComponents, showAllComponents] = useState(false);
   const searchShortcut = api ? shortcutToHumanString(api.getShortcutKeys().search) : '/';
@@ -198,15 +204,16 @@ export const Search = React.memo<SearchProps>(function Search({
 
       for (const datasetValue of datasetValues) {
         const storyStatuses = allStatuses?.[datasetValue.id];
-        const mostCriticalStatusValue = storyStatuses
-          ? getMostCriticalStatusValue(
-              Object.values(storyStatuses)
-                .filter((status) => status.typeId !== REVIEW_STATUS_TYPE_ID)
-                .map((status) => status.value)
-            )
+        const ownStatusValues = Object.values(storyStatuses ?? {})
+          .filter((status) => status.typeId !== REVIEW_STATUS_TYPE_ID)
+          .map((status) => status.value);
+        // A story can carry review statuses only. Such a story has no status of its own, so use
+        // the group status instead of the 'unknown' placeholder value.
+        const mostCriticalStatusValue = ownStatusValues.length
+          ? getMostCriticalStatusValue(ownStatusValues)
           : null;
 
-        const status = mostCriticalStatusValue ?? groupStatus[datasetValue.id] ?? null;
+        const status = mostCriticalStatusValue ?? groupStatus.get(datasetValue.id);
 
         if (datasetValue.type !== 'docs' || !globalThis?.FEATURES?.experimentalSearchDocsHeadings) {
           list.push({
@@ -252,60 +259,30 @@ export const Search = React.memo<SearchProps>(function Search({
       let results: DownshiftItem[] = [];
       const resultIds: Set<string> = new Set();
 
-      const allMatches = (fuse.search(input) as SearchResult[]).filter(({ item }) => {
-        return item.type === 'component' || item.type === 'docs' || item.type === 'story';
-      });
-
-      // When the index is being created, we have a legacy piece of logic that
-      // wraps every docs page inside a component entry. This originates from
-      // Storybook 6 and has never been removed. Because of it, we must dedupe
-      // docs entries that are hidden under a fake component entry.
-      // See https://github.com/storybookjs/storybook/issues/35513 for details.
-      const docsParentIds = new Set<string>();
-      allMatches.forEach(({ item }) => {
-        if (item.type === 'docs' && item.parent) {
-          docsParentIds.add(item.parent);
-        }
-      });
-
-      // Components suppressed in favor of a matching docs child that hasn't been rendered yet.
-      // The suppressed component still occupies its slot in `resultIds` so that sibling stories
-      // ranked between the component and its docs entry are deduplicated, as they were before.
-      const pendingDocsReplacements = new Set<string>();
-
-      const distinctResults = allMatches.filter(({ item }) => {
-        // This always gets called before the corresponding docs item
-        // because of the sorting performed by the search index. So it's
-        // safe to use `pendingDocsReplacements` in a single-pass lookup.
-        if (item.type === 'component' && docsParentIds.has(item.id)) {
-          if (!resultIds.has(item.id)) {
-            resultIds.add(item.id);
-            pendingDocsReplacements.add(item.id);
-          }
+      const distinctResults = (fuse.search(input) as SearchResult[]).filter(({ item }) => {
+        if (!(item.type === 'component' || item.type === 'docs' || item.type === 'story')) {
           return false;
         }
-
-        // When we reach this, we know we found an unattached MDX page with
-        // a synthetic docs wrapper. Like in Tree.tsx, remove the wrapper
-        // and present the docs item to end users.
-        if (item.type === 'docs' && item.parent && pendingDocsReplacements.has(item.parent)) {
-          pendingDocsReplacements.delete(item.parent);
-          resultIds.add(item.id);
-          return true;
-        }
-        // @ts-expect-error (non strict)
-        if (resultIds.has(item.parent)) {
+        // A matching result already stands for the entries under it, except for subcomponents and
+        // docs hoisted from a nested title (e.g. `Components/Button/Guide`), which are results of
+        // their own.
+        const isNested =
+          item.type === 'component' ||
+          (item.type === 'docs' && !!item.parent && !isOwnEntry({ id: item.parent }, item));
+        if (item.parent && resultIds.has(item.parent) && !isNested) {
           return false;
         }
         resultIds.add(item.id);
-        if (item.type === 'docs' && item.parent) {
-          resultIds.add(item.parent);
-        }
         return true;
       });
 
       if (distinctResults.length) {
-        results = distinctResults.slice(0, allComponents ? 1000 : DEFAULT_MAX_SEARCH_RESULTS);
+        results = distinctResults
+          .slice(0, allComponents ? 1000 : DEFAULT_MAX_SEARCH_RESULTS)
+          .map((result) => ({
+            ...result,
+            matches: resolveHighlightRanges(result.matches, input),
+          }));
         if (distinctResults.length > DEFAULT_MAX_SEARCH_RESULTS && !allComponents) {
           results.push({
             showAll: () => showAllComponents(true),
@@ -478,12 +455,19 @@ export const Search = React.memo<SearchProps>(function Search({
           },
           onBlur: () => setPlaceholder('Find components'),
           onKeyDown: (e) => {
+            if (e.key !== 'Escape') {
+              return;
+            }
+            // Escape never leaves the field. With a query it clears the query (see stateReducer).
+            // With an empty field it hands focus to the explorer: the stateReducer then returns
+            // to the tree view, and the next Escape, from the explorer, reaches the ancestors.
+            // The mobile menu drawer closes on any Escape that reaches it, so a press from the
+            // field would close it on the first press. A plain blur would not do either: the
+            // drawer's focus scope returns the focus to the field, which reopens the results.
+            e.stopPropagation();
             // @ts-expect-error (non strict)
-            if (e.key === 'Escape' && inputValue.length === 0) {
-              // When pressing escape while the input is empty, blur the input
-              // The stateReducer will handle returning to the tree view
-              // @ts-expect-error (non strict)
-              inputRef.current.blur();
+            if (inputValue.length === 0) {
+              menuRef.current?.focus();
             }
           },
         });
@@ -534,10 +518,10 @@ export const Search = React.memo<SearchProps>(function Search({
                   {searchFieldContent}
                 </Actions>
               </SearchField>
-              {searchBarContent}
             </SearchBar>
             {!isOpen && belowSearchContent}
-            <FocusContainer tabIndex={0} id="storybook-explorer-menu">
+            {/* Programmatically focusable (focusableUIElements.storyListMenu). */}
+            <FocusContainer tabIndex={-1} id="storybook-explorer-menu" ref={menuRef}>
               {children({
                 query: input,
                 results,

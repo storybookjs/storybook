@@ -24,7 +24,7 @@ function createMockOptions({
           return hasFeaturesObject
             ? {
                 [featureFlagName]: featureFlag,
-                ...(docgenServer ? { experimentalDocgenServer: true } : {}),
+                ...(docgenServer ? { docgenServer: true } : {}),
               }
             : {};
         }
@@ -116,7 +116,7 @@ describe('getManifestStatus', () => {
       },
     },
     {
-      description: 'experimentalDocgenServer mode reports manifests available via the services',
+      description: 'docgenServer mode reports manifests available via the services',
       options: { featureFlag: true, hasManifests: false, docgenServer: true },
       expected: { available: true, hasManifests: true, hasFeatureFlag: true, docgenServer: true },
     },

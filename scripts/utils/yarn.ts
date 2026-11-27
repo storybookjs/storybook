@@ -37,7 +37,12 @@ export const addPackageResolutions = async ({ cwd, dryRun }: YarnOptions) => {
   await writeFile(packageJsonPath, JSON.stringify(packageJson, null, 2));
 };
 
-export const installYarn2 = async ({ cwd, dryRun, debug }: YarnOptions) => {
+export const installYarn2 = async ({
+  cwd,
+  dryRun,
+  debug,
+  key,
+}: YarnOptions & { key: AllTemplatesKey }) => {
   await mkdir(cwd, { recursive: true });
 
   // The published sandbox ships a lockfile and a `.yarnrc.yml` carrying the age gate.
@@ -47,7 +52,7 @@ export const installYarn2 = async ({ cwd, dryRun, debug }: YarnOptions) => {
   // Our own Storybook packages are published to Verdaccio seconds before this install,
   // so they can never satisfy the gate. Name them instead of switching it off, exactly
   // as sandbox generation does for the `after-storybook` install.
-  await preapproveLocallyPublishedPackages(cwd);
+  await preapproveLocallyPublishedPackages(cwd, allTemplates[key].minAgeGateExemptions);
 
   const command = [
     // No `yarn set version` here: the sandbox pins Yarn through the `packageManager`
@@ -92,7 +97,10 @@ export const addWorkaroundResolutions = async ({
   let additionalResolutions = {};
 
   // add additional resolutions for React 19
-  if (['nextjs/default-ts', 'nextjs/prerelease', 'react-native-web-vite/expo-ts'].includes(key)) {
+  if (
+    key !== undefined &&
+    ['nextjs/default-ts', 'nextjs/prerelease', 'react-native-web-vite/expo-ts'].includes(key)
+  ) {
     additionalResolutions = {
       react: '^19.0.0',
       'react-dom': '^19.0.0',
@@ -111,6 +119,16 @@ export const addWorkaroundResolutions = async ({
     additionalResolutions = {
       ...additionalResolutions,
       'react-docgen': '^8.0.2',
+    };
+  }
+
+  // Vue 3.5.46 and 3.6.0-rc.16 need these at versions still inside the age gate.
+  // Remove once source-map-js 1.2.3 (2026-11-18) is older than the gate.
+  if (key === 'vue3-vite/prerelease-ts') {
+    additionalResolutions = {
+      ...additionalResolutions,
+      'source-map-js': '1.2.2',
+      csstype: '3.2.3',
     };
   }
 

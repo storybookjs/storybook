@@ -18,8 +18,6 @@ import { CLI_COLORS, deprecate, logger, prompt } from 'storybook/internal/node-l
 import { MissingBuilderError, NoStatsForViteDevError } from 'storybook/internal/server-errors';
 import { detectAgent, oneWayHash, telemetry } from 'storybook/internal/telemetry';
 import type { BuilderOptions, CLIOptions, LoadOptions, Options } from 'storybook/internal/types';
-import { applyServicesPresetOnce } from './utils/apply-services-preset-once.ts';
-import { global } from '@storybook/global';
 
 import { join, relative, resolve } from 'pathe';
 import invariant from 'tiny-invariant';
@@ -32,6 +30,7 @@ import { getWsToken } from './presets/wsToken.ts';
 import { buildOrThrow } from './utils/build-or-throw.ts';
 import { getManagerBuilder, getPreviewBuilder } from './utils/get-builders.ts';
 import { getServerChannel } from './utils/get-server-channel.ts';
+import { warnOnDisabledHostValidation } from './utils/host-validation-warning.ts';
 import { outputStartupInformation } from './utils/output-startup-information.ts';
 import { outputStats } from './utils/output-stats.ts';
 import {
@@ -80,6 +79,9 @@ export async function buildDevStandalone(
       previewConfigPath?: string;
     }
 ): Promise<{ port: number; address: string; networkAddress: string }> {
+  // lets a Vite plugin loaded through vite.config.ts tell a CLI run from an embedded one
+  process.env.STORYBOOK_CLI = 'true';
+
   const { packageJson, versionUpdates } = options;
   let { storybookVersion, previewConfigPath } = options;
   const configDir = resolve(options.configDir);
@@ -97,7 +99,7 @@ export async function buildDevStandalone(
   }
   // updateInfo are cached, so this is typically pretty fast
   const [port, versionCheck] = await Promise.all([
-    getServerPort(options.port, { exactPort: options.exactPort }),
+    getServerPort(options.port, { exactPort: options.exactPort, host: options.host }),
     versionUpdates
       ? updateCheck(storybookVersion)
       : Promise.resolve({ success: false, cached: false, data: {}, time: Date.now() }),
@@ -144,6 +146,8 @@ export async function buildDevStandalone(
   options.serverChannelUrl = getServerChannelUrl(port, options);
   options.localAddress = localAddress;
   options.networkAddress = networkAddress;
+  // The CLI dev server always serves from the root; only `loadStorybook` callers mount it elsewhere.
+  options.basePath = '/';
 
   const config = await loadMainConfig(options);
   const { core, framework } = config;
@@ -151,9 +155,7 @@ export async function buildDevStandalone(
   const corePresets = [];
 
   let frameworkName = typeof framework === 'string' ? framework : framework?.name;
-  if (!options.ignorePreview) {
-    validateFrameworkName(frameworkName);
-  }
+  validateFrameworkName(frameworkName);
   if (frameworkName) {
     corePresets.push(join(frameworkName, 'preset'));
   }
@@ -205,18 +207,13 @@ export async function buildDevStandalone(
 
   const { allowedHosts, renderer, builder } = await presets.apply('core', {});
 
-  // '0.0.0.0' binds to all interfaces, which is useful for Docker and other containerized environments.
-  // By default we allow requests from all hosts in this case, but the user should be made aware of the risk.
-  if (
-    options.host === '0.0.0.0' &&
-    (!allowedHosts || (allowedHosts !== true && allowedHosts.length === 0))
-  ) {
-    logger.warn(dedent`
-      --host is set to 0.0.0.0 but no allowedHosts are defined. Allowing all hosts.
-      To restrict allowed hosts, set core.allowedHosts in your main Storybook config.
-      See: https://storybook.js.org/docs/api/main-config/main-config-core
-    `);
-  }
+  await warnOnDisabledHostValidation({
+    host: options.host,
+    allowedHosts,
+    ci: options.ci,
+    smokeTest: options.smokeTest,
+    cacheKey,
+  });
 
   if (!builder) {
     throw new MissingBuilderError();
@@ -282,9 +279,8 @@ export async function buildDevStandalone(
   });
 
   const features = await presets.apply('features');
-  global.FEATURES = features;
+  globalThis.FEATURES = features;
 
-  await applyServicesPresetOnce(presets);
   await presets.apply('experimental_serverChannel', channel);
 
   const fullOptions: Options = {
@@ -365,6 +361,7 @@ export async function buildDevStandalone(
         version: storybookVersion,
         name,
         address: localAddress,
+        host: options.host,
         networkAddress,
         allowedHosts,
         managerTotalTime,

@@ -7,30 +7,42 @@ import {
   type TemplateChildNode,
 } from '@vue/compiler-dom';
 
-import { babelParseExpression, types as t } from 'storybook/internal/babel';
 import {
-  keyOf,
+  type ESTree as E,
+  type ESTreeNode as Node,
+  type ImportBinding,
+  isStringLiteral,
+  staticKey,
+  normalizeLineEndings,
+  parseModule,
   propertyValue,
   unwrapExpression,
-  type ImportBinding,
+  walk,
 } from 'storybook/internal/csf-tools';
 
 import type { ClassifiedArg } from '../classify-args/classify-args.ts';
-import { isFunctionExpression, printValue } from '../../shared/classify-value.ts';
+import { isFunctionExpression, printValue, snippetValueOf } from '../../shared/classify-value.ts';
 import { readForwardableSetup, type ForwardableSetup } from './forward-setup.ts';
 import {
+  attributeHole,
   createRenderContext,
-  escapeTextContent,
   hoistArgValue,
   hoistModelRef,
   importStatementForBinding,
-  inlinePrimitiveSource,
+  marked,
   renderArgsBindingExpansion,
   renderBoundArgAttribute,
   renderPreparedSfcSnippet,
-  wrapSlotContent,
+  sharesWrittenConst,
   type RenderContext,
 } from '../../shared/render-primitives.ts';
+import {
+  type VueHolePlace,
+  expressionCode,
+  interpolatedText,
+  operand,
+  wrapSlotContent,
+} from '../../../snippet-values.ts';
 import { renderSlotArgContent } from './render-slot-content.ts';
 
 export interface TemplateRenderConfig {
@@ -70,6 +82,11 @@ export interface TransformTemplateInput {
   componentImports: Map<string, string>;
   /** Story component tag; role-aware args expansion applies only to it. */
   componentName?: string;
+  // The story component's slots, which `v-bind="args"` does not pass as props.
+  slots?: ReadonlySet<string>;
+  // Whether the template is the one a story without a render function renders with, which passes
+  // its slot args as slots.
+  argsStory?: boolean;
   /** Import bindings from the CSF module, for components a function slot renders. */
   importBindings?: Map<string, ImportBinding>;
   /** Pre-seeded context carrying imports and hoists an upstream printer collected. */
@@ -96,6 +113,8 @@ interface TransformState {
   edits: Edit[];
   componentImports: Map<string, string>;
   componentName?: string;
+  slots: ReadonlySet<string>;
+  argsStory: boolean;
   importBindings: Map<string, ImportBinding>;
   template: string;
 }
@@ -107,6 +126,8 @@ interface ElementContext {
   storyTag: boolean;
   /** Wrapped slot children waiting to be spliced into the element. */
   slotChildren: string[];
+  // The story component's slots the story leaves unset, which a control can set as its children.
+  unsetSlots: string[];
 }
 
 interface ArgsExpansionPlan {
@@ -139,7 +160,7 @@ const COMPONENTS_UNREADABLE_WARNING =
 
 /** Read a transformable template-render object without resolving the render function itself. */
 export function readTemplateRenderConfig(
-  renderObject: t.ObjectExpression,
+  renderObject: E.ObjectExpression,
   importBindings: Map<string, ImportBinding>,
   options: ReadTemplateRenderConfigOptions = {}
 ): TemplateRenderResolution {
@@ -199,8 +220,10 @@ export function readTemplateRenderConfig(
 export function transformTemplate(
   input: TransformTemplateInput
 ): TransformTemplateResult | undefined {
+  // `parseModule` normalizes line endings, so template expressions must already use `\n`.
+  const template = normalizeLineEndings(input.template);
   let invalid = false;
-  const ast = parse(input.template, { onError: () => (invalid = true) });
+  const ast = parse(template, { onError: () => (invalid = true) });
   if (invalid) {
     return undefined;
   }
@@ -212,8 +235,10 @@ export function transformTemplate(
     edits: [],
     componentImports: input.componentImports,
     componentName: input.componentName,
+    slots: input.slots ?? new Set(),
+    argsStory: input.argsStory ?? false,
     importBindings: input.importBindings ?? new Map(),
-    template: input.template,
+    template,
   };
 
   if (input.setup && !seedForwardedSetup(input.setup, state)) {
@@ -234,7 +259,7 @@ export function transformTemplate(
 
   return {
     snippet: renderPreparedSfcSnippet({
-      templateCode: applyEdits(input.template, state.edits),
+      templateCode: applyEdits(template, state.edits),
       ctx: state.ctx,
     }),
   };
@@ -264,6 +289,8 @@ function appendSetupStatements(setup: ForwardableSetup, state: TransformState): 
     let text = statement.source;
     for (const read of [...statement.argsReads].sort((a, b) => b.start - a.start)) {
       const arg = state.argsByName.get(read.name);
+      const inline =
+        !arg || arg.plan.kind === 'inline' || sharesWrittenConst(arg.name, arg.value, state.ctx);
       const rendered = arg
         ? arg.role === 'prop'
           ? arg.plan.kind === 'inline'
@@ -276,10 +303,16 @@ function appendSetupStatements(setup: ForwardableSetup, state: TransformState): 
       if (rendered === undefined) {
         return false;
       }
-      const wrapped = wrapSubstitution(rendered, text.slice(read.end));
+      const following = text.slice(read.end);
+      const wrapped = inline
+        ? marked(
+            state.ctx,
+            { kind: 'value', in: 'statement', ...readsOn(following), arg: read.name },
+            wrapSubstitution(rendered, following)
+          )
+        : rendered;
       text = text.slice(0, read.start) + wrapped + text.slice(read.end);
     }
-    text = text.replace(/\r\n?/g, '\n');
     state.ctx.statements.push(dedentBy(text, statement.column));
   }
   return true;
@@ -292,11 +325,11 @@ function appendSetupStatements(setup: ForwardableSetup, state: TransformState): 
  * lexes the dot into the number
  */
 function wrapSubstitution(text: string, following: string): string {
-  if (text.startsWith('-') || (following.startsWith('.') && /^\d/.test(text))) {
-    return `(${text})`;
-  }
-  return text;
+  return operand(text, following.startsWith('.'));
 }
+
+// A value hole followed by a `.` reads on, where a number needs parentheses.
+const readsOn = (following: string) => (following.startsWith('.') ? { readsOn: true } : {});
 
 // Continuation lines keep the story file's nesting; strip the statement's own column from them.
 function dedentBy(source: string, column: number): string {
@@ -346,34 +379,30 @@ function transformInterpolation(
   }
 
   const arg = state.argsByName.get(argName);
+  const start = node.loc.start.offset;
+  const end = node.loc.end.offset;
+  const hole = { kind: 'text', arg: argName } as const;
   if (!arg && state.unsetArgs.has(argName)) {
-    state.edits.push({ start: node.loc.start.offset, end: node.loc.end.offset, text: '' });
+    state.edits.push({ start, end, text: marked(state.ctx, hole, '') });
     return true;
   }
   if (!arg) {
     return false;
   }
 
-  const rendered = inlinePrimitiveSource(arg.value);
-  if (rendered === undefined) {
-    return false;
-  }
-
   // Runtime interpolation renders escaped text, so markup and mustache characters in the value
   // are entity-escaped to decode back to the same text when the snippet re-parses.
-  const text = escapeTextContent(rendered);
-
+  const text = interpolatedText(snippetValueOf(arg.value));
   // A value edge touching an author '{' would concatenate into a new '{{'.
-  const start = node.loc.start.offset;
-  const end = node.loc.end.offset;
   if (
+    text === undefined ||
     (text.startsWith('{') && state.template[start - 1] === '{') ||
     (text.endsWith('{') && state.template[end] === '{')
   ) {
     return false;
   }
 
-  state.edits.push({ start, end, text });
+  state.edits.push({ start, end, text: marked(state.ctx, hole, text) });
   return true;
 }
 
@@ -393,6 +422,7 @@ function transformElement(node: ElementNode, state: TransformState): boolean {
   const element: ElementContext = {
     storyTag: node.tag === state.componentName,
     slotChildren: [],
+    unsetSlots: [],
   };
   const attributesByName = attributePropsByName(node);
   const plan = planArgsBindingExpansion(node, attributesByName, state);
@@ -406,9 +436,20 @@ function transformElement(node: ElementNode, state: TransformState): boolean {
       continue;
     }
     if (plan.directive && prop === plan.directive) {
-      if (!expandArgsBinding(plan.directive, plan.surviving, element, state)) {
+      if (
+        !expandArgsBinding({ ...plan, directive: plan.directive }, attributesByName, element, state)
+      ) {
         return false;
       }
+      continue;
+    }
+    const bound =
+      plan.directive && boundProp(prop, plan.directive, attributesByName, element, state);
+    if (bound === false) {
+      return false;
+    }
+    if (bound) {
+      state.edits.push(bound);
       continue;
     }
     if (
@@ -419,17 +460,29 @@ function transformElement(node: ElementNode, state: TransformState): boolean {
     }
   }
 
+  // The slots a control sets join those the story sets, or open the tag if it closes itself.
+  const slotsHole = (text: string, tag?: string) =>
+    marked(
+      state.ctx,
+      { kind: 'slots', slots: element.unsetSlots, indent: '', ...(tag && { tag }), spread: true },
+      text
+    );
   if (element.slotChildren.length > 0) {
     // Slot children joining an element that already renders its own content would reorder or
     // duplicate what the story shows, so only an empty element takes them.
     if (hasNonWhitespaceChildren(node)) {
       return false;
     }
-    const edit = slotChildrenEdit(node, element.slotChildren, state.template);
+    const after = element.unsetSlots.length > 0 ? slotsHole('') : '';
+    const edit = slotChildrenEdit(node, element.slotChildren, after, state.template);
     if (!edit) {
       return false;
     }
     state.edits.push(edit);
+  } else if (node.isSelfClosing && element.unsetSlots.length > 0) {
+    const end = node.loc.end.offset;
+    const start = blankRunStart(state.template, end - 2);
+    state.edits.push({ start, end, text: slotsHole(state.template.slice(start, end), node.tag) });
   }
 
   return node.children.every((child) => transformNode(child, state));
@@ -492,8 +545,8 @@ function planArgsBindingExpansion(
 }
 
 function expandArgsBinding(
-  directive: DirectiveNode,
-  surviving: ClassifiedArg[],
+  { directive, surviving, removed }: Required<ArgsExpansionPlan>,
+  attributesByName: Map<string, ElementProp[]>,
   element: ElementContext,
   state: TransformState
 ): boolean {
@@ -507,9 +560,119 @@ function expandArgsBinding(
   }
 
   element.slotChildren.push(...rendered.slotChildren);
-  state.edits.push(replacementFor(directive, rendered.attributes.join(' '), state.template));
+  if (element.storyTag && state.argsStory) {
+    element.unsetSlots = [...state.slots].filter(
+      (slot) => !surviving.some((arg) => arg.name === slot)
+    );
+  }
+  // The args a control sets go after the args the story writes, but those the element prints
+  // itself, but for a `.prop` or `.attr` binding, which sets another key, and its slots.
+  const printed = [
+    ...[...attributesByName.entries()].flatMap(([name, props]) =>
+      props.every(setsOwnKey) ? [] : spellings(name)
+    ),
+    ...surviving.map((arg) => arg.name),
+    ...state.slots,
+  ];
+  const added = marked(
+    state.ctx,
+    { kind: 'props', except: [...new Set(printed)], spread: true },
+    '',
+    ' '
+  );
+  const edit = replacementFor(directive, rendered.attributes.join(' '), state.template);
+  state.edits.push({ ...edit, text: edit.text + added });
   return true;
 }
+
+// A prop the element writes before its args binding, which the binding writes over once a control
+// sets the arg it names, as an `attr` hole for that arg. Its text is the prop as the snippet prints
+// it, with the args it reads filled in.
+function boundProp(
+  prop: ElementProp,
+  directive: DirectiveNode,
+  attributesByName: Map<string, ElementProp[]>,
+  element: ElementContext,
+  state: TransformState
+): Edit | false | undefined {
+  const binding = prop.type === NodeTypes.DIRECTIVE ? prop : undefined;
+  const name = binding
+    ? binding.name === 'bind' && !setsOwnKey(binding)
+      ? staticDirectiveArg(binding)
+      : undefined
+    : prop.name;
+  const exp = binding?.exp?.type === NodeTypes.SIMPLE_EXPRESSION ? binding.exp : undefined;
+  const read = exp && state.argsByName.get(exactArgsMemberName(exp.content.trim()) ?? '');
+  // An earlier one of two props of a name leaves it to the later one, which Vue keeps.
+  const later = attributesByName
+    .get(name ?? '')
+    ?.some(
+      (other) =>
+        other.loc.start.offset > prop.loc.start.offset &&
+        (other.type === NodeTypes.ATTRIBUTE || other.name === 'bind') &&
+        !setsOwnKey(other)
+    );
+  if (
+    !name ||
+    prop.loc.start.offset > directive.loc.start.offset ||
+    later ||
+    read?.role === 'slot'
+  ) {
+    return undefined;
+  }
+
+  // The prop's own edits, which fill in the args it reads but mark no hole in it, as one hole holds
+  // it; a value it declares in `<script setup>` keeps its hole there.
+  const { mark } = state.ctx;
+  const own = {
+    ...state,
+    edits: [] as Edit[],
+    ctx: {
+      ...state.ctx,
+      mark:
+        mark &&
+        ((hole, text, space) =>
+          hole.kind === 'value' && hole.in === 'script' ? mark(hole, text, space) : text),
+    } satisfies RenderContext,
+  };
+  if (binding && !transformDirective(binding, attributesByName, element, own)) {
+    return false;
+  }
+  const start = Math.min(prop.loc.start.offset, ...own.edits.map((edit) => edit.start));
+  const end = Math.max(prop.loc.end.offset, ...own.edits.map((edit) => edit.end));
+  const text = applyEdits(
+    state.template.slice(start, end),
+    own.edits.map((edit) => ({ ...edit, start: edit.start - start, end: edit.end - start }))
+  );
+  const by = camelCase(name);
+  return {
+    start,
+    end,
+    // A prop the snippet leaves out takes the space before it once a control sets it.
+    text: marked(
+      state.ctx,
+      { kind: 'attr', arg: by, ...(name !== by && { name }) },
+      text,
+      text ? undefined : ' '
+    ),
+  };
+}
+
+// A `.prop` or `.attr` binding sets a key of its own, which no args binding writes over.
+const setsOwnKey = (prop: ElementProp) =>
+  prop.type === NodeTypes.DIRECTIVE &&
+  prop.name === 'bind' &&
+  prop.modifiers.some(({ content }) => content === 'prop' || content === 'attr');
+
+const camelCase = (name: string) =>
+  name.replace(/-(\w)/g, (_, letter: string) => letter.toUpperCase());
+
+// The arg names that set the same prop as an attribute: `max-count` and `maxCount`.
+const spellings = (name: string) => [
+  name,
+  camelCase(name),
+  name.replace(/\B([A-Z])/g, '-$1').toLowerCase(),
+];
 
 function transformDirective(
   directive: DirectiveNode,
@@ -538,7 +701,9 @@ function transformDirective(
     }
     if (!arg && state.unsetArgs.has(argName)) {
       // Vue resolves a prop bound to undefined to its declared default, exactly as an absent attribute does.
-      state.edits.push(replacementFor(directive, '', state.template));
+      const edit = replacementFor(directive, '', state.template);
+      const hole = attributeHole(boundProp, argName);
+      state.edits.push({ ...edit, text: marked(state.ctx, hole, '', ' ') });
       return true;
     }
     if (!arg) {
@@ -636,10 +801,8 @@ function substituteArgsExpression(
     return undefined;
   }
 
-  let ast: t.Expression;
-  try {
-    ast = babelParseExpression(exp.content);
-  } catch {
+  const ast = parseTemplateExpression(exp.content);
+  if (!ast) {
     return undefined;
   }
 
@@ -654,7 +817,7 @@ function substituteArgsExpression(
     return undefined;
   }
 
-  const replacements = new Map<string, string>();
+  const replacements = new Map<string, Replacement>();
   for (const reference of references) {
     const replacement =
       replacements.get(reference.name) ?? replacementForArgsReference(reference, quote, state);
@@ -664,14 +827,20 @@ function substituteArgsExpression(
     replacements.set(reference.name, replacement);
   }
 
+  // A value the template writes inline is a hole that says how it is quoted and read on.
+  const where = quote ? { in: 'attribute' as const, quote } : { in: 'interpolation' as const };
   const text = references
     .sort((a, b) => b.start - a.start)
     .reduce((expression, reference) => {
-      const wrapped = wrapSubstitution(
-        replacements.get(reference.name)!,
+      const { text: replacement, inline } = replacements.get(reference.name)!;
+      const following = expression.slice(reference.end);
+      const wrapped = wrapSubstitution(replacement, following);
+      const hole = { kind: 'value' as const, ...where, ...readsOn(following), arg: reference.name };
+      return (
+        expression.slice(0, reference.start) +
+        (inline ? marked(state.ctx, hole, wrapped) : wrapped) +
         expression.slice(reference.end)
       );
-      return expression.slice(0, reference.start) + wrapped + expression.slice(reference.end);
     }, exp.content);
 
   return { start: exp.loc.start.offset, end: exp.loc.end.offset, text };
@@ -718,24 +887,69 @@ function bindingPatternForDirective(directive: DirectiveNode): string | undefine
 }
 
 function addBindingPattern(pattern: string, ctx: RenderContext): boolean {
-  let ast: t.Expression;
-  try {
-    ast = babelParseExpression(`${arrowParamsForPattern(pattern)} => 0`);
-  } catch {
-    return false;
-  }
-
-  if (!t.isArrowFunctionExpression(ast)) {
+  const ast = parseTemplateExpression(`${arrowParamsForPattern(pattern)} => 0`);
+  if (ast?.type !== 'ArrowFunctionExpression') {
     return false;
   }
 
   for (const param of ast.params) {
-    for (const name of Object.keys(t.getBindingIdentifiers(param))) {
-      ctx.bindings.add(name);
-    }
+    addBindingNames(param, ctx.bindings);
   }
 
   return true;
+}
+
+// ({ a, b: [c] }, ...rest) -> a, c, rest
+function addBindingNames(pattern: Node, into: Set<string>): void {
+  switch (pattern.type) {
+    case 'Identifier':
+      into.add(pattern.name);
+      break;
+    case 'AssignmentPattern':
+      addBindingNames(pattern.left, into);
+      break;
+    case 'RestElement':
+      addBindingNames(pattern.argument, into);
+      break;
+    case 'ObjectPattern':
+      for (const property of pattern.properties) {
+        addBindingNames(property.type === 'RestElement' ? property.argument : property.value, into);
+      }
+      break;
+    case 'ArrayPattern':
+      for (const element of pattern.elements) {
+        if (element) {
+          addBindingNames(element, into);
+        }
+      }
+      break;
+  }
+}
+
+// Offsets index into `code`; `undefined` unless `code` is exactly one expression.
+function parseTemplateExpression(code: string): E.Expression | undefined {
+  let program: E.Program;
+  try {
+    ({ program } = parseModule(`(${code}\n)`));
+  } catch {
+    return undefined;
+  }
+  const [statement, ...rest] = program.body;
+  // An expression that closed the wrapping paren, as in `a) + (b`, starts at the paren itself.
+  // Whitespace and outer parentheses (which the parser drops) make a valid expression start later.
+  if (
+    rest.length > 0 ||
+    statement?.type !== 'ExpressionStatement' ||
+    (statement.expression as E.Expression & { start: number }).start === 0
+  ) {
+    return undefined;
+  }
+  walk(statement.expression, (node) => {
+    const span = node as Node & { start: number; end: number };
+    span.start -= 1;
+    span.end -= 1;
+  });
+  return statement.expression;
 }
 
 function arrowParamsForPattern(pattern: string): string {
@@ -751,22 +965,22 @@ function surroundingAttributeQuote(
   return quote === '"' || quote === "'" ? quote : undefined;
 }
 
-function collectArgsReferences(expression: t.Expression): ArgsReference[] | undefined {
+function collectArgsReferences(expression: E.Expression): ArgsReference[] | undefined {
   const references: ArgsReference[] = [];
   let invalid = false;
 
-  const visit = (node: t.Node | null | undefined, parent?: t.Node): void => {
-    if (!node || invalid) {
-      return;
+  walk(expression, (node, parent) => {
+    if (invalid) {
+      return false;
     }
 
     if (
-      t.isAssignmentExpression(node) ||
-      t.isUpdateExpression(node) ||
-      (t.isUnaryExpression(node) && node.operator === 'delete')
+      node.type === 'AssignmentExpression' ||
+      node.type === 'UpdateExpression' ||
+      (node.type === 'UnaryExpression' && node.operator === 'delete')
     ) {
       invalid = true;
-      return;
+      return false;
     }
 
     const reference = argsReference(node);
@@ -774,58 +988,50 @@ function collectArgsReferences(expression: t.Expression): ArgsReference[] | unde
       references.push(reference);
     }
 
-    if (t.isIdentifier(node, { name: ARGS_NAME }) && !isAllowedArgsObject(node, parent)) {
+    if (
+      node.type === 'Identifier' &&
+      node.name === ARGS_NAME &&
+      !isAllowedArgsObject(node, parent)
+    ) {
       invalid = true;
-      return;
+      return false;
     }
-
-    for (const key of t.VISITOR_KEYS[node.type] ?? []) {
-      const value = node[key as keyof typeof node];
-      if (Array.isArray(value)) {
-        value.forEach((child) => {
-          if (t.isNode(child)) {
-            visit(child, node);
-          }
-        });
-      } else if (t.isNode(value)) {
-        visit(value, node);
-      }
-    }
-  };
-
-  visit(expression);
+  });
 
   return invalid ? undefined : references;
 }
 
-function argsReference(node: t.Node): ArgsReference | undefined {
-  const member =
-    t.isMemberExpression(node) || t.isOptionalMemberExpression(node) ? node : undefined;
-  if (!member || member.computed || !t.isIdentifier(member.object, { name: ARGS_NAME })) {
-    return undefined;
-  }
-  if (!t.isIdentifier(member.property) || member.start == null || member.end == null) {
+function argsReference(node: Node): ArgsReference | undefined {
+  if (
+    node.type !== 'MemberExpression' ||
+    node.computed ||
+    node.object.type !== 'Identifier' ||
+    node.object.name !== ARGS_NAME ||
+    node.property.type !== 'Identifier'
+  ) {
     return undefined;
   }
 
-  return { start: member.start, end: member.end, name: member.property.name };
+  const { start, end } = node as E.MemberExpression & { start: number; end: number };
+  return { start, end, name: node.property.name };
 }
 
-function isAllowedArgsObject(node: t.Identifier, parent: t.Node | undefined): boolean {
-  if (!parent || (!t.isMemberExpression(parent) && !t.isOptionalMemberExpression(parent))) {
-    return false;
-  }
-  return parent.object === node && !parent.computed;
+function isAllowedArgsObject(node: Node, parent: Node | null): boolean {
+  return parent?.type === 'MemberExpression' && parent.object === node && !parent.computed;
 }
+
+// What an args read is replaced with, which is `inline` where it is the value rather than the
+// name of a const the script declares it as.
+type Replacement = { text: string; inline: boolean };
 
 function replacementForArgsReference(
   reference: ArgsReference,
   quote: '"' | "'" | undefined,
   state: TransformState
-): string | undefined {
+): Replacement | undefined {
   const arg = state.argsByName.get(reference.name);
   if (!arg && state.unsetArgs.has(reference.name)) {
-    return 'undefined';
+    return { text: 'undefined', inline: true };
   }
   if (!arg) {
     return undefined;
@@ -841,11 +1047,14 @@ function replacementForArgsReference(
       : hoistArgValue(arg.name, arg.value, state.ctx);
 
   // Vue entity-decodes generated markup on re-parse, so `&` cannot be substituted faithfully.
-  if ((quote && text.includes(quote)) || text.includes('}}') || text.includes('&')) {
+  if (expressionCode(text, quote) === undefined) {
     return undefined;
   }
 
-  return text;
+  return {
+    text,
+    inline: arg.plan.kind === 'inline' || sharesWrittenConst(arg.name, arg.value, state.ctx),
+  };
 }
 
 /**
@@ -861,13 +1070,8 @@ function replacementFor(prop: { loc: ElementProp['loc'] }, text: string, templat
 
   const lineStart = blankRunStart(template, start);
   const lineEnd = blankRunEnd(template, end);
-  const lineTerminator = lineTerminatorAt(template, lineEnd);
-  if (template[lineStart - 1] === '\n' && lineTerminator) {
-    return {
-      start: previousLineTerminatorStart(template, lineStart),
-      end: lineTerminator.start,
-      text,
-    };
+  if (template[lineStart - 1] === '\n' && template[lineEnd] === '\n') {
+    return { start: lineStart - 1, end: lineEnd, text };
   }
   return { start: lineStart, end, text };
 }
@@ -888,17 +1092,6 @@ function blankRunEnd(template: string, index: number): number {
   return cursor;
 }
 
-function lineTerminatorAt(template: string, index: number): { start: number } | undefined {
-  if (template[index] === '\r' && template[index + 1] === '\n') {
-    return { start: index };
-  }
-  return template[index] === '\n' ? { start: index } : undefined;
-}
-
-function previousLineTerminatorStart(template: string, index: number): number {
-  return template[index - 2] === '\r' ? index - 2 : index - 1;
-}
-
 /**
  * Splices slot children into an element, opening a self-closing tag when needed.
  *
@@ -910,12 +1103,13 @@ function previousLineTerminatorStart(template: string, index: number): number {
 function slotChildrenEdit(
   node: ElementNode,
   children: string[],
+  after: string,
   template: string
 ): Edit | undefined {
   const baseIndent = ' '.repeat(Math.max(node.loc.start.column - 1, 0));
   const joined = `\n${children
     .map((child) => indentBy(child, `${baseIndent}  `))
-    .join('\n')}\n${baseIndent}`;
+    .join('\n')}${after}\n${baseIndent}`;
 
   if (node.isSelfClosing) {
     let start = node.loc.end.offset - 2;
@@ -1037,25 +1231,25 @@ function valueReferencesArgs(value: string): boolean {
 }
 
 // '<MyButton />' or `<MyButton />` without substitutions
-function staticTemplateSource(node: t.Node | undefined): string | undefined {
-  if (t.isStringLiteral(node)) {
+function staticTemplateSource(node: Node | undefined): string | undefined {
+  if (isStringLiteral(node)) {
     return node.value;
   }
-  if (t.isTemplateLiteral(node) && node.expressions.length === 0) {
-    return node.quasis[0]?.value.cooked;
+  if (node?.type === 'TemplateLiteral' && node.expressions.length === 0) {
+    return node.quasis[0]?.value.cooked ?? undefined;
   }
   return undefined;
 }
 
 // { components: { Button }, setup: () => ({ args }), template: '<Button />' }
-function hasOnlySupportedRenderProperties(renderObject: t.ObjectExpression): boolean {
+function hasOnlySupportedRenderProperties(renderObject: E.ObjectExpression): boolean {
   return renderObject.properties.every((property) => {
     // { ...baseRender, template: '<Button />' }
-    if (t.isSpreadElement(property)) {
+    if (property.type === 'SpreadElement') {
       return false;
     }
 
-    const key = keyOf(property);
+    const key = staticKey(property);
     // `inheritAttrs` only tunes runtime attribute fallthrough; the markup stays faithful without it.
     return (
       key === 'components' || key === SETUP_PROPERTY || key === 'template' || key === 'inheritAttrs'
@@ -1065,7 +1259,7 @@ function hasOnlySupportedRenderProperties(renderObject: t.ObjectExpression): boo
 
 // { Button, 'my-button': Button }
 function readComponentImports(
-  value: t.Node | undefined,
+  value: Node | undefined,
   importBindings: Map<string, ImportBinding>,
   options: ReadTemplateRenderConfigOptions
 ): Map<string, string> | undefined {
@@ -1076,18 +1270,18 @@ function readComponentImports(
   if (!value) {
     return componentImports;
   }
-  if (!t.isObjectExpression(value)) {
+  if (value.type !== 'ObjectExpression') {
     return undefined;
   }
 
   for (const property of value.properties) {
-    if (!t.isObjectProperty(property)) {
+    if (property.type !== 'Property' || property.method || property.kind !== 'init') {
       return undefined;
     }
 
-    const tagName = keyOf(property);
+    const tagName = staticKey(property);
     const component = unwrapExpression(property.value);
-    if (!tagName || !t.isIdentifier(component)) {
+    if (!tagName || component.type !== 'Identifier') {
       return undefined;
     }
 
@@ -1106,13 +1300,9 @@ function readComponentImports(
 }
 
 // setup() { return { args }; }
-function setupProperty(
-  renderObject: t.ObjectExpression
-): t.ObjectMethod | t.ObjectProperty | undefined {
-  return renderObject.properties.find((property): property is t.ObjectMethod | t.ObjectProperty => {
-    if (!t.isObjectMethod(property) && !t.isObjectProperty(property)) {
-      return false;
-    }
-    return keyOf(property) === SETUP_PROPERTY;
-  });
+function setupProperty(renderObject: E.ObjectExpression): E.ObjectProperty | undefined {
+  return renderObject.properties.find(
+    (property): property is E.ObjectProperty =>
+      property.type === 'Property' && staticKey(property) === SETUP_PROPERTY
+  );
 }

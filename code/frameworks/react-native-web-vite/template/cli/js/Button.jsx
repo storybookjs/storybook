@@ -1,7 +1,16 @@
-import PropTypes from 'prop-types';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-/** Primary UI component for user interaction */
+/**
+ * Primary UI component for user interaction
+ *
+ * @param {object} props
+ * @param {boolean} [props.primary=false] Is this the principal call to action on the page?
+ * @param {string} [props.backgroundColor] What background color to use
+ * @param {'small' | 'medium' | 'large'} [props.size='medium'] How large should the button be?
+ * @param {string} props.label Button contents
+ * @param {() => void} [props.onPress] Optional click handler
+ * @param {object} [props.style] Optional extra styles
+ */
 export const Button = ({
   primary = false,
   size = 'medium',
@@ -85,26 +94,4 @@ const textSizeStyles = {
   small: styles.smallText,
   medium: styles.mediumText,
   large: styles.largeText,
-};
-
-Button.propTypes = {
-  /** Is this the principal call to action on the page? */
-  primary: PropTypes.bool,
-  /** What background color to use */
-  backgroundColor: PropTypes.string,
-  /** How large should the button be? */
-  size: PropTypes.oneOf(['small', 'medium', 'large']),
-  /** Button contents */
-  label: PropTypes.string.isRequired,
-  /** Optional click handler */
-  onPress: PropTypes.func,
-  /** Optional extra styles */
-  style: PropTypes.object,
-};
-
-Button.defaultProps = {
-  backgroundColor: null,
-  primary: false,
-  size: 'medium',
-  onClick: undefined,
 };

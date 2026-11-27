@@ -68,6 +68,33 @@ describe('CsfObject.group', () => {
     expect(config.mutationDiagnostics).toEqual([]);
   });
 
+  it.each([
+    {
+      source: 'export const showNav = false, showPanel = true;',
+      output: 'export const layout = { showNav: false, showPanel: true };',
+    },
+    {
+      source: 'const showNav = false;\nconst showPanel = true;\nexport { showNav, showPanel };',
+      output:
+        'const showNav = false;\nconst showPanel = true;\nexport const layout = { showNav: false, showPanel: true };',
+    },
+    {
+      source: 'export const layout = {};\nexport const showNav = false, showPanel = true;',
+      output: 'export const layout = { showNav: false, showPanel: true };',
+    },
+  ])(
+    'removes a statement once all its grouped exports are gone in $source',
+    ({ source, output }) => {
+      const config = loadConfig(source).parse();
+
+      expect(config.group(['layout'], ['showNav', 'showPanel'])).toEqual({
+        ok: true,
+        changed: true,
+      });
+      expect(printConfig(config).code.replace(/\n+/g, '\n').trim()).toBe(output);
+    }
+  );
+
   it('rejects grouping named exports across an intervening statement without reordering execution', () => {
     const source = `
       export const showNav = record('nav');

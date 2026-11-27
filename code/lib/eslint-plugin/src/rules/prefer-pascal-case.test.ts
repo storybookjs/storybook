@@ -26,6 +26,13 @@ ruleTester.run('prefer-pascal-case', rule, {
       export const links = []
       storiesOf('Component', module)
     `,
+    // non-factory exports in a factory file are not stories
+    `
+      import preview from '../../.storybook/preview'
+      const meta = preview.meta({ component: Button })
+      export const mockData = {}
+      export const Primary = meta.story({})
+    `,
     `
       export default {
         title: 'MyComponent',
@@ -52,6 +59,32 @@ ruleTester.run('prefer-pascal-case', rule, {
   ],
 
   invalid: [
+    {
+      code: dedent`
+        import preview from '../../.storybook/preview'
+        const meta = preview.meta({ component: Button })
+        export const primary = meta.story({})
+      `,
+      errors: [
+        {
+          messageId: 'usePascalCase',
+          data: {
+            name: 'primary',
+          },
+          type: AST_NODE_TYPES.Identifier,
+          suggestions: [
+            {
+              messageId: 'convertToPascalCase',
+              output: dedent`
+                import preview from '../../.storybook/preview'
+                const meta = preview.meta({ component: Button })
+                export const Primary = meta.story({})
+              `,
+            },
+          ],
+        },
+      ],
+    },
     {
       code: dedent`
         export const primary = {}

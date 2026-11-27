@@ -8,18 +8,17 @@ const configWithFeatures = async (features: Record<string, boolean> | undefined)
 };
 
 const featureOffCases: [string, Record<string, boolean> | undefined][] = [
-  ['the feature is off', { experimentalDocgenServer: false }],
+  ['the feature is off', { docgenServer: false }],
   ['no features are set', undefined],
 ];
 
 afterEach(() => {
-  vi.unstubAllGlobals();
   vi.resetModules();
 });
 
 describe('docs source parameters', () => {
   it('labels the snippet TypeScript when the docgen server produces it', async () => {
-    expect((await configWithFeatures({ experimentalDocgenServer: true })).language).toBe('ts');
+    expect((await configWithFeatures({ docgenServer: true })).language).toBe('ts');
   });
 
   it.each(featureOffCases)('labels the runtime template HTML when %s', async (_name, features) => {
@@ -29,7 +28,7 @@ describe('docs source parameters', () => {
 
 describe('docs decorators', () => {
   it('drops the runtime source decorator when the docgen server produces snippets', async () => {
-    expect((await configWithFeatures({ experimentalDocgenServer: true })).decorators).toEqual([]);
+    expect((await configWithFeatures({ docgenServer: true })).decorators).toEqual([]);
   });
 
   it.each(featureOffCases)(

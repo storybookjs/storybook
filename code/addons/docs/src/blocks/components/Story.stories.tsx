@@ -6,13 +6,13 @@ import {
   STORY_ARGS_UPDATED,
   UPDATE_STORY_ARGS,
 } from 'storybook/internal/core-events';
-import type { PlayFunctionContext } from 'storybook/internal/csf';
-import type { ModuleExport, WebRenderer } from 'storybook/internal/types';
+import type { StoryContext } from 'storybook/internal/csf';
+import type { ModuleExport, RenderContextCallbacks, WebRenderer } from 'storybook/internal/types';
 
 import type { Meta, ReactRenderer, StoryObj } from '@storybook/react-vite';
 
 import type { PreviewWeb } from 'storybook/preview-api';
-import { within } from 'storybook/test';
+import { expect, waitFor, within } from 'storybook/test';
 
 import type { DocsContextProps } from '../blocks';
 import * as ButtonStories from '../examples/Button.stories';
@@ -27,7 +27,7 @@ type ExtendedStoryProps = Omit<StoryProps, 'story'> & {
   storyExport: ModuleExport;
 };
 
-const meta: Meta<ExtendedStoryProps> = {
+const meta = {
   // @ts-expect-error getting too complex with props
   component: StoryComponent,
   parameters: {
@@ -47,10 +47,10 @@ const meta: Meta<ExtendedStoryProps> = {
     // @ts-expect-error getting too complex with props
     return <StoryComponent {...args} story={resolved.story} />;
   },
-};
+} satisfies Meta<ExtendedStoryProps>;
 export default meta;
 
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj<Meta<ExtendedStoryProps>>;
 
 export const Loading = {
   globals: { sb_theme: 'side-by-side' },
@@ -78,6 +78,42 @@ export const InlineError: Story = {
   },
 };
 
+let errorRecoveryCallbacks: RenderContextCallbacks<ReactRenderer> | undefined;
+
+const renderStoryWithCallbacks: DocsContextProps<ReactRenderer>['renderStoryToElement'] = (
+  _story,
+  element,
+  callbacks
+) => {
+  errorRecoveryCallbacks = callbacks;
+  element.textContent = 'Story content';
+  return async () => {};
+};
+
+export const InlineErrorRecovery: Story = {
+  args: {
+    inline: true,
+    // @ts-expect-error getting too complex with props
+    autoplay: false,
+    forceInitialArgs: false,
+    renderStoryToElement: renderStoryWithCallbacks,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByText('Story content');
+
+    errorRecoveryCallbacks?.showException(new Error('Story failed'));
+    await canvas.findByText(/Story failed/);
+    await expect(canvas.getByText('Story content').getBoundingClientRect().width).toBeGreaterThan(
+      0
+    );
+
+    errorRecoveryCallbacks?.showMain();
+    await waitFor(() => expect(canvas.getByText('Story content')).toBeVisible());
+    await expect(canvas.queryByText(/Story failed/)).not.toBeInTheDocument();
+  },
+};
+
 export const IFrame: Story = {
   name: 'IFrame',
   args: {
@@ -97,7 +133,7 @@ export const ForceInitialArgs = {
     chromatic: { disableSnapshot: true },
   },
   // test that it ignores updated args by emitting an arg update and assert that it isn't reflected in the DOM
-  play: async ({ args, canvasElement, loaded }: PlayFunctionContext<WebRenderer>) => {
+  play: async ({ args, canvasElement, loaded }: StoryContext<WebRenderer>) => {
     const docsContext = loaded.docsContext as DocsContextProps;
     const resolved = docsContext.resolveOf(args.storyExport, ['story']);
 

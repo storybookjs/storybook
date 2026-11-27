@@ -12,9 +12,6 @@ export const orbs = {
   // https://circleci.com/developer/orbs/orb/codecov/codecov
   codecov: 'codecov/codecov@5.4.3',
 
-  // https://circleci.com/developer/orbs/orb/antonioned/discord
-  discord: 'antonioned/discord@0.1.0',
-
   // https://circleci.com/developer/orbs/orb/guitarrapc/git-shallow-clone
   'git-shallow-clone': 'guitarrapc/git-shallow-clone@2.8.0',
 

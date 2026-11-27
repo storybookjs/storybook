@@ -1,50 +1,66 @@
-import { types as t } from 'storybook/internal/babel';
 import type { CsfFile } from 'storybook/internal/csf-tools';
+
+import { type E, type Node } from '../../csf-tools/estree/ast.ts';
+import { staticKey } from '../../csf-tools/estree/nodes.ts';
 
 export type DeclaredSubcomponent = {
   componentName: string;
   name: string;
+  /**
+   * The component expression the name was read from — the deepest node found after following
+   * in-file variable aliases, or the raw property value when none was. Feeding it to the
+   * meta-component resolver resolves the declared subcomponent to its file.
+   */
+  node: Node;
 };
 
 export function extractDeclaredSubcomponents(csf: CsfFile): DeclaredSubcomponent[] {
-  const rawSubcomponents = unwrapSubcomponentNode(
-    csf._metaAnnotations.subcomponents,
-    csf._ast.program
-  );
+  return extractSubcomponents(csf._metaAnnotations.subcomponents, csf.program);
+}
 
-  if (!rawSubcomponents || !t.isObjectExpression(rawSubcomponents)) {
+/**
+ * The subcomponents a meta's `subcomponents` value declares, following variable aliases in
+ * `program`, the module that holds the meta. For a meta outside a CSF file, such as a Svelte CSF
+ * `defineMeta` object.
+ */
+export function extractSubcomponents(
+  subcomponents: Node | undefined,
+  program: E.Program
+): DeclaredSubcomponent[] {
+  const rawSubcomponents = unwrapSubcomponentNode(subcomponents, program);
+
+  if (rawSubcomponents?.type !== 'ObjectExpression') {
     return [];
   }
 
   return rawSubcomponents.properties.flatMap((property) => {
-    if (!t.isObjectProperty(property)) {
+    if (property.type !== 'Property' || property.method || property.kind !== 'init') {
       return [];
     }
 
-    const name = getObjectKeyName(property.key);
+    // A computed key, as in `{ [label]: Icon }`, has no name that is known before the story runs.
+    const name = staticKey(property);
     const directComponentName = getComponentExpressionName(property.value);
-    const componentExpression = unwrapSubcomponentNode(property.value, csf._ast.program);
+    const componentExpression = unwrapSubcomponentNode(property.value, program);
     const componentName = getComponentExpressionName(componentExpression) ?? directComponentName;
 
-    return name && componentName ? [{ name, componentName }] : [];
+    return name && componentName
+      ? [{ componentName, name, node: componentExpression ?? property.value }]
+      : [];
   });
 }
 
-function findVariableInitialization(identifier: string, program: t.Program) {
+function findVariableInitialization(identifier: string, program: E.Program) {
   for (const node of program.body) {
-    const declarations = t.isVariableDeclaration(node)
-      ? node.declarations
-      : t.isExportNamedDeclaration(node) && t.isVariableDeclaration(node.declaration)
-        ? node.declaration.declarations
-        : undefined;
-
-    const declaration = declarations?.find(
-      (decl): decl is t.VariableDeclarator =>
-        t.isVariableDeclarator(decl) && t.isIdentifier(decl.id) && decl.id.name === identifier
+    const declaration = node.type === 'ExportNamedDeclaration' ? node.declaration : node;
+    if (declaration?.type !== 'VariableDeclaration') {
+      continue;
+    }
+    const declarator = declaration.declarations.find(
+      (decl) => decl.id.type === 'Identifier' && decl.id.name === identifier
     );
-
-    if (declaration?.init && t.isExpression(declaration.init)) {
-      return declaration.init;
+    if (declarator?.init) {
+      return declarator.init;
     }
   }
 
@@ -52,14 +68,14 @@ function findVariableInitialization(identifier: string, program: t.Program) {
 }
 
 function unwrapSubcomponentNode(
-  node: t.Node | undefined,
-  program: t.Program,
+  node: Node | undefined,
+  program: E.Program,
   visitedIdentifiers = new Set<string>()
-): t.Node | undefined {
+): Node | undefined {
   let current = node;
 
   while (current) {
-    if (t.isIdentifier(current)) {
+    if (current.type === 'Identifier') {
       if (visitedIdentifiers.has(current.name)) {
         return undefined;
       }
@@ -70,10 +86,9 @@ function unwrapSubcomponentNode(
     }
 
     if (
-      t.isParenthesizedExpression(current) ||
-      t.isTSAsExpression(current) ||
-      t.isTSSatisfiesExpression(current) ||
-      t.isTSNonNullExpression(current)
+      current.type === 'TSAsExpression' ||
+      current.type === 'TSSatisfiesExpression' ||
+      current.type === 'TSNonNullExpression'
     ) {
       current = current.expression;
       continue;
@@ -85,28 +100,16 @@ function unwrapSubcomponentNode(
   return undefined;
 }
 
-function getObjectKeyName(key: t.Expression | t.Identifier | t.PrivateName) {
-  if (t.isIdentifier(key)) {
-    return key.name;
-  }
-
-  if (t.isStringLiteral(key)) {
-    return key.value;
-  }
-
-  return undefined;
-}
-
-function getComponentExpressionName(node: t.Node | undefined): string | undefined {
+function getComponentExpressionName(node: Node | undefined): string | undefined {
   if (!node) {
     return undefined;
   }
 
-  if (t.isIdentifier(node)) {
+  if (node.type === 'Identifier') {
     return node.name;
   }
 
-  if (t.isMemberExpression(node) && !node.computed) {
+  if (node.type === 'MemberExpression' && !node.computed) {
     const objectName = getComponentExpressionName(node.object);
     const propertyName = getComponentExpressionName(node.property);
 

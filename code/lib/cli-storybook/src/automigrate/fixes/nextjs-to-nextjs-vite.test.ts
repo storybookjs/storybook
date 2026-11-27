@@ -3,36 +3,46 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { JsPackageManager } from 'storybook/internal/common';
+import { logger, prompt } from 'storybook/internal/node-logger';
 
-import type { CheckOptions } from './index.ts';
-import { VITE_DEFAULT_VERSION, nextjsToNextjsVite } from './nextjs-to-nextjs-vite.ts';
+import { fs, vol } from 'memfs';
 
-// Mock dependencies
-vi.mock('node:fs/promises', () => ({
-  readFile: vi.fn(),
-  writeFile: vi.fn(),
+import { checkFix, runFix } from '../helpers/fix-test-utils.ts';
+import { runFixes } from '../index.ts';
+import { applyFixes } from '../pipeline.ts';
+import type { CheckOptions, RunOptions } from '../types.ts';
+import {
+  VITE_DEFAULT_VERSION,
+  type NextjsToNextjsViteOptions,
+  nextjsToNextjsVite,
+} from './nextjs-to-nextjs-vite.ts';
+
+vi.mock('node:fs/promises', { spy: true });
+
+vi.mock('globby', () => ({
+  globby: vi.fn().mockResolvedValue(['/project/.storybook/preview.ts']),
 }));
 
 vi.mock('storybook/internal/node-logger', () => ({
   logger: {
-    step: vi.fn(),
-    debug: vi.fn(),
-    warn: vi.fn(),
+    logBox: vi.fn(),
     log: vi.fn(),
+    warn: vi.fn(),
     error: vi.fn(),
+    info: vi.fn(),
+    debug: vi.fn(),
+    step: vi.fn(),
+    SYMBOLS: { success: '✔', error: '✕' },
+  },
+  prompt: {
+    confirm: vi.fn(),
+    taskLog: vi.fn(() => ({
+      message: vi.fn(),
+      success: vi.fn(),
+      error: vi.fn(),
+    })),
   },
 }));
-
-vi.mock('storybook/internal/common', () => ({
-  transformImportFiles: vi.fn().mockResolvedValue([]),
-}));
-
-vi.mock('globby', () => ({
-  globby: vi.fn().mockResolvedValue([]),
-}));
-
-const mockReadFile = vi.mocked(readFile);
-const mockWriteFile = vi.mocked(writeFile);
 
 describe('nextjs-to-nextjs-vite', () => {
   const mockPackageManager = {
@@ -41,12 +51,25 @@ describe('nextjs-to-nextjs-vite', () => {
     removeDependencies: vi.fn().mockResolvedValue(undefined),
     addDependencies: vi.fn().mockResolvedValue(undefined),
     getDependencyVersion: vi.fn(),
+    // A non-npx runner proves the fix composes its commands through the package manager instead
+    // of hard-coding `npx`.
+    getRemoteRunCommand: vi.fn(() => 'yarn dlx storybook automigrate nextjs-to-nextjs-vite'),
   } as unknown as JsPackageManager;
+
+  const runOptions = {
+    result: { hasWebpackFinal: false },
+    packageManager: mockPackageManager,
+    mainConfigPath: '/project/.storybook/main.ts',
+    storiesPaths: ['/project/src/Button.stories.tsx'],
+    configDir: '/project/.storybook',
+    storybookVersion: '9.0.0',
+  } as unknown as Omit<RunOptions<NextjsToNextjsViteOptions>, 'files'>;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(mockPackageManager.removeDependencies).mockResolvedValue(undefined);
-    vi.mocked(mockPackageManager.addDependencies).mockResolvedValue(undefined);
+    vol.reset();
+    vi.mocked(readFile).mockImplementation(fs.promises.readFile as typeof readFile);
+    vi.mocked(writeFile).mockImplementation(fs.promises.writeFile as typeof writeFile);
     vi.mocked(mockPackageManager.getDependencyVersion).mockReturnValue(null);
   });
 
@@ -56,51 +79,52 @@ describe('nextjs-to-nextjs-vite', () => {
         '@storybook/react': '^9.0.0',
       });
 
-      const result = await nextjsToNextjsVite.check({
+      const result = await checkFix(nextjsToNextjsVite, {
         packageManager: mockPackageManager,
       } as CheckOptions);
       expect(result).toBeNull();
     });
 
-    it('should return migration options if @storybook/nextjs is installed', async () => {
+    it('applies when @storybook/nextjs is installed and a file references it', async () => {
       mockPackageManager.getAllDependencies = vi.fn().mockReturnValue({
         '@storybook/nextjs': '^9.0.0',
-        '@storybook/react': '^9.0.0',
+      });
+      vol.fromJSON({
+        '/project/.storybook/main.ts': "export default { framework: '@storybook/nextjs' };",
+        '/project/.storybook/preview.ts': 'export default {};',
+        '/project/src/Button.stories.tsx': 'export default {};',
       });
 
-      mockReadFile.mockResolvedValue(
-        JSON.stringify({
-          dependencies: {
-            '@storybook/nextjs': '^9.0.0',
-          },
-        })
-      );
-
-      const result = await nextjsToNextjsVite.check({
+      const result = await checkFix(nextjsToNextjsVite, {
+        ...runOptions,
         packageManager: mockPackageManager,
-      } as CheckOptions);
+      } as unknown as CheckOptions);
 
-      expect(result).toEqual({
-        hasNextjsPackage: true,
-        packageJsonFiles: ['/project/package.json'],
-      });
+      expect(result).toEqual({ hasWebpackFinal: false });
+      expect(vol.toJSON()['/project/.storybook/main.ts']).toContain("'@storybook/nextjs'");
     });
 
-    it('should handle invalid package.json files gracefully', async () => {
+    it('reports a webpackFinal hook in the parsed main config', async () => {
       mockPackageManager.getAllDependencies = vi.fn().mockReturnValue({
         '@storybook/nextjs': '^9.0.0',
       });
-
-      mockReadFile.mockRejectedValue(new Error('Invalid JSON'));
-
-      const result = await nextjsToNextjsVite.check({
-        packageManager: mockPackageManager,
-      } as CheckOptions);
-
-      expect(result).toEqual({
-        hasNextjsPackage: true,
-        packageJsonFiles: [],
+      vol.fromJSON({
+        '/project/.storybook/main.ts': "export default { framework: '@storybook/nextjs' };",
+        '/project/.storybook/preview.ts': 'export default {};',
+        '/project/src/Button.stories.tsx': 'export default {};',
       });
+
+      const result = await checkFix(nextjsToNextjsVite, {
+        ...runOptions,
+        packageManager: mockPackageManager,
+        mainConfig: {
+          framework: '@storybook/nextjs',
+          stories: [],
+          webpackFinal: (config: unknown) => config,
+        },
+      } as unknown as CheckOptions);
+
+      expect(result).toEqual({ hasWebpackFinal: true });
     });
   });
 
@@ -113,44 +137,124 @@ describe('nextjs-to-nextjs-vite', () => {
     });
   });
 
-  describe('run function', () => {
-    it('should handle null result gracefully', async () => {
-      await expect(
-        nextjsToNextjsVite.run!({
-          result: null,
-          dryRun: false,
-          packageManager: mockPackageManager,
-          mainConfigPath: '/project/.storybook/main.js',
-          storiesPaths: ['**/*.stories.*'],
-          configDir: '.storybook',
-        } as any)
-      ).resolves.toBeUndefined();
+  describe('webpackFinal preflight', () => {
+    const webpackFinalRunOptions = {
+      ...runOptions,
+      result: { hasWebpackFinal: true },
+      mainConfig: { stories: [] },
+      configDir: '/project/.storybook',
+    } as unknown as Omit<RunOptions<NextjsToNextjsViteOptions>, 'files'>;
+
+    beforeEach(() => {
+      // The runner tries the fix's main hooks before `run`, so the main config must exist.
+      vol.fromJSON({
+        '/project/.storybook/main.ts': `export default { framework: '@storybook/nextjs' };`,
+        '/project/.storybook/preview.ts': `import type { Preview } from '@storybook/nextjs';`,
+        '/project/src/Button.stories.tsx': `import type { Meta } from '@storybook/nextjs';`,
+      });
     });
 
-    it('should transform package.json files and add vite if not installed', async () => {
-      const result = {
-        hasNextjsPackage: true,
-        packageJsonFiles: ['/project/package.json'],
-      };
-
-      mockReadFile.mockResolvedValue(
-        JSON.stringify({
-          dependencies: {
-            '@storybook/nextjs': '^9.0.0',
-            '@storybook/react': '^9.0.0',
-          },
-        })
+    // Drives the fix through the real runner so the test sees what a user's `--yes` run reports,
+    // and asserts the skipped outcome: a `run` that silently resolved without cancelling would
+    // report the migration as succeeded instead.
+    const runThroughRunner = async (yes: boolean) =>
+      applyFixes(
+        {
+          ...webpackFinalRunOptions,
+          yes,
+        } as unknown as Parameters<typeof applyFixes>[0],
+        [{ fix: nextjsToNextjsVite, result: { hasWebpackFinal: true } }]
       );
 
-      await nextjsToNextjsVite.run!({
-        result,
-        dryRun: false,
+    it('skips under --yes without prompting, naming the command to run later', async () => {
+      const outcomes = await runThroughRunner(true);
+
+      expect(outcomes.get(nextjsToNextjsVite.id)).toEqual({ status: 'skipped' });
+      expect(prompt.confirm).not.toHaveBeenCalled();
+      expect(logger.logBox).toHaveBeenCalledWith(expect.stringContaining('webpackFinal'));
+      expect(logger.log).toHaveBeenCalledWith(
+        expect.stringContaining('Port your webpackFinal hook to viteFinal first')
+      );
+      expect(logger.log).toHaveBeenCalledWith(
+        expect.stringContaining('yarn dlx storybook automigrate nextjs-to-nextjs-vite')
+      );
+      expect(mockPackageManager.removeDependencies).not.toHaveBeenCalled();
+      expect(mockPackageManager.addDependencies).not.toHaveBeenCalled();
+    });
+
+    it('migrates when the user confirms interactively', async () => {
+      vi.mocked(prompt.confirm).mockResolvedValue(true);
+
+      const outcomes = await runThroughRunner(false);
+
+      expect(outcomes.get(nextjsToNextjsVite.id)?.status).toBe('succeeded');
+      expect(prompt.confirm).toHaveBeenCalledWith(
+        expect.objectContaining({ message: expect.stringContaining('Continue anyway?') })
+      );
+      expect(mockPackageManager.removeDependencies).toHaveBeenCalledWith(['@storybook/nextjs']);
+      expect(mockPackageManager.addDependencies).toHaveBeenCalled();
+    });
+
+    it('cancels when the user declines interactively, without migrating', async () => {
+      vi.mocked(prompt.confirm).mockResolvedValue(false);
+
+      const outcomes = await runThroughRunner(false);
+
+      expect(outcomes.get(nextjsToNextjsVite.id)).toEqual({ status: 'skipped' });
+      expect(prompt.confirm).toHaveBeenCalledOnce();
+      expect(logger.log).toHaveBeenCalledWith(expect.stringContaining('Migration cancelled'));
+      expect(mockPackageManager.removeDependencies).not.toHaveBeenCalled();
+      expect(mockPackageManager.addDependencies).not.toHaveBeenCalled();
+    });
+
+    it('a cancelled preflight under --yes hands the doctor no warned ids, so its deprecation still shows', async () => {
+      vol.fromJSON({
+        '/project/.storybook/main.ts':
+          "export default { framework: '@storybook/nextjs', webpackFinal: (config) => config };",
+        '/project/.storybook/preview.ts': `import type { Preview } from '@storybook/nextjs';`,
+        '/project/src/Button.stories.tsx': `import type { Meta } from '@storybook/nextjs';`,
+      });
+      mockPackageManager.getAllDependencies = vi.fn().mockReturnValue({
+        '@storybook/nextjs': '^9.0.0',
+      });
+
+      const { fixResults, warnedFixIds } = await runFixes({
+        fixes: [nextjsToNextjsVite],
+        yes: true,
+        skipInstall: true,
+        configDir: '/project/.storybook',
         packageManager: mockPackageManager,
-        mainConfigPath: '/project/.storybook/main.js',
-        storiesPaths: ['**/*.stories.*'],
-        configDir: '.storybook',
+        mainConfig: {
+          stories: [],
+          webpackFinal: (config: unknown) => config,
+        },
+        mainConfigPath: '/project/.storybook/main.ts',
         storybookVersion: '9.0.0',
-      } as any);
+        storiesPaths: ['/project/src/Button.stories.tsx'],
+      } as Parameters<typeof runFixes>[0]);
+
+      // The preflight cancelled the migration under --yes without printing the fix's skip
+      // warning, so the doctor must not treat the fix as warned and still reports the
+      // @storybook/nextjs deprecation (issue #37770).
+      expect(fixResults).toEqual({ 'nextjs-to-nextjs-vite': 'skipped' });
+      expect(vi.mocked(logger.warn)).not.toHaveBeenCalledWith(
+        expect.stringContaining('deprecated')
+      );
+      expect(warnedFixIds).toEqual([]);
+    });
+  });
+
+  describe('run function', () => {
+    beforeEach(() => {
+      vol.fromJSON({
+        '/project/.storybook/main.ts': `export default { framework: '@storybook/nextjs' };`,
+        '/project/.storybook/preview.ts': `import type { Preview } from '@storybook/nextjs';`,
+        '/project/src/Button.stories.tsx': `import type { Meta } from '@storybook/nextjs';`,
+      });
+    });
+
+    it('should swap the framework package and add vite if not installed', async () => {
+      await runFix(nextjsToNextjsVite, runOptions);
 
       expect(mockPackageManager.removeDependencies).toHaveBeenCalledWith(['@storybook/nextjs']);
       expect(mockPackageManager.addDependencies).toHaveBeenCalledWith(
@@ -159,137 +263,66 @@ describe('nextjs-to-nextjs-vite', () => {
       );
     });
 
-    it('should transform package.json files without adding vite if already installed', async () => {
-      const result = {
-        hasNextjsPackage: true,
-        packageJsonFiles: ['/project/package.json'],
-      };
-
-      mockReadFile.mockResolvedValue(
-        JSON.stringify({
-          dependencies: {
-            '@storybook/nextjs': '^9.0.0',
-            '@storybook/react': '^9.0.0',
-          },
-        })
-      );
-
-      // Mock getDependencyVersion to return a version (vite is installed)
+    it('should not add vite if already installed', async () => {
       vi.mocked(mockPackageManager.getDependencyVersion).mockReturnValue('6.0.0');
 
-      await nextjsToNextjsVite.run!({
-        result,
-        dryRun: false,
-        packageManager: mockPackageManager,
-        mainConfigPath: '/project/.storybook/main.js',
-        storiesPaths: ['**/*.stories.*'],
-        configDir: '.storybook',
-        storybookVersion: '9.0.0',
-      } as any);
+      await runFix(nextjsToNextjsVite, runOptions);
 
-      expect(mockPackageManager.removeDependencies).toHaveBeenCalledWith(['@storybook/nextjs']);
       expect(mockPackageManager.addDependencies).toHaveBeenCalledWith(
         { type: 'devDependencies', skipInstall: true },
         ['@storybook/nextjs-vite@9.0.0']
       );
     });
 
-    it('should transform main config file', async () => {
-      const result = {
-        hasNextjsPackage: true,
-        packageJsonFiles: [],
-      };
+    it('should rewrite the main config, config files, and stories', async () => {
+      await runFix(nextjsToNextjsVite, runOptions);
 
-      mockReadFile.mockResolvedValue(`
-        export default {
-          framework: '@storybook/nextjs',
-          addons: ['@storybook/addon-essentials'],
-        };
-      `);
-
-      // Mock getDependencyVersion to return a version (vite is installed)
-      vi.mocked(mockPackageManager.getDependencyVersion).mockReturnValue('6.0.0');
-
-      await nextjsToNextjsVite.run!({
-        result,
-        dryRun: false,
-        packageManager: mockPackageManager,
-        mainConfigPath: '/project/.storybook/main.js',
-        storiesPaths: ['**/*.stories.*'],
-        configDir: '.storybook',
-        storybookVersion: '9.0.0',
-      } as any);
-
-      expect(mockPackageManager.removeDependencies).toHaveBeenCalledWith(['@storybook/nextjs']);
-      expect(mockPackageManager.addDependencies).toHaveBeenCalledWith(
-        { type: 'devDependencies', skipInstall: true },
-        ['@storybook/nextjs-vite@9.0.0']
-      );
-      expect(mockWriteFile).toHaveBeenCalledWith(
-        '/project/.storybook/main.js',
-        expect.stringContaining('@storybook/nextjs-vite')
-      );
+      expect(vol.toJSON()).toEqual({
+        '/project/.storybook/main.ts': `export default { framework: '@storybook/nextjs-vite' };`,
+        '/project/.storybook/preview.ts': `import type { Preview } from '@storybook/nextjs-vite';`,
+        '/project/src/Button.stories.tsx': `import type { Meta } from '@storybook/nextjs-vite';`,
+      });
     });
 
     it('should not corrupt main config that already references @storybook/nextjs-vite', async () => {
-      // Regression: projects with both @storybook/nextjs and @storybook/nextjs-vite installed
-      // (valid in SB9) already use nextjs-vite in main.ts. Without the fix, the regex would
-      // rewrite @storybook/nextjs-vite to @storybook/nextjs-vite-vite.
-      const result = {
-        hasNextjsPackage: true,
-        packageJsonFiles: [],
-      };
-
-      mockReadFile.mockResolvedValue(`
+      const mainConfig = `
         import type { StorybookConfig } from '@storybook/nextjs-vite';
         export default {
           framework: { name: '@storybook/nextjs-vite', options: {} },
         };
-      `);
+      `;
+      vol.fromJSON({ '/project/.storybook/main.ts': mainConfig });
 
-      vi.mocked(mockPackageManager.getDependencyVersion).mockReturnValue('7.0.0');
+      await runFix(nextjsToNextjsVite, runOptions);
 
-      await nextjsToNextjsVite.run!({
-        result,
-        dryRun: false,
-        packageManager: mockPackageManager,
-        mainConfigPath: '/project/.storybook/main.ts',
-        storiesPaths: [],
-        configDir: '.storybook',
-        storybookVersion: '10.0.0',
-      } as any);
-
-      expect(mockWriteFile).not.toHaveBeenCalled();
+      expect(vol.toJSON()['/project/.storybook/main.ts']).toBe(mainConfig);
     });
 
-    it('should handle dry run mode', async () => {
-      const result = {
-        hasNextjsPackage: true,
-        packageJsonFiles: ['/project/package.json'],
-      };
+    it('fails before changing dependencies when the main config inherits the framework', async () => {
+      vol.fromJSON({ '/project/.storybook/main.ts': "export { default } from '../../base-main';" });
 
-      mockReadFile.mockResolvedValue(
-        JSON.stringify({
-          dependencies: {
-            '@storybook/nextjs': '^9.0.0',
-          },
-        })
+      await expect(runFix(nextjsToNextjsVite, runOptions)).rejects.toThrow(
+        'most likely inherits the framework from a shared config'
       );
-
-      await nextjsToNextjsVite.run!({
-        result,
-        dryRun: true,
-        packageManager: mockPackageManager,
-        mainConfigPath: '/project/.storybook/main.js',
-        storiesPaths: ['**/*.stories.*'],
-        configDir: '.storybook',
-        storybookVersion: '9.0.0',
-      } as any);
-
-      // In dry run mode, package.json updates should be skipped
       expect(mockPackageManager.removeDependencies).not.toHaveBeenCalled();
-      expect(mockPackageManager.addDependencies).not.toHaveBeenCalled();
-      expect(mockWriteFile).not.toHaveBeenCalled();
+    });
+
+    it('fails before changing dependencies when the main config cannot be migrated', async () => {
+      vol.unlinkSync('/project/.storybook/main.ts');
+
+      const failures = await runFix(nextjsToNextjsVite, runOptions);
+
+      expect(failures).toEqual([
+        {
+          file: '/project/.storybook/main.ts',
+          kind: 'main',
+          message: expect.stringContaining('ENOENT'),
+        },
+      ]);
+      expect(vol.toJSON()['/project/src/Button.stories.tsx']).not.toContain(
+        '@storybook/nextjs-vite'
+      );
+      expect(mockPackageManager.removeDependencies).not.toHaveBeenCalled();
     });
   });
 });

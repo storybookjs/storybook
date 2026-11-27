@@ -45,7 +45,6 @@
     },
   },
   "title": {
-    "defaultValue": undefined,
     "description": "Card title shown in the header.",
     "name": "title",
     "table": {

@@ -6,15 +6,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { afterAll, describe, expect, it, vi } from 'vitest';
-
-// config.ts reads FEATURES through @storybook/global at call time, but the compodoc adapter in its
-// import graph destructures FEATURES at first import, so the stub must exist before that.
-const flags = vi.hoisted(() => {
-  const features = { angularFilterNonInputControls: false, experimentalDocgenServer: false };
-  vi.stubGlobal('FEATURES', features);
-  return features;
-});
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { StrictArgTypes } from '../../../../core/src/csf/story.ts';
 import { mergeServiceArgTypes } from '../../../../core/src/docs-tools/argTypes/docgenServiceArgTypes.ts';
@@ -48,13 +40,17 @@ const mergedWith = (customArgTypes: StrictArgTypes) =>
     customArgTypes,
   });
 
-afterAll(() => {
-  vi.unstubAllGlobals();
+const flags = { angularFilterNonInputControls: false, docgenServer: false };
+
+beforeEach(() => {
+  flags.angularFilterNonInputControls = false;
+  flags.docgenServer = false;
+  vi.stubGlobal('FEATURES', flags);
 });
 
 describe('parameters.docs.extractArgTypes under the docgen server', () => {
   it('extracts through Compodoc when the feature is off', () => {
-    flags.experimentalDocgenServer = false;
+    flags.docgenServer = false;
 
     expect(Object.keys(extractArgTypes(DecoratorGetterSetterComponent)!)).toEqual(
       expect.arrayContaining(['innerVolume', 'volume'])
@@ -62,7 +58,7 @@ describe('parameters.docs.extractArgTypes under the docgen server', () => {
   });
 
   it('contributes nothing when the worker payload owns extraction, but stays defined', () => {
-    flags.experimentalDocgenServer = true;
+    flags.docgenServer = true;
 
     expect(extractArgTypes(DecoratorGetterSetterComponent)).toEqual({});
   });
@@ -70,11 +66,11 @@ describe('parameters.docs.extractArgTypes under the docgen server', () => {
   it('keeps a filtered member out of the merged table, which an unfiltered extraction would resurrect', () => {
     expect(payloadArgTypes).not.toHaveProperty('innerVolume');
 
-    flags.experimentalDocgenServer = false;
+    flags.docgenServer = false;
     const resurrected = mergedWith(extractArgTypes(DecoratorGetterSetterComponent)!);
     expect(Object.keys(resurrected)).toContain('innerVolume');
 
-    flags.experimentalDocgenServer = true;
+    flags.docgenServer = true;
     const merged = mergedWith(extractArgTypes(DecoratorGetterSetterComponent)!);
     expect(Object.keys(merged)).toContain('volume');
     expect(Object.keys(merged)).not.toContain('innerVolume');

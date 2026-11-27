@@ -1,8 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { types as t } from 'storybook/internal/babel';
-
 import { loadConfig, printConfig } from './ConfigFile.ts';
+import { type E, parseExpression, textOf } from './estree/ast.ts';
 
 const configurations = [
   `export default { parameters: { a11y: { element: '#root' } } };`,
@@ -70,7 +69,48 @@ describe('ConfigFile mutations', () => {
     }
   );
 
-  it('infers quotes and prints LF output for CRLF sources', () => {
+  it('keeps the layout of named exports that are copied, transformed or moved', () => {
+    const source =
+      'export const a = 1,\n  b = {\n    x: 1,\n  };\nexport const parameters = {\n  docs: {\n    a: 1,\n  },\n  other: 1,\n};';
+    const config = loadConfig(source).parse();
+
+    expect(config.set(['b'], config.get(['b'])!)).toEqual({ ok: true, changed: true });
+    expect(config.transform(['b'], (value) => parseExpression(textOf(value)))).toEqual({
+      ok: true,
+      changed: true,
+    });
+    expect(printConfig(config).code).toBe(source);
+
+    expect(config.move(['parameters', 'docs'], ['docs'])).toEqual({ ok: true, changed: true });
+    expect(printConfig(config).code).toContain('const _docs = {\n  a: 1,\n};');
+  });
+
+  it('indents a node of the file like the place it is set', () => {
+    const config = loadConfig('export default {\n  a: {\n    x: 1,\n  },\n  b: 1,\n};').parse();
+
+    expect(config.set(['b'], config.getFieldNode(['a']) as E.Expression)).toEqual({
+      ok: true,
+      changed: true,
+    });
+    expect(printConfig(config).code).toBe(
+      'export default {\n  a: {\n    x: 1,\n  },\n  b: {\n    x: 1,\n  },\n};'
+    );
+  });
+
+  it('inspects a config without recording a diagnostic, also when its root is unreadable', () => {
+    const config = loadConfig("export default { tags: ['docs'] };").parse();
+    const tags = config.inspect(['tags']);
+    expect(tags.kind === 'value' && textOf(tags.node)).toBe("['docs']");
+
+    const unreadable = loadConfig('export default createConfig();').parse();
+    expect(unreadable.inspect(['tags'])).toMatchObject({
+      kind: 'unreadable',
+      diagnostic: { code: 'unsupported-initializer', path: ['tags'] },
+    });
+    expect(unreadable.mutationDiagnostics).toEqual([]);
+  });
+
+  it('infers quotes and keeps the line endings of CRLF sources', () => {
     const source = [
       "import { definePreview } from '@storybook/react';",
       '',
@@ -79,13 +119,13 @@ describe('ConfigFile mutations', () => {
     const config = loadConfig(source).parse();
     expect(config.set(['tags'], ['autodocs']).ok).toBe(true);
 
-    const result = printConfig(config);
-    // Recast defaults to `os.EOL`; printed files must stay LF on Windows too.
-    expect(result.code).not.toContain('\r');
-    // Freshly generated nodes must reuse the source's quote style, which is
-    // only inferable when token offsets align with the original code.
-    expect(result.code).toContain("'autodocs'");
-    expect(result.code).not.toContain('"autodocs"');
+    expect(printConfig(config).code).toBe(
+      [
+        "import { definePreview } from '@storybook/react';",
+        '',
+        "export default definePreview({ tags: ['autodocs'] });",
+      ].join('\r\n')
+    );
   });
 
   it('keeps an empty parent that shadows an earlier spread', () => {
@@ -100,6 +140,7 @@ describe('ConfigFile mutations', () => {
     'const tags = ["autodocs"]; export default { tags };',
     'const tags = ["autodocs"]; module.exports = { tags };',
     'const values = ["autodocs"]; export { values as tags };',
+    'const preview = { tags: ["autodocs"] }; export const argTypesEnhancers = []; export default preview;',
   ])('reads literal values from %s', (source) => {
     const config = loadConfig(source).parse();
     expect(config.getValue(['tags'])).toEqual(['autodocs']);
@@ -112,11 +153,17 @@ describe('ConfigFile mutations', () => {
     'import { tags } from "./shared"; export default { tags };',
     'let tags = []; tags = other; export default { tags };',
     'const tags = [tags]; export default { tags };',
-    'const undefined = "shadowed"; use(undefined); export default { value: undefined };',
   ])('does not guess values from %s', (source) => {
     const config = loadConfig(source).parse();
-    expect(config.getValue([source.includes('shadowed') ? 'value' : 'tags'])).toBeUndefined();
-    expect(config.mutationDiagnostics.length).toBeGreaterThan(0);
+    expect(config.getValue(['tags'])).toBeUndefined();
+    expect(config.mutationDiagnostics).toEqual([]);
+  });
+
+  it('reads a local constant named undefined as its value', () => {
+    const config = loadConfig(
+      'const undefined = "shadowed"; use(undefined); export default { value: undefined };'
+    ).parse();
+    expect(config.getValue(['value'])).toBe('shadowed');
   });
 
   it.each([
@@ -159,11 +206,11 @@ describe('ConfigFile mutations', () => {
       changed: true,
     });
     expect(object.get(['parameters'])).toBeUndefined();
-    expect(object.transform(['globals', 'a11y'], () => t.stringLiteral('#app'))).toEqual({
+    expect(object.transform(['globals', 'a11y'], () => parseExpression("'#app'"))).toEqual({
       ok: true,
       changed: true,
     });
-    expect(object.set(['tags'], t.arrayExpression([t.stringLiteral('autodocs')]))).toEqual({
+    expect(object.set(['tags'], parseExpression("['autodocs']"))).toEqual({
       ok: true,
       changed: true,
     });
@@ -239,7 +286,7 @@ describe('ConfigFile mutations', () => {
   ])('does not expose unsafe config bindings in %s', (source) => {
     const config = loadConfig(source).parse();
 
-    expect(config.set(['parameters', 'a11y', 'context'], t.stringLiteral('#app'))).toMatchObject({
+    expect(config.set(['parameters', 'a11y', 'context'], parseExpression("'#app'"))).toMatchObject({
       ok: false,
       changed: false,
     });
@@ -257,16 +304,11 @@ describe('ConfigFile mutations', () => {
 
     expect(
       config.transform(['beforeEach'], (value) => {
-        if (!t.isFunctionExpression(value)) {
+        if (value.type !== 'FunctionExpression') {
           throw new Error('Expected a function expression');
         }
-        return {
-          ...value,
-          body: t.blockStatement([
-            ...value.body.body,
-            t.expressionStatement(t.callExpression(t.identifier('spy'), [])),
-          ]),
-        };
+        const source = textOf(value);
+        return parseExpression(`${source.slice(0, source.lastIndexOf('}'))} spy(); }`);
       })
     ).toEqual({ ok: true, changed: true });
 
@@ -284,14 +326,7 @@ describe('ConfigFile mutations', () => {
 
   it('preserves the local name when replacing an exported function', () => {
     const config = loadConfig('export function beforeEach() {}').parse();
-    config.set(
-      ['beforeEach'],
-      t.functionExpression(
-        t.identifier('replacement'),
-        [],
-        t.blockStatement([t.returnStatement(t.identifier('replacement'))])
-      )
-    );
+    config.set(['beforeEach'], parseExpression('function replacement() { return replacement; }'));
 
     const output = printConfig(config).code;
     expect(output).toContain('export const beforeEach = function replacement()');
@@ -304,10 +339,10 @@ describe('ConfigFile mutations', () => {
 
   it('replaces a named function with a value and keeps later edits in sync', () => {
     const config = loadConfig('export function beforeEach() {}').parse();
-    config.set(['beforeEach'], t.booleanLiteral(false));
+    config.set(['beforeEach'], parseExpression('false'));
     config.rename(['beforeEach'], 'disabled');
     expect(loadConfig(printConfig(config).code).parse().get(['disabled'])).toMatchObject({
-      type: 'BooleanLiteral',
+      type: 'Literal',
       value: false,
     });
     expect(config.get(['beforeEach'])).toBeUndefined();
@@ -319,7 +354,7 @@ describe('ConfigFile mutations', () => {
     'const a11y = {}; export const parameters = { a11y };',
   ])('edits nested local objects in %s', (source) => {
     const config = loadConfig(source).parse();
-    config.set(['parameters', 'a11y', 'test'], t.stringLiteral('todo'));
+    config.set(['parameters', 'a11y', 'test'], parseExpression("'todo'"));
     const output = loadConfig(printConfig(config).code).parse();
     expect(output.get(['parameters', 'a11y', 'test'])).toMatchObject({ value: 'todo' });
     config.move(['parameters', 'a11y', 'test'], ['initialGlobals', 'a11y']);
@@ -335,7 +370,7 @@ describe('ConfigFile mutations', () => {
     'export default { get parameters() { return {}; } };',
   ])('leaves unsafe nested objects unchanged in %s', (source) => {
     const config = loadConfig(source).parse();
-    expect(config.set(['parameters', 'a11y', 'test'], t.stringLiteral('todo'))).toMatchObject({
+    expect(config.set(['parameters', 'a11y', 'test'], parseExpression("'todo'"))).toMatchObject({
       ok: false,
     });
     expect(printConfig(config).code).toBe(source);
@@ -367,16 +402,63 @@ describe('ConfigFile mutations', () => {
     expect(printConfig(config).code).toBe('export const sibling = true;');
   });
 
+  it.each([
+    { name: 'b', output: 'const a = 1;\nexport { a as b };' },
+    { name: 'custom-field', output: 'const a = 1;\nexport { a as "custom-field" };' },
+  ])('aliases an unaliased export specifier renamed to $name', ({ name, output }) => {
+    const config = loadConfig(`const a = 1;\nexport { a };`).parse();
+
+    expect(config.rename(['a'], name)).toEqual({ ok: true, changed: true });
+    expect(printConfig(config).code).toBe(output);
+    expect(config.getValue([name])).toBe(1);
+  });
+
+  it('keeps the parentheses of a comma expression it moves or renames', () => {
+    const config = loadConfig(
+      `export const a = (f(), 1);\nexport const b = (g(), 2);\nexport const parameters = {};`
+    ).parse();
+
+    expect(config.move(['a'], ['parameters', 'a'])).toEqual({ ok: true, changed: true });
+    expect(config.rename(['b'], 'custom-field')).toEqual({ ok: true, changed: true });
+    expect(config.move(['parameters', 'a'], ['first'])).toEqual({ ok: true, changed: true });
+
+    const output = loadConfig(printConfig(config).code).parse();
+    expect(textOf(output.get(['first'])!)).toBe('f(), 1');
+    expect(textOf(output.get(['custom-field'])!)).toBe('g(), 2');
+  });
+
+  it('keeps the parentheses of a comma expression it copies or appends to an array', () => {
+    const config = loadConfig(`export default { addons: [(a, b)] };`).parse();
+    const [element] = (config.get(['addons']) as E.ArrayExpression).elements;
+    config.set(['first'], element as E.Expression);
+    config.appendNodeToArray(['addons'], parseExpression('c, d'));
+
+    expect(printConfig(config).code).toBe(
+      `export default { addons: [(a, b), (c, d)], first: (a, b) };`
+    );
+  });
+
   it('can create named exports in an empty file', () => {
     const config = loadConfig('').parse();
     const object = config;
 
-    object.set(['framework'], t.stringLiteral('@storybook/react-vite'));
-    object.set(['parameters', 'a11y', 'context'], t.stringLiteral('#app'));
+    object.set(['framework'], parseExpression("'@storybook/react-vite'"));
+    object.set(['parameters', 'a11y', 'context'], parseExpression("'#app'"));
 
     const output = loadConfig(printConfig(config).code).parse();
     expect(output.getValue(['framework'])).toBe('@storybook/react-vite');
     expect(output.getValue(['parameters', 'a11y', 'context'])).toBe('#app');
+  });
+
+  it('groups named exports into one declaration at the end of the file', () => {
+    const config = loadConfig(
+      'export const showNav = false;\nexport const showPanel = true;\n'
+    ).parse();
+
+    expect(config.group(['layout'], ['showNav', 'showPanel'])).toEqual({ ok: true, changed: true });
+    expect(printConfig(config).code).toBe(
+      'export const layout = { showNav: false, showPanel: true };\n'
+    );
   });
 
   it.each(['local', 'custom-field'])(
@@ -386,7 +468,7 @@ describe('ConfigFile mutations', () => {
       const object = config;
 
       expect(object.rename(['original'], name)).toEqual({ ok: true, changed: true });
-      expect(object.set([name], t.stringLiteral('updated'))).toEqual({ ok: true, changed: true });
+      expect(object.set([name], parseExpression("'updated'"))).toEqual({ ok: true, changed: true });
 
       const output = printConfig(config).code;
       expect(output).toContain(`const local = 'keep'`);

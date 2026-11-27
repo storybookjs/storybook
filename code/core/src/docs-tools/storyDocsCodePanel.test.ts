@@ -1,15 +1,11 @@
 import { SourceType } from './shared.ts';
 import { shouldSkipStoryDocsEmit, shouldWaitForServiceSnippet } from './storyDocsCodePanel.ts';
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 describe('storyDocsCodePanel', () => {
   beforeEach(() => {
-    vi.stubGlobal('FEATURES', { experimentalDocgenServer: true });
-  });
-
-  afterEach(() => {
-    vi.unstubAllGlobals();
+    vi.stubGlobal('FEATURES', { docgenServer: true });
   });
 
   describe('shouldSkipStoryDocsEmit', () => {
@@ -29,8 +25,8 @@ describe('storyDocsCodePanel', () => {
   });
 
   describe('shouldWaitForServiceSnippet', () => {
-    it('is false when experimentalDocgenServer is disabled', () => {
-      vi.stubGlobal('FEATURES', { experimentalDocgenServer: false });
+    it('is false when docgenServer is disabled', () => {
+      vi.stubGlobal('FEATURES', { docgenServer: false });
       expect(shouldWaitForServiceSnippet(undefined, false)).toBe(false);
     });
 

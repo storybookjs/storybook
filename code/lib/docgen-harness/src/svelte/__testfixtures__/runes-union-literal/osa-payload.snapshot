@@ -1,0 +1,9 @@
+{
+  "description": undefined,
+  "id": "sveltefixtures-unionliteral",
+  "jsDocTags": {},
+  "name": "UnionLiteral",
+  "path": "./input.stories.svelte",
+  "renderer": "svelte",
+  "summary": undefined,
+}

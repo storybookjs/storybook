@@ -50,7 +50,7 @@ export const EmptyObject: Story = {
 
 export const EmptyArray: Story = {
   args: {
-    value: {},
+    value: [],
   },
 };
 
@@ -63,6 +63,25 @@ export const Null: Story = {
 export const Undefined: Story = {
   args: {
     value: undefined,
+  },
+  play: async ({ canvas, args, userEvent }) => {
+    const button = canvas.getByRole('button', { name: 'Set object' });
+    await expect(button).toBeVisible();
+    await userEvent.click(button);
+    await expect(args.onChange).toHaveBeenCalledWith({});
+  },
+};
+
+export const UndefinedArray: Story = {
+  args: {
+    value: undefined,
+    argType: { type: { name: 'array', value: { name: 'string' } } },
+  },
+  play: async ({ canvas, args, userEvent }) => {
+    const button = canvas.getByRole('button', { name: 'Set array' });
+    await expect(button).toBeVisible();
+    await userEvent.click(button);
+    await expect(args.onChange).toHaveBeenCalledWith([]);
   },
 };
 

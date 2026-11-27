@@ -1,13 +1,12 @@
 import { Component, Input, Output } from '@angular/core';
 import type { DecoratorFunction, StoryContext } from 'storybook/internal/types';
-import { describe, expect, it } from 'vitest';
+import { assert, describe, expect, it } from 'vitest';
 import { componentWrapperDecorator } from './decorators.ts';
 
 import decorateStory from './decorateStory.ts';
 import type { AngularRenderer } from './types.ts';
 
-// TODO: Fix. Test is infinitely running.
-describe.skip('decorateStory', () => {
+describe('decorateStory', () => {
   describe('angular behavior', () => {
     it('should use componentWrapperDecorator with args', () => {
       const decorators: DecoratorFunction<AngularRenderer>[] = [
@@ -207,9 +206,9 @@ describe.skip('decorateStory', () => {
       });
     });
 
-    it('should only keeps args with a control or an action in argTypes', () => {
+    it('passes every arg to the story, including ones carrying no control', () => {
       const decorated = decorateStory(
-        (context: StoryContext) => ({
+        (context: StoryContext<AngularRenderer>) => ({
           template: `Args available in the story : ${Object.keys(context.args).join()}`,
         }),
         []
@@ -222,19 +221,37 @@ describe.skip('decorateStory', () => {
             argTypes: {
               withControl: { control: { type: 'object' }, name: 'withControl' },
               withAction: { action: 'onClick', name: 'withAction' },
-              toRemove: { name: 'toRemove' },
+              withoutControl: { control: false, name: 'withoutControl' },
             },
             args: {
               withControl: 'withControl',
               withAction: () => ({}),
-              toRemove: 'toRemove',
+              withoutControl: 'withoutControl',
             },
           })
         )
       ).toEqual({
-        template: 'Args available in the story : withControl,withAction',
+        template: 'Args available in the story : withControl,withAction,withoutControl',
         userDefinedTemplate: true,
       });
+    });
+
+    it('passes the component inputs and outputs when the preview holds no argTypes', () => {
+      const decorated = decorateStory(
+        (context: StoryContext<AngularRenderer>) => ({ props: context.args }),
+        []
+      );
+
+      const onParentOutput = () => {};
+      expect(
+        decorated(
+          makeContext({
+            component: ParentComponent,
+            argTypes: {},
+            args: { parentInput: 'Parent input', parentOutput: onParentOutput },
+          })
+        ).props
+      ).toEqual({ parentInput: 'Parent input', parentOutput: onParentOutput });
     });
   });
 
@@ -243,14 +260,17 @@ describe.skip('decorateStory', () => {
       const decorators: DecoratorFunction<AngularRenderer>[] = [
         (s) => {
           const story = s();
+          assert(story.props);
           return { ...story, props: { a: [...story.props.a, 1] } };
         },
         (s) => {
           const story = s();
+          assert(story.props);
           return { ...story, props: { a: [...story.props.a, 2] } };
         },
         (s) => {
           const story = s();
+          assert(story.props);
           return { ...story, props: { a: [...story.props.a, 3] } };
         },
       ];
@@ -263,18 +283,24 @@ describe.skip('decorateStory', () => {
       const decorators: DecoratorFunction<AngularRenderer>[] = [
         (s, c) => {
           const story = s({ ...c, k: 1 });
+          assert(story.props);
           return { ...story, props: { a: [...story.props.a, c.k] } };
         },
         (s, c) => {
           const story = s({ ...c, k: 2 });
+          assert(story.props);
           return { ...story, props: { a: [...story.props.a, c.k] } };
         },
         (s, c) => {
           const story = s({ ...c, k: 3 });
+          assert(story.props);
           return { ...story, props: { a: [...story.props.a, c.k] } };
         },
       ];
-      const decorated = decorateStory((c: StoryContext) => ({ props: { a: [c.k] } }), decorators);
+      const decorated = decorateStory(
+        (c: StoryContext<AngularRenderer>) => ({ props: { a: [c.k] } }),
+        decorators
+      );
 
       expect(decorated(makeContext({ k: 0 }))).toEqual({ props: { a: [1, 2, 3, 0] } });
     });
@@ -283,6 +309,7 @@ describe.skip('decorateStory', () => {
       const decorators: DecoratorFunction<AngularRenderer>[] = [
         (s, c) => {
           const story = s({ ...c, k: 1, parameters: { p: 1 } });
+          assert(story.props);
           return {
             ...story,
             props: { a: [...story.props.a, c.k], p: [...story.props.p, c.parameters.p] },
@@ -290,6 +317,7 @@ describe.skip('decorateStory', () => {
         },
         (s, c) => {
           const story = s({ ...c, k: 2, parameters: { p: 2 } });
+          assert(story.props);
           return {
             ...story,
             props: { a: [...story.props.a, c.k], p: [...story.props.p, c.parameters.p] },
@@ -297,6 +325,7 @@ describe.skip('decorateStory', () => {
         },
         (s, c) => {
           const story = s({ ...c, k: 3, parameters: { p: 3 } });
+          assert(story.props);
           return {
             ...story,
             props: { a: [...story.props.a, c.k], p: [...story.props.p, c.parameters.p] },
@@ -304,7 +333,9 @@ describe.skip('decorateStory', () => {
         },
       ];
       const decorated = decorateStory(
-        (c: StoryContext) => ({ props: { a: [c.k], p: [c.parameters.p] } }),
+        (c: StoryContext<AngularRenderer>) => ({
+          props: { a: [c.k], p: [c.parameters.p] },
+        }),
         decorators
       );
 
@@ -318,7 +349,6 @@ describe.skip('decorateStory', () => {
 function makeContext(input: Record<string, unknown>): StoryContext<AngularRenderer> {
   return {
     id: 'id',
-    kind: 'kind',
     name: 'name',
     viewMode: 'story',
     parameters: {},
@@ -328,21 +358,17 @@ function makeContext(input: Record<string, unknown>): StoryContext<AngularRender
 
 @Component({
   selector: 'foo',
-  template: `
-    foo
-  `,
+  template: ` foo `,
 })
 class FooComponent {}
 
 @Component({
   selector: 'parent',
-  template: `
-    <ng-content></ng-content>
-  `,
+  template: ` <ng-content></ng-content> `,
 })
 class ParentComponent {
   @Input()
-  parentInput: string;
+  parentInput?: string;
 
   @Output()
   parentOutput: any;

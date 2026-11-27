@@ -18,16 +18,17 @@ import { z } from 'zod';
 import { parseHarnessOptions } from '../../docgen-shared/args.ts';
 import { PIN_OPTION, importPinned } from '../../docgen-shared/pin.ts';
 import { type SeriesEngine, harnessMain, runSeriesHarness } from '../../docgen-shared/series.ts';
+import { VUE_FRAMEWORK } from '../generators/vue.ts';
 import {
-  VUE_OPTIONS,
-  VUE_SCHEMA,
-  type VueHarnessOptions,
-  type VueOptionsInput,
-  setUpVueScenario,
-  vueBanner,
-  vueOutDir,
-  vueToInput,
-} from './vue-scenario.ts';
+  WORKSPACE_OPTIONS,
+  WORKSPACE_SCHEMA,
+  type WorkspaceHarnessOptions,
+  type WorkspaceOptionsInput,
+  setUpWorkspaceScenario,
+  workspaceBanner,
+  workspaceOutDir,
+  workspaceToInput,
+} from './workspace-scenario.ts';
 
 /** The canonical install. A pin is an alias of the same package, so these types describe either. */
 const PACKAGE = 'vue-component-meta';
@@ -41,21 +42,21 @@ const CHECKER_OPTIONS: MetaCheckerOptions = {
   printer: { newLine: 1 },
 };
 
-const SCHEMA = VUE_SCHEMA.extend({ pin: z.string().default(PACKAGE) });
+const SCHEMA = WORKSPACE_SCHEMA.extend({ pin: z.string().default(PACKAGE) });
 
 /**
  * `--pin` extends the shared Vue table rather than being read out of argv beforehand, so it reaches
  * the same strict parser as every other flag and lands in the options the result JSON records. Each
  * install gets its own scratch directory, so the two runs never share a generated project.
  */
-function parseOptions(argv: string[]): VueHarnessOptions & { pin: string } {
-  const parsed = parseHarnessOptions<VueOptionsInput & { pin: string }>(
+function parseOptions(argv: string[]): WorkspaceHarnessOptions & { pin: string } {
+  const parsed = parseHarnessOptions<WorkspaceOptionsInput & { pin: string }>(
     argv,
-    { ...VUE_OPTIONS, ...PIN_OPTION },
+    { ...WORKSPACE_OPTIONS, ...PIN_OPTION },
     SCHEMA,
-    vueToInput
+    workspaceToInput
   );
-  return { ...parsed, outDir: parsed.outDir ?? vueOutDir(parsed.pin) };
+  return { ...parsed, outDir: parsed.outDir ?? workspaceOutDir(parsed.pin) };
 }
 
 /**
@@ -79,8 +80,8 @@ function extractOne(checker: Checker, sfcPath: string): number {
   return meta.props.length + meta.events.length + meta.slots.length + meta.exposed.length;
 }
 
-async function createEngine(options: VueHarnessOptions, pin: string): Promise<SeriesEngine> {
-  const scenario = setUpVueScenario(options);
+async function createEngine(options: WorkspaceHarnessOptions, pin: string): Promise<SeriesEngine> {
+  const scenario = setUpWorkspaceScenario(options, VUE_FRAMEWORK);
   const fns = await importPinned<CheckerModule>(pin, PACKAGE);
   let checker: Checker | undefined;
   let measuredPath = scenario.targetPaths[0];
@@ -117,7 +118,7 @@ harnessMain(async () => {
   await runSeriesHarness({
     title: `vue-component-meta harness (${options.scenario}, pin=${options.pin})`,
     options,
-    banner: vueBanner(options),
+    banner: workspaceBanner(options),
     saves: options.saves,
     coldLabel: `${options.componentsPerPackage} components, checker creation included`,
     jsonOut: options.jsonOut,

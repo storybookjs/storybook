@@ -6,18 +6,23 @@
  * from the story index, so the listing matches what core's manifest generator would emit — same
  * `manifest` tag filter, same component selection, same order — instead of whatever happens to have
  * been extracted so far. And single-entry lookups use the per-id queries, so resolving one
- * component never triggers docgen extraction for every component.
+ * component never triggers docgen extraction for every component. The names a `docs show` miss
+ * suggests from come from the story index too.
  */
 
 import type { StoryIndex } from 'storybook/internal/types';
 
 import { getComponentIdFromEntry } from '../../../../common/utils/component-id.ts';
-import { selectComponentEntriesByComponentId } from '../../../../common/utils/select-component-entry.ts';
+import {
+  isManifestEntry,
+  selectComponentEntriesByComponentId,
+} from '../../../../common/utils/select-component-entry.ts';
 import {
   OpenServiceDocgenMissingComponentError,
   OpenServiceMissingServiceError,
 } from '../../../../server-errors.ts';
 import { Tag } from '../../../constants/tags.ts';
+import { readComponent } from '../../services/component-state-key.ts';
 import type { DocgenService } from '../../services/docgen/definition.ts';
 import type { StoryDocsService } from '../../services/story-docs/definition.ts';
 import type { ToolsetGetService } from '../../toolset-definition.ts';
@@ -51,6 +56,10 @@ export type ServiceDocsAccessOptions = {
   getService: ToolsetGetService;
 };
 
+function manifestEntries(index: StoryIndex) {
+  return Object.values(index.entries).filter(isManifestEntry);
+}
+
 /**
  * Derives the visible set from the story index using core's manifest rules.
  *
@@ -58,9 +67,7 @@ export type ServiceDocsAccessOptions = {
  * re-sorting here would silently disagree with every other manifest surface.
  */
 function classifyIndex(index: StoryIndex): DocsClassification {
-  const entries = Object.values(index.entries).filter(
-    (entry) => entry.tags?.includes(Tag.MANIFEST) ?? false
-  );
+  const entries = manifestEntries(index);
   const selected = selectComponentEntriesByComponentId(entries);
 
   const storyBasedIds = new Set<string>();
@@ -71,13 +78,13 @@ function classifyIndex(index: StoryIndex): DocsClassification {
   }
 
   const attachedDocsByComponent = new Map<string, string[]>();
-  const unattachedDocs = new Map<string, string>();
+  const unattachedDocs: DocsClassification['unattachedDocs'] = new Map();
   for (const entry of entries) {
     if (entry.type !== 'docs') {
       continue;
     }
     if (entry.tags?.includes(Tag.UNATTACHED_MDX)) {
-      unattachedDocs.set(entry.id, entry.name);
+      unattachedDocs.set(entry.id, { name: entry.name, title: entry.title });
     } else if (entry.tags?.includes(Tag.ATTACHED_MDX)) {
       const componentId = getComponentIdFromEntry(entry);
       attachedDocsByComponent.set(componentId, [
@@ -154,7 +161,9 @@ export function createServiceDocsAccess({
           async (id) =>
             [
               id,
-              await loadOptionalComponentPayload(storyDocs.queries.storyDocs.loaded({ id })),
+              await loadOptionalComponentPayload(
+                storyDocs.queries.storyDocs.loaded({ id, scope: 'manifest' })
+              ),
             ] as const
         )
       )
@@ -162,7 +171,7 @@ export function createServiceDocsAccess({
 
     const components: Record<string, ComponentManifestV1> = {};
     for (const id of classification.componentIds) {
-      const payload = allDocgen[id];
+      const payload = readComponent(allDocgen, id);
       components[id] = {
         id,
         name: payload?.name ?? id,
@@ -185,12 +194,13 @@ export function createServiceDocsAccess({
     const allMdx = (await getMdx()?.queries.mdxForAllComponents.loaded()) ?? {};
 
     const docs: Record<string, DocV1> = {};
-    for (const [docId, name] of classification.unattachedDocs) {
-      // The display name comes from the index entry: it exists even when the MDX service does not.
+    for (const [docId, { name, title }] of classification.unattachedDocs) {
+      // The name and title come from the index entry: it exists even when the MDX service does not.
       const payload = allMdx[docId]?.docs?.[docId];
       docs[docId] = {
         id: docId,
         name,
+        title,
         ...(payload?.summary !== undefined ? { summary: payload.summary } : {}),
       };
     }
@@ -205,7 +215,9 @@ export function createServiceDocsAccess({
     const mdx = getMdx();
     const [docgenPayload, storyDocsPayload] = await Promise.all([
       loadOptionalComponentPayload(getDocgen().queries.docgen.loaded({ id })),
-      loadOptionalComponentPayload(getStoryDocs().queries.storyDocs.loaded({ id })),
+      loadOptionalComponentPayload(
+        getStoryDocs().queries.storyDocs.loaded({ id, scope: 'manifest' })
+      ),
     ]);
 
     const hasAttachedDocs = (classification.attachedDocsByComponent.get(id)?.length ?? 0) > 0;
@@ -244,6 +256,20 @@ export function createServiceDocsAccess({
         listDocs(classification),
       ]);
       return toShallowManifests(components, docs);
+    },
+
+    // A component is named by the last segment of its title, the name the React manifest falls back
+    // to, so that suggesting close ids never runs docgen for every component.
+    async listNames() {
+      const index = await storyIndex.getIndex();
+      const components = [...selectComponentEntriesByComponentId(manifestEntries(index))].map(
+        ([id, entry]) => ({ id, name: entry.title.split('/').at(-1)!.replace(/\s+/g, '') })
+      );
+      const docs = [...classifyIndex(index).unattachedDocs].map(([id, { title }]) => ({
+        id,
+        name: title,
+      }));
+      return [...components, ...docs];
     },
 
     async resolve(id) {

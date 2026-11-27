@@ -1,4 +1,4 @@
-import { expectStoryTestsRanAndPassed } from '#test-utils';
+import { expectFocusedTestRun, expectStoryTestsRanAndPassed } from '#test-utils';
 import { readFileSync } from 'node:fs';
 import { describe, expect, test } from 'vitest';
 
@@ -10,8 +10,8 @@ describe('fixing failing Button story tests', () => {
   // A single test-run call is enough: agents may spot the initial
   // failure through any channel, as long as the fix is verified through the
   // tool.
-  test('finishes with the story tests passing', () => {
-    expectStoryTestsRanAndPassed({ covering: ['button'] });
+  test('finishes with the story tests passing', async () => {
+    await expectStoryTestsRanAndPassed({ covering: ['button'] });
   });
 
   // The tests should turn green through the real fix (wiring onClick through
@@ -24,5 +24,10 @@ describe('fixing failing Button story tests', () => {
     expect(stories, 'Expected the Default story to keep asserting the onClick behavior').toMatch(
       /toHaveBeenCalled/
     );
+  });
+
+  // The workflow names the test command itself, so a request to run the tests needs no skill.
+  test('runs the Button tests through Storybook', () => {
+    expectFocusedTestRun();
   });
 });

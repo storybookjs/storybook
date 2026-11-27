@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { expect, test, vi } from 'vitest';
 
 import { Tag } from 'storybook/internal/core-server';
-import type { IndexEntry } from 'storybook/internal/types';
+import type { ComponentManifest, IndexEntry } from 'storybook/internal/types';
 
 import { dedent } from 'ts-dedent';
 
@@ -13,39 +13,50 @@ import { type ComponentDocWithExportName, invalidateParser } from './reactDocgen
 import { invalidateCache } from './utils.ts';
 
 const repoRoot = process.cwd();
-type ManifestComponentWithReactDocgenTypescript = {
-  error?: { name: string; message: string };
+type ManifestComponentWithReactDocgenTypescript = ComponentManifest & {
   reactDocgenTypescript?: ComponentDocWithExportName;
 };
 
-test.sequential('manifests uses the referenced app tsconfig for react-docgen-typescript in Vite-style projects', async () => {
-  invalidateCache();
-  invalidateParser();
-
-  const tempDir = createTempProject();
-  const cwdSpy = vi.spyOn(process, 'cwd').mockReturnValue(tempDir);
-
-  try {
-    const result = await manifests(undefined, createManifestOptions());
-    const button = result?.components?.components?.['example-button'] as
-      | ManifestComponentWithReactDocgenTypescript
-      | undefined;
-
-    expect(button?.error).toBeUndefined();
-    expect(button?.reactDocgenTypescript?.displayName).toBe('Button');
-    expect(button?.reactDocgenTypescript?.props.label).toMatchObject({
-      required: true,
-    });
-    expect(button?.reactDocgenTypescript?.props.primary).toMatchObject({
-      required: false,
-    });
-  } finally {
-    cwdSpy.mockRestore();
+test(
+  'manifests uses the referenced app tsconfig for react-docgen-typescript in Vite-style projects',
+  { concurrent: false },
+  async () => {
     invalidateCache();
     invalidateParser();
-    rmSync(tempDir, { recursive: true, force: true });
+
+    const tempDir = createTempProject();
+    const cwdSpy = vi.spyOn(process, 'cwd').mockReturnValue(tempDir);
+
+    try {
+      const result = await manifests(undefined, createManifestOptions());
+      const button = result?.components?.components?.['example-button'] as
+        | ManifestComponentWithReactDocgenTypescript
+        | undefined;
+
+      expect(button?.error).toBeUndefined();
+      expect(button?.reactDocgenTypescript?.displayName).toBe('Button');
+      expect(button?.reactDocgenTypescript?.props.label).toMatchObject({
+        required: true,
+      });
+      expect(button?.reactDocgenTypescript?.props.primary).toMatchObject({
+        required: false,
+      });
+      // react-docgen-typescript strips @tags from description; they must still reach the manifest.
+      expect(button?.summary).toBe('For user interactions that do not navigate to another route.');
+      expect(button?.jsDocTags?.summary).toEqual([
+        'For user interactions that do not navigate to another route.',
+      ]);
+      expect(button?.jsDocTags?.example).toEqual(['Primary usage', 'With primary flag']);
+      expect(button?.description).toBe('Primary UI component for user interaction');
+      expect(button?.import).toBe("import { Button } from '@design-system/components/override';");
+    } finally {
+      cwdSpy.mockRestore();
+      invalidateCache();
+      invalidateParser();
+      rmSync(tempDir, { recursive: true, force: true });
+    }
   }
-});
+);
 
 function createManifestOptions() {
   const manifestEntries: IndexEntry[] = [
@@ -150,7 +161,14 @@ function createTempProject() {
         primary?: boolean;
       }
 
-      /** Primary UI component for user interaction */
+      /**
+       * Primary UI component for user interaction
+       *
+       * @summary For user interactions that do not navigate to another route.
+       * @example Primary usage
+       * @example With primary flag
+       * @import import { Button } from '@design-system/components/override';
+       */
       export const Button = ({ label, primary = false }: ButtonProps) => (
         <button data-primary={primary}>{label}</button>
       );

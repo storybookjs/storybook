@@ -29,13 +29,8 @@ import { collectTelemetry } from '../telemetry.ts';
 import type { AddonContext } from '../types.ts';
 import { errorToMCPContent } from '../utils/errors.ts';
 import { resolveToolsetOrigin } from './toolset-origin.ts';
-import type { StorybookAiToolCallResult } from './tool-registry.ts';
 
 type Server = McpServer<any, AddonContext>;
-type ToolEnabled = Parameters<Server['tool']>[0]['enabled'];
-
-// The grouping behind the enable gate and the `X-MCP-Toolsets` header; not a telemetry field.
-export type McpToolsetGroup = keyof NonNullable<AddonContext['toolsets']>;
 
 export type ToolsetToolOptions = {
   /** Which toolset method backs this MCP tool. */
@@ -84,12 +79,7 @@ function isAgentFacingError(error: unknown): error is Error {
   return error instanceof Error && (error as { agentFacing?: boolean }).agentFacing === true;
 }
 
-/**
- * Narrows outcome data to the published output contract.
- *
- * Outcomes may carry more data than the contract declares (the rendered Markdown needs it); only
- * the declared shape reaches `structuredContent`.
- */
+/** Narrows outcome data to the published output contract. */
 async function toStructuredContent(
   outputSchema: StandardSchemaV1 | undefined,
   data: unknown
@@ -125,12 +115,18 @@ async function reportToolsetTelemetry(
   await collectTelemetry({ event, server, ...payload, toolset, tool });
 }
 
+type ToolCallResult = {
+  content: Array<{ type: 'text'; text: string }>;
+  structuredContent?: Record<string, unknown>;
+  isError?: boolean;
+};
+
 /** Runs one toolset method and unwraps its outcome into an MCP tool result. */
 export async function callToolsetMethod(
   server: Server,
   options: ToolsetToolOptions,
   input: unknown
-): Promise<StorybookAiToolCallResult> {
+): Promise<ToolCallResult> {
   const toolset = resolveToolset(options, server);
   const { methodName } = parseToolsetMethodId(options.method);
   const method = toolset.methods[methodName];
@@ -183,15 +179,11 @@ export function getToolsetToolMetadata(options: ToolsetToolOptions) {
 }
 
 /** Registers one toolset-backed MCP tool. */
-export function registerToolsetTool(
-  server: Server,
-  options: ToolsetToolOptions,
-  enabled: ToolEnabled
-): void {
+export function registerToolsetTool(server: Server, options: ToolsetToolOptions): void {
   // tmcp types the handler from the literal schema generic; toolset schemas resolve at runtime,
   // so both sides step out of that inference.
   server.tool(
-    { ...getToolsetToolMetadata(options), enabled } as never,
+    getToolsetToolMetadata(options) as never,
     ((input: unknown) => callToolsetMethod(server, options, input)) as never
   );
 }

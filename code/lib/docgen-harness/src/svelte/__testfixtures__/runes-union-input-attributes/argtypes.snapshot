@@ -1,0 +1,67 @@
+{
+  "files": {
+    "control": {
+      "type": "array",
+    },
+    "description": "Selected files.",
+    "name": "files",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "FileList",
+      },
+    },
+    "type": {
+      "name": "FileList",
+      "required": false,
+    },
+  },
+  "type": {
+    "control": {
+      "type": "radio",
+    },
+    "description": "Input type.",
+    "name": "type",
+    "options": [
+      "file",
+      "text",
+      "email",
+    ],
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": ""file" | "text" | "email"",
+      },
+    },
+    "type": {
+      "name": ""file" | "text" | "email"",
+      "required": false,
+    },
+  },
+  "value": {
+    "control": {
+      "type": "object",
+    },
+    "description": undefined,
+    "name": "value",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "any",
+      },
+    },
+    "type": {
+      "name": "any",
+      "required": false,
+    },
+  },
+}

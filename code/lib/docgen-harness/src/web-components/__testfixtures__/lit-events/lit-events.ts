@@ -4,8 +4,8 @@ import { property } from 'lit/decorators.js';
 /**
  * Emits changes from the text field.
  *
- * @fires my-change - Fired when the value changes.
- * @fires my-close - Fired when the panel closes.
+ * @fires {CustomEvent<{ value: string }>} my-change - Fired when the value changes.
+ * @fires {CustomEvent<void>} my-close - Fired when the panel closes.
  */
 export class LitEvents extends LitElement {
   /** Current text value. */

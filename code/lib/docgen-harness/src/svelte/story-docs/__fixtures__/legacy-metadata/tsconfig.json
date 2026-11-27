@@ -1,0 +1,4 @@
+{
+  "compilerOptions": { "moduleResolution": "bundler", "module": "esnext", "target": "esnext" },
+  "include": ["Metadata.svelte"]
+}

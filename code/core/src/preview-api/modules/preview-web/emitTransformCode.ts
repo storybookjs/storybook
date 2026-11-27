@@ -23,6 +23,7 @@ export async function emitTransformCode(
   const transformed = transform && source ? transform?.(source, context) : source;
   const result = transformed ? await transformed : undefined;
 
+  // Note: The snippet payload emitted via SNIPPET_RENDERED is already transformed.
   addons.getChannel().emit(SNIPPET_RENDERED, {
     id,
     source: result,

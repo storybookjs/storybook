@@ -1,31 +1,24 @@
 // @vitest-environment happy-dom
 import { act, cleanup, render, waitFor } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import React from 'react';
 
 import type { API_PreparedStoryIndex } from 'storybook/internal/types';
 
-import type { API, Combo, State } from '../root.tsx';
-import { Provider as ManagerProvider, mockChannel } from '../root.tsx';
+import { Channel } from 'storybook/internal/channels';
 
-// The stories module destructures `fetch` from `@storybook/global` at import time to fetch the
-// index on init. Reject it so the init no-ops (into indexError) instead of hitting the network.
-// Return a fresh `global` object rather than mutating the shared global in place, so the mocked
-// `fetch` cannot leak into other test files. We copy all own property descriptors (a plain spread
-// drops non-enumerable globals like happy-dom's `document`) and keep the prototype, so the other
-// globals that manager modules rely on are preserved.
-vi.mock('@storybook/global', async (importOriginal) => {
-  const mod = await importOriginal<typeof import('@storybook/global')>();
-  const global = Object.create(
-    Object.getPrototypeOf(mod.global),
-    Object.getOwnPropertyDescriptors(mod.global)
-  );
-  global.fetch = vi.fn().mockRejectedValue(new Error('network disabled in test'));
-  return { ...mod, global };
+import type { API, Combo, State } from '../root.tsx';
+import { Provider as ManagerProvider } from '../root.tsx';
+
+// The stories module fetches the index on init. Reject `fetch` so init settles into indexError
+// instead of hitting the network.
+beforeEach(() => {
+  vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('network disabled in test')));
 });
 
-afterEach(() => {
+afterEach(async () => {
+  await vi.dynamicImportSettled();
   cleanup();
 });
 
@@ -57,15 +50,15 @@ describe('ManagerProvider', () => {
     let api: API | undefined;
     let latestState: State | undefined;
 
-    // Simulate an addon that calls experimental_setFilter synchronously from its register callback.
+    // Simulate an addon that calls setFilter synchronously from its register callback.
     // handleAPI runs in the constructor, before the component mounts.
     const provider = {
-      channel: mockChannel(),
+      channel: new Channel({}),
       getConfig: () => ({}),
       getElements: () => ({}),
       handleAPI: (a: API) => {
         api = a;
-        a.experimental_setFilter('addon-filter', (item) => !item.id.includes('hidden'));
+        a.setFilter('addon-filter', (item) => !item.id.includes('hidden'));
       },
     };
 

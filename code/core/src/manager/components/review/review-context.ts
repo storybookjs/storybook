@@ -43,11 +43,6 @@ export interface ReviewContextValue {
 
 const noop = () => {};
 
-/**
- * The default value doubles as the feature-off state: with no provider mounted,
- * consumers see no review and inert callbacks, so surfaces like the sidebar
- * widget render nothing without touching the (unregistered) review service.
- */
 const emptyReviewContextValue: ReviewContextValue = {
   review: null,
   pendingReview: null,

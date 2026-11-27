@@ -1,0 +1,5 @@
+<script>
+  import Input from './Input.svelte';
+</script>
+
+<Input value="typed" disabled placeholder="Name" />

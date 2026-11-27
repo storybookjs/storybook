@@ -1361,7 +1361,25 @@ function renderSubcomponentNote(
   `;
 }
 
-const parseReactDocgenTypescript = (reactDocgenTypescript: RdtComponentDoc): ParsedDocgen => {
+// RDT's enum payload carries both `raw` and a `value` array of literal members. For a
+// named-alias enum (`type Size = 'small' | 'medium' | 'large'`), `raw` holds only the alias
+// name ('Size'), so prefer the expanded members — for an inline union they join back to the
+// exact string `raw` already holds (issue #35778).
+const docgenTypeString = (propType?: {
+  name?: string;
+  raw?: string;
+  value?: { value: string }[];
+}): string | undefined => {
+  const members = (propType?.value ?? []).map((member) => member.value);
+  if (members.length > 0) {
+    return members.join(' | ');
+  }
+  return propType?.raw ?? propType?.name;
+};
+
+export const parseReactDocgenTypescript = (
+  reactDocgenTypescript: RdtComponentDoc
+): ParsedDocgen => {
   const props: Record<string, PropItem> = reactDocgenTypescript.props ?? {};
   return {
     props: Object.fromEntries(
@@ -1370,8 +1388,9 @@ const parseReactDocgenTypescript = (reactDocgenTypescript: RdtComponentDoc): Par
         {
           description: prop.description,
           // RDT uses prop.type.name as a flat string (e.g. "() => void", "{ id: string }")
-          // For enums, prefer prop.type.raw which has the full union
-          type: prop.type?.raw ?? prop.type?.name,
+          // For enums, prefer prop.type.raw which has the full union; for a named-alias enum
+          // raw only holds the alias name, so use the expanded members instead (issue #35778)
+          type: docgenTypeString(prop.type),
           defaultValue: prop.defaultValue?.value,
           required: prop.required,
         },
@@ -1380,7 +1399,9 @@ const parseReactDocgenTypescript = (reactDocgenTypescript: RdtComponentDoc): Par
   };
 };
 
-const parseReactComponentMeta = (reactComponentMeta: ReactComponentMetaDoc): ParsedDocgen => {
+export const parseReactComponentMeta = (
+  reactComponentMeta: ReactComponentMetaDoc
+): ParsedDocgen => {
   const props = reactComponentMeta.props ?? {};
   return {
     props: Object.fromEntries(
@@ -1388,7 +1409,7 @@ const parseReactComponentMeta = (reactComponentMeta: ReactComponentMetaDoc): Par
         propName,
         {
           description: prop.description,
-          type: prop.type?.raw ?? prop.type?.name,
+          type: docgenTypeString(prop.type),
           defaultValue: prop.defaultValue?.value,
           required: prop.required,
         },

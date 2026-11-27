@@ -49,11 +49,15 @@ export class ComponentMetaManager<
   private inferredProject: P | undefined;
   private rootTsConfigs = new Set<string>();
   private searchedDirs = new Set<string>();
+  private referencedTsConfigs = new Map<string, string[]>();
 
   // Our own file watching layer
   private watching = false;
   private watchersByDir = new Map<string, FSWatcher>();
-  private pendingEvents = new Map<string, ReturnType<typeof setTimeout>>();
+  private pendingEvents = new Map<
+    string,
+    { timeout: ReturnType<typeof setTimeout>; renamed: boolean }
+  >();
 
   // Heap-pressure recycle: bytes of `heapUsed` past which the TS program(s) are disposed and rebuilt.
   private readonly heapRecycleThresholdBytes: number;
@@ -96,16 +100,44 @@ export class ComponentMetaManager<
   }
 
   /**
+   * Group the files of a batch by the project that extracts them: the project of each group's
+   * `projectFile`.
+   *
+   * A file goes to the project that extracts it, which is not always the project it belongs to: a
+   * component can live under another tsconfig than the story that imports it.
+   */
+  groupFilesByProject(groups: { projectFile: string; files: string[] }[]): Map<P, string[]> {
+    const groupsByProjectFile = Map.groupBy(groups, (g) => g.projectFile);
+    this.discoverTsConfigsAbove(groupsByProjectFile.keys());
+    const filesByProject = new Map<P, Set<string>>();
+    for (const [projectFile, projectFileGroups] of groupsByProjectFile) {
+      const project = this.getProjectForFile(projectFile);
+      const files = filesByProject.get(project) ?? new Set<string>();
+      filesByProject.set(project, files);
+      for (const group of projectFileGroups) {
+        group.files.forEach((file) => files.add(file));
+      }
+    }
+    return new Map(Array.from(filesByProject, ([project, files]) => [project, [...files]]));
+  }
+
+  private discoverTsConfigsAbove(files: Iterable<string>): void {
+    for (const file of files) {
+      this.findMatchTSConfig(file);
+    }
+  }
+
+  /**
    * Reclaim the shared program(s)' resident type-resolution cache when heap usage approaches the V8
    * limit, preventing the next extraction's spike from OOMing the dev server. Callers with a
    * batch-extraction surface invoke this after each batch.
    */
-  protected recycleProjectsIfHeapPressured(): void {
+  protected recycleProjectsIfHeapPressured(): boolean {
     if (this.configProjects.size === 0 && !this.inferredProject) {
-      return;
+      return false;
     }
     if (process.memoryUsage().heapUsed < this.heapRecycleThresholdBytes) {
-      return;
+      return false;
     }
 
     // We crossed the heap-pressure threshold. Recycling reclaims the type cache and usually prevents
@@ -113,7 +145,7 @@ export class ComponentMetaManager<
     // their memory limit rather than silently paying repeated rebuilds (or eventually crashing).
     const heapLimitMb = Math.round(v8.getHeapStatistics().heap_size_limit / (1024 * 1024));
     once.warn(dedent`
-      Storybook's experimental docgen server is nearing the Node.js memory limit (~${heapLimitMb} MB) while extracting component types, and recycled its TypeScript program to avoid an out-of-memory crash. This can briefly slow down the docs and Controls panels.
+      Storybook's docgen server is nearing the Node.js memory limit (~${heapLimitMb} MB) while extracting component types, and recycled its TypeScript program to avoid an out-of-memory crash. This can briefly slow down the docs and Controls panels.
 
       If this happens often, raise Node's memory limit before starting Storybook, for example:
         NODE_OPTIONS="--max-old-space-size=${heapLimitMb * 2}"
@@ -124,8 +156,10 @@ export class ComponentMetaManager<
     }
     this.inferredProject?.dispose();
     this.configProjects.clear();
+    this.referencedTsConfigs.clear();
     this.inferredProject = undefined;
     this.factory.recycle?.();
+    return true;
   }
 
   // ---------------------------------------------------------------------------
@@ -207,23 +241,26 @@ export class ComponentMetaManager<
       )) {
         const project = this.configProjects.get(rootTsConfig);
         if (project) {
-          let chains = getReferencesChains(project.getCommandLine(), rootTsConfig, []);
+          let referenced = this.referencedTsConfigs.get(rootTsConfig);
+          if (!referenced) {
+            // This is to be consistent with tsserver behavior
+            const chains = getReferencesChains(
+              project.getCommandLine(),
+              rootTsConfig,
+              []
+            ).reverse();
+            referenced = [...new Set(chains.flatMap((chain) => chain.toReversed()))];
+            this.referencedTsConfigs.set(rootTsConfig, referenced);
+          }
 
-          // This is to be consistent with tsserver behavior
-          chains = chains.reverse();
+          for (const tsconfig of referenced) {
+            if (checked.has(tsconfig)) {
+              continue;
+            }
+            checked.add(tsconfig);
 
-          for (const chain of chains) {
-            for (let i = chain.length - 1; i >= 0; i--) {
-              const tsconfig = chain[i];
-
-              if (checked.has(tsconfig)) {
-                continue;
-              }
-              checked.add(tsconfig);
-
-              if (match(tsconfig)) {
-                return tsconfig;
-              }
+            if (match(tsconfig)) {
+              return tsconfig;
             }
           }
         }
@@ -369,6 +406,7 @@ export class ComponentMetaManager<
     // Clear searchedDirs so findMatchTSConfig re-scans directories.
     // Without this, new tsconfigs in previously-scanned dirs would be invisible.
     this.searchedDirs.clear();
+    this.referencedTsConfigs.clear();
   }
 
   // ---------------------------------------------------------------------------
@@ -492,15 +530,21 @@ export class ComponentMetaManager<
 
         const existing = this.pendingEvents.get(filePath);
         if (existing) {
-          clearTimeout(existing);
+          clearTimeout(existing.timeout);
         }
+        // Windows reports writing a new file as `rename` (FILE_ACTION_ADDED) followed by `change`
+        // (FILE_ACTION_MODIFIED). A `rename` anywhere in the burst must survive, or the file is
+        // treated as an edit and projects never see it was created.
+        // https://learn.microsoft.com/en-us/dotnet/api/system.io.filesystemwatcher.created#remarks
+        // https://github.com/libuv/libuv/blob/v1.51.0/src/win/fs-event.c#L540-L548
+        const renamed = eventType === 'rename' || (existing?.renamed ?? false);
 
-        this.pendingEvents.set(
-          filePath,
-          setTimeout(() => {
+        this.pendingEvents.set(filePath, {
+          renamed,
+          timeout: setTimeout(() => {
             this.pendingEvents.delete(filePath);
 
-            if (eventType === 'rename') {
+            if (renamed) {
               if (existsSync(filePath)) {
                 this.handleFileEvent(filePath, 'created');
               } else {
@@ -509,8 +553,8 @@ export class ComponentMetaManager<
             } else {
               this.handleFileEvent(filePath, 'changed');
             }
-          }, 50)
-        );
+          }, 50),
+        });
       });
       watcher.unref();
       this.watchersByDir.set(normalized, watcher);
@@ -520,7 +564,7 @@ export class ComponentMetaManager<
   }
 
   stopWatching(): void {
-    for (const timeout of this.pendingEvents.values()) {
+    for (const { timeout } of this.pendingEvents.values()) {
       clearTimeout(timeout);
     }
     this.pendingEvents.clear();
@@ -574,6 +618,7 @@ export class ComponentMetaManager<
     this.factory.dispose?.();
     this.searchedDirs.clear();
     this.rootTsConfigs.clear();
+    this.referencedTsConfigs.clear();
   }
 }
 

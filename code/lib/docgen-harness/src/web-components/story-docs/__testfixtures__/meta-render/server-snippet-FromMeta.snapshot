@@ -1,0 +1,1 @@
+html`<meta-render label=${'from-meta'}></meta-render>`

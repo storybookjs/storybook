@@ -27,7 +27,7 @@ function registerStubStoriesToolset(
       description: 'stub',
       methods: {
         preview: {
-          input: v.object({ id: v.string() }),
+          input: v.strictObject({ id: v.string() }),
           output: v.object({ stories: v.array(v.object({ previewUrl: v.string() })) }),
           title: 'Get story preview URLs',
           description: (ctx) => `describes ${ctx.transport}`,
@@ -134,7 +134,7 @@ describe('toolset-backed MCP tools', () => {
         description: 'stub',
         methods: {
           changed: {
-            input: v.object({}),
+            input: v.strictObject({}),
             title: 'Get changed stories metadata',
             description: 'changed',
             handler: async () => ({ ok: true, data: { stories: [] }, markdown: 'no changes' }),
@@ -261,6 +261,48 @@ describe('toolset-backed MCP tools', () => {
 
     const result = await callToolsetMethod(
       makeServer({
+        endpoint: '/mcp',
+        request: new Request('http://localhost:6006/nested/mcp', { method: 'POST' }),
+      }),
+      previewOptions,
+      { id: 'button--primary' }
+    );
+
+    expect(result.content[0]).toEqual({
+      type: 'text',
+      text: 'http://localhost:6006/nested',
+    });
+  });
+
+  it('prefers the configured base path over the request path in the toolset origin', async () => {
+    registerStubStoriesToolset({
+      handler: async (_input, ctx) => ({ ok: true, data: { stories: [] }, markdown: ctx.origin }),
+    });
+
+    const result = await callToolsetMethod(
+      makeServer({
+        basePath: '/__storybook/',
+        endpoint: '/mcp',
+        request: new Request('http://localhost:6006/nested/mcp', { method: 'POST' }),
+      }),
+      previewOptions,
+      { id: 'button--primary' }
+    );
+
+    expect(result.content[0]).toEqual({
+      type: 'text',
+      text: 'http://localhost:6006/__storybook',
+    });
+  });
+
+  it('still uses the request subpath when Storybook is served from the root', async () => {
+    registerStubStoriesToolset({
+      handler: async (_input, ctx) => ({ ok: true, data: { stories: [] }, markdown: ctx.origin }),
+    });
+
+    const result = await callToolsetMethod(
+      makeServer({
+        basePath: '/',
         endpoint: '/mcp',
         request: new Request('http://localhost:6006/nested/mcp', { method: 'POST' }),
       }),

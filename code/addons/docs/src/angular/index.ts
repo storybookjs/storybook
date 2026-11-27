@@ -6,11 +6,11 @@ let warnedRedundant = false;
 export const setCompodocJson = (compodocJson: any) => {
   // Storybook extracts Angular metadata on the server under this feature, and reads neither this
   // value nor Compodoc itself.
-  if (globalThis.FEATURES?.experimentalDocgenServer) {
+  if (globalThis.FEATURES?.docgenServer) {
     if (!warnedRedundant) {
       warnedRedundant = true;
       logger.warn(
-        'setCompodocJson() had no effect: with the experimentalDocgenServer feature enabled, Storybook extracts Angular metadata on the server and never reads Compodoc output. You can delete the setCompodocJson call and the documentation.json import from your preview config.'
+        'setCompodocJson() had no effect: with the docgenServer feature enabled, Storybook extracts Angular metadata on the server and never reads Compodoc output. You can delete the setCompodocJson call and the documentation.json import from your preview config.'
       );
     }
     return;

@@ -8,6 +8,8 @@ export interface ModuleResolverOptions {
   extensions?: string[];
   mainFields?: string[];
   conditionNames?: string[];
+  /** Extensions to try in place of a written one, such as `{ '.js': ['.ts', '.js'] }`. */
+  extensionAlias?: Record<string, string[]>;
   /** Honor `paths`/`baseUrl` from a tsconfig. `'auto'` walks up from the resolution origin. */
   tsconfig?: 'auto' | { configFile: string };
 }

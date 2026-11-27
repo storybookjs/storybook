@@ -15,7 +15,10 @@ export class LitSlotsAndCss extends LitElement {
   heading = 'Details';
 
   render() {
-    return html`<section part="panel"><h2>${this.heading}</h2><slot></slot><slot name="actions"></slot></section>`;
+    return html`<section part="panel">
+      <h2>${this.heading}</h2>
+      <slot></slot><slot name="actions"></slot>
+    </section>`;
   }
 }
 

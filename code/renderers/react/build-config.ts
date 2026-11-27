@@ -34,6 +34,12 @@ const config: BuildEntries = {
     ],
     node: [
       {
+        // Builder docgen package checks, shared with `@storybook/react-vite` and
+        // `@storybook/preset-react-webpack`.
+        exportEntries: ['./internal/builder-docgen'],
+        entryPoint: './src/builder-docgen.ts',
+      },
+      {
         exportEntries: ['./preset'],
         entryPoint: './src/preset.ts',
         dts: false,

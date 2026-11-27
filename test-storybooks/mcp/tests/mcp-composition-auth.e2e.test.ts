@@ -8,6 +8,7 @@ import {
 	startStorybook,
 	stopStorybook,
 } from './helpers';
+import { startRefFixtures, type RefFixtures } from './ref-fixtures.ts';
 
 const PORT = 6008;
 const MCP_ENDPOINT = `http://localhost:${PORT}/mcp`;
@@ -15,6 +16,7 @@ const WELL_KNOWN_ENDPOINT = `http://localhost:${PORT}/.well-known/oauth-protecte
 const STARTUP_TIMEOUT = 30_000;
 
 let storybookProcess: ReturnType<typeof x> | null = null;
+let fixtures: RefFixtures | null = null;
 
 async function mcpRequest(method: string, params: any = {}, token?: string) {
 	const headers: Record<string, string> = {
@@ -34,13 +36,16 @@ async function mcpRequest(method: string, params: any = {}, token?: string) {
 describe('MCP Composition Auth E2E Tests', () => {
 	beforeAll(async () => {
 		await killPort(PORT);
-		storybookProcess = startStorybook('.storybook-composition-auth', PORT);
+		fixtures = await startRefFixtures();
+		({ storybookProcess } = await startStorybook('.storybook-composition-auth', PORT, fixtures.env));
 		await waitForMcpEndpoint(MCP_ENDPOINT, { acceptStatuses: [401] });
 	}, STARTUP_TIMEOUT);
 
 	afterAll(async () => {
 		await stopStorybook(storybookProcess);
 		storybookProcess = null;
+		await fixtures?.close();
+		fixtures = null;
 	});
 
 	describe('OAuth Discovery', () => {
@@ -49,18 +54,11 @@ describe('MCP Composition Auth E2E Tests', () => {
 			expect(response.status).toBe(200);
 
 			const metadata = await response.json();
-			expect(metadata).toMatchInlineSnapshot(`
-				{
-				  "authorization_servers": [
-				    "https://www.chromatic.com",
-				  ],
-				  "resource": "http://localhost:6008/mcp",
-				  "scopes_supported": [
-				    "storybook:read",
-				    "project:read",
-				  ],
-				}
-			`);
+			expect(metadata).toEqual({
+				authorization_servers: [fixtures!.privateRefUrl],
+				resource: `http://localhost:${PORT}/mcp`,
+				scopes_supported: ['storybook:read', 'project:read'],
+			});
 		});
 
 		it('should point resource to the local MCP endpoint', async () => {
@@ -142,6 +140,23 @@ describe('MCP Composition Auth E2E Tests', () => {
 
 				Primary UI component for user interaction
 
+				## Props
+
+				\`\`\`
+				export type Props = {
+				  /** Is this the principal call to action on the page? */
+				  primary?: boolean = false;
+				  /** What background color to use */
+				  backgroundColor?: string;
+				  /** How large should the button be? */
+				  size?: 'small' | 'medium' | 'large' = 'medium';
+				  /** Button contents */
+				  label: string;
+				  /** Optional click handler */
+				  onClick?: () => void;
+				}
+				\`\`\`
+
 				## Stories
 
 				### Primary
@@ -179,35 +194,10 @@ describe('MCP Composition Auth E2E Tests', () => {
 
 				### Other Stories
 
+				Get the code of one of these stories with the docs-show-story tool and its story ID.
+
 				- Small (example-button--small)
 				- With A 11 Y Violation (example-button--with-a-11-y-violation)
-
-				## Props
-
-				\`\`\`
-				export type Props = {
-				  /**
-				    Is this the principal call to action on the page?
-				  */
-				  primary?: boolean = false;
-				  /**
-				    What background color to use
-				  */
-				  backgroundColor?: string;
-				  /**
-				    How large should the button be?
-				  */
-				  size?: 'small' | 'medium' | 'large' = 'medium';
-				  /**
-				    Button contents
-				  */
-				  label: string;
-				  /**
-				    Optional click handler
-				  */
-				  onClick?: () => void;
-				}
-				\`\`\`
 
 				## Docs
 
@@ -246,7 +236,7 @@ describe('MCP Composition Auth E2E Tests', () => {
 			expect(response.headers.get('www-authenticate')).toContain('resource_metadata=');
 		});
 
-		it('should require storybookId in multi-source auth mode', async () => {
+		it('should default docs-show to the local source when storybookId is omitted', async () => {
 			const response = await mcpRequest(
 				'tools/call',
 				{
@@ -257,17 +247,10 @@ describe('MCP Composition Auth E2E Tests', () => {
 			);
 			const data = await parseMCPResponse(response);
 
-			expect(data.result).toMatchInlineSnapshot(`
-				{
-				  "content": [
-				    {
-				      "text": "Invalid arguments for tool docs-show: [{"kind":"schema","type":"object","expected":"\\"storybookId\\"","received":"undefined","message":"Invalid key: Expected \\"storybookId\\" but received undefined","path":[{"type":"object","origin":"key","input":{"id":"example-button"},"key":"storybookId"}]}]",
-				      "type": "text",
-				    },
-				  ],
-				  "isError": true,
-				}
-			`);
+			expect(data.result.isError).toBeFalsy();
+			const text = data.result.content[0].text;
+			expect(text).toContain('ID: example-button');
+			expect(text).toContain('🍌-emoji');
 		});
 	});
 });

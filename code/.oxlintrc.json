@@ -1,6 +1,11 @@
 {
   "$schema": "../node_modules/oxlint/configuration_schema.json",
   "extends": ["../.oxlintrc.json"],
+  "settings": {
+    "react": {
+      "version": "18.2.0"
+    }
+  },
   "jsPlugins": [
     { "name": "local-rules", "specifier": "../scripts/eslint-plugin-local-rules/index.js" },
     "eslint-plugin-storybook",
@@ -12,12 +17,11 @@
     "**/*.svelte",
     "storybook-static",
     "built-storybooks",
-    "ember-output",
     "**/__testfixtures__",
     "**/__mockdata__",
+    "**/__corpus__/inputs",
     "core/assets",
     "core/report",
-    "core/src/core-server/utils/__search-files-tests__",
     "lib/cli-storybook/test/default/cli.test.cjs",
     "sandbox"
   ],
@@ -90,35 +94,15 @@
       }
     },
     {
-      "files": ["core/src/cli/tools/**"],
+      "files": ["**/*.ts", "**/*.tsx"],
       "rules": {
-        "no-restricted-imports": [
-          "error",
-          {
-            "patterns": [
-              {
-                "group": ["**/cli/ai/**", "../ai/**"],
-                "message": "The `storybook ai` CLI is slated for removal, so it depends on `cli/tools`, never the other way around. Move what you need into `cli/tools/` instead."
-              }
-            ]
-          }
-        ]
+        "local-rules/no-untracked-service-state-key-check": "error"
       }
     },
     {
-      "files": ["core/src/cli/skills/**"],
+      "files": ["renderers/react/src/componentManifest/**", "lib/angular-cm/src/**"],
       "rules": {
-        "no-restricted-imports": [
-          "error",
-          {
-            "patterns": [
-              {
-                "group": ["**/cli/ai/**", "../ai/**"],
-                "message": "The `storybook ai` CLI is slated for removal, so it depends on `cli/skills`, never the other way around. Move what you need into `cli/skills/` instead."
-              }
-            ]
-          }
-        ]
+        "local-rules/docgen-node-fields-through-contract": "error"
       }
     },
     {
@@ -129,16 +113,52 @@
           {
             "patterns": [
               {
-                "group": ["**/cli/ai/**", "../ai/**"],
-                "message": "The `storybook ai` CLI is slated for removal, so it depends on `cli/skills`, never the other way around."
-              },
-              {
                 "group": ["**/core-server/**"],
                 "message": "`cli/skills/content` is the pure `storybook/internal/skills` entry; probing and anything server-side belongs in `cli/skills/` outside `content/`."
               }
             ]
           }
         ]
+      }
+    },
+    {
+      "files": ["lib/cli-storybook/src/automigrate/fixes/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "node:fs",
+                "allowImportNames": ["existsSync"],
+                "message": "Read and write project files through `files` or a `transform` hook, so the automigration runner can stage, check, and report them. See lib/cli-storybook/src/automigrate/README.md."
+              },
+              {
+                "name": "fs",
+                "allowImportNames": ["existsSync"],
+                "message": "Read and write project files through `files` or a `transform` hook, so the automigration runner can stage, check, and report them. See lib/cli-storybook/src/automigrate/README.md."
+              },
+              {
+                "name": "node:fs/promises",
+                "message": "Read and write project files through `files` or a `transform` hook, so the automigration runner can stage, check, and report them. See lib/cli-storybook/src/automigrate/README.md."
+              },
+              {
+                "name": "fs/promises",
+                "message": "Read and write project files through `files` or a `transform` hook, so the automigration runner can stage, check, and report them. See lib/cli-storybook/src/automigrate/README.md."
+              },
+              {
+                "name": "p-limit",
+                "message": "The automigration runner already visits files in one pass. See lib/cli-storybook/src/automigrate/README.md."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["lib/cli-storybook/src/automigrate/fixes/**/*.test.ts"],
+      "rules": {
+        "no-restricted-imports": "off"
       }
     },
     {
@@ -195,6 +215,7 @@
         "storybook/no-redundant-story-name": "warn",
         "storybook/no-renderer-packages": "error",
         "storybook/prefer-pascal-case": "warn",
+        "storybook/static-csf-properties": "error",
         "storybook/story-exports": "error",
         "storybook/use-storybook-expect": "error",
         "storybook/use-storybook-testing-library": "error"
@@ -204,6 +225,12 @@
       "files": ["**/renderers/**/*.stories.*", "**/core/template/**/*.stories.*"],
       "rules": {
         "storybook/no-renderer-packages": "off"
+      }
+    },
+    {
+      "files": ["renderers/*/src/__test__/**/*.stories.*"],
+      "rules": {
+        "storybook/default-exports": "off"
       }
     },
     {

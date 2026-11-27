@@ -1,8 +1,6 @@
 import type { ArgTypes, PreparedStory } from 'storybook/internal/types';
 import type { Args, StoryId } from 'storybook/internal/types';
 
-import { global } from '@storybook/global';
-
 import { DEEPLY_EQUAL, combineArgs, deepDiff, mapArgsToTypes, validateOptions } from './args.ts';
 import { inferArgTypes } from './inferArgTypes.ts';
 
@@ -19,7 +17,7 @@ function deleteUndefined(obj: Record<string, any>) {
  * types those passes need without putting them back on the story.
  */
 const argTypesForValidation = (story: PreparedStory<any>): ArgTypes =>
-  global.FEATURES?.experimentalDocgenServer
+  globalThis.FEATURES?.docgenServer
     ? inferArgTypes({
         id: story.id,
         argTypes: story.argTypes,
@@ -32,7 +30,7 @@ export class ArgsStore {
 
   argsByStoryId: Record<StoryId, Args> = {};
 
-  get(storyId: StoryId) {
+  get(storyId: StoryId): Args {
     if (!(storyId in this.argsByStoryId)) {
       throw new Error(`No args known for ${storyId} -- has it been rendered yet?`);
     }

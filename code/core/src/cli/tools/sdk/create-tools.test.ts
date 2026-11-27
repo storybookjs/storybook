@@ -10,6 +10,7 @@ import {
   type AnyToolsetOutcome,
 } from '../../../shared/open-service/toolset-definition.ts';
 import { getToolName } from '../../../shared/open-service/toolset-names.ts';
+import type { StorybookInstanceRecord } from '../instances/types.ts';
 import { createTools } from './create-tools.ts';
 import {
   AttachUnavailableError,
@@ -32,33 +33,33 @@ const echo = defineToolset({
     ok: {
       title: 'Echo the input',
       description: 'Echo the input back.',
-      input: v.object({ value: v.string() }),
+      input: v.strictObject({ value: v.string() }),
       output: v.object({ value: v.string() }),
       handler: async (input) => ({ ok: true as const, data: input, markdown: input.value }),
     },
     bad: {
       title: 'Report bad news',
       description: 'Report bad news without throwing.',
-      input: v.object({}),
+      input: v.strictObject({}),
       handler: async () => ({ ok: false as const, data: { reason: 'nope' }, markdown: 'nope' }),
     },
     live: {
       title: 'Need a dev server',
       description: 'Needs a running Storybook.',
-      input: v.object({}),
+      input: v.strictObject({}),
       requiresDevServer: true,
       handler: async () => ({ ok: true as const, data: {}, markdown: '' }),
     },
     sibling: {
       title: 'Point at a sibling',
       description: (ctx) => `See ${getToolName(ctx)('echo.ok')}.`,
-      input: v.object({}),
+      input: v.strictObject({}),
       handler: async () => ({ ok: true as const, data: {}, markdown: '' }),
     },
     counted: {
       title: 'Report a count',
       description: 'Reports usage, then succeeds.',
-      input: v.object({}),
+      input: v.strictObject({}),
       handler: async () => ({
         ok: true as const,
         data: {},
@@ -69,7 +70,7 @@ const echo = defineToolset({
     slow: {
       title: 'Delay',
       description: 'Resolves after a tick unless aborted.',
-      input: v.object({}),
+      input: v.strictObject({}),
       handler: async () => {
         await new Promise((resolve) => setTimeout(resolve, 50));
         return { ok: true as const, data: { ran: true }, markdown: 'ran' };
@@ -322,6 +323,79 @@ describe('createTools', () => {
     expect(fallback.fallbackNotice).toContain('port 9999');
   });
 
+  it('falls back without a notice when the connection to the instance failed', async () => {
+    vi.mocked(attach).mockRejectedValueOnce(
+      new AttachUnavailableError({
+        reason: 'connection-failed',
+        instances: [],
+        remediation: 'Could not connect to the Storybook at http://localhost:6006.',
+      })
+    );
+
+    const fallback = await createTools({}, { attach });
+
+    expect(fallback.mode).toBe('local');
+    expect(fallback.fallbackReason).toBe('connection-failed');
+    expect(fallback.fallbackNotice).toBeUndefined();
+    expect(fallback.attachFailure).toBe(
+      'Could not connect to the Storybook at http://localhost:6006.'
+    );
+  });
+
+  it('keeps the notice for a failed connection to the instance that `port` named', async () => {
+    vi.mocked(attach).mockRejectedValueOnce(
+      new AttachUnavailableError({
+        reason: 'connection-failed',
+        instances: [],
+        remediation: 'Could not connect to the Storybook at http://localhost:6007.',
+      })
+    );
+
+    const fallback = await createTools({ port: 6007 }, { attach });
+
+    expect(fallback.fallbackNotice).toContain('Could not connect to the Storybook');
+    expect(fallback.fallbackNotice).toContain('Falling back');
+  });
+
+  it('states the attach failure when a requiresDevServer method runs after a fallback', async () => {
+    const record = { url: 'http://localhost:6006', port: 6006 } as StorybookInstanceRecord;
+    vi.mocked(attach).mockRejectedValueOnce(
+      new AttachUnavailableError({
+        reason: 'connection-failed',
+        instances: [record],
+        remediation: 'Could not connect to the Storybook at http://localhost:6006.',
+      })
+    );
+    const fallback = await createTools({}, { attach });
+
+    const call = fallback.call('echo.live');
+
+    await expect(call).rejects.toMatchObject({
+      data: { reason: 'connection-failed', instances: [record] },
+    });
+    await expect(call).rejects.toThrow(
+      '`echo.live` requires a running Storybook dev server, and could not attach to one:\n\nCould not connect to the Storybook at http://localhost:6006.'
+    );
+  });
+
+  it.each([
+    ['environment-mismatch', new EnvironmentMismatchError({ reason: 'Different installations.' })],
+    ['spawn-failed', new SpawnFailedError({ reason: 'Could not start a child host.' })],
+  ] as const)(
+    'keeps the kind of the %s attach error for a requiresDevServer method after a fallback',
+    async (_reason, attachError) => {
+      vi.mocked(attach).mockRejectedValueOnce(attachError);
+      const fallback = await createTools({}, { attach });
+
+      const call = fallback.call('echo.live');
+
+      await expect(call).rejects.toBeInstanceOf(attachError.constructor);
+      await expect(call).rejects.toThrow(
+        `\`echo.live\` requires a running Storybook dev server, and could not attach to one:\n\n${attachError.message}`
+      );
+    }
+  );
+
   it('runs a requiresDevServer method when attached', async () => {
     const attach = vi.fn(async () => ({
       runtime: makeRuntime(),
@@ -428,7 +502,7 @@ describe('createTools', () => {
         reason: 'no-instance',
         instances: [],
         remediation:
-          'No running Storybook was found for this project. Start it first (for example `npm run storybook`), then retry with `--attach`.',
+          'No running Storybook was found for this project. Start it first with the Storybook script in its `package.json`, then retry with `--attach`.',
       })
     );
 
@@ -444,6 +518,7 @@ describe('createTools', () => {
     expect(fallback.host).toBe('in-process');
     expect(fallback.fallbackReason).toBe('no-instance');
     expect(fallback.fallbackNotice).toBeUndefined();
+    expect(fallback.attachFailure).toBeUndefined();
   });
 
   it('falls back to a local child host when auto cannot attach from another cwd', async () => {
@@ -463,7 +538,7 @@ describe('createTools', () => {
         reason: 'no-instance',
         instances: [],
         remediation:
-          'No running Storybook was found for this project. Start it first (for example `npm run storybook`), then retry with `--attach`.',
+          'No running Storybook was found for this project. Start it first with the Storybook script in its `package.json`, then retry with `--attach`.',
       })
     );
     vi.mocked(spawnChild).mockResolvedValue(spawned);
@@ -528,6 +603,29 @@ describe('createTools', () => {
     await expect(localLoadFailure).rejects.toThrow('Falling back');
   });
 
+  it('states the failed connection when the local load also fails', async () => {
+    const failure = createTools(
+      {},
+      {
+        attach: async () => {
+          throw new AttachUnavailableError({
+            reason: 'connection-failed',
+            instances: [],
+            remediation: 'Could not connect to the Storybook at http://localhost:6006.',
+          });
+        },
+        bootstrap: async () => {
+          throw new Error('main.ts has a syntax error');
+        },
+      }
+    );
+
+    await expect(failure).rejects.toThrow('main.ts has a syntax error');
+    await expect(failure).rejects.toThrow(
+      'Could not connect to the Storybook at http://localhost:6006.'
+    );
+  });
+
   it('keeps spawn and mode-unavailable reasons when auto local fallback also fails', async () => {
     const attachUnavailable = async () => {
       throw new AttachUnavailableError({
@@ -569,7 +667,7 @@ describe('createTools', () => {
               ping: {
                 title: 'Ping',
                 description: 'ping',
-                input: v.object({}),
+                input: v.strictObject({}),
                 handler: async (_input, ctx) => ({
                   ok: true as const,
                   data: { origin: ctx.origin },
@@ -768,7 +866,7 @@ describe('call', () => {
         never: {
           title: 'Hang',
           description: 'hang',
-          input: v.object({}),
+          input: v.strictObject({}),
           handler: () => new Promise<AnyToolsetOutcome>(() => {}),
         },
       },

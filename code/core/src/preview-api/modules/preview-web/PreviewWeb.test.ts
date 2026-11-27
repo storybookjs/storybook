@@ -27,9 +27,8 @@ import {
   UPDATE_GLOBALS,
   UPDATE_STORY_ARGS,
 } from 'storybook/internal/core-events';
+import { ArgTypesRemovedFromStoryContextError } from 'storybook/internal/preview-errors';
 import type { ModuleImportFn, ProjectAnnotations, Renderer } from 'storybook/internal/types';
-
-import { global } from '@storybook/global';
 
 import { toMerged } from 'es-toolkit/object';
 
@@ -55,24 +54,21 @@ import {
 } from './PreviewWeb.mockdata.ts';
 import { WebView } from './WebView.ts';
 
-const { history, document } = global;
-
 const mockStoryIndex = vi.fn(() => storyIndex);
 
+const history = { replaceState: vi.fn() };
 let mockFetchResult: any;
-vi.mock('@storybook/global', async (importOriginal) => ({
-  global: {
-    ...(await importOriginal<typeof import('@storybook/global')>),
-    history: { replaceState: vi.fn() },
-    document: {
-      location: {
-        pathname: 'pathname',
-        search: '?id=*',
-      },
-    },
-    fetch: async () => mockFetchResult,
-  },
-}));
+
+// Preview reads `fetch` once when it loads, so stub it before the imports run. Vitest unstubs
+// globals before each test, but Preview keeps the function it read.
+vi.hoisted(() => {
+  vi.stubGlobal('fetch', async () => mockFetchResult);
+});
+
+beforeEach(() => {
+  vi.stubGlobal('history', history);
+  vi.stubGlobal('location', { pathname: 'pathname', search: '?id=*' });
+});
 
 vi.mock('storybook/internal/client-logger');
 vi.mock('react-dom');
@@ -112,7 +108,7 @@ async function createAndRenderPreview({
 }
 
 beforeEach(() => {
-  document.location.search = '';
+  location.search = '';
   mockChannel.emit.mockClear();
   emitter.removeAllListeners();
   componentOneExports.default.loaders[0].mockReset().mockImplementation(async () => ({ l: 7 }));
@@ -160,7 +156,7 @@ describe('PreviewWeb', () => {
     });
 
     it('sets globals from the URL', async () => {
-      document.location.search = '?id=*&globals=a:c';
+      location.search = '?id=*&globals=a:c';
 
       const preview = await createAndRenderPreview();
 
@@ -198,7 +194,7 @@ describe('PreviewWeb', () => {
     });
 
     it('emits the SET_GLOBALS event from the URL', async () => {
-      document.location.search = '?id=*&globals=a:c';
+      location.search = '?id=*&globals=a:c';
 
       await createAndRenderPreview();
 
@@ -209,7 +205,7 @@ describe('PreviewWeb', () => {
     });
 
     it('sets args from the URL', async () => {
-      document.location.search = '?id=component-one--a&args=foo:url';
+      location.search = '?id=component-one--a&args=foo:url';
 
       const preview = await createAndRenderPreview();
 
@@ -223,7 +219,7 @@ describe('PreviewWeb', () => {
     });
 
     it('prepares story with args from the URL', async () => {
-      document.location.search = '?id=component-one--a&args=foo:url';
+      location.search = '?id=component-one--a&args=foo:url';
 
       await createAndRenderPreview();
 
@@ -253,7 +249,7 @@ describe('PreviewWeb', () => {
 
   describe('initial selection', () => {
     it('selects the story specified in the URL', async () => {
-      document.location.search = '?id=component-one--a';
+      location.search = '?id=component-one--a';
 
       const preview = await createAndRenderPreview();
 
@@ -269,7 +265,7 @@ describe('PreviewWeb', () => {
     });
 
     it('emits the STORY_SPECIFIED event', async () => {
-      document.location.search = '?id=component-one--a';
+      location.search = '?id=component-one--a';
 
       await createAndRenderPreview();
 
@@ -280,7 +276,7 @@ describe('PreviewWeb', () => {
     });
 
     it('emits the CURRENT_STORY_WAS_SET event', async () => {
-      document.location.search = '?id=component-one--a';
+      location.search = '?id=component-one--a';
 
       await createAndRenderPreview();
 
@@ -292,7 +288,7 @@ describe('PreviewWeb', () => {
 
     describe('when the first entry is a docs entry', () => {
       it('emits the STORY_SPECIFIED event with viewMode=docs', async () => {
-        document.location.search = '?id=*';
+        location.search = '?id=*';
         await createAndRenderPreview();
 
         expect(mockChannel.emit).toHaveBeenCalledWith(STORY_SPECIFIED, {
@@ -304,7 +300,7 @@ describe('PreviewWeb', () => {
 
     describe('if the story specified does not exist', () => {
       it('renders a loading error', async () => {
-        document.location.search = '?id=random';
+        location.search = '?id=random';
 
         const preview = await createAndRenderPreview();
 
@@ -313,7 +309,7 @@ describe('PreviewWeb', () => {
       });
 
       it('tries again with a specifier if CSF file changes', async () => {
-        document.location.search = '?id=component-one--missing';
+        location.search = '?id=component-one--missing';
 
         const preview = await createAndRenderPreview();
 
@@ -363,7 +359,7 @@ describe('PreviewWeb', () => {
         });
 
         it('DOES NOT try again if CSF file changes', async () => {
-          document.location.search = '?id=component-one--missing';
+          location.search = '?id=component-one--missing';
 
           const preview = await createAndRenderPreview();
 
@@ -419,7 +415,7 @@ describe('PreviewWeb', () => {
 
     describe('story entries', () => {
       it('calls view.prepareForStory', async () => {
-        document.location.search = '?id=component-one--a';
+        location.search = '?id=component-one--a';
 
         const preview = await createAndRenderPreview();
 
@@ -432,7 +428,7 @@ describe('PreviewWeb', () => {
       });
 
       it('emits STORY_PREPARED', async () => {
-        document.location.search = '?id=component-one--a';
+        location.search = '?id=component-one--a';
         await createAndRenderPreview();
 
         expect(mockChannel.emit).toHaveBeenCalledWith(STORY_PREPARED, {
@@ -454,7 +450,7 @@ describe('PreviewWeb', () => {
       });
 
       it('emits GLOBALS_UPDATED with initial global values', async () => {
-        document.location.search = '?id=component-one--a';
+        location.search = '?id=component-one--a';
         await createAndRenderPreview();
 
         await waitForEvents([GLOBALS_UPDATED]);
@@ -468,7 +464,7 @@ describe('PreviewWeb', () => {
 
       describe('if the story sets globals', () => {
         it('emits GLOBALS_UPDATED with overridden storyGlobals', async () => {
-          document.location.search = '?id=component-one--a';
+          location.search = '?id=component-one--a';
           const newImportFn = vi.fn(async (path) => {
             if (path === './src/ComponentOne.stories.js') {
               return {
@@ -491,7 +487,7 @@ describe('PreviewWeb', () => {
       });
 
       it('applies loaders with story context', async () => {
-        document.location.search = '?id=component-one--a';
+        location.search = '?id=component-one--a';
         await createAndRenderPreview();
 
         expect(componentOneExports.default.loaders[0]).toHaveBeenCalledWith(
@@ -505,17 +501,15 @@ describe('PreviewWeb', () => {
               throwPlayFunctionExceptions: false,
             },
             initialArgs: { foo: 'a', one: 1 },
-            argTypes: {
-              foo: { name: 'foo', type: { name: 'string' } },
-              one: { name: 'one', type: { name: 'string' }, mapping: { 1: 'mapped-1' } },
-            },
             args: { foo: 'a', one: 'mapped-1' },
           })
         );
+        const loaderContext = componentOneExports.default.loaders[0].mock.calls[0][0];
+        expect(() => loaderContext.argTypes).toThrow(ArgTypesRemovedFromStoryContextError);
       });
 
       it('passes loaded context to renderToCanvas', async () => {
-        document.location.search = '?id=component-one--a';
+        location.search = '?id=component-one--a';
         await createAndRenderPreview();
 
         expect(projectAnnotations.renderToCanvas).toHaveBeenCalledWith(
@@ -548,7 +542,7 @@ describe('PreviewWeb', () => {
           throw error;
         });
 
-        document.location.search = '?id=component-one--a';
+        location.search = '?id=component-one--a';
         const preview = await createAndRenderPreview();
 
         expect(mockChannel.emit).toHaveBeenCalledWith(STORY_THREW_EXCEPTION, serializeError(error));
@@ -561,7 +555,7 @@ describe('PreviewWeb', () => {
           throw error;
         });
 
-        document.location.search = '?id=component-one--a';
+        location.search = '?id=component-one--a';
         const preview = await createAndRenderPreview();
 
         expect(mockChannel.emit).toHaveBeenCalledWith(STORY_THREW_EXCEPTION, serializeError(error));
@@ -569,7 +563,7 @@ describe('PreviewWeb', () => {
       });
 
       it('renders helpful message if renderToCanvas is undefined', async () => {
-        document.location.search = '?id=component-one--a';
+        location.search = '?id=component-one--a';
 
         getProjectAnnotations.mockReturnValueOnce({
           ...projectAnnotations,
@@ -604,7 +598,7 @@ describe('PreviewWeb', () => {
             },
           });
 
-          document.location.search = '?id=component-one--a';
+          location.search = '?id=component-one--a';
           const preview = await createAndRenderPreview();
 
           expect(mockChannel.emit).toHaveBeenCalledWith(
@@ -634,7 +628,7 @@ describe('PreviewWeb', () => {
             },
           });
 
-          document.location.search = '?id=component-one--a';
+          location.search = '?id=component-one--a';
           const preview = await createAndRenderPreview();
 
           expect(mockChannel.emit).toHaveBeenCalledWith(
@@ -655,7 +649,7 @@ describe('PreviewWeb', () => {
           context.showException(error)
         );
 
-        document.location.search = '?id=component-one--a';
+        location.search = '?id=component-one--a';
         const preview = await createAndRenderPreview();
 
         expect(mockChannel.emit).toHaveBeenCalledWith(STORY_THREW_EXCEPTION, serializeError(error));
@@ -666,7 +660,7 @@ describe('PreviewWeb', () => {
         const error = { title: 'title', description: 'description' };
         projectAnnotations.renderToCanvas.mockImplementation((context) => context.showError(error));
 
-        document.location.search = '?id=component-one--a';
+        location.search = '?id=component-one--a';
         const preview = await createAndRenderPreview();
 
         expect(mockChannel.emit).toHaveBeenCalledWith(STORY_ERRORED, error);
@@ -677,14 +671,14 @@ describe('PreviewWeb', () => {
       });
 
       it('executes playFunction', async () => {
-        document.location.search = '?id=component-one--a';
+        location.search = '?id=component-one--a';
         await createAndRenderPreview();
 
         expect(componentOneExports.a.play).toHaveBeenCalled();
       });
 
       it('emits STORY_RENDERED', async () => {
-        document.location.search = '?id=component-one--a';
+        location.search = '?id=component-one--a';
         await createAndRenderPreview();
 
         expect(mockChannel.emit).toHaveBeenCalledWith(STORY_RENDERED, 'component-one--a');
@@ -693,7 +687,7 @@ describe('PreviewWeb', () => {
 
     describe('CSF docs entries', () => {
       it('emits DOCS_PREPARED', async () => {
-        document.location.search = '?id=component-one--docs';
+        location.search = '?id=component-one--docs';
         await createAndRenderPreview();
 
         expect(mockChannel.emit).toHaveBeenCalledWith(DOCS_PREPARED, {
@@ -706,21 +700,21 @@ describe('PreviewWeb', () => {
       });
 
       it('always renders in docs viewMode', async () => {
-        document.location.search = '?id=component-one--docs';
+        location.search = '?id=component-one--docs';
         await createAndRenderPreview();
 
         expect(mockChannel.emit).toHaveBeenCalledWith(DOCS_RENDERED, 'component-one--docs');
       });
 
       it('calls view.prepareForDocs', async () => {
-        document.location.search = '?id=component-one--docs&viewMode=docs';
+        location.search = '?id=component-one--docs&viewMode=docs';
         const preview = await createAndRenderPreview();
 
         expect(preview.view.prepareForDocs).toHaveBeenCalled();
       });
 
       it('renders with docs parameters from the first story', async () => {
-        document.location.search = '?id=component-one--docs&viewMode=docs';
+        location.search = '?id=component-one--docs&viewMode=docs';
         await createAndRenderPreview();
 
         expect(docsRenderer.render).toHaveBeenCalledWith(
@@ -734,14 +728,14 @@ describe('PreviewWeb', () => {
       });
 
       it('loads imports of the docs entry', async () => {
-        document.location.search = '?id=component-one--docs&viewMode=docs';
+        location.search = '?id=component-one--docs&viewMode=docs';
         await createAndRenderPreview();
 
         expect(importFn).toHaveBeenCalledWith('./src/ExtraComponentOne.stories.js');
       });
 
       it('renders with componentStories loaded from the attached CSF file', async () => {
-        document.location.search = '?id=component-one--docs&viewMode=docs';
+        location.search = '?id=component-one--docs&viewMode=docs';
         await createAndRenderPreview();
 
         const context = docsRenderer.render.mock.calls[0][0];
@@ -754,7 +748,7 @@ describe('PreviewWeb', () => {
       });
 
       it('emits DOCS_RENDERED', async () => {
-        document.location.search = '?id=component-one--docs&viewMode=docs';
+        location.search = '?id=component-one--docs&viewMode=docs';
 
         await createAndRenderPreview();
 
@@ -764,14 +758,14 @@ describe('PreviewWeb', () => {
 
     describe('MDX docs entries', () => {
       it('always renders in docs viewMode', async () => {
-        document.location.search = '?id=introduction--docs';
+        location.search = '?id=introduction--docs';
         await createAndRenderPreview();
 
         expect(mockChannel.emit).toHaveBeenCalledWith(DOCS_RENDERED, 'introduction--docs');
       });
 
       it('emits DOCS_PREPARED', async () => {
-        document.location.search = '?id=introduction--docs';
+        location.search = '?id=introduction--docs';
         await createAndRenderPreview();
 
         expect(mockChannel.emit).toHaveBeenCalledWith(DOCS_PREPARED, {
@@ -784,7 +778,7 @@ describe('PreviewWeb', () => {
 
       describe('attached', () => {
         it('emits DOCS_PREPARED with component parameters', async () => {
-          document.location.search = '?id=component-one--attached-docs';
+          location.search = '?id=component-one--attached-docs';
           await createAndRenderPreview();
 
           expect(mockChannel.emit).toHaveBeenCalledWith(DOCS_PREPARED, {
@@ -798,14 +792,14 @@ describe('PreviewWeb', () => {
       });
 
       it('calls view.prepareForDocs', async () => {
-        document.location.search = '?id=component-one--docs&viewMode=docs';
+        location.search = '?id=component-one--docs&viewMode=docs';
         const preview = await createAndRenderPreview();
 
         expect(preview.view.prepareForDocs).toHaveBeenCalled();
       });
 
       it('renders with the generated docs parameters', async () => {
-        document.location.search = '?id=introduction--docs&viewMode=docs';
+        location.search = '?id=introduction--docs&viewMode=docs';
         await createAndRenderPreview();
 
         expect(docsRenderer.render).toHaveBeenCalledWith(
@@ -819,14 +813,14 @@ describe('PreviewWeb', () => {
       });
 
       it('loads imports of the docs entry', async () => {
-        document.location.search = '?id=introduction--docs';
+        location.search = '?id=introduction--docs';
         await createAndRenderPreview();
 
         expect(importFn).toHaveBeenCalledWith('./src/ComponentTwo.stories.js');
       });
 
       it('emits DOCS_RENDERED', async () => {
-        document.location.search = '?id=component-one--docs&viewMode=docs';
+        location.search = '?id=component-one--docs&viewMode=docs';
 
         await createAndRenderPreview();
 
@@ -842,7 +836,7 @@ describe('PreviewWeb', () => {
     });
 
     it('emits GLOBALS_UPDATED', async () => {
-      document.location.search = '?id=component-one--a';
+      location.search = '?id=component-one--a';
       await createAndRenderPreview();
 
       emitter.emit(UPDATE_GLOBALS, { globals: { a: 'c' } });
@@ -872,7 +866,7 @@ describe('PreviewWeb', () => {
       );
 
       it('allows changes to globals the story did not set', async () => {
-        document.location.search = '?id=component-one--a';
+        location.search = '?id=component-one--a';
         await createAndRenderPreview({
           importFn: newImportFn,
           getProjectAnnotations: newGetProjectAnnotations,
@@ -891,7 +885,7 @@ describe('PreviewWeb', () => {
       });
 
       it('does not allow changes to globals the story sets', async () => {
-        document.location.search = '?id=component-one--a';
+        location.search = '?id=component-one--a';
         await createAndRenderPreview({
           importFn: newImportFn,
           getProjectAnnotations: newGetProjectAnnotations,
@@ -911,7 +905,7 @@ describe('PreviewWeb', () => {
     });
 
     it('doet not allow new globals on the store', async () => {
-      document.location.search = '?id=component-one--a';
+      location.search = '?id=component-one--a';
       const preview = await createAndRenderPreview();
 
       emitter.emit(UPDATE_GLOBALS, { globals: { foo: 'bar' } });
@@ -925,7 +919,7 @@ describe('PreviewWeb', () => {
     });
 
     it('passes globals in context to renderToCanvas', async () => {
-      document.location.search = '?id=component-one--a';
+      location.search = '?id=component-one--a';
       await createAndRenderPreview();
 
       mockChannel.emit.mockClear();
@@ -945,7 +939,7 @@ describe('PreviewWeb', () => {
     });
 
     it('emits STORY_RENDERED', async () => {
-      document.location.search = '?id=component-one--a';
+      location.search = '?id=component-one--a';
       await createAndRenderPreview();
 
       mockChannel.emit.mockClear();
@@ -957,16 +951,37 @@ describe('PreviewWeb', () => {
 
     describe('in docs mode', () => {
       it('re-renders the docs container', async () => {
-        document.location.search = '?id=component-one--docs&viewMode=docs';
+        location.search = '?id=component-one--docs&viewMode=docs';
 
         await createAndRenderPreview();
 
         mockChannel.emit.mockClear();
         docsRenderer.render.mockClear();
         emitter.emit(UPDATE_GLOBALS, { globals: { a: 'd' } });
-        await waitForEvents([GLOBALS_UPDATED]);
+        await waitForEvents([DOCS_RENDERED]);
 
         expect(docsRenderer.render).toHaveBeenCalled();
+      });
+
+      it('waits for inline stories to rerender before rerendering the docs container', async () => {
+        location.search = '?id=component-one--docs&viewMode=docs';
+        const preview = await createAndRenderPreview();
+        const [inlineStoryRerender, finishInlineStoryRerender] = createGate();
+        const rerenderInlineStory = vi.fn(() => inlineStoryRerender);
+        preview.storyRenders.push({
+          rerender: rerenderInlineStory,
+        } as unknown as (typeof preview.storyRenders)[number]);
+        const rerenderDocs = vi.spyOn(preview.currentRender!, 'rerender');
+
+        const updateGlobals = preview.onUpdateGlobals({ globals: { a: 'd' } });
+        await vi.waitFor(() => expect(rerenderInlineStory).toHaveBeenCalled());
+
+        expect(rerenderDocs).not.toHaveBeenCalled();
+
+        finishInlineStoryRerender();
+        await updateGlobals;
+
+        expect(rerenderDocs).toHaveBeenCalledOnce();
       });
     });
   });
@@ -978,7 +993,7 @@ describe('PreviewWeb', () => {
     });
 
     it('emits STORY_ARGS_UPDATED', async () => {
-      document.location.search = '?id=component-one--a';
+      location.search = '?id=component-one--a';
       await createAndRenderPreview();
 
       emitter.emit(UPDATE_STORY_ARGS, {
@@ -994,7 +1009,7 @@ describe('PreviewWeb', () => {
     });
 
     it('sets new args on the store', async () => {
-      document.location.search = '?id=component-one--a';
+      location.search = '?id=component-one--a';
       const preview = await createAndRenderPreview();
 
       emitter.emit(UPDATE_STORY_ARGS, {
@@ -1015,7 +1030,7 @@ describe('PreviewWeb', () => {
     });
 
     it('passes new args in context to renderToCanvas', async () => {
-      document.location.search = '?id=component-one--a';
+      location.search = '?id=component-one--a';
       await createAndRenderPreview();
 
       mockChannel.emit.mockClear();
@@ -1039,7 +1054,7 @@ describe('PreviewWeb', () => {
     });
 
     it('emits STORY_RENDERED', async () => {
-      document.location.search = '?id=component-one--a';
+      location.search = '?id=component-one--a';
       await createAndRenderPreview();
 
       mockChannel.emit.mockClear();
@@ -1054,7 +1069,7 @@ describe('PreviewWeb', () => {
 
     describe('if play function destructures mount', () => {
       it('passes forceRemount to renderToCanvas', async () => {
-        document.location.search = '?id=component-one--a';
+        location.search = '?id=component-one--a';
         const newImportFn = vi.fn(async (path) => {
           if (path === './src/ComponentOne.stories.js') {
             return {
@@ -1093,7 +1108,7 @@ describe('PreviewWeb', () => {
         const [loadersRanGate, openLoadersRanGate] = createGate();
         const [blockLoadersGate, openBlockLoadersGate] = createGate();
 
-        document.location.search = '?id=component-one--a';
+        location.search = '?id=component-one--a';
         componentOneExports.default.loaders[0].mockImplementationOnce(async (input) => {
           openLoadersRanGate();
           return blockLoadersGate;
@@ -1166,7 +1181,7 @@ describe('PreviewWeb', () => {
       it('renders a second time after the already running renderToCanvas is done', async () => {
         const [gate, openGate] = createGate();
 
-        document.location.search = '?id=component-one--a';
+        location.search = '?id=component-one--a';
         projectAnnotations.renderToCanvas.mockImplementation(async () => gate);
 
         await new PreviewWeb(importFn, getProjectAnnotations).ready();
@@ -1220,7 +1235,7 @@ describe('PreviewWeb', () => {
           });
         });
 
-        document.location.search = '?id=component-one--a';
+        location.search = '?id=component-one--a';
         await new PreviewWeb(importFn, getProjectAnnotations).ready();
         await waitForRenderPhase('playing');
 
@@ -1264,7 +1279,7 @@ describe('PreviewWeb', () => {
 
     describe('in docs mode', () => {
       it('does not re-render the docs container', async () => {
-        document.location.search = '?id=component-one--docs&viewMode=docs';
+        location.search = '?id=component-one--docs&viewMode=docs';
 
         await createAndRenderPreview();
 
@@ -1282,7 +1297,7 @@ describe('PreviewWeb', () => {
       describe('when renderStoryToElement was called', () => {
         const callbacks = { showMain: vi.fn(), showError: vi.fn(), showException: vi.fn() };
         it('re-renders the story', async () => {
-          document.location.search = '?id=component-one--docs&viewMode=docs';
+          location.search = '?id=component-one--docs&viewMode=docs';
 
           const preview = await createAndRenderPreview();
           await waitForRender();
@@ -1323,7 +1338,7 @@ describe('PreviewWeb', () => {
         });
 
         it('does not re-render the story when forceInitialArgs=true', async () => {
-          document.location.search = '?id=component-one--docs&viewMode=docs';
+          location.search = '?id=component-one--docs&viewMode=docs';
 
           const preview = await createAndRenderPreview();
           await waitForRender();
@@ -1365,7 +1380,7 @@ describe('PreviewWeb', () => {
 
   describe('onPreloadStories', () => {
     it('loads stories', async () => {
-      document.location.search = '?id=component-one--docs&viewMode=docs';
+      location.search = '?id=component-one--docs&viewMode=docs';
       const preview = await createAndRenderPreview();
       await waitForRender();
 
@@ -1375,7 +1390,7 @@ describe('PreviewWeb', () => {
     });
 
     it('loads legacy docs entries', async () => {
-      document.location.search = '?id=component-one--docs&viewMode=docs';
+      location.search = '?id=component-one--docs&viewMode=docs';
       const preview = await createAndRenderPreview();
       await waitForRender();
 
@@ -1385,7 +1400,7 @@ describe('PreviewWeb', () => {
     });
 
     it('loads modern docs entries', async () => {
-      document.location.search = '?id=component-one--docs&viewMode=docs';
+      location.search = '?id=component-one--docs&viewMode=docs';
       const preview = await createAndRenderPreview();
       await waitForRender();
 
@@ -1394,7 +1409,7 @@ describe('PreviewWeb', () => {
       expect(importFn).toHaveBeenCalledWith('./src/Introduction.mdx');
     });
     it('loads imports of modern docs entries', async () => {
-      document.location.search = '?id=component-one--docs&viewMode=docs';
+      location.search = '?id=component-one--docs&viewMode=docs';
       const preview = await createAndRenderPreview();
       await waitForRender();
 
@@ -1402,11 +1417,102 @@ describe('PreviewWeb', () => {
       await preview.onPreloadStories({ ids: ['introduction--docs'] });
       expect(importFn).toHaveBeenCalledWith('./src/ComponentTwo.stories.js');
     });
+
+    it('starts the newest batch once the one in flight finishes', async () => {
+      location.search = '?id=component-one--docs&viewMode=docs';
+      const preview = await createAndRenderPreview();
+      await waitForRender();
+
+      vi.mocked(importFn).mockClear();
+      const [gate, openGate] = createGate();
+      vi.mocked(importFn).mockImplementationOnce(() => gate.then(() => componentTwoExports));
+      const inFlight = preview.onPreloadStories({ ids: ['component-two--c'] });
+      await vi.waitFor(() =>
+        expect(importFn).toHaveBeenCalledWith('./src/ComponentTwo.stories.js')
+      );
+
+      const next = preview.onPreloadStories({ ids: ['component-one--e'] });
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      expect(importFn).not.toHaveBeenCalledWith('./src/ExtraComponentOne.stories.js');
+
+      openGate();
+      await Promise.all([inFlight, next]);
+      expect(importFn).toHaveBeenCalledWith('./src/ExtraComponentOne.stories.js');
+    });
+
+    it('drops a batch superseded before it starts', async () => {
+      location.search = '?id=component-one--docs&viewMode=docs';
+      const preview = await createAndRenderPreview();
+      await waitForRender();
+
+      vi.mocked(importFn).mockClear();
+      const [gate, openGate] = createGate();
+      vi.mocked(importFn).mockImplementationOnce(() => gate.then(() => componentTwoExports));
+      const inFlight = preview.onPreloadStories({ ids: ['component-two--c'] });
+      await vi.waitFor(() =>
+        expect(importFn).toHaveBeenCalledWith('./src/ComponentTwo.stories.js')
+      );
+
+      const superseded = preview.onPreloadStories({ ids: ['component-one--e'] });
+      const newest = preview.onPreloadStories({ ids: ['introduction--docs'] });
+      openGate();
+      await Promise.all([inFlight, superseded, newest]);
+
+      expect(importFn).toHaveBeenCalledWith('./src/Introduction.mdx');
+      expect(importFn).not.toHaveBeenCalledWith('./src/ExtraComponentOne.stories.js');
+    });
+
+    it('does not let a sibling request replace a waiting hover request', async () => {
+      location.search = '?id=component-one--docs&viewMode=docs';
+      const preview = await createAndRenderPreview();
+      await waitForRender();
+
+      vi.mocked(importFn).mockClear();
+      const [gate, openGate] = createGate();
+      vi.mocked(importFn).mockImplementationOnce(() => gate.then(() => componentTwoExports));
+      const inFlight = preview.onPreloadStories({ ids: ['component-two--c'], source: 'hover' });
+      await vi.waitFor(() =>
+        expect(importFn).toHaveBeenCalledWith('./src/ComponentTwo.stories.js')
+      );
+
+      const hover = preview.onPreloadStories({ ids: ['component-one--e'], source: 'hover' });
+      const sibling = preview.onPreloadStories({ ids: ['component-one--a'], source: 'sibling' });
+      openGate();
+      await Promise.all([inFlight, hover, sibling]);
+
+      expect(importFn).toHaveBeenCalledWith('./src/ExtraComponentOne.stories.js');
+      expect(importFn).toHaveBeenCalledWith('./src/ComponentOne.stories.js');
+    });
+
+    it('runs a waiting sibling request after the interactive ones', async () => {
+      location.search = '?id=component-one--docs&viewMode=docs';
+      const preview = await createAndRenderPreview();
+      await waitForRender();
+
+      vi.mocked(importFn).mockClear();
+      const [gate, openGate] = createGate();
+      vi.mocked(importFn).mockImplementationOnce(() => gate.then(() => componentTwoExports));
+      const inFlight = preview.onPreloadStories({ ids: ['component-two--c'], source: 'hover' });
+      await vi.waitFor(() =>
+        expect(importFn).toHaveBeenCalledWith('./src/ComponentTwo.stories.js')
+      );
+
+      const sibling = preview.onPreloadStories({ ids: ['component-one--a'], source: 'sibling' });
+      const hover = preview.onPreloadStories({ ids: ['component-one--e'], source: 'hover' });
+      openGate();
+      await Promise.all([inFlight, sibling, hover]);
+
+      expect(vi.mocked(importFn).mock.calls.map(([path]) => path)).toEqual([
+        './src/ComponentTwo.stories.js',
+        './src/ExtraComponentOne.stories.js',
+        './src/ComponentOne.stories.js',
+      ]);
+    });
   });
 
   describe('onResetArgs', () => {
     it('emits STORY_ARGS_UPDATED', async () => {
-      document.location.search = '?id=component-one--a';
+      location.search = '?id=component-one--a';
       await createAndRenderPreview();
 
       mockChannel.emit.mockClear();
@@ -1436,7 +1542,7 @@ describe('PreviewWeb', () => {
     });
 
     it('resets a single arg', async () => {
-      document.location.search = '?id=component-one--a';
+      location.search = '?id=component-one--a';
       const preview = await createAndRenderPreview();
       const onUpdateArgsSpy = vi.spyOn(preview, 'onUpdateArgs');
 
@@ -1479,7 +1585,7 @@ describe('PreviewWeb', () => {
     });
 
     it('resets all args after one is updated', async () => {
-      document.location.search = '?id=component-one--a';
+      location.search = '?id=component-one--a';
       const preview = await createAndRenderPreview();
       const onUpdateArgsSpy = vi.spyOn(preview, 'onUpdateArgs');
 
@@ -1520,7 +1626,7 @@ describe('PreviewWeb', () => {
     });
 
     it('resets all args', async () => {
-      document.location.search = '?id=component-one--a';
+      location.search = '?id=component-one--a';
       const preview = await createAndRenderPreview();
       const onUpdateArgsSpy = vi.spyOn(preview, 'onUpdateArgs');
 
@@ -1561,7 +1667,7 @@ describe('PreviewWeb', () => {
     });
 
     it('resets all args when one arg is undefined', async () => {
-      document.location.search = '?id=component-one--a';
+      location.search = '?id=component-one--a';
       const preview = await createAndRenderPreview();
       const onUpdateArgsSpy = vi.spyOn(preview, 'onUpdateArgs');
 
@@ -1604,7 +1710,7 @@ describe('PreviewWeb', () => {
 
   describe('on FORCE_RE_RENDER', () => {
     it('rerenders the story with the same args', async () => {
-      document.location.search = '?id=component-one--a';
+      location.search = '?id=component-one--a';
       await createAndRenderPreview();
 
       mockChannel.emit.mockClear();
@@ -1628,7 +1734,7 @@ describe('PreviewWeb', () => {
     });
 
     it('remounts the story with the same args', async () => {
-      document.location.search = '?id=component-one--a';
+      location.search = '?id=component-one--a';
       await createAndRenderPreview();
 
       mockChannel.emit.mockClear();
@@ -1645,7 +1751,7 @@ describe('PreviewWeb', () => {
     it('aborts render function for initial story', async () => {
       const [gate, openGate] = createGate();
 
-      document.location.search = '?id=component-one--a';
+      location.search = '?id=component-one--a';
       projectAnnotations.renderToCanvas.mockImplementation(async () => gate);
       await new PreviewWeb(importFn, getProjectAnnotations).ready();
       await waitForRenderPhase('rendering');
@@ -1684,6 +1790,99 @@ describe('PreviewWeb', () => {
     });
   });
 
+  describe('concurrent renderSelection calls', () => {
+    it('drops a selection that was superseded while the previous render was tearing down', async () => {
+      const [teardownGate, openTeardownGate] = createGate();
+      const [replacementGate, openReplacementGate] = createGate();
+      let replacementLoadStarted = () => {};
+      const replacementStarted = new Promise<void>((resolve) => {
+        replacementLoadStarted = resolve;
+      });
+
+      location.search = '?id=component-one--a';
+      const preview = await createAndRenderPreview();
+
+      teardownrenderToCanvas.mockImplementationOnce(async () => teardownGate);
+      preview.selectionStore.setSelection({
+        storyId: 'component-one--b',
+        viewMode: 'story',
+      });
+      // @ts-expect-error Ignore protected method
+      const selectionB = preview.renderSelection();
+      await vi.waitFor(() => expect(teardownrenderToCanvas).toHaveBeenCalledOnce());
+
+      componentOneExports.default.loaders[0].mockImplementationOnce(async () => {
+        replacementLoadStarted();
+        return replacementGate;
+      });
+      preview.selectionStore.setSelection({
+        storyId: 'component-one--a',
+        viewMode: 'story',
+      });
+      // @ts-expect-error Ignore protected method
+      const selectionA = preview.renderSelection();
+      await replacementStarted;
+
+      mockChannel.emit.mockClear();
+      openTeardownGate();
+      await selectionB;
+
+      expect(mockChannel.emit).not.toHaveBeenCalledWith(
+        STORY_PREPARED,
+        expect.objectContaining({ id: 'component-one--b' })
+      );
+      expect(projectAnnotations.renderToCanvas).toHaveBeenCalledOnce();
+
+      openReplacementGate({ l: 9 });
+      await selectionA;
+    });
+
+    it('tears down a superseded docs render so it cannot be reused without rendering', async () => {
+      const [teardownGate, openTeardownGate] = createGate();
+      const [replacementGate, openReplacementGate] = createGate();
+      let replacementLoadStarted = () => {};
+      const replacementStarted = new Promise<void>((resolve) => {
+        replacementLoadStarted = resolve;
+      });
+
+      location.search = '?id=component-one--a';
+      const preview = await createAndRenderPreview();
+
+      teardownrenderToCanvas.mockImplementationOnce(async () => teardownGate);
+      preview.selectionStore.setSelection({
+        storyId: 'component-one--docs',
+        viewMode: 'docs',
+      });
+      // @ts-expect-error Ignore protected method
+      const selectionDocs = preview.renderSelection();
+      await vi.waitFor(() => expect(teardownrenderToCanvas).toHaveBeenCalledOnce());
+
+      componentOneExports.default.loaders[0].mockImplementationOnce(async () => {
+        replacementLoadStarted();
+        return replacementGate;
+      });
+      preview.selectionStore.setSelection({
+        storyId: 'component-one--a',
+        viewMode: 'story',
+      });
+      // @ts-expect-error Ignore protected method
+      const selectionA = preview.renderSelection();
+      await replacementStarted;
+
+      mockChannel.emit.mockClear();
+      openTeardownGate();
+      await selectionDocs;
+
+      expect(mockChannel.emit).not.toHaveBeenCalledWith(
+        DOCS_PREPARED,
+        expect.objectContaining({ id: 'component-one--docs' })
+      );
+
+      openReplacementGate({ l: 9 });
+      await selectionA;
+    });
+  });
+
   describe('onSetCurrentStory', () => {
     beforeEach(() => {
       vi.useFakeTimers();
@@ -1693,7 +1892,7 @@ describe('PreviewWeb', () => {
     });
 
     it('updates URL', async () => {
-      document.location.search = '?id=component-one--a';
+      location.search = '?id=component-one--a';
       await createAndRenderPreview();
 
       emitter.emit(SET_CURRENT_STORY, {
@@ -1710,7 +1909,7 @@ describe('PreviewWeb', () => {
     });
 
     it('emits CURRENT_STORY_WAS_SET', async () => {
-      document.location.search = '?id=component-one--a';
+      location.search = '?id=component-one--a';
       await createAndRenderPreview();
 
       emitter.emit(SET_CURRENT_STORY, {
@@ -1731,7 +1930,7 @@ describe('PreviewWeb', () => {
     });
 
     it('renders loading error if the story specified does not exist', async () => {
-      document.location.search = '?id=component-one--a';
+      location.search = '?id=component-one--a';
       const preview = await createAndRenderPreview();
 
       emitter.emit(SET_CURRENT_STORY, {
@@ -1747,7 +1946,7 @@ describe('PreviewWeb', () => {
 
     describe('if called before the preview is readyd', () => {
       it('works when there was no selection specifier', async () => {
-        document.location.search = '';
+        location.search = '';
         // We intentionally are *not* awaiting here
         new PreviewWeb(importFn, getProjectAnnotations).ready();
 
@@ -1772,7 +1971,7 @@ describe('PreviewWeb', () => {
       });
 
       it('works when there was a selection specifier', async () => {
-        document.location.search = '?id=component-one--a';
+        location.search = '?id=component-one--a';
 
         const readyd = new PreviewWeb(importFn, getProjectAnnotations).ready();
 
@@ -1822,7 +2021,7 @@ describe('PreviewWeb', () => {
 
     describe('if the selection is unchanged', () => {
       it('emits STORY_UNCHANGED', async () => {
-        document.location.search = '?id=component-one--a';
+        location.search = '?id=component-one--a';
         await createAndRenderPreview();
 
         emitter.emit(SET_CURRENT_STORY, {
@@ -1836,7 +2035,7 @@ describe('PreviewWeb', () => {
       });
 
       it('does NOT call renderToCanvas', async () => {
-        document.location.search = '?id=component-one--a';
+        location.search = '?id=component-one--a';
         await createAndRenderPreview();
 
         projectAnnotations.renderToCanvas.mockClear();
@@ -1852,7 +2051,7 @@ describe('PreviewWeb', () => {
       });
 
       it('does NOT call renderToCanvas teardown', async () => {
-        document.location.search = '?id=component-one--a';
+        location.search = '?id=component-one--a';
         await createAndRenderPreview();
 
         projectAnnotations.renderToCanvas.mockClear();
@@ -1868,7 +2067,7 @@ describe('PreviewWeb', () => {
       describe('while preparing', () => {
         // For https://github.com/storybookjs/storybook/issues/17214
         it('does NOT render a second time in story mode', async () => {
-          document.location.search = '?id=component-one--a';
+          location.search = '?id=component-one--a';
 
           const [gate, openGate] = createGate();
           const [importedGate, openImportedGate] = createGate();
@@ -1915,7 +2114,7 @@ describe('PreviewWeb', () => {
 
         // For https://github.com/storybookjs/storybook/issues/19015
         it('does NOT render a second time in template docs mode', async () => {
-          document.location.search = '?id=component-one--docs&viewMode=docs';
+          location.search = '?id=component-one--docs&viewMode=docs';
 
           const [gate, openGate] = createGate();
           const [importedGate, openImportedGate] = createGate();
@@ -1961,7 +2160,7 @@ describe('PreviewWeb', () => {
         });
 
         it('does NOT render a second time in mdx docs mode', async () => {
-          document.location.search = '?id=introduction--docs&viewMode=docs';
+          location.search = '?id=introduction--docs&viewMode=docs';
 
           const [gate, openGate] = createGate();
           const [importedGate, openImportedGate] = createGate();
@@ -2010,7 +2209,7 @@ describe('PreviewWeb', () => {
 
     describe('when changing story in story viewMode', () => {
       it('calls renderToCanvas teardown', async () => {
-        document.location.search = '?id=component-one--a';
+        location.search = '?id=component-one--a';
         await createAndRenderPreview();
 
         projectAnnotations.renderToCanvas.mockClear();
@@ -2025,7 +2224,7 @@ describe('PreviewWeb', () => {
       });
 
       it('updates URL', async () => {
-        document.location.search = '?id=component-one--a';
+        location.search = '?id=component-one--a';
         await createAndRenderPreview();
 
         emitter.emit(SET_CURRENT_STORY, {
@@ -2042,7 +2241,7 @@ describe('PreviewWeb', () => {
       });
 
       it('renders preparing state', async () => {
-        document.location.search = '?id=component-one--a';
+        location.search = '?id=component-one--a';
         const preview = await createAndRenderPreview();
 
         emitter.emit(SET_CURRENT_STORY, {
@@ -2055,7 +2254,7 @@ describe('PreviewWeb', () => {
       });
 
       it('emits STORY_CHANGED', async () => {
-        document.location.search = '?id=component-one--a';
+        location.search = '?id=component-one--a';
         await createAndRenderPreview();
 
         mockChannel.emit.mockClear();
@@ -2070,7 +2269,7 @@ describe('PreviewWeb', () => {
       });
 
       it('emits STORY_PREPARED', async () => {
-        document.location.search = '?id=component-one--a';
+        location.search = '?id=component-one--a';
         await createAndRenderPreview();
 
         mockChannel.emit.mockClear();
@@ -2098,7 +2297,7 @@ describe('PreviewWeb', () => {
       });
 
       it('emits GLOBALS_UPDATED with initial global values', async () => {
-        document.location.search = '?id=component-one--a';
+        location.search = '?id=component-one--a';
         await createAndRenderPreview();
 
         mockChannel.emit.mockClear();
@@ -2119,7 +2318,7 @@ describe('PreviewWeb', () => {
 
       describe('if the story sets globals', () => {
         it('emits GLOBALS_UPDATED with overridden storyGlobals', async () => {
-          document.location.search = '?id=component-one--a';
+          location.search = '?id=component-one--a';
           const newImportFn = vi.fn(async (path) => {
             if (path === './src/ComponentOne.stories.js') {
               return {
@@ -2149,7 +2348,7 @@ describe('PreviewWeb', () => {
       });
 
       it('applies loaders with story context', async () => {
-        document.location.search = '?id=component-one--a';
+        location.search = '?id=component-one--a';
         await createAndRenderPreview();
 
         mockChannel.emit.mockClear();
@@ -2169,17 +2368,13 @@ describe('PreviewWeb', () => {
               fileName: './src/ComponentOne.stories.js',
             }),
             initialArgs: { foo: 'b', one: 1 },
-            argTypes: {
-              foo: { name: 'foo', type: { name: 'string' } },
-              one: { name: 'one', type: { name: 'string' }, mapping: { 1: 'mapped-1' } },
-            },
             args: { foo: 'b', one: 'mapped-1' },
           })
         );
       });
 
       it('passes loaded context to renderToCanvas', async () => {
-        document.location.search = '?id=component-one--a';
+        location.search = '?id=component-one--a';
         await createAndRenderPreview();
 
         mockChannel.emit.mockClear();
@@ -2215,7 +2410,7 @@ describe('PreviewWeb', () => {
       });
 
       it('renders exception if renderToCanvas throws', async () => {
-        document.location.search = '?id=component-one--a';
+        location.search = '?id=component-one--a';
         const preview = await createAndRenderPreview();
 
         const error = new Error('error');
@@ -2236,7 +2431,7 @@ describe('PreviewWeb', () => {
       });
 
       it('renders error if the story calls showError', async () => {
-        document.location.search = '?id=component-one--a';
+        location.search = '?id=component-one--a';
         const preview = await createAndRenderPreview();
 
         const error = { title: 'title', description: 'description' };
@@ -2258,7 +2453,7 @@ describe('PreviewWeb', () => {
       });
 
       it('renders exception if the story calls showException', async () => {
-        document.location.search = '?id=component-one--a';
+        location.search = '?id=component-one--a';
         const preview = await createAndRenderPreview();
 
         const error = new Error('error');
@@ -2279,7 +2474,7 @@ describe('PreviewWeb', () => {
       });
 
       it('executes playFunction', async () => {
-        document.location.search = '?id=component-one--a';
+        location.search = '?id=component-one--a';
         await createAndRenderPreview();
 
         mockChannel.emit.mockClear();
@@ -2294,7 +2489,7 @@ describe('PreviewWeb', () => {
       });
 
       it('emits STORY_RENDERED', async () => {
-        document.location.search = '?id=component-one--a';
+        location.search = '?id=component-one--a';
         await createAndRenderPreview();
 
         mockChannel.emit.mockClear();
@@ -2309,7 +2504,7 @@ describe('PreviewWeb', () => {
       });
 
       it('retains any arg changes', async () => {
-        document.location.search = '?id=component-one--a';
+        location.search = '?id=component-one--a';
         const preview = await createAndRenderPreview();
 
         mockChannel.emit.mockClear();
@@ -2377,7 +2572,7 @@ describe('PreviewWeb', () => {
         it('aborts render for initial story', async () => {
           const [gate, openGate] = createGate();
 
-          document.location.search = '?id=component-one--a';
+          location.search = '?id=component-one--a';
           projectAnnotations.renderToCanvas.mockImplementation(async () => gate);
           await new PreviewWeb(importFn, getProjectAnnotations).ready();
           await waitForRenderPhase('rendering');
@@ -2412,7 +2607,7 @@ describe('PreviewWeb', () => {
           const [gate, openGate] = createGate();
           componentOneExports.a.play.mockImplementationOnce(async () => gate);
 
-          document.location.search = '?id=component-one--a';
+          location.search = '?id=component-one--a';
           await new PreviewWeb(importFn, getProjectAnnotations).ready();
           await waitForRenderPhase('playing');
 
@@ -2465,7 +2660,7 @@ describe('PreviewWeb', () => {
           const [gate] = createGate();
           componentOneExports.a.play.mockImplementationOnce(async () => gate);
 
-          document.location.search = '?id=component-one--a';
+          location.search = '?id=component-one--a';
           await new PreviewWeb(importFn, getProjectAnnotations).ready();
           await waitForRenderPhase('playing');
 
@@ -2503,7 +2698,7 @@ describe('PreviewWeb', () => {
 
     describe('when changing from story viewMode to docs', () => {
       it('emits DOCS_PREPARED', async () => {
-        document.location.search = '?id=component-one--a';
+        location.search = '?id=component-one--a';
         await createAndRenderPreview();
 
         mockChannel.emit.mockClear();
@@ -2524,7 +2719,7 @@ describe('PreviewWeb', () => {
       });
 
       it('calls renderToCanvas teardown', async () => {
-        document.location.search = '?id=component-one--a';
+        location.search = '?id=component-one--a';
         await createAndRenderPreview();
 
         emitter.emit(SET_CURRENT_STORY, {
@@ -2537,7 +2732,7 @@ describe('PreviewWeb', () => {
       });
 
       it('updates URL', async () => {
-        document.location.search = '?id=component-one--a';
+        location.search = '?id=component-one--a';
         await createAndRenderPreview();
 
         emitter.emit(SET_CURRENT_STORY, {
@@ -2554,7 +2749,7 @@ describe('PreviewWeb', () => {
       });
 
       it('renders preparing state', async () => {
-        document.location.search = '?id=component-one--a';
+        location.search = '?id=component-one--a';
         const preview = await createAndRenderPreview();
 
         emitter.emit(SET_CURRENT_STORY, {
@@ -2567,7 +2762,7 @@ describe('PreviewWeb', () => {
       });
 
       it('emits STORY_CHANGED', async () => {
-        document.location.search = '?id=component-one--a';
+        location.search = '?id=component-one--a';
         await createAndRenderPreview();
 
         mockChannel.emit.mockClear();
@@ -2582,7 +2777,7 @@ describe('PreviewWeb', () => {
       });
 
       it('calls view.prepareForDocs', async () => {
-        document.location.search = '?id=component-one--a';
+        location.search = '?id=component-one--a';
         const preview = await createAndRenderPreview();
 
         mockChannel.emit.mockClear();
@@ -2597,7 +2792,7 @@ describe('PreviewWeb', () => {
       });
 
       it('render the docs container with the correct context, template render', async () => {
-        document.location.search = '?id=component-one--a';
+        location.search = '?id=component-one--a';
         await createAndRenderPreview();
 
         mockChannel.emit.mockClear();
@@ -2615,7 +2810,7 @@ describe('PreviewWeb', () => {
       });
 
       it('emits DOCS_RENDERED', async () => {
-        document.location.search = '?id=component-one--a';
+        location.search = '?id=component-one--a';
         await createAndRenderPreview();
 
         mockChannel.emit.mockClear();
@@ -2632,7 +2827,7 @@ describe('PreviewWeb', () => {
 
     describe('when changing from docs viewMode to story', () => {
       it('unmounts docs', async () => {
-        document.location.search = '?id=component-one--docs&viewMode=docs';
+        location.search = '?id=component-one--docs&viewMode=docs';
         await createAndRenderPreview();
 
         mockChannel.emit.mockClear();
@@ -2648,7 +2843,7 @@ describe('PreviewWeb', () => {
 
       // this test seems to somehow affect the test above, I re-ordered them to get it green, but someone should look into this
       it('updates URL', async () => {
-        document.location.search = '?id=component-one--docs&viewMode=docs';
+        location.search = '?id=component-one--docs&viewMode=docs';
         await createAndRenderPreview();
 
         emitter.emit(SET_CURRENT_STORY, {
@@ -2666,7 +2861,7 @@ describe('PreviewWeb', () => {
 
       // NOTE: I am not sure this entirely makes sense but this is the behaviour from 6.3
       it('emits STORY_CHANGED', async () => {
-        document.location.search = '?id=component-one--docs&viewMode=docs';
+        location.search = '?id=component-one--docs&viewMode=docs';
         await createAndRenderPreview();
 
         mockChannel.emit.mockClear();
@@ -2681,7 +2876,7 @@ describe('PreviewWeb', () => {
       });
 
       it('calls view.prepareForStory', async () => {
-        document.location.search = '?id=component-one--docs&viewMode=docs';
+        location.search = '?id=component-one--docs&viewMode=docs';
         const preview = await createAndRenderPreview();
 
         mockChannel.emit.mockClear();
@@ -2701,7 +2896,7 @@ describe('PreviewWeb', () => {
       });
 
       it('emits STORY_PREPARED', async () => {
-        document.location.search = '?id=component-one--docs&viewMode=docs';
+        location.search = '?id=component-one--docs&viewMode=docs';
         await createAndRenderPreview();
 
         mockChannel.emit.mockClear();
@@ -2729,7 +2924,7 @@ describe('PreviewWeb', () => {
       });
 
       it('applies loaders with story context', async () => {
-        document.location.search = '?id=component-one--docs&viewMode=docs';
+        location.search = '?id=component-one--docs&viewMode=docs';
         await createAndRenderPreview();
 
         mockChannel.emit.mockClear();
@@ -2749,17 +2944,13 @@ describe('PreviewWeb', () => {
               fileName: './src/ComponentOne.stories.js',
             }),
             initialArgs: { foo: 'a', one: 1 },
-            argTypes: {
-              foo: { name: 'foo', type: { name: 'string' } },
-              one: { name: 'one', type: { name: 'string' }, mapping: { 1: 'mapped-1' } },
-            },
             args: { foo: 'a', one: 'mapped-1' },
           })
         );
       });
 
       it('passes loaded context to renderToCanvas', async () => {
-        document.location.search = '?id=component-one--docs&viewMode=docs';
+        location.search = '?id=component-one--docs&viewMode=docs';
         await createAndRenderPreview();
 
         mockChannel.emit.mockClear();
@@ -2795,7 +2986,7 @@ describe('PreviewWeb', () => {
       });
 
       it('renders exception if renderToCanvas throws', async () => {
-        document.location.search = '?id=component-one--docs&viewMode=docs';
+        location.search = '?id=component-one--docs&viewMode=docs';
         const preview = await createAndRenderPreview();
 
         const error = new Error('error');
@@ -2819,7 +3010,7 @@ describe('PreviewWeb', () => {
         const error = { title: 'title', description: 'description' };
         projectAnnotations.renderToCanvas.mockImplementation((context) => context.showError(error));
 
-        document.location.search = '?id=component-one--docs&viewMode=docs';
+        location.search = '?id=component-one--docs&viewMode=docs';
         const preview = await createAndRenderPreview();
 
         mockChannel.emit.mockClear();
@@ -2843,7 +3034,7 @@ describe('PreviewWeb', () => {
           context.showException(error)
         );
 
-        document.location.search = '?id=component-one--docs&viewMode=docs';
+        location.search = '?id=component-one--docs&viewMode=docs';
         const preview = await createAndRenderPreview();
 
         mockChannel.emit.mockClear();
@@ -2859,7 +3050,7 @@ describe('PreviewWeb', () => {
       });
 
       it('executes playFunction', async () => {
-        document.location.search = '?id=component-one--docs&viewMode=docs';
+        location.search = '?id=component-one--docs&viewMode=docs';
         await createAndRenderPreview();
 
         mockChannel.emit.mockClear();
@@ -2874,7 +3065,7 @@ describe('PreviewWeb', () => {
       });
 
       it('emits STORY_RENDERED', async () => {
-        document.location.search = '?id=component-one--docs&viewMode=docs';
+        location.search = '?id=component-one--docs&viewMode=docs';
         await createAndRenderPreview();
 
         mockChannel.emit.mockClear();
@@ -2893,7 +3084,7 @@ describe('PreviewWeb', () => {
   describe('onStoriesChanged', () => {
     describe('if stories.json endpoint 500s initially', () => {
       it('recovers and renders the story', async () => {
-        document.location.search = '?id=component-one--a';
+        location.search = '?id=component-one--a';
         const err = new Error('sort error');
         mockFetchResult = { status: 500, text: async () => err.toString() };
 
@@ -2911,7 +3102,7 @@ describe('PreviewWeb', () => {
       });
 
       it('sets story args from the URL', async () => {
-        document.location.search = '?id=component-one--a&args=foo:url';
+        location.search = '?id=component-one--a&args=foo:url';
         const err = new Error('sort error');
         mockFetchResult = { status: 500, text: async () => err.toString() };
 
@@ -2945,7 +3136,7 @@ describe('PreviewWeb', () => {
           return importFn(path);
         });
 
-        document.location.search = '?id=component-one--a';
+        location.search = '?id=component-one--a';
         const preview = await createAndRenderPreview();
         mockChannel.emit.mockClear();
 
@@ -2974,7 +3165,7 @@ describe('PreviewWeb', () => {
           return importFn(path);
         });
 
-        document.location.search = '?id=component-one--a';
+        location.search = '?id=component-one--a';
         const preview = await createAndRenderPreview();
         mockChannel.emit.mockClear();
 
@@ -3003,7 +3194,7 @@ describe('PreviewWeb', () => {
       // render must keep its DOM mounted until the new render replaces it in place; unmounting
       // it first collapses the document and loses the user's scroll position.
       it('does NOT call renderToCanvas teardown (the DOM is replaced by the new render)', async () => {
-        document.location.search = '?id=component-one--a';
+        location.search = '?id=component-one--a';
         const preview = await createAndRenderPreview();
         mockChannel.emit.mockClear();
 
@@ -3017,7 +3208,7 @@ describe('PreviewWeb', () => {
       // "preparing" spinner hides the whole document when it fires, which equally collapses
       // the document and loses the scroll position mid-re-render.
       it('does NOT show the preparing spinner (previous content stays visible)', async () => {
-        document.location.search = '?id=component-one--a';
+        location.search = '?id=component-one--a';
         const preview = await createAndRenderPreview();
         vi.mocked(preview.view.showPreparingStory).mockClear();
         mockChannel.emit.mockClear();
@@ -3029,7 +3220,7 @@ describe('PreviewWeb', () => {
       });
 
       it('does not emit STORY_UNCHANGED', async () => {
-        document.location.search = '?id=component-one--a';
+        location.search = '?id=component-one--a';
         const preview = await createAndRenderPreview();
         mockChannel.emit.mockClear();
 
@@ -3040,7 +3231,7 @@ describe('PreviewWeb', () => {
       });
 
       it('does not emit STORY_CHANGED', async () => {
-        document.location.search = '?id=component-one--a';
+        location.search = '?id=component-one--a';
         const preview = await createAndRenderPreview();
         mockChannel.emit.mockClear();
 
@@ -3051,7 +3242,7 @@ describe('PreviewWeb', () => {
       });
 
       it('emits STORY_PREPARED with new annotations', async () => {
-        document.location.search = '?id=component-one--a';
+        location.search = '?id=component-one--a';
         const preview = await createAndRenderPreview();
         mockChannel.emit.mockClear();
 
@@ -3075,7 +3266,7 @@ describe('PreviewWeb', () => {
       });
 
       it('applies loaders with story context', async () => {
-        document.location.search = '?id=component-one--a';
+        location.search = '?id=component-one--a';
         const preview = await createAndRenderPreview();
 
         mockChannel.emit.mockClear();
@@ -3094,17 +3285,13 @@ describe('PreviewWeb', () => {
               throwPlayFunctionExceptions: false,
             },
             initialArgs: { foo: 'edited', one: 1 },
-            argTypes: {
-              foo: { name: 'foo', type: { name: 'string' } },
-              one: { name: 'one', type: { name: 'string' }, mapping: { 1: 'mapped-1' } },
-            },
             args: { foo: 'edited', one: 'mapped-1' },
           })
         );
       });
 
       it('passes loaded context to renderToCanvas', async () => {
-        document.location.search = '?id=component-one--a';
+        location.search = '?id=component-one--a';
         const preview = await createAndRenderPreview();
 
         mockChannel.emit.mockClear();
@@ -3139,7 +3326,7 @@ describe('PreviewWeb', () => {
       });
 
       it('retains the same delta to the args', async () => {
-        document.location.search = '?id=component-one--a';
+        location.search = '?id=component-one--a';
         const preview = await createAndRenderPreview();
 
         mockChannel.emit.mockClear();
@@ -3167,7 +3354,7 @@ describe('PreviewWeb', () => {
       });
 
       it('renders exception if renderToCanvas throws', async () => {
-        document.location.search = '?id=component-one--a';
+        location.search = '?id=component-one--a';
         const preview = await createAndRenderPreview();
 
         const error = new Error('error');
@@ -3184,7 +3371,7 @@ describe('PreviewWeb', () => {
       });
 
       it('renders error if the story calls showError', async () => {
-        document.location.search = '?id=component-one--a';
+        location.search = '?id=component-one--a';
         const preview = await createAndRenderPreview();
 
         const error = { title: 'title', description: 'description' };
@@ -3202,7 +3389,7 @@ describe('PreviewWeb', () => {
       });
 
       it('renders exception if the story calls showException', async () => {
-        document.location.search = '?id=component-one--a';
+        location.search = '?id=component-one--a';
         const preview = await createAndRenderPreview();
 
         const error = new Error('error');
@@ -3219,7 +3406,7 @@ describe('PreviewWeb', () => {
       });
 
       it('executes playFunction', async () => {
-        document.location.search = '?id=component-one--a';
+        location.search = '?id=component-one--a';
         const preview = await createAndRenderPreview();
 
         mockChannel.emit.mockClear();
@@ -3231,7 +3418,7 @@ describe('PreviewWeb', () => {
       });
 
       it('emits STORY_RENDERED', async () => {
-        document.location.search = '?id=component-one--a';
+        location.search = '?id=component-one--a';
         const preview = await createAndRenderPreview();
 
         mockChannel.emit.mockClear();
@@ -3244,7 +3431,7 @@ describe('PreviewWeb', () => {
       // Regression test for https://github.com/storybookjs/storybook/issues/22057. The HMR
       // re-render must pass scrollReset: false so the user's scroll position is preserved.
       it('calls view.prepareForStory with scrollReset: false to preserve scroll on HMR', async () => {
-        document.location.search = '?id=component-one--a';
+        location.search = '?id=component-one--a';
         const preview = await createAndRenderPreview();
 
         mockChannel.emit.mockClear();
@@ -3276,7 +3463,7 @@ describe('PreviewWeb', () => {
       });
 
       it('re-imports the component', async () => {
-        document.location.search = '?id=component-one--a';
+        location.search = '?id=component-one--a';
         const preview = await createAndRenderPreview();
 
         mockChannel.emit.mockClear();
@@ -3294,7 +3481,7 @@ describe('PreviewWeb', () => {
           vi.useRealTimers();
         });
         it('is reloaded when it is re-selected', async () => {
-          document.location.search = '?id=component-one--a';
+          location.search = '?id=component-one--a';
           const preview = await createAndRenderPreview();
 
           mockChannel.emit.mockClear();
@@ -3328,7 +3515,7 @@ describe('PreviewWeb', () => {
       });
 
       it('does NOT call renderToCanvas teardown', async () => {
-        document.location.search = '?id=component-one--a';
+        location.search = '?id=component-one--a';
         const preview = await createAndRenderPreview();
 
         mockChannel.emit.mockClear();
@@ -3339,7 +3526,7 @@ describe('PreviewWeb', () => {
       });
 
       it('emits STORY_UNCHANGED', async () => {
-        document.location.search = '?id=component-one--a';
+        location.search = '?id=component-one--a';
         const preview = await createAndRenderPreview();
 
         mockChannel.emit.mockClear();
@@ -3351,7 +3538,7 @@ describe('PreviewWeb', () => {
       });
 
       it('clears preparing state', async () => {
-        document.location.search = '?id=component-one--a';
+        location.search = '?id=component-one--a';
         const preview = await createAndRenderPreview();
 
         vi.mocked(preview.view.showMain).mockClear();
@@ -3363,7 +3550,7 @@ describe('PreviewWeb', () => {
       });
 
       it('does not re-render the story', async () => {
-        document.location.search = '?id=component-one--a';
+        location.search = '?id=component-one--a';
         const preview = await createAndRenderPreview();
 
         mockChannel.emit.mockClear();
@@ -3393,7 +3580,7 @@ describe('PreviewWeb', () => {
       });
       it('retains the same delta to the args', async () => {
         // Start at Story A
-        document.location.search = '?id=component-one--a';
+        location.search = '?id=component-one--a';
         const preview = await createAndRenderPreview();
 
         // Change A's args
@@ -3472,7 +3659,7 @@ describe('PreviewWeb', () => {
       };
 
       it('calls renderToCanvas teardown', async () => {
-        document.location.search = '?id=component-one--a';
+        location.search = '?id=component-one--a';
         const preview = await createAndRenderPreview();
 
         mockChannel.emit.mockClear();
@@ -3483,7 +3670,7 @@ describe('PreviewWeb', () => {
       });
 
       it('renders loading error', async () => {
-        document.location.search = '?id=component-one--a';
+        location.search = '?id=component-one--a';
         const preview = await createAndRenderPreview();
 
         mockChannel.emit.mockClear();
@@ -3495,7 +3682,7 @@ describe('PreviewWeb', () => {
       });
 
       it('does not re-render the story', async () => {
-        document.location.search = '?id=component-one--a';
+        location.search = '?id=component-one--a';
         const preview = await createAndRenderPreview();
 
         mockChannel.emit.mockClear();
@@ -3508,7 +3695,7 @@ describe('PreviewWeb', () => {
       });
 
       it('re-renders the story if it is readded', async () => {
-        document.location.search = '?id=component-one--a';
+        location.search = '?id=component-one--a';
         const preview = await createAndRenderPreview();
 
         mockChannel.emit.mockClear();
@@ -3530,7 +3717,7 @@ describe('PreviewWeb', () => {
       });
 
       it('emits DOCS_PREPARED', async () => {
-        document.location.search = '?id=introduction--docs';
+        location.search = '?id=introduction--docs';
         const preview = await createAndRenderPreview();
 
         mockChannel.emit.mockClear();
@@ -3548,7 +3735,7 @@ describe('PreviewWeb', () => {
       });
 
       it('renders with the generated docs parameters', async () => {
-        document.location.search = '?id=introduction--docs&viewMode=docs';
+        location.search = '?id=introduction--docs&viewMode=docs';
         const preview = await createAndRenderPreview();
         mockChannel.emit.mockClear();
         docsRenderer.render.mockClear();
@@ -3567,7 +3754,7 @@ describe('PreviewWeb', () => {
       });
 
       it('emits DOCS_RENDERED', async () => {
-        document.location.search = '?id=introduction--docs&viewMode=docs';
+        location.search = '?id=introduction--docs&viewMode=docs';
         const preview = await createAndRenderPreview();
         mockChannel.emit.mockClear();
 
@@ -3582,7 +3769,7 @@ describe('PreviewWeb', () => {
   describe('onGetProjectAnnotationsChanged', () => {
     describe('if initial getProjectAnnotations threw', () => {
       it('recovers and renders the story', async () => {
-        document.location.search = '?id=component-one--a';
+        location.search = '?id=component-one--a';
 
         const err = new Error('meta error');
         const preview = new PreviewWeb(importFn, () => {
@@ -3597,7 +3784,7 @@ describe('PreviewWeb', () => {
       });
 
       it('sets globals from the URL', async () => {
-        document.location.search = '?id=*&globals=a:c';
+        location.search = '?id=*&globals=a:c';
 
         const err = new Error('meta error');
         const preview = new PreviewWeb(importFn, () => {
@@ -3627,7 +3814,7 @@ describe('PreviewWeb', () => {
     });
 
     it('shows an error the new value throws', async () => {
-      document.location.search = '?id=component-one--a';
+      location.search = '?id=component-one--a';
       const preview = await createAndRenderPreview();
 
       mockChannel.emit.mockClear();
@@ -3655,7 +3842,7 @@ describe('PreviewWeb', () => {
     };
 
     it('updates globals to their new values', async () => {
-      document.location.search = '?id=component-one--a';
+      location.search = '?id=component-one--a';
       const preview = await createAndRenderPreview();
 
       mockChannel.emit.mockClear();
@@ -3671,7 +3858,7 @@ describe('PreviewWeb', () => {
     });
 
     it('emits SET_GLOBALS with new values', async () => {
-      document.location.search = '?id=component-one--a';
+      location.search = '?id=component-one--a';
       const preview = await createAndRenderPreview();
 
       mockChannel.emit.mockClear();
@@ -3686,7 +3873,7 @@ describe('PreviewWeb', () => {
     });
 
     it('updates args to their new values', async () => {
-      document.location.search = '?id=component-one--a';
+      location.search = '?id=component-one--a';
       const preview = await createAndRenderPreview();
 
       mockChannel.emit.mockClear();
@@ -3704,7 +3891,7 @@ describe('PreviewWeb', () => {
     });
 
     it('emits SET_PREPARED with new args', async () => {
-      document.location.search = '?id=component-one--a';
+      location.search = '?id=component-one--a';
       const preview = await createAndRenderPreview();
 
       mockChannel.emit.mockClear();
@@ -3723,7 +3910,7 @@ describe('PreviewWeb', () => {
     // Same-story re-render: the DOM is kept mounted until the new render replaces it, so the
     // scroll position survives editing preview annotations (#22057).
     it('does NOT call renderToCanvas teardown', async () => {
-      document.location.search = '?id=component-one--a';
+      location.search = '?id=component-one--a';
       const preview = await createAndRenderPreview();
 
       projectAnnotations.renderToCanvas.mockClear();
@@ -3735,7 +3922,7 @@ describe('PreviewWeb', () => {
     });
 
     it('rerenders the current story with new global meta-generated context', async () => {
-      document.location.search = '?id=component-one--a';
+      location.search = '?id=component-one--a';
       const preview = await createAndRenderPreview();
 
       projectAnnotations.renderToCanvas.mockClear();
@@ -3756,8 +3943,83 @@ describe('PreviewWeb', () => {
   });
 
   describe('onKeydown', () => {
+    it('forwards F6 from inputs and keeps the browser from acting on it, so landmarks can be navigated from anywhere in the story', async () => {
+      vi.stubGlobal('parent', {});
+      location.search = '?id=component-one--docs&viewMode=docs';
+      const preview = await createAndRenderPreview();
+
+      const event = {
+        key: 'F6',
+        shiftKey: true,
+        preventDefault: vi.fn(),
+        target: { tagName: 'input', getAttribute: vi.fn().mockReturnValue(null) },
+      };
+      preview.onKeydown(event as any);
+
+      expect(event.preventDefault).toHaveBeenCalled();
+      expect(mockChannel.emit).toHaveBeenCalledWith(PREVIEW_KEYDOWN, {
+        event: expect.objectContaining({ key: 'F6', shiftKey: true }),
+      });
+    });
+
+    it('keeps a story from wrapping around its own React Aria landmarks, so F6 moves on to the manager', async () => {
+      vi.stubGlobal('parent', {});
+      location.search = '?id=component-one--docs&viewMode=docs';
+      await createAndRenderPreview();
+
+      const wrap = new CustomEvent('react-aria-landmark-navigation', {
+        detail: { direction: 'forward' },
+        bubbles: true,
+        cancelable: true,
+      });
+      globalThis.dispatchEvent(wrap);
+
+      expect(wrap.defaultPrevented).toBe(true);
+    });
+
+    it('lets a story wrap around its own React Aria landmarks when it is the top-level document', async () => {
+      vi.stubGlobal('parent', globalThis.self);
+      location.search = '?id=component-one--docs&viewMode=docs';
+      await createAndRenderPreview();
+
+      const wrap = new CustomEvent('react-aria-landmark-navigation', {
+        detail: { direction: 'forward' },
+        bubbles: true,
+        cancelable: true,
+      });
+      globalThis.dispatchEvent(wrap);
+
+      expect(wrap.defaultPrevented).toBe(false);
+    });
+
+    it('sets up its listeners when the global has no addEventListener, as in React Native', async () => {
+      vi.stubGlobal('addEventListener', undefined);
+      location.search = '?id=component-one--docs&viewMode=docs';
+
+      await expect(createAndRenderPreview()).resolves.toBeDefined();
+    });
+
+    it('leaves F6 to the browser when the preview is the top-level document', async () => {
+      vi.stubGlobal('parent', globalThis.self);
+      location.search = '?id=component-one--docs&viewMode=docs';
+      const preview = await createAndRenderPreview();
+
+      const event = {
+        key: 'F6',
+        preventDefault: vi.fn(),
+        target: { tagName: 'input', getAttribute: vi.fn().mockReturnValue(null) },
+      };
+      preview.onKeydown(event as any);
+
+      expect(event.preventDefault).not.toHaveBeenCalled();
+      expect(mockChannel.emit).not.toHaveBeenCalledWith(
+        PREVIEW_KEYDOWN,
+        expect.objectContaining({})
+      );
+    });
+
     it('emits PREVIEW_KEYDOWN for regular elements', async () => {
-      document.location.search = '?id=component-one--docs&viewMode=docs';
+      location.search = '?id=component-one--docs&viewMode=docs';
       const preview = await createAndRenderPreview();
 
       preview.onKeydown({
@@ -3770,7 +4032,7 @@ describe('PreviewWeb', () => {
     });
 
     it('emits PREVIEW_KEYDOWN for regular elements, fallback to event.target', async () => {
-      document.location.search = '?id=component-one--docs&viewMode=docs';
+      location.search = '?id=component-one--docs&viewMode=docs';
       const preview = await createAndRenderPreview();
 
       preview.onKeydown({
@@ -3781,7 +4043,7 @@ describe('PreviewWeb', () => {
     });
 
     it('does not emit PREVIEW_KEYDOWN for input elements', async () => {
-      document.location.search = '?id=component-one--docs&viewMode=docs';
+      location.search = '?id=component-one--docs&viewMode=docs';
       const preview = await createAndRenderPreview();
 
       preview.onKeydown({
@@ -3797,7 +4059,7 @@ describe('PreviewWeb', () => {
     });
 
     it('does not emit PREVIEW_KEYDOWN during story play functions', async () => {
-      document.location.search = '?id=component-one--a';
+      location.search = '?id=component-one--a';
 
       const [gate, openGate] = createGate();
       componentOneExports.a.play.mockImplementationOnce(async () => gate);
@@ -3817,7 +4079,7 @@ describe('PreviewWeb', () => {
     });
 
     it('does not emit PREVIEW_KEYDOWN during docs play functions', async () => {
-      document.location.search = '?id=component-one--a';
+      location.search = '?id=component-one--a';
 
       const preview = await createAndRenderPreview();
 

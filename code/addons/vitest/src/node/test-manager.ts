@@ -1,11 +1,13 @@
 import type { TestError } from 'vitest';
 import type { TestResult, TestState } from 'vitest/node';
 
-import type { experimental_UniversalStore } from 'storybook/internal/core-server';
+import type { internal_UniversalStore } from 'storybook/internal/core-server';
 import type {
   Options,
+  PreviewAnnotation,
   StatusStoreByTypeId,
   StatusValue,
+  StoryIndex,
   TestProviderStoreById,
 } from 'storybook/internal/types';
 
@@ -25,15 +27,16 @@ import type {
   VitestError,
 } from '../types.ts';
 import { errorToErrorLike } from '../utils.ts';
-import { VitestManager } from './vitest-manager.ts';
+import { VitestManager, toModuleId } from './vitest-manager.ts';
 
 export type TestManagerOptions = {
   storybookOptions: Options;
   configLoader?: BuilderOptions['configLoader'];
-  store: experimental_UniversalStore<StoreState, StoreEvent>;
+  store: internal_UniversalStore<StoreState, StoreEvent>;
   componentTestStatusStore: StatusStoreByTypeId;
   a11yStatusStore: StatusStoreByTypeId;
   testProviderStore: TestProviderStoreById;
+  previewAnnotations: PreviewAnnotation[];
   onError?: (message: string, error: Error) => void;
   onReady?: () => void;
 };
@@ -84,6 +87,29 @@ export class TestManager {
 
   public readonly configLoader?: TestManagerOptions['configLoader'];
 
+  private _storyIndex: StoryIndex = { v: 5, entries: {} };
+
+  public get storyIndex(): StoryIndex {
+    return this._storyIndex;
+  }
+
+  public set storyIndex(index: StoryIndex) {
+    const previousImportPaths = new Set(
+      Object.values(this._storyIndex.entries).map((entry) => entry.importPath)
+    );
+    this._storyIndex = index;
+    const newImportPaths = new Set(
+      Object.values(index.entries)
+        .map((entry) => entry.importPath)
+        .filter((importPath) => !previousImportPaths.has(importPath))
+    );
+    // Files added to the index may never be reported by Vitest's own watcher (e.g. when they
+    // live outside the Vite root), so make sure Vitest picks them up before the next run
+    this.vitestManager.registerTestFiles([...newImportPaths].map(toModuleId));
+  }
+
+  public readonly previewAnnotations: PreviewAnnotation[];
+
   private batchedTestCaseResults: {
     storyId: string;
     testResult: TestResult;
@@ -106,6 +132,7 @@ export class TestManager {
     this.onReady = options.onReady;
     this.storybookOptions = options.storybookOptions;
     this.configLoader = options.configLoader;
+    this.previewAnnotations = options.previewAnnotations;
 
     this.vitestManager = new VitestManager(this);
 
@@ -126,7 +153,8 @@ export class TestManager {
 
   async handleTriggerRunEvent(event: TriggerRunEvent) {
     await this.runTestsWithState({
-      storyIds: event.payload.storyIds,
+      // The stories of a run of files are known once Vitest has matched the files
+      storyIds: event.payload.fileFilters || event.payload.storyFiles ? [] : event.payload.storyIds,
       triggeredBy: event.payload.triggeredBy,
       configOverride: event.payload.configOverride,
       callback: async () => {
@@ -207,6 +235,15 @@ export class TestManager {
     });
   }
 
+  setRunStories(storyIds: string[], matchedFileCount: number | undefined) {
+    this.componentTestStatusStore.unset(storyIds);
+    this.a11yStatusStore.unset(storyIds);
+    this.store.setState((s) => ({
+      ...s,
+      currentRun: { ...s.currentRun, storyIds, matchedFileCount },
+    }));
+  }
+
   onTestModuleCollected(collectedTestCount: number) {
     this.store.setState((s) => ({
       ...s,
@@ -239,7 +276,7 @@ export class TestManager {
       return true;
     }
 
-    const entry = this.store.getState().index.entries[storyId];
+    const entry = this.storyIndex.entries[storyId];
     return entry?.type === 'story' && !!entry.parent && requestedStoryIds.includes(entry.parent);
   }
 

@@ -1,68 +1,38 @@
 import { describe, test } from 'vitest';
 import {
-  expectAllStoryExportsInDisplayReview,
-  expectDisplayReviewForVisualChange,
-  expectPreviewBrowserStarted,
-  expectPreviewStoriesWithFinalLinks,
-  expectSkillInvoked,
-  getEvalContext,
-  expectStoryDiscoveryBeforeReview,
-  expectStoryIdsInDisplayReview,
+  expectAnyWorkflowSkillInvoked,
+  expectNoDisplayReview,
+  expectReviewHint,
   expectStoryTestsRanAndPassed,
-  expectValidStorybookLaunchConfig,
   expectWorkflowCalls,
-  isReviewEnabled,
+  getEvalContext,
 } from '#test-utils';
 
+// The skills of the workflow in AGENTS.md that this task cannot do without. The tests are a
+// command of the workflow, not a skill, and a review only comes when the user asks for one.
+const WORKFLOW_SKILLS = ['write-stories'];
+
 describe('writing the first Button stories in an empty Storybook', () => {
-  const review = isReviewEnabled();
-
-  test('runs story tests after the change and finishes with them passing', () => {
-    expectStoryTestsRanAndPassed({ covering: ['button'] });
-  });
-
-  describe.runIf(review)('when review is enabled', () => {
-    test('uses Storybook story instructions and publishes a display review', () => {
-      expectWorkflowCalls(['get-storybook-story-instructions', 'review-create']);
-      expectDisplayReviewForVisualChange();
-    });
-
-    test('the review covers the new Button stories', () => {
-      expectStoryIdsInDisplayReview(['button']);
-    });
-
-    test('every new story appears in the display review', () => {
-      expectAllStoryExportsInDisplayReview();
-    });
-
-    test('discovers stories through the workflow tools before publishing the review', () => {
-      expectStoryDiscoveryBeforeReview();
+  test('runs story tests after the change and finishes with them passing', async () => {
+    await expectStoryTestsRanAndPassed({
+      covering: ['button'],
     });
   });
 
-  describe.runIf(!review)('when review is disabled', () => {
-    test('uses Storybook story instructions and previews the new stories', () => {
-      expectWorkflowCalls(['get-storybook-story-instructions']);
-      expectPreviewStoriesWithFinalLinks({ covering: ['button'] });
-    });
+  test('runs the skills of the workflow, and creates no review unasked', () => {
+    expectWorkflowCalls(WORKFLOW_SKILLS);
+    expectNoDisplayReview();
+  });
+
+  test('tells the user about the /ui-review skill', () => {
+    expectReviewHint();
   });
 
   describe('depending on the current agent and integration', () => {
-    const { agent, integration } = getEvalContext();
+    const { integration } = getEvalContext();
 
-    test.skipIf(integration === 'mcp')('invokes the stories skill', () => {
-      expectSkillInvoked('stories');
-    });
-
-    test.skipIf(agent !== 'claude-code' || integration !== 'plugin')(
-      'keeps the pre-existing Storybook launch config valid',
-      () => {
-        expectValidStorybookLaunchConfig();
-      }
-    );
-
-    test.skipIf(integration !== 'plugin')('opens the preview browser when using the plugin', () => {
-      expectPreviewBrowserStarted();
+    test.skipIf(integration === 'mcp')('finds the workflow through the plugin skills', () => {
+      expectAnyWorkflowSkillInvoked();
     });
   });
 });

@@ -15,12 +15,13 @@ import * as fs from 'node:fs';
 import { parse } from 'vue-docgen-api';
 
 import { type SeriesEngine, harnessMain, runSeriesHarness } from '../../docgen-shared/series.ts';
+import { VUE_FRAMEWORK } from '../generators/vue.ts';
 import {
-  type VueHarnessOptions,
-  parseVueOptions,
-  setUpVueScenario,
-  vueBanner,
-} from './vue-scenario.ts';
+  type WorkspaceHarnessOptions,
+  parseWorkspaceOptions,
+  setUpWorkspaceScenario,
+  workspaceBanner,
+} from './workspace-scenario.ts';
 
 /**
  * Member count is reported alongside timing: a parse that resolved nothing is fast for the wrong
@@ -36,8 +37,8 @@ async function extractOne(sfcPath: string): Promise<number> {
   );
 }
 
-function createEngine(options: VueHarnessOptions): SeriesEngine {
-  const scenario = setUpVueScenario(options);
+function createEngine(options: WorkspaceHarnessOptions): SeriesEngine {
+  const scenario = setUpWorkspaceScenario(options, VUE_FRAMEWORK);
   let measuredPath = scenario.targetPaths[0];
 
   return {
@@ -60,11 +61,11 @@ function createEngine(options: VueHarnessOptions): SeriesEngine {
 }
 
 harnessMain(async () => {
-  const options = parseVueOptions(process.argv.slice(2), 'vue-docgen-api');
+  const options = parseWorkspaceOptions(process.argv.slice(2), 'vue-docgen-api');
   await runSeriesHarness({
     title: `vue-docgen-api harness (${options.scenario})`,
     options,
-    banner: vueBanner(options),
+    banner: workspaceBanner(options),
     saves: options.saves,
     coldLabel: `${options.componentsPerPackage} components`,
     jsonOut: options.jsonOut,

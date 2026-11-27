@@ -1,4 +1,5 @@
 import { angularSnippetGrammar } from './snippets-angular.ts';
+import { svelteSnippetGrammar } from './snippets-svelte.ts';
 import { vueRepresentedNames } from './snippets-vue3.ts';
 import { webComponentsSnippetGrammar } from './snippets-web-components.ts';
 import type { Framework, SnippetGrammar, Violation } from './types.ts';
@@ -27,6 +28,8 @@ export function compareSnippet(input: CompareSnippetInput): Violation[] {
   switch (input.framework) {
     case 'angular':
       return compareWithGrammar(angularSnippetGrammar, input);
+    case 'svelte':
+      return compareWithGrammar(svelteSnippetGrammar, input);
     case 'vue3':
       return compareWithGrammar(vue3SnippetGrammar, input);
     case 'web-components':

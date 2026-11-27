@@ -14,12 +14,8 @@ import type {
   Renderer,
   StoryContext,
   StoryContextForEnhancers,
-  StoryContextForLoaders,
   StrictArgTypes,
 } from 'storybook/internal/types';
-
-import { global } from '@storybook/global';
-import { global as globalThis } from '@storybook/global';
 
 import { Tag } from '../../../../shared/constants/tags.ts';
 import { applyHooks } from '../../addons/index.ts';
@@ -27,6 +23,7 @@ import { mountDestructured } from '../../preview-web/render/mount-utils.ts';
 import { UNTARGETED, groupArgsByTarget } from '../args.ts';
 import { defaultDecorateStory } from '../decorators.ts';
 import { combineParameters } from '../parameters.ts';
+import { hideArgTypes } from './hideArgTypes.ts';
 import { normalizeArrays } from './normalizeArrays.ts';
 
 // Combine all the metadata about a story (both direct and inherited from the component/global scope)
@@ -102,7 +99,7 @@ export function prepareStory<TRenderer extends Renderer>(
   };
 
   const undecoratedStoryFn = (context: StoryContext<TRenderer>) =>
-    context.originalStoryFn(context.args, context);
+    context.originalStoryFn(context.args, hideArgTypes(context));
 
   // Currently it is only possible to set these globally
   const { applyDecorators = defaultDecorateStory, runStep } = projectAnnotations;
@@ -153,7 +150,6 @@ export function prepareStory<TRenderer extends Renderer>(
     moduleExport,
     id,
     name,
-    story: name,
     originalStoryFn: render!,
     undecoratedStoryFn,
     unboundStoryFn,
@@ -251,11 +247,9 @@ function preparePartialAnnotations<TRenderer extends Renderer>(
   } = {
     componentId: componentAnnotations.id,
     title: componentAnnotations.title,
-    kind: componentAnnotations.title, // Back compat
     id: storyAnnotations?.id || componentAnnotations.id,
     // if there's no story name, we create a fake one since enhancers expect a name
     name: storyAnnotations?.name || '__meta',
-    story: storyAnnotations?.name || '__meta', // Back compat
     component: componentAnnotations.component,
     subcomponents: componentAnnotations.subcomponents,
     tags,
@@ -269,7 +263,7 @@ function preparePartialAnnotations<TRenderer extends Renderer>(
     .filter((enhancer) => {
       // Server docgen merges component prop metadata at UI read time (`mergeServiceArgTypes`).
       // Second-pass enhancers run there instead so `customArgTypes` stays annotation-only.
-      if (global.FEATURES?.experimentalDocgenServer && enhancer.secondPass) {
+      if (globalThis.FEATURES?.docgenServer && enhancer.secondPass) {
         return false;
       }
       return true;
@@ -293,7 +287,7 @@ function preparePartialAnnotations<TRenderer extends Renderer>(
     initialArgsBeforeEnhancers
   );
 
-  const { name, story, ...withoutStoryIdentifiers } = contextForEnhancers;
+  const { name, ...withoutStoryIdentifiers } = contextForEnhancers;
 
   return withoutStoryIdentifiers;
 }
@@ -303,27 +297,21 @@ function preparePartialAnnotations<TRenderer extends Renderer>(
 // eg. reactive proxies set by frameworks like SolidJS or Vue
 export function prepareContext<
   TRenderer extends Renderer,
-  TContext extends Pick<StoryContextForLoaders<TRenderer>, 'args' | 'argTypes' | 'globals'>,
+  TContext extends Pick<StoryContext<TRenderer>, 'args' | 'globals'> & {
+    argTypes: StrictArgTypes;
+  },
 >(
   context: TContext
-): TContext & Pick<StoryContextForLoaders<TRenderer>, 'allArgs' | 'argsByTarget' | 'unmappedArgs'> {
+): TContext & Pick<StoryContext<TRenderer>, 'allArgs' | 'argsByTarget' | 'unmappedArgs'> {
   const { args: unmappedArgs } = context;
 
-  let targetedContext: TContext &
-    Pick<StoryContextForLoaders<TRenderer>, 'allArgs' | 'argsByTarget'> = {
+  const argsByTarget = groupArgsByTarget(context);
+  const targetedContext: TContext & Pick<StoryContext<TRenderer>, 'allArgs' | 'argsByTarget'> = {
     ...context,
-    allArgs: undefined,
-    argsByTarget: undefined,
+    allArgs: context.args,
+    argsByTarget,
+    args: argsByTarget[UNTARGETED] || {},
   };
-  if (global.FEATURES?.argTypeTargetsV7) {
-    const argsByTarget = groupArgsByTarget(context);
-    targetedContext = {
-      ...context,
-      allArgs: context.args,
-      argsByTarget,
-      args: argsByTarget[UNTARGETED] || {},
-    };
-  }
 
   const mappedArgs = Object.entries(targetedContext.args).reduce((acc, [key, val]) => {
     if (!targetedContext.argTypes[key]?.mapping) {

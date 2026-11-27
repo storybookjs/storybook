@@ -26,13 +26,13 @@ export const uniqueArray = (arr: any[]) => {
 };
 
 export class PropertyExtractor implements NgModuleMetadata {
-  declarations?: any[] = [];
-  imports?: any[];
-  providers?: Provider[];
-  applicationProviders?: Array<Provider | ReturnType<typeof importProvidersFrom>>;
+  declarations: any[] = [];
+  imports: any[] = [];
+  providers: Provider[] = [];
+  applicationProviders: Array<Provider | ReturnType<typeof importProvidersFrom>> = [];
 
   constructor(
-    private metadata: NgModuleMetadata,
+    private metadata: NgModuleMetadata | undefined,
     private component?: any
   ) {}
 
@@ -88,7 +88,7 @@ export class PropertyExtractor implements NgModuleMetadata {
    * - Extracts providers from ModuleWithProviders
    * - Returns a new NgModuleMetadata object
    */
-  private analyzeMetadata = async (metadata: NgModuleMetadata) => {
+  private analyzeMetadata = async (metadata: NgModuleMetadata | undefined) => {
     const declarations = [...(metadata?.declarations || [])];
     const providers = [...(metadata?.providers || [])];
     const applicationProviders: Provider[] = [];

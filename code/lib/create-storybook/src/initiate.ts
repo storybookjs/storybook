@@ -1,11 +1,20 @@
 import { resolve } from 'node:path';
 
-import { ProjectType } from 'storybook/internal/cli';
+import {
+  ProjectType,
+  hasAddonVitest,
+  installSkills,
+  supportsSkills,
+  supportsAiSetup,
+} from 'storybook/internal/cli';
 import {
   HandledError,
   PackageManagerName,
   cache,
   executeCommand,
+  getConfigInfo,
+  loadMainConfig,
+  syncStorybookAddons,
   type JsPackageManager,
 } from 'storybook/internal/common';
 import { getServerPort, withTelemetry } from 'storybook/internal/core-server';
@@ -26,6 +35,7 @@ import {
   executeGeneratorExecution,
   executePreflightCheck,
   executeProjectDetection,
+  executeTypeScriptDependency,
   executeUserPreferences,
 } from './commands/index.ts';
 import { DependencyCollector } from './dependency-collector.ts';
@@ -42,6 +52,7 @@ async function checkFeatureSupport(
   renderer: SupportedRenderer
 ): Promise<{
   isTestFeatureAvailable: boolean;
+  isAiAvailable: boolean;
   isAiSetupAvailable: boolean;
 }> {
   const featureService = new FeatureCompatibilityService(packageManager);
@@ -52,11 +63,10 @@ async function checkFeatureSupport(
     process.cwd()
   );
 
-  const aiSetup = FeatureCompatibilityService.supportsAISetupFeature(renderer, builder, framework);
-
   return {
     isTestFeatureAvailable: result.compatible,
-    isAiSetupAvailable: aiSetup,
+    isAiAvailable: supportsSkills(renderer, framework),
+    isAiSetupAvailable: supportsAiSetup(renderer, builder, framework),
   };
 }
 
@@ -102,7 +112,7 @@ export async function doInitiate(options: CommandOptions): Promise<
   );
 
   // Step 4: Get user preferences and feature selections (with framework/builder for validation)
-  const { isTestFeatureAvailable, isAiSetupAvailable } = await checkFeatureSupport(
+  const { isTestFeatureAvailable, isAiAvailable, isAiSetupAvailable } = await checkFeatureSupport(
     packageManager,
     framework,
     builder,
@@ -118,7 +128,23 @@ export async function doInitiate(options: CommandOptions): Promise<
     isTestFeatureAvailable,
     // Skip AI feature recommendation when scaffolding into an empty directory,
     // since the user hasn't yet committed to a project setup where AI tooling adds value.
-    isAiSetupAvailable: isAiSetupAvailable && !isEmptyProject,
+    isAiAvailable: isAiAvailable && !isEmptyProject,
+    isAiSetupAvailable,
+  });
+
+  if (selectedFeatures.has(Feature.AI) && !isAiAvailable) {
+    logger.warn(
+      'The AI features are not available for this framework yet, so the Storybook skills are not installed.'
+    );
+    selectedFeatures.delete(Feature.AI);
+  }
+
+  const typeScriptDependency = await executeTypeScriptDependency({
+    options,
+    packageManager,
+    framework,
+    renderer,
+    dependencyCollector,
   });
 
   // Step 5: Execute generator with dependency collector (now with frameworkInfo)
@@ -140,6 +166,7 @@ export async function doInitiate(options: CommandOptions): Promise<
     dependencyCollector,
     skipInstall: !!options.skipInstall,
     selectedFeatures,
+    upgradedDependencies: typeScriptDependency === 'upgraded',
   });
 
   // After dependencies are installed, we must not use the dependency collector anymore
@@ -164,8 +191,41 @@ export async function doInitiate(options: CommandOptions): Promise<
     options,
   });
 
-  // Step 8: Print final summary
+  if (configDir && !options.skipInstall && dependencyInstallationResult.status === 'success') {
+    try {
+      const { previewConfigPath } = getConfigInfo(configDir);
+      if (previewConfigPath) {
+        const mainConfig = await loadMainConfig({ configDir, skipCache: true });
+        await syncStorybookAddons(mainConfig, previewConfigPath, configDir);
+      }
+    } catch (err) {
+      logger.debug(
+        `Could not sync preview addons after init: ${err instanceof Error ? err.message : String(err)}`
+      );
+    }
+  }
+
+  // Step 8: Install the official Storybook skills for AI agents, and tell agents in AGENTS.md when
+  // to use them
   const hasAiFeature = selectedFeatures.has(Feature.AI);
+  if (hasAiFeature) {
+    // The section gets its test step only when the main config lists addon-vitest. When it cannot
+    // be read, the test feature the user selected decides.
+    const mainConfig = configDir
+      ? await loadMainConfig({ configDir, skipCache: true }).catch(() => undefined)
+      : undefined;
+    await telemetryService.trackSkills(
+      await installSkills({
+        packageManager,
+        source: 'ai-feature',
+        testSupported: mainConfig ? hasAddonVitest(mainConfig) : selectedFeatures.has(Feature.TEST),
+        // This is one Storybook of the project.
+        sawEveryStorybook: false,
+      })
+    );
+  }
+
+  // Step 9: Print final summary
   if (configDir && isAiSetupAvailable) {
     // Persist init-time AI opt-in/opt-out so the dev server can gate AI-related UI
     // (checklist item, copy-prompt button) on the user's actual choice — not on
@@ -186,14 +246,14 @@ export async function doInitiate(options: CommandOptions): Promise<
     }).catch(() => {});
   }
   await executeFinalization({
-    showAgentFollowUp: !!options.agent && hasAiFeature,
-    showAiInstructions: hasAiFeature,
+    showAgentFollowUp: !!options.agent && hasAiFeature && isAiSetupAvailable,
+    showAiInstructions: hasAiFeature && isAiSetupAvailable,
     logfile: options.logfile,
     storybookCommand,
     setupSkillCommand: packageManager.getPackageCommand(['storybook', 'skills', 'setup']),
   });
 
-  // Step 9: Track telemetry (pass configDir so RN `.rnstorybook` metadata is resolved)
+  // Step 10: Track telemetry (pass configDir so RN `.rnstorybook` metadata is resolved)
   await telemetryService.trackInitWithContext(projectType, selectedFeatures, newUser, configDir);
 
   // Signal dev to redirect to onboarding on first run

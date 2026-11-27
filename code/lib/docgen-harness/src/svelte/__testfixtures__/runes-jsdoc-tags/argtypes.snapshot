@@ -1,0 +1,82 @@
+{
+  "example": {
+    "control": {
+      "type": "text",
+    },
+    "description": "Example value.",
+    "name": "example",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+      "required": false,
+    },
+  },
+  "internalValue": {
+    "control": {
+      "type": "text",
+    },
+    "description": "Internal value.",
+    "name": "internalValue",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+      "required": false,
+    },
+  },
+  "label": {
+    "control": {
+      "type": "text",
+    },
+    "description": "New label text.",
+    "name": "label",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": ""Current label"",
+      },
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+      "required": false,
+    },
+  },
+  "oldLabel": {
+    "control": {
+      "type": "text",
+    },
+    "description": "Old label text.",
+    "name": "oldLabel",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+      "required": false,
+    },
+  },
+}

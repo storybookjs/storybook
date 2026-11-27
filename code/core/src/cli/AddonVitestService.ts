@@ -1,7 +1,6 @@
 import fs from 'node:fs/promises';
 import os from 'node:os';
 
-import { canUpdateVitestConfigFile } from 'storybook/internal/babel';
 import type { JsPackageManager } from 'storybook/internal/common';
 import { getProjectRoot } from 'storybook/internal/common';
 import { CLI_COLORS } from 'storybook/internal/node-logger';
@@ -18,6 +17,7 @@ import {
   SUPPORTED_FRAMEWORKS,
   VITEST_FALLBACK_SPECIFIER,
 } from './AddonVitestService.constants.ts';
+import { canUpdateVitestConfigFile } from './vitest-config.ts';
 
 type Result = {
   compatible: boolean;
@@ -328,7 +328,7 @@ export class AddonVitestService {
       reasons.push(`Cannot auto-update CommonJS config file: ${vitestConfigFile}`);
     } else if (vitestConfigFile) {
       const configContent = await fs.readFile(vitestConfigFile, 'utf8');
-      if (!canUpdateVitestConfigFile(configContent)) {
+      if (!canUpdateVitestConfigFile(configContent, vitestConfigFile)) {
         reasons.push(`Found an invalid Vitest config file: ${vitestConfigFile}`);
       }
     }

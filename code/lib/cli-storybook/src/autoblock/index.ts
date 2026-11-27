@@ -14,6 +14,10 @@ const blockers: () => BlockerModule<any>[] = () => [
   import('./block-webpack5-frameworks.ts'),
   import('./block-major-version.ts'),
   import('./block-experimental-addon-test.ts'),
+  import('./block-react-legacy-root-api.ts'),
+  import('./block-a11y-vision-simulations.ts'),
+  import('./block-storybook-overrides.ts'),
+  import('./block-test-runner.ts'),
 ];
 
 /**

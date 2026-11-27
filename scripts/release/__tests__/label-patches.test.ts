@@ -1,21 +1,18 @@
 import { beforeEach, expect, it, vi } from 'vitest';
 
-import ansiRegex from 'ansi-regex';
+import { stripVTControlCharacters } from 'node:util';
 import type { LogResult } from 'simple-git';
 
 import { run } from '../label-patches.ts';
-import * as githubInfo_ from '../utils/get-github-info.ts';
 import * as gitClient_ from '../utils/git-client.ts';
 import * as github_ from '../utils/github-client.ts';
 
 vi.mock('uuid');
-vi.mock('../utils/get-github-info');
 vi.mock('../utils/github-client');
 vi.mock('../utils/git-client');
 
 const gitClient = vi.mocked(gitClient_, true);
 const github = vi.mocked(github_, true);
-const githubInfo = vi.mocked(githubInfo_, true);
 
 const remoteMock = [
   {
@@ -54,22 +51,6 @@ const gitLogMock: LogResult = {
   total: 1,
 };
 
-const pullInfoMock = {
-  user: 'JReinhold',
-  id: 'pr_id',
-  pull: 55,
-  commit: '930b47f011f750c44a1782267d698ccdd3c04da3',
-  title: 'Legal: Fix license',
-  labels: ['documentation', 'patch:yes', 'patch:done'],
-  state: 'MERGED',
-  links: {
-    commit:
-      '[`930b47f011f750c44a1782267d698ccdd3c04da3`](https://github.com/storybookjs/storybook/commit/930b47f011f750c44a1782267d698ccdd3c04da3)',
-    pull: '[#55](https://github.com/storybookjs/storybook/pull/55)',
-    user: '[@JReinhold](https://github.com/JReinhold)',
-  },
-};
-
 function expectAddPatchDoneLabelCalls(labelableIds: string[]) {
   expect(github.githubGraphQlClient.mock.calls).toHaveLength(labelableIds.length);
 
@@ -91,7 +72,6 @@ beforeEach(() => {
   gitClient.getLatestTag.mockResolvedValue('v7.2.1');
   gitClient.git.log.mockResolvedValue(gitLogMock);
   gitClient.git.getRemotes.mockResolvedValue(remoteMock);
-  githubInfo.getPullInfoFromCommit.mockResolvedValue(pullInfoMock);
   github.getLabelIds.mockResolvedValue({ 'patch:done': 'pick-id' });
   github.getUnpickedPRs.mockResolvedValue([
     {
@@ -99,7 +79,7 @@ beforeEach(() => {
       id: 'some-id',
       branch: 'some-patching-branch',
       title: 'Fix: Patch this PR',
-      mergeCommit: 'abcd1234',
+      mergeCommit: '930b47f011f750c44a1782267d698ccdd3c04da3',
     },
     {
       number: 44,
@@ -124,13 +104,12 @@ it('should label the PR associated with cherry picks in the current branch', asy
   const writeStderr = vi.spyOn(process.stderr, 'write').mockImplementation((() => {}) as any);
 
   await run({});
-  expectAddPatchDoneLabelCalls(['pr_id']);
+  expectAddPatchDoneLabelCalls(['some-id']);
 
   const stderrCalls = writeStderr.mock.calls
     .map(([text]) =>
       typeof text === 'string'
-        ? text
-            .replace(ansiRegex(), '')
+        ? stripVTControlCharacters(text)
             .replace(/[^\x20-\x7E]/g, '')
             .replaceAll('-', '')
             .trim()
@@ -143,7 +122,7 @@ it('should label the PR associated with cherry picks in the current branch', asy
       "Looking for latest tag",
       "Found latest tag: v7.2.1",
       "Looking at cherry pick commits since v7.2.1",
-      "Found the following picks : Commit: 930b47f011f750c44a1782267d698ccdd3c04da3 PR: [#55](https://github.com/storybookjs/storybook/pull/55)",
+      "Found the following picks : Commit: 930b47f011f750c44a1782267d698ccdd3c04da3 PR: #42",
       "Labeling 1 PRs with the patch:done label...",
       "Successfully labeled all PRs with the patch:done label.",
     ]
@@ -168,8 +147,7 @@ it('should label all PRs when the --all flag is passed', async () => {
   const stderrCalls = writeStderr.mock.calls
     .map(([text]) =>
       typeof text === 'string'
-        ? text
-            .replace(ansiRegex(), '')
+        ? stripVTControlCharacters(text)
             .replace(/[^\x20-\x7E]/g, '')
             .replaceAll('-', '')
             .trim()

@@ -3,9 +3,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   type ProjectAutomigrationData,
   collectAutomigrationsAcrossProjects,
+  logAutomigrationDetails,
   promptForAutomigrations,
+  runAutomigrationsForProjects,
 } from './multi-project.ts';
 import type { Fix } from './types.ts';
+import { nextjsToNextjsVite } from './fixes/nextjs-to-nextjs-vite.ts';
 
 vi.mock('storybook/internal/node-logger', async (importOriginal) => {
   return {
@@ -13,9 +16,16 @@ vi.mock('storybook/internal/node-logger', async (importOriginal) => {
     prompt: {
       multiselect: vi.fn(),
       error: vi.fn(),
+      taskLog: vi.fn(() => ({
+        message: vi.fn(),
+        success: vi.fn(),
+        error: vi.fn(),
+      })),
     },
     logger: {
       log: vi.fn(),
+      logBox: vi.fn(),
+      warn: vi.fn(),
       error: vi.fn(),
       debug: vi.fn(),
       SYMBOLS: {
@@ -71,7 +81,6 @@ describe('multi-project automigrations', () => {
     storybookVersion: '8.0.0',
     beforeVersion: '7.0.0',
     storiesPaths: [],
-    hasCsfFactoryPreview: false,
   });
 
   describe('collectAutomigrationsAcrossProjects', () => {
@@ -196,6 +205,57 @@ describe('multi-project automigrations', () => {
       expect(result).toEqual([]);
     });
 
+    it('warns that @storybook/nextjs is deprecated when the real nextjs-vite migration is declined', async () => {
+      const { logger, prompt } = await import('storybook/internal/node-logger');
+      vi.mocked(prompt.multiselect).mockResolvedValue([]);
+
+      const project = createMockProject('/project1/.storybook');
+      project.packageManager.getRemoteRunCommand = vi
+        .fn()
+        .mockReturnValue('yarn dlx storybook automigrate nextjs-to-nextjs-vite');
+
+      await promptForAutomigrations([asAutomigration(nextjsToNextjsVite, project)], {
+        dryRun: false,
+        yes: false,
+      });
+
+      expect(vi.mocked(logger.warn)).toHaveBeenCalledWith(
+        expect.stringContaining(
+          '@storybook/nextjs is deprecated and will be removed in Storybook 12'
+        )
+      );
+      expect(vi.mocked(logger.warn)).toHaveBeenCalledWith(
+        expect.stringContaining('yarn dlx storybook automigrate nextjs-to-nextjs-vite')
+      );
+    });
+
+    it('does not warn about the deprecation when the nextjs-vite automigration is selected', async () => {
+      const { logger, prompt } = await import('storybook/internal/node-logger');
+      vi.mocked(prompt.multiselect).mockResolvedValue(['nextjs-to-nextjs-vite']);
+
+      const project = createMockProject('/project1/.storybook');
+
+      await promptForAutomigrations([asAutomigration(nextjsToNextjsVite, project)], {
+        dryRun: false,
+        yes: false,
+      });
+
+      expect(vi.mocked(logger.warn)).not.toHaveBeenCalledWith(
+        expect.stringContaining('will be removed in Storybook 12')
+      );
+    });
+
+    it('runs the nextjs-vite migration under --yes because it is opted in by default', async () => {
+      const project = createMockProject('/project1/.storybook');
+
+      const result = await promptForAutomigrations([asAutomigration(nextjsToNextjsVite, project)], {
+        dryRun: false,
+        yes: true,
+      });
+
+      expect(result.map(({ fix }) => fix.id)).toEqual(['nextjs-to-nextjs-vite']);
+    });
+
     it('should return all automigrations when yes option is true', async () => {
       const { logger } = await import('storybook/internal/node-logger');
       const logSpy = vi.spyOn(logger, 'log');
@@ -234,6 +294,8 @@ describe('multi-project automigrations', () => {
     });
 
     it('should exclude opt-in non-auto automigrations when yes option is true', async () => {
+      const { logger } = await import('storybook/internal/node-logger');
+      const logSpy = vi.spyOn(logger, 'log');
       const project1 = createMockProject('/project1/.storybook');
       const defaultFix = createMockFix('default-fix');
       const optInFix = createMockFix(
@@ -253,6 +315,11 @@ describe('multi-project automigrations', () => {
       const result = await promptForAutomigrations(automigrations, { dryRun: false, yes: true });
 
       expect(result.map(({ fix }) => fix.id)).toEqual(['default-fix']);
+      expect(logSpy).toHaveBeenCalledWith('Running these detected automigrations:');
+      expect(logSpy).toHaveBeenCalledWith(
+        'Not run with --yes because they are opt-in (run `storybook automigrate <id>` to apply one):'
+      );
+      expect(logSpy).toHaveBeenCalledWith(expect.stringContaining('opt-in-fix'));
     });
 
     it('should keep opt-in automigrations that declare promptType auto when yes option is true', async () => {
@@ -379,6 +446,138 @@ describe('multi-project automigrations', () => {
       expect(logSpy).toHaveBeenCalledWith(
         'Detected automigrations (dry run - no changes will be made):'
       );
+    });
+  });
+
+  describe('logAutomigrationDetails', () => {
+    const detailedFix = () =>
+      createMockFix(
+        'detailed-fix',
+        {},
+        {
+          prompt: vi.fn((result?: { files: string[] }) =>
+            result ? `Migrate\n\nFiles:\n${result.files.join('\n')}` : 'Migrate'
+          ),
+        }
+      );
+
+    it("shows a fix's details for each project where its check succeeded", async () => {
+      const { logger } = await import('storybook/internal/node-logger');
+      const fix = detailedFix();
+      const reports = [
+        {
+          result: { files: ['a.ts'] },
+          status: 'check_succeeded' as const,
+          project: createMockProject('/repo/app-a/.storybook'),
+        },
+        {
+          result: null,
+          status: 'not_applicable' as const,
+          project: createMockProject('/repo/app-b/.storybook'),
+        },
+      ];
+
+      logAutomigrationDetails([{ fix, reports }]);
+
+      expect(logger.logBox).toHaveBeenCalledTimes(1);
+      expect(logger.logBox).toHaveBeenCalledWith(
+        'Migrate\n\nFiles:\na.ts',
+        expect.objectContaining({ title: expect.stringContaining('detailed-fix') })
+      );
+    });
+
+    it("adds the fix's link to the details", async () => {
+      const { logger } = await import('storybook/internal/node-logger');
+      const fix = { ...detailedFix(), link: 'https://storybook.js.org/docs/guide#section' };
+
+      logAutomigrationDetails([
+        {
+          fix,
+          reports: [
+            {
+              result: { files: ['a.ts'] },
+              status: 'check_succeeded' as const,
+              project: createMockProject('/repo/.storybook'),
+            },
+          ],
+        },
+      ]);
+
+      expect(logger.logBox).toHaveBeenCalledWith(
+        'Migrate\n\nFiles:\na.ts\n\nMore info: https://storybook.js.org/docs/guide#section',
+        expect.anything()
+      );
+    });
+
+    it('shows nothing for a fix whose prompt does not depend on the check result', async () => {
+      const { logger } = await import('storybook/internal/node-logger');
+
+      logAutomigrationDetails([
+        asAutomigration(createMockFix('plain-fix'), createMockProject('/repo/.storybook')),
+      ]);
+
+      expect(logger.logBox).not.toHaveBeenCalled();
+    });
+
+    it('shows the details in a dry run', async () => {
+      const { logger } = await import('storybook/internal/node-logger');
+      const fix = detailedFix();
+
+      await promptForAutomigrations(
+        [
+          {
+            fix,
+            reports: [
+              {
+                result: { files: ['a.ts'] },
+                status: 'check_succeeded' as const,
+                project: createMockProject('/repo/.storybook'),
+              },
+            ],
+          },
+        ],
+        { dryRun: true }
+      );
+
+      expect(logger.logBox).toHaveBeenCalledWith('Migrate\n\nFiles:\na.ts', expect.anything());
+    });
+  });
+
+  describe('runAutomigrationsForProjects', () => {
+    it('hands the doctor the unselected fixes as warned, not fixes that cancelled from run', async () => {
+      const project = createMockProject('/project1/.storybook');
+      const cancelledFix = createMockFix(
+        'cancelled-fix',
+        {},
+        {
+          run: vi.fn(async () => false as const),
+        }
+      );
+      const unselectedFix = createMockFix(
+        'unselected-fix',
+        {},
+        {
+          skipWarning: 'The unselected-fix migration was skipped.',
+        }
+      );
+
+      // The user selected cancelled-fix but left unselected-fix out of the multi-project prompt.
+      const results = await runAutomigrationsForProjects([asAutomigration(cancelledFix, project)], {
+        automigrations: [
+          asAutomigration(cancelledFix, project),
+          asAutomigration(unselectedFix, project),
+        ],
+        yes: false,
+      });
+
+      const result = results['/project1/.storybook'];
+      expect(result.automigrationStatuses).toEqual({
+        'cancelled-fix': 'skipped',
+        'unselected-fix': 'skipped',
+      });
+      // Only the unselected fix printed its skip warning; the cancelled fix printed none, so the
+      // doctor still reports its deprecation.
+      expect(result.warnedFixIds).toEqual(['unselected-fix']);
     });
   });
 });

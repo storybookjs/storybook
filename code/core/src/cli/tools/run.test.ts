@@ -5,8 +5,9 @@
  * everything behind the commander wiring, without spawning processes.
  */
 
+import { logger } from 'storybook/internal/node-logger';
 import type { StoryIndex } from 'storybook/internal/types';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 
 import * as v from 'valibot';
 
@@ -19,6 +20,7 @@ import {
   registerToolset,
 } from '../../shared/open-service/toolset-registry.ts';
 import type { DocsAccess } from '../../shared/open-service/toolsets/docs/access.ts';
+import { createDocsToolset } from '../../shared/open-service/toolsets/docs/definition.ts';
 import type { StorybookInstanceRecord } from './instances/types.ts';
 import { runToolsCommand, type ToolsInvocation, type ToolsRunDeps } from './run.ts';
 import { invokeToolsetMethod } from '../../shared/open-service/toolset-definition.ts';
@@ -32,6 +34,9 @@ import {
   type ToolsRuntime,
 } from './sdk/index.ts';
 import { registerCoreToolsetsForTest } from './test-support/register-core-toolsets.ts';
+
+// The shared setup stubs the logger; these tests assert what the real one prints.
+vi.mock('storybook/internal/node-logger', { spy: true });
 
 const CONFIG_DIR = '/repo/.storybook';
 
@@ -306,7 +311,7 @@ describe('local tools', () => {
           graphStatus: {
             title: 'Read graph status',
             description: 'Read the module graph status.',
-            input: v.object({}),
+            input: v.strictObject({}),
             handler: async (_input, ctx) => {
               const service = ctx.getService<typeof moduleGraph>('core/module-graph', {
                 internal: true,
@@ -455,6 +460,26 @@ describe('requires-dev-server contract', () => {
     expect(result.output).toContain('--cwd');
   });
 
+  it('states the attach failure itself when auto mode found an instance but could not attach', async () => {
+    const tools = makeLocalTools();
+    tools.requestedMode = 'auto';
+    tools.fallbackReason = 'old-server';
+    tools.attachFailure = 'Restart Storybook to enable attach.';
+    tools.fallbackNotice = `${tools.attachFailure}\n\nFalling back to loading this project's Storybook configuration.`;
+    const { deps } = makeDeps({
+      createTools: vi.fn(async () => tools),
+      discoverInstance: vi.fn(async () => ({ currentRecord: RECORD, records: [RECORD] })),
+    });
+
+    const result = await run(['review', 'create', '--input', '{}'], deps);
+
+    expect(result.outcome).toEqual({ kind: 'intercept', reason: 'requires-dev-server' });
+    expect(result.output).toBe(
+      '`npx storybook tools review create` requires a running Storybook dev server, and could not attach to one:\n\nRestart Storybook to enable attach.'
+    );
+    expect(result.fallbackNotice).toBeUndefined();
+  });
+
   it('intercepts stories preview in local mode even when an instance is running', async () => {
     const { deps } = makeDeps({
       discoverInstance: vi.fn(async () => ({ currentRecord: RECORD, records: [RECORD] })),
@@ -481,7 +506,7 @@ describe('requires-dev-server contract', () => {
         methods: {
           attach: {
             title: 'Attach',
-            input: v.object({}),
+            input: v.strictObject({}),
             description: 'attach',
             requiresDevServer: true,
             handler: async () => ({ ok: true as const, data: {}, markdown: '' }),
@@ -545,6 +570,83 @@ describe('dispatch', () => {
     expect(result.output).toContain('--help');
   });
 
+  it('rejects an unknown flag without calling the tool, naming it and listing the valid flags', async () => {
+    const resolve = vi.fn(DOCS_ACCESS.resolve);
+    clearToolsetRegistry();
+    registerToolset(
+      createDocsToolset({
+        sources: [
+          { source: { id: 'local', title: 'Local' }, access: { ...DOCS_ACCESS, resolve } },
+          { source: { id: 'tetra', title: 'Tetra' }, access: { ...DOCS_ACCESS, resolve } },
+        ],
+      })
+    );
+    const { deps } = makeDeps();
+
+    const result = await run(['docs', 'show', '--id', 'button', '--storybook-id', 'tetra'], deps);
+
+    expect(result.exitCode).toBe(1);
+    expect(result.outcome).toEqual({ kind: 'intercept', reason: 'invalid-arguments' });
+    expect(result.output).toBe(`Invalid arguments for \`npx storybook tools docs show\`:
+
+- Unknown flag \`--storybook-id\`.
+
+Valid flags: \`--id\`, \`--storybookId\`.
+
+Run \`npx storybook tools docs show --help\` for the expected arguments.`);
+    expect(resolve).not.toHaveBeenCalled();
+  });
+
+  it('rejects an unknown --input key the same way', async () => {
+    const { deps } = makeDeps();
+
+    const result = await run(
+      ['docs', 'show', '--input', '{"id":"button","storybook-id":"x"}'],
+      deps
+    );
+
+    expect(result.exitCode).toBe(1);
+    expect(result.outcome).toEqual({ kind: 'intercept', reason: 'invalid-arguments' });
+    expect(result.output).toContain('- Unknown flag `--storybook-id`.');
+    expect(result.output).toContain('Valid flags: `--id`.');
+  });
+
+  it('points a target option given after the tool name back before the toolset name', async () => {
+    const { deps } = makeDeps();
+
+    const result = await run(['docs', 'show', '--id', 'button', '--port', '6006'], deps);
+
+    expect(result.outcome).toEqual({ kind: 'intercept', reason: 'invalid-arguments' });
+    expect(result.output).toContain(
+      'goes before the toolset name: `npx storybook tools --port <value> docs show`'
+    );
+  });
+
+  it('rejects any flag for a tool that takes no arguments', async () => {
+    clearToolsetRegistry();
+    registerToolset(
+      defineToolset({
+        id: 'echo',
+        description: 'Echo tools.',
+        methods: {
+          ping: {
+            title: 'Ping',
+            description: 'Takes no arguments.',
+            input: v.strictObject({}),
+            handler: async () => ({ ok: true as const, data: {}, markdown: 'pong' }),
+          },
+        },
+      })
+    );
+    const { deps } = makeDeps();
+
+    const result = await run(['echo', 'ping', '--verbose'], deps);
+
+    expect(result.outcome).toEqual({ kind: 'intercept', reason: 'invalid-arguments' });
+    expect(result.output).toContain('- Unknown flag `--verbose`.');
+    expect(result.output).toContain('This tool takes no arguments.');
+  });
+
   it('leaves the test toolset out when the project does not register it', async () => {
     // Core harness never registers addon-vitest's `test` toolset.
     registerCoreToolsetsForTest();
@@ -557,7 +659,7 @@ describe('dispatch', () => {
 });
 
 describe('help', () => {
-  it('renders the full discovery dump with badges, schemas and CLI spellings', async () => {
+  it('renders the overview with badges and CLI spellings, without the arguments of any tool', async () => {
     const { deps } = makeDeps();
 
     const result = await runToolsCommand({ tokens: [], target: {} }, deps);
@@ -575,17 +677,13 @@ describe('help', () => {
     expect(result.output).toContain('--cwd <path>');
     expect(result.output).toContain('-c, --config-dir <dir-name>');
     expect(result.output).toContain('-o, --output <path>');
-    // The Commands listing summarizes every subcommand commander-style before the full reference.
     expect(result.output).toContain('Commands:');
-    expect(result.output).toContain('stories preview  [requires running Storybook]');
-    expect(result.output).toContain('docs list  [local]');
+    expect(result.output).toMatch(/stories preview +Get story preview URLs/);
+    expect(result.output).toMatch(/docs list +List All Documentation {2}\[local\]/);
     // `test` is owned by addon-vitest; the core harness does not register it.
     expect(result.output).not.toContain('test run');
-    expect(result.output).toContain('stories find-by-component');
-    // Input schemas come from the valibot definitions.
-    expect(result.output).toContain('`--componentPaths`');
-    // Declared output schemas are part of the dump.
-    expect(result.output).toContain('Output (`--json`):');
+    expect(result.output).not.toContain('`--componentPaths`');
+    expect(result.output).not.toContain('Output (`--json`):');
   });
 
   it('renders one toolset’s section with a usage line on a bare toolset name', async () => {
@@ -656,7 +754,7 @@ describe('help', () => {
   it('describes tools in CLI vocabulary, never MCP tool names', async () => {
     const { deps } = makeDeps();
 
-    const result = await runToolsCommand({ tokens: [], target: {} }, deps);
+    const result = await run(['stories', 'find-by-component', '--help'], deps);
 
     expect(result.output).toContain('npx storybook tools stories changed');
     expect(result.output).not.toContain('stories-changed');
@@ -673,19 +771,19 @@ describe('outcome mapping', () => {
         methods: {
           ok: {
             title: 'ok',
-            input: v.object({}),
+            input: v.strictObject({}),
             description: 'ok',
             handler: async () => ({ ok: true, data: { a: 1 }, markdown: ['one', 'two'] }),
           },
           bad: {
             title: 'bad',
-            input: v.object({}),
+            input: v.strictObject({}),
             description: 'bad',
             handler: async () => ({ ok: false, data: { a: 0 }, markdown: 'bad news' }),
           },
           boom: {
             title: 'boom',
-            input: v.object({}),
+            input: v.strictObject({}),
             description: 'boom',
             handler: async () => {
               throw new Error('kapow');
@@ -693,7 +791,7 @@ describe('outcome mapping', () => {
           },
           guide: {
             title: 'guide',
-            input: v.object({}),
+            input: v.strictObject({}),
             description: 'guide',
             handler: async () => {
               const error = new Error('Start the dev server, then retry.');
@@ -701,9 +799,29 @@ describe('outcome mapping', () => {
               throw error;
             },
           },
+          warn: {
+            title: 'warn',
+            input: v.strictObject({}),
+            description: 'warns while running',
+            handler: async () => {
+              logger.warn('No story files found for the specified pattern');
+              return { ok: true, data: {}, markdown: 'result' };
+            },
+          },
+          files: {
+            title: 'files',
+            input: v.strictObject({ files: v.optional(v.array(v.string())) }),
+            description: 'file echo',
+            positional: 'files',
+            handler: async (input: { files?: string[] }) => ({
+              ok: true,
+              data: input,
+              markdown: JSON.stringify(input),
+            }),
+          },
           input: {
             title: 'input',
-            input: v.object({ a: v.optional(v.number()), b: v.optional(v.number()) }),
+            input: v.strictObject({ a: v.optional(v.number()), b: v.optional(v.number()) }),
             description: 'input echo',
             handler: async (input: { a?: number; b?: number }) => ({
               ok: true,
@@ -725,6 +843,43 @@ describe('outcome mapping', () => {
       exitCode: 0,
       output: 'one\n\ntwo',
       outcome: { kind: 'success' },
+    });
+  });
+
+  describe('warnings logged while the tool runs', () => {
+    let printed: string[];
+
+    beforeEach(() => {
+      printed = [];
+      const capture = (chunk: unknown) => {
+        printed.push(String(chunk));
+        return true;
+      };
+      const spies = [
+        vi.spyOn(process.stdout, 'write').mockImplementation(capture),
+        vi.spyOn(console, 'warn').mockImplementation(capture),
+      ];
+      onTestFinished(() => spies.forEach((spy) => spy.mockRestore()));
+    });
+
+    it('stay out of the output, and the log level is restored afterwards', async () => {
+      const { deps } = makeDeps();
+
+      const result = await run(['echo', 'warn'], deps);
+
+      expect(result.output).toBe('result');
+      expect(printed.join('')).not.toContain('No story files found');
+      expect(logger.getLogLevel()).toBe('info');
+    });
+
+    it('are printed when the log level is not the default', async () => {
+      logger.setLogLevel('debug');
+      onTestFinished(() => logger.setLogLevel('info'));
+      const { deps } = makeDeps();
+
+      await run(['echo', 'warn'], deps);
+
+      expect(printed.join('')).toContain('No story files found');
     });
   });
 
@@ -767,6 +922,67 @@ describe('outcome mapping', () => {
     );
 
     expect(JSON.parse(result.output)).toEqual({ a: 1, b: 2 });
+  });
+
+  describe('positional arguments', () => {
+    it('passes bare arguments as the positional key, as typed', async () => {
+      const { deps } = makeDeps();
+
+      // This test file exists, and still reaches the tool as the relative path that was typed.
+      const result = await run(
+        ['echo', 'files', 'src/cli/tools/run.test.ts', './Button/', 'Button', '--json'],
+        deps
+      );
+
+      expect(result.exitCode).toBe(0);
+      expect(JSON.parse(result.output)).toEqual({
+        files: ['src/cli/tools/run.test.ts', './Button/', 'Button'],
+      });
+    });
+
+    it('appends bare arguments to the values given with the flag', async () => {
+      const { deps } = makeDeps();
+
+      const result = await run(
+        ['echo', 'files', '--files', '["/abs/A.tsx"]', '--json', '--', 'B.tsx'],
+        deps
+      );
+
+      expect(JSON.parse(result.output)).toEqual({ files: ['/abs/A.tsx', 'B.tsx'] });
+    });
+
+    it('reads a single flag value as a list of one, as it reads one bare argument', async () => {
+      const { deps } = makeDeps();
+
+      const result = await run(['echo', 'files', '--files', 'A.tsx', '--json'], deps);
+
+      expect(JSON.parse(result.output)).toEqual({ files: ['A.tsx'] });
+    });
+
+    it('rejects bare arguments for a tool without a positional key, without calling it', async () => {
+      const { deps } = makeDeps();
+
+      const result = await run(['echo', 'input', 'button'], deps);
+
+      expect(result).toMatchObject({
+        exitCode: 1,
+        outcome: { kind: 'intercept', reason: 'invalid-arguments' },
+      });
+      expect(result.output).toContain(
+        'Unexpected argument `button`. `npx storybook tools echo input` takes no bare arguments'
+      );
+    });
+
+    it('shows the positional key in the tool help', async () => {
+      const { deps } = makeDeps();
+
+      const result = await run(['echo', 'files', '--help'], deps);
+
+      expect(result.output).toContain(
+        'Usage: npx storybook tools echo files [files...] [--key value ...]'
+      );
+      expect(result.output).toContain('Bare arguments are `--files` values.');
+    });
   });
 });
 
@@ -891,7 +1107,7 @@ describe('attached tools', () => {
         methods: {
           ping: {
             title: 'Ping',
-            input: v.object({}),
+            input: v.strictObject({}),
             description: 'ping',
             requiresDevServer: true,
             handler: async (_input, ctx) => ({
@@ -921,7 +1137,7 @@ describe('attached tools', () => {
           reason: 'no-instance',
           instances: [],
           remediation:
-            'No running Storybook was found for this project. Start it first (for example `npm run storybook`), then retry with `--attach`.',
+            'No running Storybook was found for this project. Start it first with the Storybook script in its `package.json`, then retry with `--attach`.',
         });
       }),
     });
@@ -932,7 +1148,7 @@ describe('attached tools', () => {
     expect(result.outcome).toEqual({ kind: 'attach-gate', reason: 'no-instance' });
     expect(result.requestedMode).toBe('attached');
     expect(result.attachMode).toBe('attached');
-    expect(result.output).toContain('npm run storybook');
+    expect(result.output).toContain('Start it first with the Storybook script');
     expect(result.output).toContain('--attach');
   });
 

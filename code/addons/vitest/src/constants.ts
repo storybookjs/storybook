@@ -28,8 +28,6 @@ export const storeOptions = {
     watching: false,
     cancelling: false,
     fatalError: undefined,
-    index: { entries: {}, v: 5 },
-    previewAnnotations: [],
     currentRun: {
       triggeredBy: undefined,
       config: {
@@ -51,6 +49,7 @@ export const storeOptions = {
       },
       storyIds: undefined,
       totalTestCount: undefined,
+      matchedFileCount: undefined,
       startedAt: undefined,
       finishedAt: undefined,
       unhandledErrors: [],
@@ -64,6 +63,7 @@ export const FULL_RUN_TRIGGERS: RunTrigger[] = ['global', 'run-all'] as const;
 export const STORE_CHANNEL_EVENT_NAME = `UNIVERSAL_STORE:${storeOptions.id}`;
 export const STATUS_STORE_CHANNEL_EVENT_NAME = 'UNIVERSAL_STORE:storybook/status';
 export const TEST_PROVIDER_STORE_CHANNEL_EVENT_NAME = 'UNIVERSAL_STORE:storybook/test-provider';
+export const STORY_INDEX_CHANNEL_EVENT_NAME = `${ADDON_ID}/story-index`;
 
 export const STATUS_TYPE_ID_COMPONENT_TEST = 'storybook/component-test';
 export const STATUS_TYPE_ID_A11Y = 'storybook/a11y';
@@ -81,6 +81,8 @@ export type TriggerTestRunRequestPayload = {
   requestId: string;
   actor: string;
   storyIds?: string[];
+  fileFilters?: string[];
+  storyFiles?: string[];
   config?: Record<string, unknown>;
 };
 

@@ -8,7 +8,9 @@ import React, { Profiler, StrictMode, createElement } from 'react';
 import PropTypes from 'prop-types';
 import { addons, emitTransformCode, useState } from 'storybook/preview-api';
 
-import type { ReactRenderer, StoryContext } from '../types';
+import type { StoryContext } from 'storybook/internal/types';
+
+import type { ReactRenderer } from '../types';
 import { getReactSymbolName, jsxDecorator, renderJsx } from './jsxDecorator';
 
 vi.mock('storybook/preview-api', () => ({
@@ -338,8 +340,13 @@ describe('renderJsx', () => {
   });
 });
 
-// @ts-expect-error (Converted from ts-ignore)
-const makeContext = (name: string, parameters: any, args: any, extra?: object): StoryContext => ({
+const makeContext = (
+  name: string,
+  parameters: any,
+  args: any,
+  extra?: object
+  // @ts-expect-error (Converted from ts-ignore)
+): StoryContext<ReactRenderer> => ({
   id: `jsx-test--${name}`,
   kind: 'js-text',
   name,

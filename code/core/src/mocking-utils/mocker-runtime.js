@@ -71,9 +71,8 @@ function registerModuleMocker(interceptor) {
         return rpc('invalidate', { ids });
       },
     },
-    (...args) => {
-      return globalThis.__STORYBOOK_MODULE_TEST__.spyOn(...args);
-    },
+    // Set by storybook/test (see `test/spy.ts`), so module mocks are reactive storybook/test mocks.
+    (options) => globalThis.__STORYBOOK_CREATE_MOCK_INSTANCE__(options),
     {
       root: '',
     }

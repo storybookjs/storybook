@@ -12,7 +12,6 @@ import {
 describe('channel slot', () => {
   afterEach(() => {
     clearChannel();
-    vi.unstubAllGlobals();
   });
 
   it('returns null after clearChannel', () => {
@@ -108,7 +107,6 @@ describe('module import', () => {
       const { getChannel } = await import('./channel-slot.ts');
       expect(getChannel()).toBeNull();
     } finally {
-      vi.unstubAllGlobals();
       vi.unstubAllEnvs();
       vi.resetModules();
     }

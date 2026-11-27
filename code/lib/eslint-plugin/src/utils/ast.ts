@@ -43,4 +43,5 @@ export const isTSInterfaceDeclaration = isNodeOfType(AST_NODE_TYPES.TSInterfaceD
 export const isTSAsExpression = isNodeOfType(AST_NODE_TYPES.TSAsExpression);
 export const isTSSatisfiesExpression = isNodeOfType(AST_NODE_TYPES.TSSatisfiesExpression);
 export const isTSNonNullExpression = isNodeOfType(AST_NODE_TYPES.TSNonNullExpression);
+export const isTSTypeAssertion = isNodeOfType(AST_NODE_TYPES.TSTypeAssertion);
 export const isMetaProperty = isNodeOfType(AST_NODE_TYPES.MetaProperty);

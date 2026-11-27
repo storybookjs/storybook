@@ -3,7 +3,7 @@ import React, { useMemo } from 'react';
 import { Link } from 'storybook/internal/components';
 
 import { useStorybookApi } from 'storybook/manager-api';
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/emotion';
 
 import { DOCUMENTATION_DISCREPANCY_LINK } from '../constants.ts';
 

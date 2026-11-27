@@ -10,17 +10,14 @@ import {
   Spaced,
 } from 'storybook/internal/components';
 
-import { global } from '@storybook/global';
 import { ChevronDownIcon, LockIcon, SweepIcon, SyncIcon } from '@storybook/icons';
 
 import { useStorybookApi } from 'storybook/manager-api';
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/emotion';
 
 import { useLayout } from '../layout/LayoutProvider.tsx';
 import { Contained, Loader } from './Loader.tsx';
 import { NoResults } from './NoResults.tsx';
-
-const { window: globalWindow } = global;
 
 const TextStyle = styled.div(({ theme }) => ({
   fontSize: theme.typography.size.s2,
@@ -43,37 +40,22 @@ const Text = styled.div(({ theme }) => ({
   },
 }));
 
-const ErrorDisplay = styled.pre<{ isMobile: boolean }>(
-  {
-    boxSizing: 'border-box',
-    borderRadius: 8,
-    overflow: 'auto',
-    whiteSpace: 'pre',
-  },
-  ({ isMobile }) =>
-    isMobile
-      ? {
-          maxWidth: 'calc(100vw - 40px)',
-        }
-      : {
-          minWidth: 420,
-          maxWidth: 640,
-        },
-  ({ theme }) => ({
-    color: theme.color.dark,
-  })
-);
+const ErrorDisplay = styled.pre(({ theme }) => ({
+  borderRadius: 8,
+  maxWidth: 640,
+  color: theme.color.dark,
+}));
 
 export const AuthBlock: FC<{ loginUrl: string; id: string }> = ({ loginUrl, id }) => {
   const [isAuthAttempted, setAuthAttempted] = useState(false);
 
   const refresh = useCallback(() => {
-    globalWindow.document.location.reload();
+    document.location.reload();
   }, []);
 
   const open = useCallback<React.MouseEventHandler>((e) => {
     e.preventDefault();
-    const childWindow = globalWindow.open(loginUrl, `storybook_auth_${id}`, 'resizable,scrollbars');
+    const childWindow = window.open(loginUrl, `storybook_auth_${id}`, 'resizable,scrollbars');
 
     // poll for window to close
     const timer = setInterval(() => {
@@ -107,7 +89,7 @@ export const AuthBlock: FC<{ loginUrl: string; id: string }> = ({ loginUrl, id }
           <Fragment>
             <Text>Sign in to browse this Storybook.</Text>
             <div>
-              <Button size="small" variant="outline" onClick={open}>
+              <Button ariaLabel={false} size="small" variant="outline" onClick={open}>
                 <LockIcon />
                 Sign in
               </Button>
@@ -133,7 +115,7 @@ export const ErrorBlock: FC<{ error: Error }> = ({ error }) => {
             offset={isMobile ? 0 : 8}
             placement={isMobile ? 'bottom-end' : 'bottom-start'}
             popover={
-              <ErrorDisplay isMobile={isMobile}>
+              <ErrorDisplay>
                 <ErrorFormatter error={error} />
               </ErrorDisplay>
             }

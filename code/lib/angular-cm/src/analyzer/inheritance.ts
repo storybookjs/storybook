@@ -2,6 +2,7 @@ import type * as ts from 'typescript';
 
 import type { Method, Property } from '../types.ts';
 import { resolvedSymbol, type AnalyzerContext } from './context.ts';
+import { applyHostDirectives } from './host-directives.ts';
 import type { ClassMembers, DocumentedClassKind, MemberEntry } from './members.ts';
 import { applyMetadataInputsOutputs, sameMemberIdentity, visitClassMembers } from './members.ts';
 import { signalValueTypeFromType } from './signals.ts';
@@ -23,7 +24,24 @@ export function resolveClassMembers(
   classNode: ts.ClassLikeDeclaration,
   kind: DocumentedClassKind
 ): ClassMembers {
-  return resolveWithBases(ctx, classNode, kind, new Set([classNode]), new Map());
+  return resolveWithHostDirectives(ctx, classNode, kind, new Set([classNode]));
+}
+
+// Host directives are applied once the whole base chain is merged, because Angular inherits them
+// and a binding any class in the chain declares itself takes precedence over one they expose.
+function resolveWithHostDirectives(
+  ctx: AnalyzerContext,
+  classNode: ts.ClassLikeDeclaration,
+  kind: DocumentedClassKind,
+  visited: ReadonlySet<ts.Node>
+): ClassMembers {
+  const members = resolveWithBases(ctx, classNode, kind, new Set(visited), new Map());
+  applyHostDirectives(ctx, [classNode, ...ancestors(ctx, classNode)], members, (declaration) =>
+    visited.has(declaration)
+      ? undefined
+      : resolveWithHostDirectives(ctx, declaration, 'directive', new Set([...visited, declaration]))
+  );
+  return members;
 }
 
 function resolveWithBases(
@@ -43,6 +61,45 @@ function resolveWithBases(
   return members;
 }
 
+const baseClasses = (
+  ctx: AnalyzerContext,
+  classNode: ts.ClassLikeDeclaration
+): { declaration: ts.ClassDeclaration; baseType: ts.BaseType }[] => {
+  if (!classNode.name) {
+    return [];
+  }
+  const symbol = ctx.checker.getSymbolAtLocation(classNode.name);
+  const type = symbol && ctx.checker.getDeclaredTypeOfSymbol(symbol);
+  if (!type?.isClassOrInterface()) {
+    return [];
+  }
+  return ctx.checker.getBaseTypes(type).flatMap((baseType) => {
+    const declaration = baseType
+      .getSymbol()
+      ?.declarations?.find((candidate): candidate is ts.ClassDeclaration =>
+        ctx.ts.isClassDeclaration(candidate)
+      );
+    return declaration ? [{ declaration, baseType }] : [];
+  });
+};
+
+const ancestors = (
+  ctx: AnalyzerContext,
+  classNode: ts.ClassLikeDeclaration
+): ts.ClassDeclaration[] => {
+  const found: ts.ClassDeclaration[] = [];
+  const pending = [classNode];
+  for (let node = pending.pop(); node; node = pending.pop()) {
+    for (const { declaration } of baseClasses(ctx, node)) {
+      if (declaration !== classNode && !found.includes(declaration)) {
+        found.push(declaration);
+        pending.push(declaration);
+      }
+    }
+  }
+  return found;
+};
+
 function walkBases(
   ctx: AnalyzerContext,
   classNode: ts.ClassLikeDeclaration,
@@ -51,21 +108,8 @@ function walkBases(
   visited: Set<ts.Node>,
   substitutions: ReadonlyMap<ts.Symbol, ts.TypeNode>
 ): void {
-  if (!classNode.name) {
-    return;
-  }
-  const symbol = ctx.checker.getSymbolAtLocation(classNode.name);
-  const type = symbol && ctx.checker.getDeclaredTypeOfSymbol(symbol);
-  if (!type?.isClassOrInterface()) {
-    return;
-  }
-  for (const baseType of ctx.checker.getBaseTypes(type)) {
-    const declaration = baseType
-      .getSymbol()
-      ?.declarations?.find((candidate): candidate is ts.ClassDeclaration =>
-        ctx.ts.isClassDeclaration(candidate)
-      );
-    if (!declaration || visited.has(declaration)) {
+  for (const { declaration, baseType } of baseClasses(ctx, classNode)) {
+    if (visited.has(declaration)) {
       continue;
     }
     visited.add(declaration);
@@ -81,12 +125,9 @@ function walkBases(
       inheritedSubstitutions,
       baseType
     );
-    // A declaration file records no decorators or signal calls, so a base from one has nothing to
-    // contribute to the IO buckets.
-    if (!declaration.getSourceFile().isDeclarationFile) {
-      mergeBucket(ctx, members, baseMembers, 'inputs');
-      mergeBucket(ctx, members, baseMembers, 'outputs');
-    }
+    // A base from a declaration file has IO only where its compiled `ɵcmp` or a signal type says so.
+    mergeBucket(ctx, members, baseMembers, 'inputs');
+    mergeBucket(ctx, members, baseMembers, 'outputs');
     mergeInto(members.properties, baseMembers.properties, members);
     mergeInto(members.methods, baseMembers.methods, members);
   }
@@ -130,7 +171,7 @@ const typeParameterSubstitutions = (
   }
   const args = clause.typeArguments ?? [];
   for (const [index, parameter] of parameters.entries()) {
-    const argument = args[index] ?? parameter.default;
+    const argument = args[index] ?? ctx.ts.getTypeParameterDefault(parameter);
     const symbol = ctx.checker.getSymbolAtLocation(parameter.name);
     if (!argument || !symbol) {
       continue;

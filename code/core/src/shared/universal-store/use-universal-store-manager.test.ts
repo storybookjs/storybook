@@ -8,6 +8,7 @@ import type { ChannelEvent } from './types.ts';
 import { useUniversalStore as useUniversalStoreManager } from './use-universal-store-manager.ts';
 
 vi.mock('./instances');
+vi.mock('./first-party-store-ids');
 
 const mockChannelListeners = new Map<string, Set<(...args: any[]) => void>>();
 
@@ -90,6 +91,30 @@ describe('useUniversalStore - Manager', () => {
     expect(renderCounter).toHaveBeenCalledTimes(2);
     const [secondState] = result.current;
     expect(secondState).toEqual({ count: 1 });
+  });
+
+  it('should not re-render when the state is replaced with a deeply equal state', async () => {
+    // Arrange - create a store
+    const store = UniversalStore.create({
+      id: 'env1:test',
+      leader: true,
+      initialState: { count: 0 },
+    });
+    const renderCounter = vi.fn();
+
+    // Act - render the hook
+    const { result } = renderHook(() => {
+      renderCounter();
+      return useUniversalStoreManager(store);
+    });
+    const [firstState] = result.current;
+
+    // Act - replace the state with a new object of identical content
+    act(() => store.setState({ count: 0 }));
+
+    // Assert - the component should not re-render and the state should keep its identity
+    expect(renderCounter).toHaveBeenCalledTimes(1);
+    expect(result.current[0]).toBe(firstState);
   });
 
   it('should only re-render when the selected state changes', async () => {

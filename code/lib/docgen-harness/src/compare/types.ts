@@ -1,4 +1,4 @@
-export type Framework = 'vue3' | 'angular' | 'web-components';
+export type Framework = 'vue3' | 'angular' | 'web-components' | 'svelte';
 
 export type ViolationKind =
   | 'lost-arg'

@@ -1,5 +1,5 @@
 import { createMetaComponentResolver } from 'storybook/internal/common';
-import type { CsfFile } from 'storybook/internal/csf-tools';
+import type { CsfFile, ESTreeNode } from 'storybook/internal/csf-tools';
 
 /** The component a story file documents, located on disk. */
 export interface ResolvedVueComponent {
@@ -17,7 +17,8 @@ export interface ResolvedVueComponent {
 export type UnresolvedComponentReason =
   | 'no-meta-component'
   | 'no-component-import'
-  | 'unreadable-component-expression';
+  | 'unreadable-component-expression'
+  | 'missing-export';
 
 const resolveComponent = createMetaComponentResolver({ extensions: ['.vue'] });
 
@@ -26,13 +27,15 @@ const resolveComponent = createMetaComponentResolver({ extensions: ['.vue'] });
  *
  * `vue-component-meta` extracts from a module on disk, so the shared resolver's looser results — a
  * component declared in the story file, or a specifier that does not resolve — are reported here as
- * no component at all.
+ * no component at all. Passing `componentNode` resolves a declared subcomponent's expression
+ * instead, through the same following.
  */
 export function resolveMetaComponent(
   csf: CsfFile,
-  storyPath: string
+  storyPath: string,
+  componentNode?: ESTreeNode
 ): { component: ResolvedVueComponent } | { reason: UnresolvedComponentReason } {
-  const resolved = resolveComponent(csf, storyPath);
+  const resolved = resolveComponent(csf, storyPath, componentNode);
   if ('reason' in resolved) {
     return resolved;
   }

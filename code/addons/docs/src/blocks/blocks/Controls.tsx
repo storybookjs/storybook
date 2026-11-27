@@ -165,7 +165,7 @@ const LegacyControls: FC<ControlsStoryProps> = ({ story, context, ...props }) =>
 };
 
 const DocgenServiceControls: FC<ControlsStoryProps> = ({ story, context, ...props }) => {
-  const { parameters, argTypes, component } = story;
+  const { parameters, argTypes } = story;
   const filterProps = getControlsFilterProps(story, props);
   const interactiveState = useControlsInteractiveState(story, context);
   const { rows: serviceRows, isInitialLoading } = useDocgenServiceRows({
@@ -186,7 +186,7 @@ const DocgenServiceControls: FC<ControlsStoryProps> = ({ story, context, ...prop
 
   return (
     <ControlsTables
-      mainName={getComponentName(component) ?? serviceRows.serviceComponentName}
+      mainName={serviceRows.serviceComponentName}
       mainRows={serviceRows.mainRows}
       subcomponentRows={serviceRows.subcomponentRows}
       {...filterProps}
@@ -210,7 +210,7 @@ const ControlsImpl: FC<ControlsProps> = (props) => {
 
   const storyProps = { ...props, story, context };
 
-  return globalThis.FEATURES?.experimentalDocgenServer ? (
+  return globalThis.FEATURES?.docgenServer ? (
     <DocgenServiceControls {...storyProps} />
   ) : (
     <LegacyControls {...storyProps} />

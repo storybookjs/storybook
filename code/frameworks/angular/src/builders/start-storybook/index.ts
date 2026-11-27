@@ -38,6 +38,7 @@ addToGlobalContext('cliVersion', versions.storybook);
 export type StorybookBuilderOptions = JsonObject & {
   browserTarget?: string | null;
   tsConfig?: string;
+  configDir: string;
   compodoc: boolean;
   compodocArgs: string[];
   enableProdMode?: boolean;
@@ -69,7 +70,6 @@ export type StorybookBuilderOptions = JsonObject & {
     | 'webpackStatsJson'
     | 'statsJson'
     | 'loglevel'
-    | 'previewUrl'
   >;
 
 export type StorybookBuilderOutput = JsonObject & BuilderOutput & {};
@@ -142,7 +142,6 @@ const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = (
           loglevel,
           webpackStatsJson,
           statsJson,
-          previewUrl,
           sourceMap = false,
           preserveSymlinks = false,
           // Angular 21+ always supports zoneless; users still opt out via `experimentalZoneless: false`
@@ -185,7 +184,6 @@ const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = (
           webpackStatsJson,
           statsJson,
           loglevel,
-          previewUrl,
         };
 
         const startedPort = await runInstance(standaloneOptions);
@@ -226,16 +224,21 @@ async function setup(options: StorybookBuilderOptions, context: BuilderContext) 
     );
   }
 
-  return {
-    tsConfig:
-      options.tsConfig ??
-      find.up('tsconfig.json', { cwd: options.configDir }) ??
-      browserOptions.tsConfig,
-  };
+  const tsConfig =
+    options.tsConfig ??
+    find.up('tsconfig.json', { cwd: options.configDir }) ??
+    browserOptions?.tsConfig;
+  if (tsConfig === undefined) {
+    throw new Error(
+      'Storybook could not find a tsconfig.json. Set the "tsConfig" or "browserTarget" option of the Storybook builder.'
+    );
+  }
+
+  return { tsConfig };
 }
 async function runInstance(options: StandaloneOptions) {
   try {
-    const { port } = await withTelemetry(
+    const result = await withTelemetry(
       'dev',
       {
         cliOptions: options,
@@ -251,7 +254,10 @@ async function runInstance(options: StandaloneOptions) {
         return buildDevStandalone(options);
       }
     );
-    return port;
+    if (!result) {
+      throw new Error('Storybook dev server did not start');
+    }
+    return result.port;
   } catch (error) {
     const summarized = errorSummary(error);
     throw new Error(String(summarized));

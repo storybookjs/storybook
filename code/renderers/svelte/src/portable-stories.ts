@@ -10,7 +10,8 @@ import type {
 } from 'storybook/internal/types';
 
 import PreviewRender from '@storybook/svelte/internal/PreviewRender.svelte';
-// @ts-expect-error Don't know why TS doesn't pick up the types export here
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore Typed through JSDoc and `allowJs`. Packages that type-check this file without `allowJs` see an untyped module.
 import { createReactiveProps } from '@storybook/svelte/internal/createReactiveProps';
 
 import {

@@ -2,8 +2,15 @@ import type { JsPackageManager, PackageManagerName } from 'storybook/internal/co
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 export interface DoctorOptions {
-  configDir: string;
+  configDir?: string;
   packageManager?: PackageManagerName;
+  /** Automigrations whose skip warning was printed this run; the doctor stays silent about their deprecations. */
+  warnedFixIds?: string[];
+}
+
+export interface DiagnosticMessage {
+  title: string;
+  message: string;
 }
 
 export interface ProjectDoctorData {
@@ -11,14 +18,19 @@ export interface ProjectDoctorData {
   packageManager: JsPackageManager;
   storybookVersion?: string;
   mainConfig: StorybookConfigRaw;
+  configurationError?: DiagnosticMessage;
+  /** Automigrations whose skip warning was printed this run; the doctor stays silent about their deprecations. */
+  warnedFixIds?: string[];
 }
 
 export enum DiagnosticType {
   MISSING_STORYBOOK_DEPENDENCY = 'missing_storybook_dependency',
   INCOMPATIBLE_PACKAGES = 'incompatible_packages',
+  STORYBOOK_OVERRIDES = 'storybook_overrides',
   MISMATCHING_VERSIONS = 'mismatching_versions',
   DUPLICATED_DEPENDENCIES = 'duplicated_dependencies',
   CONFIGURATION_ERROR = 'configuration_error',
+  DEPRECATED_PACKAGES = 'deprecated_packages',
 }
 
 export enum DiagnosticStatus {
@@ -38,10 +50,8 @@ export interface DiagnosticResult {
   projects: DiagnosticDoctorData[];
 }
 
-export interface DoctorCheckResult {
+export interface DoctorCheckResult extends DiagnosticMessage {
   type: DiagnosticType;
-  title: string;
-  message: string;
   project: DiagnosticDoctorData;
 }
 

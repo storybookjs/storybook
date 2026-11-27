@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url';
 
 import { describe, expect, it } from 'vitest';
 
+import { extractDeclaredSubcomponents } from 'storybook/internal/common';
 import { loadCsf } from 'storybook/internal/csf-tools';
 
 import { resolveMetaComponent } from './resolve-component.ts';
@@ -100,5 +101,26 @@ describe('resolveMetaComponent', () => {
     `);
 
     expect(resolveMetaComponent(csf, storyPath)).toEqual({ reason: 'no-component-import' });
+  });
+
+  it('resolves a declared subcomponent node to its SFC file', () => {
+    const csf = parse(`
+      import Button from './Button.vue';
+      export default { component: Button, subcomponents: { Header: Button } };
+      export const Default = {};
+    `);
+    const declared = extractDeclaredSubcomponents(csf)[0];
+    if (!declared) {
+      throw new Error('fixture declares one subcomponent');
+    }
+
+    expect(resolveMetaComponent(csf, storyPath, declared.node)).toEqual({
+      component: {
+        localName: 'Button',
+        importId: './Button.vue',
+        path: join(fixturesDir, 'Button.vue'),
+        exportName: 'default',
+      },
+    });
   });
 });

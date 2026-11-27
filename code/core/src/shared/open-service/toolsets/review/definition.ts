@@ -6,7 +6,7 @@ import {
   OpenServiceUnknownStoryIdsError,
 } from '../../../../server-errors.ts';
 import { defineToolset, type ToolsetCtx, type ToolsetOutcome } from '../../toolset-definition.ts';
-import { getToolName } from '../../toolset-names.ts';
+import { getSkillCommand, getToolName } from '../../toolset-names.ts';
 import type { ReviewService } from '../../services/review/definition.ts';
 
 /** Storybook manager route the review page is registered at. */
@@ -33,7 +33,7 @@ const reviewCollectionSchema = v.object({
   ),
 });
 
-const reviewCreateInputSchema = v.object({
+const reviewCreateInputSchema = v.strictObject({
   title: v.pipe(
     v.string(),
     v.description(
@@ -55,50 +55,43 @@ const reviewCreateInputSchema = v.object({
   changedFiles: v.pipe(
     v.array(v.string()),
     v.description(
-      'Paths of the files you changed, most central first. Pass an empty array `[]` only when no code changed (browse requests, Trigger 2).'
+      'Paths of the files you changed, most central first. Pass an empty array `[]` only when no code changed (e.g. browse requests).'
     )
   ),
 });
 
 type ReviewCreateInput = v.InferOutput<typeof reviewCreateInputSchema>;
 
-const reviewCreateOutputSchema = v.object({
-  reviewUrl: v.pipe(
-    v.string(),
-    v.description(
-      'URL of the Storybook review page. Always include this URL in your final user-facing response so the user can open it directly.'
-    )
-  ),
-});
-
+// No MCP output schema: Claude Code would hand the model this as JSON instead of the text, and
+// the review lines, escaped inside a JSON string, then go missing from the answer.
 export type ReviewCreateOutput = {
   reviewUrl: string;
   collectionCount: number;
   storyCount: number;
+  instructions: string;
 };
 
 function describeCreate(ctx: ToolsetCtx): string {
   const ref = getToolName(ctx);
-  return `Publish a curated review to Storybook's review page for spot-checking **visual impact**. Each call replaces the single active review — call it again whenever the user iterates on the changes.
+  const skill = getSkillCommand(ctx)('ui-review');
+  return `Create a curated review on Storybook's review page for spot-checking visual impact. Each call replaces the active review; call again when the user iterates.${skill ? `\nFirst run ${skill} once and follow it.` : ''}
 
 ## When to call
-- **Trigger 1 — visual change** (components, stories, CSS, themes, colors, design tokens, i18n — anything that changes how the UI looks): when the user should spot-check rendering. A shared file (token, style, util) has no stories of its own — review its consumers' stories. Skip non-visual refactors unless side-effects are plausible. Start from \`${ref('stories.changed')}\`; fall back to \`${ref('stories.findByComponent')}\` if change detection is unavailable. Include \`changedFiles\`.
-- **Trigger 2 — browse request** ("show me the Badge component"): resolve via \`${ref('stories.findByComponent')}\` / \`${ref('docs.list')}\`; you may consult other sources to interpret the ask, but IDs must still come from those tools. Pass \`changedFiles: []\` — no code changed.
+- The user or the project's agent instructions ask for a review of a visual change (components, CSS, themes, tokens, i18n). A shared file (token, style, util) has no stories; review its consumers'. Skip non-visual refactors unless side-effects are plausible. Start from ${ref('stories.changed')}; use ${ref('stories.findByComponent')} only for a file it leaves out, or when it is unavailable. Include changedFiles.
+- A review shows the stories as they are when it is created: an edit after it needs a new review. End your answer with the three lines it returns.
+- Browse request ("show me the Badge component"): resolve via ${ref('stories.findByComponent')} / ${ref('docs.list')}. Show exactly what was asked. Pass changedFiles: [].
 
 ## Hard rules
-1. Every \`storyId\` MUST come from those tools. Reject IDs derived from file paths, story names, or memory. Unknown IDs cause a runtime error; obtain real IDs via \`${ref('stories.findByComponent')}\` or \`${ref('docs.list')}\`, then retry.
-2. Every story you CREATED in this change MUST appear in the review — including interaction/play-function stories. Showing the stories you modified is encouraged too. Curate by grouping, never by omission.
-3. Prefer 2-5 collections; avoid one-story collections unless truly isolated.
-4. Follow-up reviews: stabilize collection/story order to avoid disorientation from reshuffling.
-5. Apply the field formatting rules from each schema property. Do not use em-dashes in review payload field values (title, rationale, description, etc.).
-6. Do not instruct or tell the user what to do unless they explicitly ask for guidance.
-7. "Collection" and "trigger" are internal terms for this tool's mechanics and mean nothing to users. Never use them in user-facing text unless the user used them first; say "group of stories" or just describe the contents in plain language.
+1. Every storyId MUST come from those tools, never from file paths, story names or memory.
+2. Every story you CREATED MUST appear, play-function stories too. Curate by grouping, never by omission.
+3. Prefer 2-5 collections when the change reaches that many layers (one for a new, unused component). Avoid one-story collections unless truly isolated; never add stories the change cannot reach.
+4. In follow-up reviews, keep collection and story order stable.
+5. Follow each field's formatting rules; no em-dashes in field values.
+6. Don't tell the user what to do unless they ask for guidance.
+7. Never say "collection" to the user unless they did; say "group of stories".
 
-## Curating (Trigger 1)
-Trace the **visual cascade** up the **import graph** to **page-level UI surfaces** — one collection per layer (\`distance 0\` → direct importers → page context). Include **control stories** where the change is **not supposed to be visible**. **Theme tokens**, **shared styles**, and **layout primitives** need page-level coverage even from a single-file edit. **Localized changes:** affected component → **usage locations** → outer surfaces. **Larger features:** central page/module → lower-level pieces → outer **usage locations**.
-
-## Curating (Trigger 2)
-Exactly what the user asked for — **no more, no less**. Group logically or follow **story index hierarchy**.`;
+## Curating a visual change
+Trace the visual cascade up the import graph to page-level surfaces, one collection per layer (changed component → direct importers → page context). Include control stories where the change should not be visible. Theme tokens, shared styles and layout primitives need page-level coverage even for a one-file edit. Larger features: central page → lower-level pieces → usage locations.`;
 }
 
 /**
@@ -113,23 +106,35 @@ function formatUnknownStoryIdsError(unknownIds: string[], ctx: ToolsetCtx): stri
   return `${describeUnknownStoryIds(unknownIds)}\n${list}\n\nThis usually means the IDs were inferred from file paths or naming conventions rather than returned by a tool. Resolve real IDs by calling \`${ref('stories.findByComponent')}\` (for components you've edited or want covered) or \`${ref('docs.list')}\` (to browse the index), then retry \`${ref('review.create')}\` with the verified IDs. Do not invent IDs to satisfy this check.`;
 }
 
-/** Pure renderer for a published review. */
-function formatReviewApplied(
-  { reviewUrl, collectionCount, storyCount }: ReviewCreateOutput,
-  ctx: ToolsetCtx
-): string {
-  const storyNoun = storyCount === 1 ? 'y' : 'ies';
-  const summary = `Review applied: ${collectionCount} collection${collectionCount === 1 ? '' : 's'}, ${storyCount} stor${storyNoun}.`;
+function storyNoun(storyCount: number): string {
+  return storyCount === 1 ? 'story' : 'stories';
+}
 
-  // Agents were observed ending visual work at the tool result, so the result itself has to
-  // carry both follow-ups: open the page, and surface the link in the final response.
-  // The running instance is named by the same UI root the review link is built from — for a
-  // sub-path-hosted Storybook the bare origin is not an address the agent can reach.
-  return `${summary} Storybook is already running at ${ctx.origin} — reuse it. Do NOT start another Storybook or change its port to view this review; the running instance already serves it.
+function reviewInstructions(reviewUrl: string, storyCount: number, browse: boolean): string {
+  // Agents were observed ending visual work at the tool result, or summarizing the review in
+  // their own words, so the result carries the lines the final response has to end with.
+  // The instruction comes after the lines too, so it is the last thing the agent reads.
+  return `End your final response with these three lines, copied unchanged:
 
-Two things you must do now, both of them:
-1. **Open ${reviewUrl} yourself in your preview browser.** If you have any browser-preview or navigate tool in this session (e.g. preview_eval or an equivalent), call it on this URL so the review opens in your preview window immediately. Don't merely print the link and stop — actually open it.
-2. **Show the link to the user too.** End your final response with a dedicated review section as the very last thing: its own heading on a line by itself (e.g. \`## 👀 Review your changes\`), then a one-line explanation of what the review is, then on the next line the review page as a markdown link prefixed with a 👉 so it's easy to spot: \`👉 [Open the Storybook review page](${reviewUrl})\`. For the explanation, use something like: "The review shows the ${storyCount} stor${storyNoun} most relevant for you to review right now. Because this is AI-curated, results may be inaccurate or incomplete." Put nothing after the link — not a trailing sentence the user has to hunt for. The user needs to see this link even after you've opened it yourself.`;
+${
+  // A browse request changes no files, so its heading must not speak of changes.
+  browse
+    ? `## 👀 See the stories
+The review shows the ${storyCount} ${storyNoun(storyCount)} you asked to see.`
+    : `## 👀 Review your changes
+The review shows the ${storyCount} ${storyNoun(storyCount)} most relevant for you to review right now.`
+} Because this is AI-curated, results may be inaccurate or incomplete.
+👉 [Open the Storybook review page](${reviewUrl})
+
+Above these three lines, first answer the user's request, such as what you changed or the stories they asked to see. Your final response ends with the three lines, with nothing after them.`;
+}
+
+function formatReviewApplied({
+  collectionCount,
+  storyCount,
+  instructions,
+}: ReviewCreateOutput): string {
+  return `Review applied: ${collectionCount} collection${collectionCount === 1 ? '' : 's'}, ${storyCount} ${storyNoun(storyCount)}. ${instructions}`;
 }
 
 export const reviewToolset = defineToolset({
@@ -138,7 +143,6 @@ export const reviewToolset = defineToolset({
   methods: {
     create: {
       input: reviewCreateInputSchema,
-      output: reviewCreateOutputSchema,
       title: 'Create Storybook review',
       // Reviews publish into the running Storybook's review service and link into its UI.
       requiresDevServer: true,
@@ -171,16 +175,18 @@ export const reviewToolset = defineToolset({
           0
         );
 
+        const reviewUrl = `${ctx.origin.replace(/\/$/, '')}/?path=${REVIEW_PAGE_PATH}`;
         const data: ReviewCreateOutput = {
-          reviewUrl: `${ctx.origin.replace(/\/$/, '')}/?path=${REVIEW_PAGE_PATH}`,
+          reviewUrl,
           collectionCount,
           storyCount,
+          instructions: reviewInstructions(reviewUrl, storyCount, review.changedFiles.length === 0),
         };
 
         return {
           ok: true,
           data,
-          markdown: formatReviewApplied(data, ctx),
+          markdown: formatReviewApplied(data),
           telemetry: {
             payload: { collectionCount, storyCount, changedFileCount: review.changedFiles.length },
           },

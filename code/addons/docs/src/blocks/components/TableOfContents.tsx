@@ -4,7 +4,7 @@ import React, { useEffect } from 'react';
 import type { Channel } from 'storybook/internal/channels';
 import { NAVIGATE_URL } from 'storybook/internal/core-events';
 
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/emotion';
 import tocbot from 'tocbot';
 
 // Define our own interface based on tocbot's actual options

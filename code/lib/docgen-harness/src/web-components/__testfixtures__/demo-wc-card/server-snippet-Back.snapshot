@@ -1,0 +1,5 @@
+html`
+  <demo-wc-card .backSide=${true} .header=${undefined} .rows=${[]}
+    ><span slot="prefix">${undefined}</span>A simple card</demo-wc-card
+  >
+`

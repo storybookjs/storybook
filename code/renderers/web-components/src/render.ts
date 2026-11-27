@@ -1,7 +1,4 @@
-/* eslint-disable @typescript-eslint/ban-ts-comment */
 import type { ArgsStoryFn, RenderContext } from 'storybook/internal/types';
-
-import { global } from '@storybook/global';
 
 import { render as litRender } from 'lit';
 // Keep `.js` extension to avoid issue with Webpack (related to export map?)
@@ -9,10 +6,10 @@ import { isTemplateResult } from 'lit/directive-helpers.js';
 import { simulateDOMContentLoaded, simulatePageLoad } from 'storybook/preview-api';
 import { dedent } from 'ts-dedent';
 
+import { bindArgs } from './bind-args.ts';
 import type { WebComponentsRenderer } from './types.ts';
 
-const { Node } = global;
-
+/** With `docgenServer`, returns a DocumentFragment so scoped CSS part and state rules can precede the element. */
 export const render: ArgsStoryFn<WebComponentsRenderer> = (args, context) => {
   const { id, component } = context;
   if (!component) {
@@ -22,17 +19,27 @@ export const render: ArgsStoryFn<WebComponentsRenderer> = (args, context) => {
   }
 
   const element = document.createElement(component);
-  Object.entries(args).forEach(([key, val]) => {
-    // @ts-ignore
-    element[key] = val;
-  });
-  return element;
+  if (!globalThis.FEATURES?.docgenServer) {
+    return Object.assign(element, args);
+  }
+
+  const styleRules = bindArgs(element, args);
+  const fragment = document.createDocumentFragment();
+  if (styleRules.length > 0) {
+    // A prelude-less `@scope` limits rules to the `<style>`'s parent, and `:scope > style +` to the element right after it, so sibling instances and other stories stay unstyled.
+    const style = document.createElement('style');
+    style.textContent = `@scope {\n  ${styleRules.map((rule) => `:scope > style + ${rule}`).join('\n  ')}\n}`;
+    fragment.append(style);
+  }
+  fragment.append(element);
+
+  return fragment;
 };
 
 export function renderToCanvas(
-  { storyFn, kind, name, showMain, showError, forceRemount }: RenderContext<WebComponentsRenderer>,
+  { storyFn, title, name, showMain, showError, forceRemount }: RenderContext<WebComponentsRenderer>,
   canvasElement: WebComponentsRenderer['canvasElement']
-) {
+): void {
   const element = storyFn();
 
   showMain();
@@ -50,7 +57,7 @@ export function renderToCanvas(
   } else if (typeof element === 'string') {
     canvasElement.innerHTML = element;
     simulatePageLoad(canvasElement);
-  } else if (element instanceof Node) {
+  } else if (element instanceof globalThis.Node) {
     // Don't re-mount the element if it didn't change and neither did the story
     if (canvasElement.firstChild === element && !forceRemount) {
       return;
@@ -61,7 +68,7 @@ export function renderToCanvas(
     simulateDOMContentLoaded();
   } else {
     showError({
-      title: `Expecting an HTML snippet or DOM node from the story: "${name}" of "${kind}".`,
+      title: `Expecting an HTML snippet or DOM node from the story: "${name}" of "${title}".`,
       description: dedent`
         Did you forget to return the HTML snippet from the story?
         Use "() => <your snippet or node>" or when defining the story.

@@ -7,6 +7,7 @@ import { logger } from '../../node-logger/index.ts';
 import { executeCommand } from '../utils/command.ts';
 import { JsPackageManager } from './JsPackageManager.ts';
 import { Yarn2Proxy } from './Yarn2Proxy.ts';
+import { STORYBOOK_PACKAGE_PATTERNS } from './util.ts';
 
 vi.mock('storybook/internal/node-logger', () => ({
   prompt: {
@@ -14,15 +15,6 @@ vi.mock('storybook/internal/node-logger', () => ({
     getPreferredStdio: vi.fn(() => 'inherit'),
     select: vi.fn(),
   },
-  logger: {
-    debug: vi.fn(),
-    info: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn(),
-  },
-}));
-
-vi.mock('../../node-logger/index.ts', () => ({
   logger: {
     debug: vi.fn(),
     info: vi.fn(),
@@ -48,20 +40,46 @@ describe('Yarn 2 Proxy', () => {
   });
 
   describe('installDependencies', () => {
-    it('should run `yarn`', async () => {
-      // sort of un-mock part of the function so executeCommand (also mocked) is called
+    afterEach(() => {
+      vi.unstubAllEnvs();
+    });
+
+    it.each([
+      ['set', 'true'],
+      ['unset', undefined],
+    ])(
+      'runs `yarn install --no-immutable` when CI is %s, so the lockfile can change',
+      async (_, ci) => {
+        vi.stubEnv('CI', ci);
+        // sort of un-mock part of the function so executeCommand (also mocked) is called
+        vi.mocked(prompt.executeTaskWithSpinner).mockImplementationOnce(async (fn: any) => {
+          await Promise.resolve(fn());
+        });
+        const executeCommandSpy = mockedExecuteCommand.mockResolvedValue({
+          stdout: '',
+        } as any);
+
+        await yarn2Proxy.installDependencies();
+
+        expect(executeCommandSpy).toHaveBeenCalledWith(
+          expect.objectContaining({ command: 'yarn', args: ['install', '--no-immutable'] })
+        );
+      }
+    );
+
+    it('keeps the original error when Yarn 6 finds no candidates', async () => {
       vi.mocked(prompt.executeTaskWithSpinner).mockImplementationOnce(async (fn: any) => {
         await Promise.resolve(fn());
       });
-      const executeCommandSpy = mockedExecuteCommand.mockResolvedValue({
-        stdout: '',
-      } as any);
+      const originalError = new Error('➤ · No candidates found for npm:not-a-package');
+      mockedExecuteCommand.mockRejectedValueOnce(originalError);
 
-      await yarn2Proxy.installDependencies();
-
-      expect(executeCommandSpy).toHaveBeenCalledWith(
-        expect.objectContaining({ command: 'yarn', args: ['install'] })
+      const error = await yarn2Proxy.installDependencies().then(
+        () => null,
+        (caughtError) => caughtError
       );
+
+      expect(error).toBe(originalError);
     });
 
     it('should rethrow minimum-age-gate install errors as handled errors', async () => {
@@ -151,6 +169,58 @@ describe('Yarn 2 Proxy', () => {
     });
   });
 
+  describe('getPublishedPeerDependencies', () => {
+    const readPeers = () =>
+      yarn2Proxy.getPublishedPeerDependencies('@storybook/react-native', '11.0.0-next.0');
+
+    describe('when the version has peer dependencies', () => {
+      beforeEach(() => {
+        mockedExecuteCommand.mockResolvedValue({
+          stdout: '{"name":"@storybook/react-native","peerDependencies":{"storybook":"^10.5.4"}}',
+        } as any);
+      });
+
+      it('reads them through the package manager', async () => {
+        await expect(readPeers()).resolves.toEqual({ storybook: '^10.5.4' });
+        expect(mockedExecuteCommand).toHaveBeenCalledWith(
+          expect.objectContaining({
+            command: 'yarn',
+            args: [
+              'npm',
+              'info',
+              '@storybook/react-native@11.0.0-next.0',
+              '--fields',
+              'peerDependencies',
+              '--json',
+            ],
+          })
+        );
+      });
+    });
+
+    describe('when the version has no peer dependencies', () => {
+      beforeEach(() => {
+        mockedExecuteCommand.mockResolvedValue({
+          stdout: '{"name":"@storybook/react-native"}',
+        } as any);
+      });
+
+      it('returns an empty object', async () => {
+        await expect(readPeers()).resolves.toEqual({});
+      });
+    });
+
+    describe('when the lookup fails', () => {
+      beforeEach(() => {
+        mockedExecuteCommand.mockRejectedValue(new Error('401 Unauthorized'));
+      });
+
+      it('returns null', async () => {
+        await expect(readPeers()).resolves.toBeNull();
+      });
+    });
+  });
+
   describe('latestVersion', () => {
     it('without constraint it returns the latest version', async () => {
       const executeCommandSpy = mockedExecuteCommand.mockResolvedValue({
@@ -162,7 +232,7 @@ describe('Yarn 2 Proxy', () => {
       expect(executeCommandSpy).toHaveBeenCalledWith(
         expect.objectContaining({
           command: 'yarn',
-          args: ['npm', 'info', 'storybook', '--fields', 'version', '--json'],
+          args: ['npm', 'info', 'storybook', '--json'],
         })
       );
       expect(version).toEqual('5.3.19');
@@ -178,7 +248,7 @@ describe('Yarn 2 Proxy', () => {
       expect(executeCommandSpy).toHaveBeenCalledWith(
         expect.objectContaining({
           command: 'yarn',
-          args: ['npm', 'info', 'storybook', '--fields', 'versions', '--json'],
+          args: ['npm', 'info', 'storybook', '--json'],
         })
       );
       expect(version).toEqual('5.3.19');
@@ -293,6 +363,12 @@ describe('Yarn 2 Proxy', () => {
         installContext: 'create',
       });
 
+      expect(mockedExecuteCommand).toHaveBeenCalledWith(
+        expect.objectContaining({
+          command: 'yarn',
+          args: ['config', 'get', 'npmPreapprovedPackages', '--json'],
+        })
+      );
       expect(mockedExecuteCommand).toHaveBeenLastCalledWith(
         expect.objectContaining({
           command: 'yarn',
@@ -301,12 +377,7 @@ describe('Yarn 2 Proxy', () => {
             'set',
             'npmPreapprovedPackages',
             '--json',
-            JSON.stringify([
-              'storybook',
-              '@storybook/*',
-              'eslint-plugin-storybook',
-              '@chromatic-com/storybook',
-            ]),
+            JSON.stringify(STORYBOOK_PACKAGE_PATTERNS),
           ],
         })
       );
@@ -380,12 +451,55 @@ describe('Yarn 2 Proxy', () => {
             JSON.stringify([
               'foo',
               '@storybook/preset-react-webpack',
-              'storybook',
-              '@storybook/*',
-              'eslint-plugin-storybook',
-              '@chromatic-com/storybook',
+              ...STORYBOOK_PACKAGE_PATTERNS,
             ]),
           ],
+        })
+      );
+    });
+
+    it('reads a Yarn 6 age gate in seconds and does not treat it as minutes', async () => {
+      mockedExecuteCommand
+        .mockResolvedValueOnce({ stdout: '86400s\n' } as any)
+        .mockResolvedValueOnce({ stdout: '[]\n' } as any)
+        .mockResolvedValueOnce({
+          stdout: JSON.stringify({
+            name: 'storybook',
+            version: '10.3.2',
+            time: { '10.3.2': '2026-05-01T00:00:00.000Z' },
+          }),
+        } as any);
+
+      await yarn2Proxy.precheckStorybookPackageInstall({
+        storybookVersion: '10.3.2',
+        nonInteractive: true,
+        installContext: 'create',
+      });
+
+      expect(vi.mocked(prompt.executeTaskWithSpinner)).not.toHaveBeenCalled();
+      expect(mockedExecuteCommand).not.toHaveBeenCalledWith(
+        expect.objectContaining({
+          args: expect.arrayContaining(['set', 'npmPreapprovedPackages']),
+        })
+      );
+    });
+
+    it('does not overwrite npmPreapprovedPackages when Yarn prints an unreadable list', async () => {
+      mockedExecuteCommand
+        .mockResolvedValueOnce({ stdout: '1440\n' } as any)
+        .mockResolvedValueOnce({
+          stdout: 'unimplemented; use --json to display container contents for now\n',
+        } as any);
+
+      await yarn2Proxy.precheckStorybookPackageInstall({
+        storybookVersion: '10.4.0-alpha.17',
+        nonInteractive: true,
+        installContext: 'create',
+      });
+
+      expect(mockedExecuteCommand).not.toHaveBeenCalledWith(
+        expect.objectContaining({
+          args: expect.arrayContaining(['set', 'npmPreapprovedPackages']),
         })
       );
     });
@@ -468,8 +582,7 @@ describe('Yarn 2 Proxy', () => {
       mockedExecuteCommand
         .mockResolvedValueOnce({ stdout: '1440\n' } as any)
         .mockResolvedValueOnce({
-          stdout:
-            "[\n  'storybook',\n  '@storybook/*',\n  'eslint-plugin-storybook',\n  '@chromatic-com/storybook',\n]\n",
+          stdout: `[\n${STORYBOOK_PACKAGE_PATTERNS.map((pattern) => `  '${pattern}',`).join('\n')}\n]\n`,
         } as any);
 
       await expect(

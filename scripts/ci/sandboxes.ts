@@ -1,12 +1,14 @@
+import { readFileSync } from 'node:fs';
+
 import { join } from 'path';
 
 import * as sandboxTemplates from '../../code/lib/cli-storybook/src/sandbox-templates.ts';
 import { type TemplateKey } from '../../code/lib/cli-storybook/src/sandbox-templates.ts';
-import { BEFORE_SANDBOX_NPM_MIN_VERSION } from '../utils/constants.ts';
 import { build_linux } from './common-jobs.ts';
 import { LINUX_ROOT_DIR, SANDBOX_DIR, WINDOWS_ROOT_DIR, WORKING_DIR } from './utils/constants.ts';
 import {
   artifact,
+  npm,
   sandboxArchive,
   server,
   testResults,
@@ -19,6 +21,33 @@ import type { JobOrNoOpJob, Workflow } from './utils/types.ts';
 import { defineJob, defineNoOpJob, isWorkflowOrAbove } from './utils/types.ts';
 
 const DOCGEN_HARNESS_DIR = 'code/lib/docgen-harness';
+
+/**
+ * The Chromatic job runs the CLI through npx, so it needs none of the repository's node_modules.
+ * The version is read from the lockfile because this generator runs before anything is installed.
+ */
+const CHROMATIC_VERSION = getLockedVersion('chromatic');
+
+function getLockedVersion(name: string) {
+  const root = join(import.meta.dirname, '../..');
+  const range: string = JSON.parse(readFileSync(join(root, 'scripts/package.json'), 'utf8'))
+    .dependencies[name];
+  const descriptor = `${name}@npm:${range}`;
+  const entry = readFileSync(join(root, 'yarn.lock'), 'utf8')
+    .split('\n\n')
+    .find((block) =>
+      block
+        .split('\n')[0]
+        .replace(/^"|":$/g, '')
+        .split(', ')
+        .includes(descriptor)
+    );
+  const version = entry?.match(/^ {2}version: (.+)$/m)?.[1];
+  if (!version) {
+    throw new Error(`No yarn.lock entry for ${descriptor}`);
+  }
+  return version;
+}
 
 /**
  * Verifies the committed docgen baselines against the sandbox that was just built.
@@ -73,6 +102,12 @@ const XLARGE_DEV_TEMPLATES = new Set<string>([
   'vue3-vite/default-ts',
 ]);
 
+/**
+ * Sandbox creation peaks at 4.3 GB on every template but these, so it fits medium+ (6 GB). The
+ * Angular CLI webpack build peaks at 5.6 GB.
+ */
+const LARGE_CREATE_TEMPLATES = new Set<string>(['angular-cli/default-ts']);
+
 function defineSandboxJob_dev({
   directory,
   name,
@@ -123,7 +158,7 @@ function defineSandboxJob_dev({
                   },
                   command: [
                     'TEST_FILES=$(circleci tests glob "code/e2e-sandbox/*.{test,spec}.{ts,js,mjs}")',
-                    `echo "$TEST_FILES" | circleci tests run --command="xargs yarn task e2e-tests-dev --template ${template} --no-link -s e2e-tests-dev --junit" --verbose --index=0 --total=1`,
+                    `echo "$TEST_FILES" | circleci tests run --command="xargs yarn task e2e-tests-dev --template ${template} --no-link -s task --junit" --index=0 --total=1`,
                   ].join('\n'),
                 },
               },
@@ -139,7 +174,6 @@ function defineSandboxJob_dev({
                 run: {
                   name: 'Run storybook smoke test',
                   working_directory: 'code',
-                  background: true,
                   command: `yarn task smoke-test --template ${template} --no-link -s dev`,
                 },
               },
@@ -162,7 +196,7 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
     () => ({
       executor: {
         name: 'sb_node_22_browsers',
-        class: 'large',
+        class: LARGE_CREATE_TEMPLATES.has(key) ? 'large' : 'medium+',
       },
       steps: [
         ...getSandboxSetupSteps(key),
@@ -190,14 +224,9 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
         },
         ...('inDevelopment' in data && data.inDevelopment
           ? [
-              {
-                run: {
-                  name: 'Install npm with min-release-age support',
-                  // Node's bundled npm is older and silently ignores NPM_CONFIG_MIN_RELEASE_AGE
-                  // during scaffold; `ensureNpmSupportsMinReleaseAge` fails the generate task on it.
-                  command: `sudo npm install -g npm@${BEFORE_SANDBOX_NPM_MIN_VERSION}`,
-                },
-              },
+              // Node's bundled npm silently ignores NPM_CONFIG_MIN_RELEASE_AGE during scaffold;
+              // `ensureNpmSupportsMinReleaseAge` fails the generate task on it.
+              npm.installPinnedVersion(),
               {
                 run: {
                   name: 'Generate Sandbox',
@@ -266,13 +295,12 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
     () => ({
       executor: {
         name: 'sb_node_22_classic',
-        class: 'medium',
+        class: 'small',
       },
       steps: [
         ...getSandboxSetupSteps(key),
         'checkout', // we need the full git history for chromatic
         workspace.attach(),
-        workspace.unpack(),
         workspace.unpackSandbox(id),
         {
           // we copy to the working directory to get git history, which chromatic needs for baselines
@@ -284,10 +312,14 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
         {
           run: {
             name: 'Running Chromatic',
-            command: `yarn task chromatic --template ${key} --no-link -s chromatic`,
-            environment: {
-              STORYBOOK_SANDBOX_ROOT: `./sandbox`,
-            },
+            working_directory: join(LINUX_ROOT_DIR, WORKING_DIR, 'sandbox', path),
+            command: [
+              `npx --yes chromatic@${CHROMATIC_VERSION}`,
+              '--debug',
+              '--exit-zero-on-changes',
+              '--storybook-build-dir=storybook-static',
+              `--projectToken="$CHROMATIC_TOKEN_${key.toUpperCase().replace(/\/|-|\./g, '_')}"`,
+            ].join(' '),
           },
         },
       ],
@@ -347,7 +379,7 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
             },
             command: [
               `TEST_FILES=$(circleci tests glob "code/e2e-sandbox/*.{test,spec}.{ts,js,mjs}")`,
-              `echo "$TEST_FILES" | circleci tests run --command="xargs yarn task e2e-tests --template ${key} --no-link -s e2e-tests --junit" --verbose --index=0 --total=1`,
+              `echo "$TEST_FILES" | circleci tests run --command="xargs yarn task e2e-tests --template ${key} --no-link -s e2e-tests --junit" --index=0 --total=1`,
             ].join('\n'),
           },
         },
@@ -361,27 +393,6 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
     }),
     [createJob]
   );
-  const testRunnerJob = defineJob(
-    `${name} (test-runner)`,
-    () => ({
-      executor: {
-        name: 'sb_playwright',
-        class: 'medium',
-      },
-      steps: [
-        ...getSandboxSetupSteps(key),
-        ...workflow.restoreLinux({ sandboxId: id }),
-        {
-          run: {
-            name: 'Running test-runner',
-            command: `yarn task test-runner --template ${key} --no-link -s test-runner --junit`,
-          },
-        },
-        testResults.persist(join(LINUX_ROOT_DIR, WORKING_DIR, 'test-results')),
-      ],
-    }),
-    [createJob]
-  );
 
   const jobs = [
     createJob,
@@ -389,19 +400,7 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
     !skipTasks?.includes('chromatic') ? chromaticJob : undefined,
     !skipTasks?.includes('vitest-integration') ? vitestJob : undefined,
     !skipTasks?.includes('e2e-tests') ? e2eJob : undefined,
-
-    /**
-     * Question: What is this for? Do we want to know if the test-runner works? Or do we want to
-     * know if the sandbox works?
-     *
-     * If it's the first, we actually only need to run the test-runner job once, on any sandbox. If
-     * it's the second, we need to run the test-runner job for each sandbox, but then we don't need
-     * to run it when we're already running the chromatic job.
-     */
-    !skipTasks?.includes('test-runner') && skipTasks.includes('chromatic')
-      ? testRunnerJob
-      : undefined,
-  ].filter(Boolean);
+  ].filter((job) => job !== undefined);
   return {
     id,
     name: key,
@@ -409,31 +408,8 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
     jobs,
     createJob,
     devJob,
+    chromaticJob,
   };
-}
-
-export function defineSandboxTestRunner(sandbox: ReturnType<typeof defineSandboxFlow>) {
-  return defineJob(
-    `${sandbox.id}--test-runner`,
-    () => ({
-      executor: {
-        name: 'sb_playwright',
-        class: 'medium',
-      },
-      steps: [
-        ...getSandboxSetupSteps(sandbox.name),
-        ...workflow.restoreLinux({ sandboxId: sandbox.id }),
-        {
-          run: {
-            name: 'Running test-runner',
-            command: `yarn task test-runner --template ${sandbox.name} --no-link -s test-runner --junit`,
-          },
-        },
-        testResults.persist(join(LINUX_ROOT_DIR, WORKING_DIR, 'test-results')),
-      ],
-    }),
-    [sandbox.createJob]
-  );
 }
 
 export function defineWindowsSandboxDev(sandbox: ReturnType<typeof defineSandboxFlow>) {
@@ -467,16 +443,16 @@ export function defineWindowsSandboxDev(sandbox: ReturnType<typeof defineSandbox
           run: {
             name: 'Run storybook',
             background: true,
-            working_directory: `${WINDOWS_ROOT_DIR}\\${SANDBOX_DIR}\\${sandbox.path}`,
-            command: 'yarn storybook --port 8001',
+            working_directory: 'code',
+            command: `yarn task dev --template ${sandbox.name} --no-link -s dev`,
           },
         },
-        server.wait(['8001']),
+        server.wait(['6006']),
         {
           run: {
             name: 'Running E2E Tests',
             working_directory: 'code',
-            command: `yarn task e2e-tests-dev --template ${sandbox.name} --no-link -s e2e-tests-dev --junit`,
+            command: `yarn task e2e-tests-dev --template ${sandbox.name} --no-link -s task --junit`,
           },
         },
         testResults.persist(`${WINDOWS_ROOT_DIR}\\${WORKING_DIR}\\test-results`),
@@ -542,12 +518,17 @@ export function defineWindowsSandboxBuild(sandbox: ReturnType<typeof defineSandb
 
 export const sandboxesNoOpJob = defineNoOpJob('sandboxes', [build_linux]);
 
+/** Define the Windows build and dev E2E jobs, which run against the first daily sandbox. */
+export function getWindowsSandboxes(): JobOrNoOpJob[] {
+  const sandbox = defineSandboxFlow(sandboxTemplates.daily[0]);
+
+  return [defineWindowsSandboxBuild(sandbox), defineWindowsSandboxDev(sandbox)];
+}
+
 const getListOfSandboxes = (workflow: Workflow) => {
   switch (workflow) {
     case 'normal':
       return sandboxTemplates.normal;
-    case 'merged':
-      return sandboxTemplates.merged;
     case 'daily':
       return sandboxTemplates.daily;
     default:
@@ -561,11 +542,7 @@ export function getSandboxes(workflow: Workflow) {
   const list: JobOrNoOpJob[] = sandboxes.flatMap((sandbox) => sandbox.jobs);
 
   if (isWorkflowOrAbove(workflow, 'daily')) {
-    const windows_sandbox_build = defineWindowsSandboxBuild(sandboxes[0]);
-    const windows_sandbox_dev = defineWindowsSandboxDev(sandboxes[0]);
-    const testRunner = defineSandboxTestRunner(sandboxes[0]);
-
-    list.push(windows_sandbox_build, windows_sandbox_dev, testRunner);
+    list.push(...getWindowsSandboxes());
   }
 
   return list;

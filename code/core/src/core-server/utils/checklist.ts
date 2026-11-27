@@ -1,6 +1,6 @@
 import type { Channel } from 'storybook/internal/channels';
 import { createFileSystemCache, resolvePathInStorybookCache } from 'storybook/internal/common';
-import { experimental_UniversalStore } from 'storybook/internal/core-server';
+import { internal_UniversalStore } from 'storybook/internal/core-server';
 import {
   AI_SETUP_ANALYTICS_REQUEST,
   GHOST_STORIES_REQUEST,
@@ -31,7 +31,7 @@ export async function initializeChecklist(
   configDir?: string
 ) {
   try {
-    const store = experimental_UniversalStore.create<StoreState, StoreEvent>({
+    const store = internal_UniversalStore.create<StoreState, StoreEvent>({
       ...UNIVERSAL_CHECKLIST_STORE_OPTIONS,
       leader: true,
     });
@@ -78,7 +78,7 @@ export async function initializeChecklist(
         }) satisfies StoreState
     );
 
-    // AI setup run and AI optin flags (set in `ai setup` and `init`respectively).
+    // AI setup run and AI optin flags (set in `skills setup` and `init` respectively).
     // Read from the regular fs cache — NOT from the telemetry event cache
     // so the copy-prompt button appears for users who disabled telemetry.
     // Fire-and-forget so the store is never blocked waiting for this check.
@@ -97,21 +97,21 @@ export async function initializeChecklist(
       .catch(() => {});
 
     /**
-     * "Has the agent actually produced something?" Running `storybook ai setup`
+     * "Has the agent actually produced something?" Running `storybook skills setup`
      * only generates the prompt; it doesn't mean the agent that received the
      * prompt did any work. We therefore require BOTH:
      *
-     *   1. A record that `ai setup` ran in this project (cache key `ai-setup-ran`,
+     *   1. A record that `skills setup` ran in this project (cache key `ai-setup-ran`,
      *      written by the CLI regardless of telemetry state).
      *   2. At least one story carrying the `ai-generated` tag in the story index.
      *
      * Without step 2 the copy-prompt button stays visible — so a user who ran
-     * `ai setup` but whose agent stalled, hit a rate limit, or outright refused
+     * `skills setup` but whose agent stalled, hit a rate limit, or outright refused
      * still has a way to retry.
      */
     const isAiSetupCompleted = async (): Promise<boolean> => {
       try {
-        // Skip if `ai setup` was not run.
+        // Skip if `skills setup` was not run.
         if (!(await hasAiSetupRun(configDir!))) {
           return false;
         }
@@ -172,7 +172,7 @@ export async function initializeChecklist(
       }
       // Sync aiSetup UI as soon as we observe AI-generated stories in the
       // index, so the copy-prompt button disappears the moment there is real
-      // evidence of agent work — not the moment `storybook ai setup` ran.
+      // evidence of agent work — not the moment `storybook skills setup` ran.
       throttledSyncAiSetupStatus();
       clearTimeout(analyticsTimer);
       analyticsTimer = setTimeout(async () => {

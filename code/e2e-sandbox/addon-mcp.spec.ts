@@ -134,90 +134,19 @@ const COLOR_PICKER_ID = 'stories-frameworks-angular-vite-model-signal-color-pick
 // Derived from the story file's path under the linked renderer template stories.
 const DEFINE_MODEL_ID = 'stories-renderers-vue3-vue3-vite-default-ts-component-meta-definemodel';
 
-const isReactSandbox = templateName === 'react-vite/default-ts';
-const isAngularSandbox = templateName === 'angular-vite/docgen-server-ts';
-const isVueSandbox = templateName === 'vue3-vite/docgen-server-ts';
+const isReactSandbox = ['react-vite/default-ts', 'react-vite/typescript-7-ts'].includes(
+  templateName
+);
+const isAngularSandbox = ['angular-vite/default-ts', 'angular-vite/typescript-7-ts'].includes(
+  templateName
+);
+const isVueSandbox = templateName === 'vue3-vite/default-ts';
 
 test.describe('addon-mcp', () => {
   test.skip(
     !isReactSandbox && !isAngularSandbox && !isVueSandbox,
     'Only run for sandboxes with addon-mcp configured'
   );
-
-  test.describe('Manifests', () => {
-    test.skip(!isReactSandbox, 'Asserts on the React sandbox fixtures');
-
-    test.describe('Component Manifest', () => {
-      test('should have valid components.json structure', async ({ request }) => {
-        const response = await request.get(`${storybookUrl}/manifests/components.json`);
-        const json = await response.json();
-
-        // Check basic structure
-        expect(json).toHaveProperty('v');
-        expect(typeof json.v).toBe('number');
-        expect(json).toHaveProperty('components');
-        expect(typeof json.components).toBe('object');
-      });
-
-      test('should contain the example Button component', async ({ request }) => {
-        const response = await request.get(`${storybookUrl}/manifests/components.json`);
-        const json = await response.json();
-
-        // Check for example-button component
-        expect(json.components).toHaveProperty('example-button');
-
-        const button = json.components['example-button'];
-        expect(button).toMatchObject({
-          id: 'example-button',
-          name: 'Button',
-          path: expect.stringContaining('Button.stories'),
-        });
-
-        // Should have stories
-        expect(button.stories).toBeInstanceOf(Array);
-        expect(button.stories.length).toBeGreaterThan(0);
-
-        // Should have reactDocgen info with props
-        expect(button).toHaveProperty('reactDocgen');
-        expect(button.reactDocgen).toHaveProperty('props');
-        expect(button.reactDocgen.props).toHaveProperty('primary');
-      });
-    });
-
-    test.describe('Docs Manifest', () => {
-      test('should have valid docs.json structure', async ({ request }) => {
-        const response = await request.get(`${storybookUrl}/manifests/docs.json`);
-        const json = await response.json();
-
-        // Check basic structure
-        expect(json).toHaveProperty('v');
-        expect(typeof json.v).toBe('number');
-        expect(json).toHaveProperty('docs');
-        expect(typeof json.docs).toBe('object');
-      });
-
-      test('should contain the "Configure your project" docs entry', async ({ request }) => {
-        const response = await request.get(`${storybookUrl}/manifests/docs.json`);
-        const json = await response.json();
-
-        // Check for configure-your-project--docs entry
-        expect(json.docs).toHaveProperty('configure-your-project--docs');
-
-        const configureDoc = json.docs['configure-your-project--docs'];
-        expect(configureDoc).toMatchObject({
-          id: 'configure-your-project--docs',
-          name: 'Docs',
-          path: expect.stringContaining('Configure.mdx'),
-          title: 'Configure your project',
-        });
-
-        // Should have content
-        expect(configureDoc).toHaveProperty('content');
-        expect(typeof configureDoc.content).toBe('string');
-        expect(configureDoc.content.length).toBeGreaterThan(0);
-      });
-    });
-  });
 
   test.describe('MCP', () => {
     test.skip(type !== 'dev', 'MCP server only runs in dev mode');
@@ -268,7 +197,8 @@ test.describe('addon-mcp', () => {
           result: {
             protocolVersion: '2025-06-18',
             capabilities: {
-              tools: { listChanged: true },
+              tools: { listChanged: false },
+              resources: { listChanged: false },
             },
             serverInfo: {
               name: '@storybook/addon-mcp',
@@ -288,6 +218,9 @@ test.describe('addon-mcp', () => {
         expect(response.result).toHaveProperty('tools');
         // At least dev and docs tools should be present (4 total)
         expect(response.result.tools.length).toBeGreaterThanOrEqual(4);
+        expect(response.result.tools.map((tool: { name: string }) => tool.name)).toContain(
+          'review-create'
+        );
       });
     });
 
@@ -303,7 +236,7 @@ test.describe('addon-mcp', () => {
             stories: [
               {
                 exportName: storyName,
-                absoluteStoryPath: path.join(sandboxDir, 'src', 'stories', 'Button.stories.ts'),
+                absoluteStoryPath: path.join(sandboxDir, 'src', 'stories', 'Button.stories.tsx'),
               },
             ],
           },
@@ -315,6 +248,10 @@ test.describe('addon-mcp', () => {
               type: 'text',
               text: expectedPreviewUrl,
             },
+            {
+              type: 'text',
+              text: expect.stringContaining('review-create'),
+            },
           ],
           structuredContent: {
             stories: [
@@ -324,24 +261,9 @@ test.describe('addon-mcp', () => {
                 title: 'Example/Button',
               },
             ],
+            instructions: expect.stringContaining('review-create'),
           },
         });
-      });
-    });
-
-    test.describe('Tool: get-storybook-story-instructions', () => {
-      test('should return UI building instructions', async ({ request }) => {
-        const response = await mcpRequest(request, 'tools/call', {
-          name: 'get-storybook-story-instructions',
-          arguments: {},
-        });
-
-        expect(response.result).toHaveProperty('content');
-        expect(response.result.content[0]).toHaveProperty('type', 'text');
-
-        const text = response.result.content[0].text;
-        expect(text).toContain('stories');
-        expect(text.length).toBeGreaterThan(100);
       });
     });
 

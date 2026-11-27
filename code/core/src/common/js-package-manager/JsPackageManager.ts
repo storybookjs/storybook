@@ -17,11 +17,14 @@ import { HandledError } from '../utils/HandledError.ts';
 import type { ExecuteCommandOptions } from '../utils/command.ts';
 import { getPkgPrNewPackageSpecifier } from '../utils/get-pkg-pr-new-package-specifier.ts';
 import { findFilesUp, getProjectRoot } from '../utils/paths.ts';
+import { resolveStorybookVersionSpecifier } from '../utils/resolve-storybook-version-specifier.ts';
 import storybookPackagesVersions from '../versions.ts';
+import { getBundledVersion } from './PackageJson.ts';
 import type { PackageJson, PackageJsonWithDepsAndDevDeps } from './PackageJson.ts';
+import { LOCK_FILES } from './constants.ts';
+import { type OverrideSource, toOverrides } from './overrides.ts';
 import type { InstallationMetadata } from './types.ts';
 import { getInstallErrorTail } from './util.ts';
-import { getVitePlusVersions } from './vite-plus-versions.ts';
 
 export enum PackageManagerName {
   NPM = 'npm',
@@ -135,7 +138,7 @@ export abstract class JsPackageManager {
     this.instanceDir = options?.configDir
       ? isAbsolute(options?.configDir)
         ? dirname(options?.configDir)
-        : dirname(join(this.cwd, options?.configDir))
+        : resolve(this.cwd, dirname(options?.configDir))
       : this.cwd;
     this.packageJsonPaths = JsPackageManager.listAllPackageJsonPaths(
       this.instanceDir,
@@ -156,8 +159,25 @@ export abstract class JsPackageManager {
   /** Returns the command to run the binary of a local package */
   abstract getPackageCommand(args: string[]): string;
 
-  /** Get the package.json file for a given module. */
-  abstract getModulePackageJSON(packageName: string, cwd?: string): Promise<PackageJson | null>;
+  /** Returns the command to run the binary of a remote package, as `runPackageCommand` does with `useRemotePkg` */
+  abstract getRemoteRunCommand(args: string[]): string;
+
+  /** Get the package.json file for a given module from the nearest `node_modules` at or above `cwd`. */
+  public async getModulePackageJSON(
+    packageName: string,
+    cwd = this.primaryPackageJson.operationDir
+  ): Promise<PackageJson | null> {
+    const packageJsonPath = find.up(join('node_modules', packageName, 'package.json'), {
+      cwd,
+      last: getProjectRoot(),
+    });
+
+    if (!packageJsonPath) {
+      return null;
+    }
+
+    return JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
+  }
 
   isStorybookInMonorepo() {
     const turboJsonPath = find.up(`turbo.json`, { last: getProjectRoot() });
@@ -185,18 +205,19 @@ export abstract class JsPackageManager {
     return false;
   }
 
-  async installDependencies(options?: { force?: boolean }) {
+  async installDependencies(options?: { force?: boolean; legacyPeerDeps?: boolean }) {
     try {
-      await prompt.executeTaskWithSpinner(() => this.runInstall(options), {
+      const executeTask = this.installUsesTerminal
+        ? prompt.executeTask
+        : prompt.executeTaskWithSpinner;
+      await executeTask(() => this.runInstall(options), {
         id: 'install-dependencies',
         intro: 'Installing dependencies...',
         error: 'Installation of dependencies failed!',
         success: 'Dependencies installed',
       });
     } catch (error) {
-      // The spinner only shows a generic message, and callers like the init flow continue without
-      // printing the thrown error. Surface the captured output tail so package-manager errors
-      // (e.g. an npm ERESOLVE) name themselves instead of surfacing later as a missing binary.
+      // Callers like init can continue without printing the thrown error, so surface captured output.
       const tail = getInstallErrorTail(error);
       if (tail) {
         logger.error(tail);
@@ -217,10 +238,17 @@ export abstract class JsPackageManager {
     installContext: 'create' | 'upgrade';
   }): Promise<void> {}
 
-  async dedupeDependencies(options?: { force?: boolean }) {
+  async dedupeDependencies(options?: { force?: boolean; legacyPeerDeps?: boolean }) {
     await prompt.executeTask(
       (_signal) =>
-        this.runInternalCommand('dedupe', [...(options?.force ? ['--force'] : [])], this.cwd),
+        this.runInternalCommand(
+          'dedupe',
+          [
+            ...(options?.force ? ['--force'] : []),
+            ...(options?.legacyPeerDeps ? ['--legacy-peer-deps'] : []),
+          ],
+          this.cwd
+        ),
       {
         intro: 'Deduplicating dependencies...',
         error: 'An error occurred while deduplicating dependencies.',
@@ -329,7 +357,39 @@ export abstract class JsPackageManager {
       return installed;
     }
     const declared = this.getAllDependencies()[packageName];
-    return declared && validRange(declared) ? declared : null;
+    const range = declared && this.getDeclaredRange(packageName, declared);
+    return range && validRange(range) ? range : null;
+  }
+
+  /**
+   * Write `name@version` upgrade specifiers for dependencies that `declared` references through a
+   * catalog into the catalog file, and return the remaining specifiers for package.json. Only
+   * PNPMProxy supports catalogs, so the base implementation writes nothing and returns every
+   * specifier.
+   */
+  public writeCatalogUpgrades(
+    specifiers: string[],
+    _declared: Partial<Record<string, string>>
+  ): string[] {
+    return specifiers;
+  }
+
+  /**
+   * List the `overrides`, `resolutions` and `pnpm.overrides` fields of the root package.json, the only
+   * manifest whose overrides package managers apply.
+   */
+  public getOverrideSources(): OverrideSource[] {
+    const path = this.#findRootPackageJsonPath();
+    const packageJson = JsPackageManager.getPackageJson(path);
+    const fields: [string, unknown][] = [
+      ['overrides', packageJson.overrides],
+      ['resolutions', packageJson.resolutions],
+      ['pnpm.overrides', packageJson.pnpm?.overrides],
+    ];
+    return fields.flatMap(([field, value]) => {
+      const overrides = toOverrides(value);
+      return overrides ? [{ path, field, overrides }] : [];
+    });
   }
 
   /**
@@ -421,6 +481,108 @@ export abstract class JsPackageManager {
   }
 
   /**
+   * Replace a dependency with another package in every package.json of the project, in the same
+   * dependency field. A package.json that already declares the replacement only loses the old
+   * dependency. The method does not run a package manager install.
+   *
+   * @example
+   *
+   * ```ts
+   * replaceDependency('@storybook/addon-svelte-csf', '@storybook/svelte-vite', '^11.0.0');
+   * ```
+   *
+   * @param version The version range for the replacement, unless the package.json declares
+   *   `storybook` with a semver range: then the replacement gets the same range as `storybook`.
+   * @returns The paths of the package.json files that changed.
+   */
+  replaceDependency(dependency: string, replacement: string, version: string): string[] {
+    const changed: string[] = [];
+    for (const packageJsonPath of this.packageJsonPaths) {
+      const packageJson = JsPackageManager.getPackageJson(packageJsonPath);
+      const fields = (['dependencies', 'devDependencies', 'peerDependencies'] as const).filter(
+        (field) => packageJson[field]?.[dependency]
+      );
+      if (fields.length === 0) {
+        continue;
+      }
+      const declaresReplacement = [
+        packageJson.dependencies,
+        packageJson.devDependencies,
+        packageJson.peerDependencies,
+      ].some((deps) => deps?.[replacement]);
+      const storybookRange =
+        packageJson.dependencies?.storybook ?? packageJson.devDependencies?.storybook;
+      // A `catalog:` or `workspace:` specifier names an entry for `storybook`, not for the replacement.
+      const storybookVersion =
+        storybookRange && validRange(storybookRange) ? storybookRange : undefined;
+      for (const field of fields) {
+        delete packageJson[field]![dependency];
+        if (!declaresReplacement) {
+          packageJson[field]![replacement] = storybookVersion ?? version;
+        }
+      }
+      this.writePackageJson(packageJson, dirname(packageJsonPath));
+      changed.push(packageJsonPath);
+    }
+    return changed;
+  }
+
+  /**
+   * Upgrade a dependency that the project resolves to `installedVersion`. Every package.json that
+   * declares it in `dependencies` or `devDependencies` with a range that `installedVersion`
+   * satisfies gets the version in `specifier`, in the same field. An `npm:` alias of the same
+   * package counts as its range. A catalog reference stays in package.json, and the catalog gets
+   * the new version. When no package.json declares it that way,
+   * the primary package.json gets it in `devDependencies`. The method does not run a package
+   * manager install.
+   *
+   * @example
+   *
+   * ```ts
+   * upgradeDeclaredDependency('typescript@^7.1', '7.0.2');
+   * ```
+   */
+  upgradeDeclaredDependency(specifier: string, installedVersion: string): void {
+    const [dependency, version = 'latest'] = getPackageDetails(specifier);
+    let declared = false;
+    for (const packageJsonPath of this.packageJsonPaths) {
+      const packageJson = JsPackageManager.getPackageJson(packageJsonPath);
+      let modified = false;
+      for (const field of ['dependencies', 'devDependencies'] as const) {
+        const declarations = packageJson[field];
+        const range =
+          declarations?.[dependency] && this.getDeclaredRange(dependency, declarations[dependency]);
+        if (!range || !satisfies(installedVersion, range)) {
+          continue;
+        }
+        declared = true;
+        if (this.writeCatalogUpgrades([specifier], declarations).length > 0) {
+          declarations[dependency] = version;
+          modified = true;
+        }
+      }
+      if (modified) {
+        this.writePackageJson(packageJson, dirname(packageJsonPath));
+      }
+    }
+    if (!declared) {
+      const { packageJson, operationDir } = this.primaryPackageJson;
+      packageJson.devDependencies = { ...packageJson.devDependencies, [dependency]: version };
+      this.writePackageJson(packageJson, operationDir);
+    }
+  }
+
+  /**
+   * The semver range that a package.json declaration stands for, or null when it has none: the
+   * declaration itself, or the range of an `npm:` alias of the same package. PNPMProxy resolves a
+   * catalog reference to the catalog's range.
+   */
+  protected getDeclaredRange(packageName: string, declared: string): string | null {
+    const alias = `npm:${packageName}@`;
+    return declared.startsWith(alias) ? declared.slice(alias.length) : declared;
+  }
+
+  /**
    * Removing dependencies from the package.json file, which is found first starting from the
    * instance root. The method does not run a package manager install like `npm install`.
    *
@@ -473,12 +635,13 @@ export abstract class JsPackageManager {
    * When a package is not in the monorepo, we don't change the package version and return the package name as is.
    * The package manager will resolve the latest version of the package upon installing it.
    *
+   * The Storybook version specifier comes from the `STORYBOOK_VERSION_SPECIFIER` env var, then the
+   * process ancestry, and otherwise the CLI version.
+   *
    * @param packages
    */
-  public getVersionedPackages(
-    packages: string[],
-    options?: { storybookVersionSpecifier?: string }
-  ): Promise<string[]> {
+  public getVersionedPackages(packages: string[]): Promise<string[]> {
+    const storybookVersionSpecifier = resolveStorybookVersionSpecifier();
     return Promise.all(
       packages.map(async (pkg) => {
         const [packageName, packageVersion] = getPackageDetails(pkg);
@@ -492,7 +655,7 @@ export abstract class JsPackageManager {
         if (packageName in storybookPackagesVersions) {
           const pkgPrNewSpecifier = getPkgPrNewPackageSpecifier(
             packageName,
-            options?.storybookVersionSpecifier
+            storybookVersionSpecifier
           );
 
           if (pkgPrNewSpecifier) {
@@ -619,6 +782,27 @@ export abstract class JsPackageManager {
   }
 
   /**
+   * Get the `peerDependencies` of a published package version. The lookup runs through the
+   * package manager, so the user's registry, auth, proxy, and certificate settings apply.
+   *
+   * @param packageName Name of the package
+   * @param version Exact version to read
+   * @returns The peer dependencies, an empty object if there are none, or `null` if the lookup
+   *   failed
+   */
+  public async getPublishedPeerDependencies(
+    packageName: string,
+    version: string
+  ): Promise<Record<string, string> | null> {
+    try {
+      return (await this.runGetPeerDependencies(`${packageName}@${version}`)) ?? {};
+    } catch (e) {
+      logger.debug(`Failed to fetch the peer dependencies of ${packageName}@${version}: ${e}`);
+      return null;
+    }
+  }
+
+  /**
    * Clear the latest version cache. Useful for testing or when you want to refresh version
    * information.
    *
@@ -693,7 +877,16 @@ export abstract class JsPackageManager {
     const resolutions = this.getResolutions(packageJson, versions);
     this.writePackageJson({ ...packageJson, ...resolutions }, operationDir);
   }
-  protected abstract runInstall(options?: { force?: boolean }): ResultPromise;
+
+  // Must let the lockfile change: every caller installs right after it edited package.json.
+  protected abstract runInstall(options?: {
+    force?: boolean;
+    legacyPeerDeps?: boolean;
+  }): ResultPromise;
+
+  protected get installUsesTerminal(): boolean {
+    return false;
+  }
 
   protected abstract runAddDeps(
     dependencies: string[],
@@ -718,6 +911,15 @@ export abstract class JsPackageManager {
   ): // Use generic and conditional type to force `string[]` if fetchAllVersions is true and `string` if false
   Promise<T extends true ? string[] : string>;
 
+  /**
+   * Read the `peerDependencies` field of a published package version from the registry
+   *
+   * @param packageSpec Package name and exact version, e.g. `storybook@11.0.0`
+   */
+  protected abstract runGetPeerDependencies(
+    packageSpec: string
+  ): Promise<Record<string, string> | undefined>;
+
   public abstract getRegistryURL(): Promise<string | undefined>;
 
   public abstract runInternalCommand(
@@ -737,11 +939,9 @@ export abstract class JsPackageManager {
 
   /** Returns the installed version of a specified package */
   public async getInstalledVersion(packageName: string): Promise<string | null> {
-    const cacheKey = packageName;
+    const cacheKey = `${this.instanceDir}::${packageName}`;
 
     try {
-      // Create cache key that includes both working directory and package name for isolation
-
       // Check cache first
       const cachedVersion = JsPackageManager.installedVersionCache.get(cacheKey);
       if (cachedVersion !== undefined) {
@@ -751,18 +951,17 @@ export abstract class JsPackageManager {
 
       logger.debug(`Getting installed version for ${packageName}...`);
 
-      // When vite-plus is used, packages like vite and vitest are vendored and their node_modules entries report the vite-plus wrapper version (e.g. 0.1.16) instead of the actual vendored version.
-      // Check vite-plus first so we always get the real version when it's available.
-      let version: string | null = null;
-      const vitePlusVersions = await getVitePlusVersions();
-      if (vitePlusVersions?.[packageName]) {
-        version = vitePlusVersions[packageName]!;
-      }
+      const resolvedPackageJson = await this.getModulePackageJSON(packageName, this.instanceDir);
+      // Package managers report an alias such as Vite+'s `vite` by its own version.
+      let version = getBundledVersion(resolvedPackageJson, packageName) ?? null;
 
       if (!version) {
         const installations = await this.findInstallations([packageName]);
         if (installations) {
           version = Object.entries(installations.dependencies)[0]?.[1]?.[0].version || null;
+        } else {
+          // A listing that failed says nothing about the package, so trust the copy that resolves.
+          version = resolvedPackageJson?.version ?? null;
         }
       }
 
@@ -852,6 +1051,44 @@ export abstract class JsPackageManager {
 
     // Fall back to cwd package.json
     return this.packageJsonPaths[0] ?? resolve(this.cwd, 'package.json');
+  }
+
+  /** Find the package.json whose `workspaces` include `packageJsonPath`, if any. */
+  protected findWorkspaceRootPackageJsonPath(packageJsonPath: string): string | undefined {
+    return this.packageJsonPaths.find((ancestorPath) => {
+      const workspaces = JsPackageManager.getPackageJson(ancestorPath).workspaces;
+      const patterns = Array.isArray(workspaces) ? workspaces : workspaces?.packages;
+      if (!patterns?.length) {
+        return false;
+      }
+      return globSync(
+        patterns
+          .filter((pattern: string) => !pattern.startsWith('!'))
+          .map((pattern: string) => `${pattern}/package.json`),
+        {
+          cwd: dirname(ancestorPath),
+          absolute: true,
+          ignore: patterns
+            .filter((pattern: string) => pattern.startsWith('!'))
+            .map((pattern: string) => `${pattern.slice(1)}/package.json`),
+        }
+      )
+        .map(normalize)
+        .includes(normalize(packageJsonPath));
+    });
+  }
+
+  /** The package.json beside the closest lockfile, else the workspace root, else the primary one. */
+  #findRootPackageJsonPath(): string {
+    const lockfilePath = find.any(LOCK_FILES, {
+      cwd: this.primaryPackageJson.operationDir,
+      last: getProjectRoot(),
+    });
+    if (lockfilePath) {
+      return join(dirname(lockfilePath), 'package.json');
+    }
+    const { packageJsonPath } = this.primaryPackageJson;
+    return normalize(this.findWorkspaceRootPackageJsonPath(packageJsonPath) ?? packageJsonPath);
   }
 
   /** List all package.json files starting from the given directory and stopping at the project root. */

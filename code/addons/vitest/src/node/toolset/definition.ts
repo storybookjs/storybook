@@ -1,14 +1,22 @@
 import * as v from 'valibot';
 
-import { storyInputArraySchema, type StoryIndexAccess } from 'storybook/internal/core-server';
+import {
+  storyInputArraySchema,
+  type StoryIndexAccess,
+  type StoryInput,
+} from 'storybook/internal/core-server';
 import {
   defineToolset,
-  type ToolsetTelemetryReport,
+  getToolset,
+  type ToolsetCtx,
+  type ToolsetDefinition,
+  type ToolsetMethod,
   type ToolsetOutcome,
+  type ToolsetTelemetryReport,
 } from 'storybook/open-service';
 
-import { formatTestRun, summarizeTestRun } from './format.ts';
-import { createAsyncQueue, runStoryTests, type TestChannel } from './run.ts';
+import { countTestRunFailures, formatTestRun, summarizeTestRun } from './format.ts';
+import { createAsyncQueue, runStoryTests, type ChangedStories, type TestChannel } from './run.ts';
 
 const errorLikeSchema: v.GenericSchema = v.object({
   message: v.string(),
@@ -46,6 +54,7 @@ const testRunResultSchema = v.object({
   a11yReports: v.record(v.string(), v.array(v.any())),
   reports: v.record(v.string(), v.array(v.any())),
   totalTestCount: v.optional(v.number()),
+  matchedFileCount: v.optional(v.number()),
   storyIds: v.optional(v.array(v.string())),
   startedAt: v.optional(v.number()),
   finishedAt: v.optional(v.number()),
@@ -63,15 +72,46 @@ const testRunResultSchema = v.object({
   ),
 });
 
+/** What `files`, `changed` and `stories` selected, for the summary line. */
+const selectionSchema = v.object({
+  files: v.optional(
+    v.object({
+      filters: v.array(v.string()),
+      /** How many story files Vitest matched. Not there when the call stopped before that. */
+      storyFileCount: v.optional(v.number()),
+    })
+  ),
+  changed: v.optional(
+    v.object({
+      /** How many stories `stories changed` listed. */
+      storyCount: v.number(),
+      /** The git ref the changes are listed since, when one was passed. */
+      since: v.optional(v.string()),
+      /** Changed files in the Storybook config directory, which can affect every story. */
+      changedConfigFiles: v.array(v.string()),
+      /** Changed files change detection has not caught up with yet. */
+      pendingFiles: v.array(v.string()),
+    })
+  ),
+  /** How many story ids `stories` gave. */
+  inputStoryCount: v.optional(v.number()),
+  /** Stories the run was asked for. */
+  storyCount: v.optional(v.number()),
+});
+
 const testRunOutputSchema = v.variant('status', [
   v.object({
     status: v.literal('no-stories'),
-    /** Per-selector lookup failures. When nothing matched, they are the whole answer. */
+    /** Why the selection is empty when that is a mistake; empty when nothing was affected. */
     notFoundMessages: v.array(v.string()),
+    selection: v.optional(selectionSchema),
   }),
   v.object({
     status: v.literal('completed'),
     result: testRunResultSchema,
+    selection: v.optional(selectionSchema),
+    /** Story ids that matched nothing. The rest ran, but they fail the call. */
+    notFoundMessages: v.optional(v.array(v.string())),
   }),
   v.object({
     status: v.literal('error'),
@@ -87,6 +127,7 @@ const testRunOutputSchema = v.variant('status', [
 
 export type TestRunResult = v.InferOutput<typeof testRunResultSchema>;
 export type TestRunOutput = v.InferOutput<typeof testRunOutputSchema>;
+export type TestRunSelection = v.InferOutput<typeof selectionSchema>;
 
 /**
  * What `run` renders: the run result plus whether accessibility tests were part of this run, which
@@ -105,22 +146,49 @@ export type TestRunSuccessData = Extract<TestRunOutput, { status: 'completed' | 
 
 export type TestRunFailureData = Extract<
   TestRunOutput,
-  { status: 'completed' | 'error' | 'cancelled' }
+  { status: 'completed' | 'no-stories' | 'error' | 'cancelled' }
 > & {
   a11y: boolean;
 };
 
-const runInputSchema = v.object({
+const runInputSchema = v.strictObject({
   stories: v.optional(
     v.pipe(
       storyInputArraySchema,
       v.description(
-        `Stories to test for focused feedback. Omit this field to run tests for all available stories.
-Prefer running tests for specific stories while developing to get faster feedback,
-and only omit this when you explicitly need to run all tests for comprehensive verification.
+        `Stories to test for focused feedback. Omit this field, \`files\` and \`changed\` to run tests for all available stories.
+Prefer running tests for specific stories while developing to get faster feedback.
 Prefer { storyId } when you don't already have story file context, since this avoids filesystem discovery.
 Use { storyId } when IDs were discovered from documentation tools.
 Use { absoluteStoryPath + exportName } only when you're currently working in a story file and already know those values.`
+      )
+    )
+  ),
+  files: v.optional(
+    v.pipe(
+      v.array(
+        v.pipe(
+          v.string(),
+          // An empty entry, as from an unset variable, would match every story file.
+          v.minLength(1),
+          // Vitest reads `Button.stories.tsx:12` as the test at that line, which the runner cannot run.
+          v.regex(
+            /^(?!.*:\d+(-\d+)?$)/,
+            'A line number after a file is not supported. To test one story, pass it in stories.'
+          )
+        )
+      ),
+      v.description(
+        `Story files to test: each entry selects the story files whose path contains it (case-insensitive), or that an absolute path or directory points to. Only story files match; to test the stories that depend on a changed component, use \`changed\`.`
+      )
+    )
+  ),
+  changed: v.optional(
+    v.pipe(
+      // An empty ref, as from an unset variable in CI, must not read as "not changed".
+      v.union([v.boolean(), v.pipe(v.string(), v.minLength(1))]),
+      v.description(
+        'Test the story files of the changed stories that the stories changed tool lists: new and modified stories, and the stories that depend on changed files. true for the uncommitted changes, or a git ref (a branch, tag or commit) for what this branch committed since it forked from that ref, plus the uncommitted changes. Combined with files or stories, only the stories that match both run.'
       )
     )
   ),
@@ -135,7 +203,32 @@ Use { absoluteStoryPath + exportName } only when you're currently working in a s
   ),
 });
 
-type RunInput = v.InferOutput<typeof runInputSchema>;
+// Inferring this from the schema would make the exported toolset type unnameable in declaration
+// output, because core's valibot types live in a private declaration chunk.
+type RunInput = {
+  stories?: StoryInput[];
+  files?: string[];
+  changed?: boolean | string;
+  a11y: boolean;
+};
+
+export type TestToolset = ToolsetDefinition<
+  'test',
+  {
+    run: ToolsetMethod<
+      v.GenericSchema<
+        {
+          stories?: StoryInput[];
+          files?: string[];
+          changed?: boolean | string;
+          a11y?: boolean;
+        },
+        RunInput
+      >,
+      ToolsetOutcome<TestRunSuccessData, TestRunFailureData>
+    >;
+  }
+>;
 
 /**
  * The accessibility half of this tool's contract only holds when addon-a11y is enabled, so the
@@ -144,10 +237,7 @@ type RunInput = v.InferOutput<typeof runInputSchema>;
 function describeRun(a11yEnabled: boolean): string {
   return (
     `Run story tests.
-Run them after editing anything that changes how the UI looks — components, stories, styles, CSS, themes, colors, or design tokens — shell-level substitutes like typecheck, lint, or package.json test scripts do not replace this.
-Provide stories for focused runs (faster while iterating),
-or omit stories to run all tests for full-project verification.
-Use this continuously to monitor test results as you work on your UI components and stories.
+Use changed for the stories your changes affect, or files for specific story files, and leave both out to run every story.
 Results will include passing/failing status` +
     (a11yEnabled
       ? `, and accessibility violation reports.
@@ -162,12 +252,16 @@ For visual/design accessibility violations (for example color contrast), ask the
  */
 function runTelemetry(data: TestRunData, input: RunInput): ToolsetTelemetryReport | undefined {
   const inputStoryCount = input.stories?.length ?? 0;
+  const inputFileCount = input.files?.length ?? 0;
+  const changed = input.changed ? { changed: true } : {};
 
   if (data.status === 'no-stories') {
     return {
       payload: {
         runA11y: data.a11y,
         inputStoryCount,
+        inputFileCount,
+        ...changed,
         matchedStoryCount: 0,
         passingStoryCount: 0,
         failingStoryCount: 0,
@@ -185,7 +279,9 @@ function runTelemetry(data: TestRunData, input: RunInput): ToolsetTelemetryRepor
     payload: {
       runA11y: data.a11y,
       inputStoryCount,
-      // A partially resolved selector list never reaches a run, so every input matched by this point.
+      inputFileCount,
+      ...changed,
+      // The stories the run was asked for; a full run falls back to the input count.
       matchedStoryCount: data.result.storyIds?.length ?? inputStoryCount,
       ...summarizeTestRun(data.result, data.a11y),
     },
@@ -199,18 +295,32 @@ function isFailedRun(data: TestRunData): data is TestRunFailureData {
       return true;
     case 'completed':
       return (
-        data.result.componentTestCount.error > 0 ||
-        (data.a11y && data.result.a11yCount.error > 0) ||
-        data.result.unhandledErrors.length > 0
+        Object.values(countTestRunFailures(data.result, data.a11y)).some((count) => count > 0) ||
+        (data.notFoundMessages?.length ?? 0) > 0
       );
     case 'no-stories':
-      return false;
+      // A filter or id that matched nothing fails, as in Vitest; `changed` affecting nothing passes.
+      return data.notFoundMessages.length > 0;
     default: {
       // Type-only: a new status must decide its own pass/fail rather than falling through.
       const _exhaustive: never = data;
       return _exhaustive;
     }
   }
+}
+
+// `stories changed` itself, so both commands select the same stories for the same changes.
+async function getChangedStories(ctx: ToolsetCtx, since?: string): Promise<ChangedStories> {
+  const { data } = await getToolset('stories').methods.changed.handler(
+    since === undefined ? {} : { since },
+    ctx
+  );
+  return {
+    storyIds: data.stories.map((story) => story.storyId),
+    storyFiles: [...new Set(data.stories.map((story) => story.importPath))],
+    changedConfigFiles: data.changedConfigFiles,
+    pendingFiles: [...data.unindexedStoryFiles, ...data.pendingFiles],
+  };
 }
 
 export type CreateTestToolsetOptions = {
@@ -224,7 +334,11 @@ export type CreateTestToolsetOptions = {
  * Creates the public test API. Each registration owns a queue because addon-vitest supports one
  * live test run at a time.
  */
-export function createTestToolset({ channel, storyIndex, a11yEnabled }: CreateTestToolsetOptions) {
+export function createTestToolset({
+  channel,
+  storyIndex,
+  a11yEnabled,
+}: CreateTestToolsetOptions): TestToolset {
   const queue = createAsyncQueue();
 
   return defineToolset({
@@ -233,8 +347,9 @@ export function createTestToolset({ channel, storyIndex, a11yEnabled }: CreateTe
     methods: {
       run: {
         input: runInputSchema,
+        positional: 'files',
         title: 'Run Storybook tests',
-        description: describeRun(a11yEnabled),
+        description: () => describeRun(a11yEnabled),
         handler: async (
           input,
           ctx
@@ -245,10 +360,13 @@ export function createTestToolset({ channel, storyIndex, a11yEnabled }: CreateTe
               channel,
               getIndex: storyIndex.getIndex,
               stories: input.stories,
+              files: input.files,
+              changed: input.changed,
+              getChangedStories: (since) => getChangedStories(ctx, since),
               a11y: input.a11y,
             });
             const data: TestRunData = { ...output, a11y: input.a11y };
-            const markdown = formatTestRun(data, ctx);
+            const markdown = formatTestRun(data, ctx, { a11yEnabled });
             const telemetry = runTelemetry(data, input);
             return isFailedRun(data)
               ? { ok: false, data, markdown, telemetry }
@@ -261,5 +379,3 @@ export function createTestToolset({ channel, storyIndex, a11yEnabled }: CreateTe
     },
   });
 }
-
-export type TestToolset = ReturnType<typeof createTestToolset>;

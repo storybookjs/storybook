@@ -1,14 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { getProcessAncestry } from './process-ancestry.ts';
-
-const { execSyncMock, platformMock } = vi.hoisted(() => ({
-  execSyncMock: vi.fn(),
+const { execFileSyncMock, platformMock } = vi.hoisted(() => ({
+  execFileSyncMock: vi.fn(),
   platformMock: vi.fn(),
 }));
 
 vi.mock('node:child_process', () => ({
-  execSync: execSyncMock,
+  execFileSync: execFileSyncMock,
 }));
 
 vi.mock('node:os', () => ({
@@ -16,88 +14,156 @@ vi.mock('node:os', () => ({
   platform: platformMock,
 }));
 
+vi.unmock('./process-ancestry.ts');
+
+const self = process.pid;
+
+const psOutput = (rows: [number, number, string][]) =>
+  rows
+    .map(
+      ([pid, ppid, command]) => `${String(pid).padStart(6)} ${String(ppid).padStart(6)} ${command}`
+    )
+    .join('\n') + '\n';
+
+const cimOutput = (rows: [number, number, string | null][]) =>
+  JSON.stringify(
+    rows.map(([ProcessId, ParentProcessId, CommandLine]) => ({
+      ProcessId,
+      ParentProcessId,
+      CommandLine,
+    }))
+  );
+
 describe('getProcessAncestry', () => {
-  beforeEach(() => {
-    execSyncMock.mockReset();
+  let getProcessAncestry: typeof import('./process-ancestry.ts').getProcessAncestry;
+
+  beforeEach(async () => {
+    execFileSyncMock.mockReset();
     platformMock.mockReset();
+    // The result is cached per module instance
+    vi.resetModules();
+    ({ getProcessAncestry } = await import('./process-ancestry.ts'));
   });
 
-  it('throws for invalid pids', () => {
+  it('reads the process table once per process', () => {
     platformMock.mockReturnValue('linux');
+    execFileSyncMock.mockReturnValue(psOutput([[self, 456, 'node storybook.js']]));
 
-    expect(() => getProcessAncestry(0)).toThrow('PID must be a positive integer');
-    expect(() => getProcessAncestry(-5)).toThrow('PID must be a positive integer');
-    expect(() => getProcessAncestry(1.5)).toThrow('PID must be a positive integer');
+    expect(getProcessAncestry()).toBe(getProcessAncestry());
+    expect(execFileSyncMock).toHaveBeenCalledTimes(1);
   });
 
-  it('walks the unix ancestry and pins child stdio so stderr cannot leak', () => {
+  it('walks the unix ancestry from one ps snapshot, with stderr discarded', () => {
     platformMock.mockReturnValue('linux');
-    execSyncMock
-      .mockReturnValueOnce(' 123  456 node /cli/storybook.js \n')
-      .mockReturnValueOnce(' 456  1 yarn start \n');
+    execFileSyncMock.mockReturnValue(
+      psOutput([
+        [1, 0, '/sbin/init'],
+        [456, 1, 'yarn start'],
+        [self, 456, 'node /cli/storybook.js --flag=a,b'],
+        [999, 456, 'unrelated'],
+      ])
+    );
 
-    const result = getProcessAncestry(123);
-
-    expect(result).toEqual([{ pid: 123, ppid: 456, command: 'node /cli/storybook.js' }]);
-    expect(execSyncMock).toHaveBeenCalledTimes(2);
-    for (const call of execSyncMock.mock.calls) {
-      expect(call[1]).toMatchObject({
-        encoding: 'utf8',
-        stdio: ['ignore', 'pipe', 'ignore'],
-      });
-    }
-  });
-
-  it('stops the unix walk at init (ppid 1)', () => {
-    platformMock.mockReturnValue('linux');
-    execSyncMock.mockReturnValue(' 123  1 orphaned-process \n');
-
-    expect(getProcessAncestry(123)).toEqual([]);
-  });
-
-  it('parses wmic CSV output on Windows and suppresses its stderr', () => {
-    platformMock.mockReturnValue('win32');
-    execSyncMock
-      .mockReturnValueOnce(
-        'Node,CommandLine,ParentProcessId,ProcessId\r\nHOST,cmd.exe /c yarn,2064,4700\r\n'
-      )
-      .mockReturnValueOnce(
-        'Node,CommandLine,ParentProcessId,ProcessId\r\nHOST,powershell,1,2064\r\n'
-      )
-      .mockReturnValueOnce('');
-
-    const result = getProcessAncestry(4700);
-
-    expect(result).toEqual([
-      { pid: 4700, ppid: 2064, command: 'cmd.exe /c yarn' },
-      { pid: 2064, ppid: 1, command: 'powershell' },
+    expect(getProcessAncestry()).toEqual([
+      { pid: self, ppid: 456, command: 'node /cli/storybook.js --flag=a,b' },
     ]);
-    const [command, options] = execSyncMock.mock.calls[0];
-    expect(command).toContain('wmic process where (ProcessId=4700)');
-    expect(options).toMatchObject({
-      encoding: 'utf8',
-      timeout: 10_000,
-      stdio: ['ignore', 'pipe', 'ignore'],
-    });
+    expect(execFileSyncMock).toHaveBeenCalledTimes(1);
+    expect(execFileSyncMock).toHaveBeenCalledWith(
+      'ps',
+      ['-A', '-o', 'pid=,ppid=,args='],
+      expect.objectContaining({ encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] })
+    );
   });
 
-  it('returns an empty ancestry when the lookup yields nothing (benign stderr case)', () => {
+  it('walks the Windows ancestry from one CIM snapshot, keeping commas in command lines', () => {
     platformMock.mockReturnValue('win32');
-    // wmic prints "No Instance(s) Available." to stderr (now discarded) and
-    // nothing to stdout when the queried PID no longer exists
-    execSyncMock.mockReturnValue('');
+    execFileSyncMock.mockReturnValue(
+      cimOutput([
+        [4, 0, null],
+        [2064, 4, 'powershell'],
+        [4700, 2064, 'cmd.exe /c "yarn storybook, now"'],
+        [self, 4700, 'node storybook.js'],
+      ])
+    );
 
-    expect(getProcessAncestry(9999)).toEqual([]);
+    expect(getProcessAncestry()).toEqual([
+      { pid: self, ppid: 4700, command: 'node storybook.js' },
+      { pid: 4700, ppid: 2064, command: 'cmd.exe /c "yarn storybook, now"' },
+    ]);
+    expect(execFileSyncMock).toHaveBeenCalledTimes(1);
+    const [file, args, options] = execFileSyncMock.mock.calls[0];
+    expect(file).toBe('powershell.exe');
+    expect(args.at(-1)).toContain('Get-CimInstance Win32_Process');
+    expect(options).toMatchObject({ stdio: ['ignore', 'pipe', 'ignore'], windowsHide: true });
   });
 
-  it('breaks on cycles in the process tree', () => {
+  it('accepts a single CIM object, which ConvertTo-Json does not wrap in an array', () => {
+    platformMock.mockReturnValue('win32');
+    execFileSyncMock.mockReturnValue(
+      JSON.stringify({ ProcessId: self, ParentProcessId: 9, CommandLine: null })
+    );
+
+    expect(getProcessAncestry()).toEqual([{ pid: self, ppid: 9, command: undefined }]);
+  });
+
+  it('returns an empty ancestry when the process table cannot be read', () => {
+    platformMock.mockReturnValue('win32');
+    execFileSyncMock.mockImplementation(() => {
+      throw new Error('spawnSync powershell.exe ETIMEDOUT');
+    });
+
+    expect(getProcessAncestry()).toEqual([]);
+  });
+
+  it('caches a failed read instead of spawning again', () => {
     platformMock.mockReturnValue('linux');
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    execSyncMock.mockReturnValue(' 5  5 looping-process \n');
+    execFileSyncMock.mockImplementation(() => {
+      throw new Error('spawnSync ps ENOENT');
+    });
 
-    getProcessAncestry(5);
+    expect(getProcessAncestry()).toEqual([]);
+    expect(getProcessAncestry()).toEqual([]);
+    expect(execFileSyncMock).toHaveBeenCalledTimes(1);
+  });
 
-    expect(warn).toHaveBeenCalledWith('Detected cycle in process tree at PID 5');
-    warn.mockRestore();
+  it('returns an empty ancestry when the current process is missing from the table', () => {
+    platformMock.mockReturnValue('linux');
+    execFileSyncMock.mockReturnValue(
+      psOutput([
+        [1, 0, '/sbin/init'],
+        [456, 1, 'yarn start'],
+      ])
+    );
+
+    expect(getProcessAncestry()).toEqual([]);
+  });
+
+  it('returns an empty ancestry for unparseable output', () => {
+    platformMock.mockReturnValue('win32');
+    execFileSyncMock.mockReturnValue('');
+
+    expect(getProcessAncestry()).toEqual([]);
+  });
+
+  it('stops on a self-referencing process', () => {
+    platformMock.mockReturnValue('linux');
+    execFileSyncMock.mockReturnValue(psOutput([[self, self, 'looping-process']]));
+
+    expect(getProcessAncestry()).toEqual([{ pid: self, ppid: self, command: 'looping-process' }]);
+  });
+
+  it('stops on cycles in the process tree', () => {
+    platformMock.mockReturnValue('win32');
+    execFileSyncMock.mockReturnValue(
+      cimOutput([
+        [self, 20, 'node child.js'],
+        [20, self, 'cmd.exe'],
+      ])
+    );
+
+    expect(getProcessAncestry()).toEqual([
+      { pid: self, ppid: 20, command: 'node child.js' },
+      { pid: 20, ppid: self, command: 'cmd.exe' },
+    ]);
   });
 });

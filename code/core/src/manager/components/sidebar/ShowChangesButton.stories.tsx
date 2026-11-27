@@ -2,8 +2,6 @@ import React from 'react';
 
 import { CHANGE_DETECTION_STATUS_TYPE_ID } from 'storybook/internal/types';
 
-import { global } from '@storybook/global';
-
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { MemoryRouter } from 'storybook/internal/router';
@@ -107,8 +105,7 @@ const meta = {
       return (
         <MemoryRouter initialEntries={['/']}>
           <ManagerContext.Provider value={makeManagerContext(parameters?.contextOptions ?? {})}>
-            {/* Without a provider, consumers read the context default: no active review. */}
-            {parameters?.withReviewProvider ? <ReviewProvider>{content}</ReviewProvider> : content}
+            <ReviewProvider>{content}</ReviewProvider>
           </ManagerContext.Provider>
         </MemoryRouter>
       );
@@ -117,11 +114,6 @@ const meta = {
   beforeEach: async () => {
     await reviewService.commands.dismissReview(undefined);
     sessionStorage.clear();
-    const features = global.FEATURES;
-    global.FEATURES = { ...features, changeDetection: true };
-    return () => {
-      global.FEATURES = features;
-    };
   },
 } satisfies Meta<typeof ShowChangesButton>;
 
@@ -146,7 +138,7 @@ const fiveNewThreeModified = () =>
 const twoStoriesBeforeEach = () =>
   setChangeStatuses({ s1: 'status-value:new', s2: 'status-value:modified' });
 
-/** Feature flag on, 5 new stories, 3 modified. No filters active. */
+/** 5 new stories, 3 modified. No filters active. */
 export const Idle: Story = {
   parameters: {
     contextOptions: {
@@ -262,7 +254,6 @@ export const ContextualTagFilter: Story = {
 /** The review widget renders in the same spot and takes precedence over this CTA. */
 export const HiddenWhenReviewActive: Story = {
   parameters: {
-    withReviewProvider: true,
     contextOptions: {
       storyIds: ['s1', 's2'],
     },
@@ -282,32 +273,10 @@ export const HiddenWhenReviewActive: Story = {
   },
 };
 
-/** Feature flag on, but no statuses in the store: nothing to show. */
+/** No statuses in the store: nothing to show. */
 export const HiddenWhenZeroCounts: Story = {
   beforeEach: () => {
     internal_fullStatusStore.unset();
-  },
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    await expect(canvas.queryByRole('switch')).toBeNull();
-  },
-};
-
-/** Feature flag off: nothing to show. */
-export const HiddenWhenFeatureOff: Story = {
-  parameters: {
-    contextOptions: {
-      storyIds: ['s1'],
-    },
-  },
-  beforeEach: () => {
-    const cleanup = setChangeStatuses({ s1: 'status-value:new' });
-    const features = global.FEATURES;
-    global.FEATURES = { ...features, changeDetection: false };
-    return () => {
-      global.FEATURES = features;
-      cleanup();
-    };
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);

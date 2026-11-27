@@ -2,12 +2,15 @@ import { execFile } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import { existsSync, rmSync } from 'node:fs';
 import { chmod, mkdir, readFile, readdir, rename, rm, stat, writeFile } from 'node:fs/promises';
-import { homedir, userInfo } from 'node:os';
+import { userInfo } from 'node:os';
 
 import { findStorybookPackageRoot, normalizeAddonName } from 'storybook/internal/common';
 import type { StorybookConfig } from 'storybook/internal/types';
 
 import { join, resolve } from 'pathe';
+
+import { getPidNamespace, isAnotherPidNamespace } from '../../common/utils/pid-namespace.ts';
+import { getInstanceRegistryDir } from '../../common/utils/storybook-config-dir.ts';
 
 import { CLAUDE_PREVIEW_AGENT_NAME } from '../../shared/constants/agent-provenance.ts';
 import { isClaudePreviewLaunch } from '../../shared/utils/agent-environment.ts';
@@ -57,7 +60,7 @@ export type RuntimeInstanceRecord = {
   pid: number;
   cwd: string;
   /**
-   * Resolved config directory of the running Storybook. Lets `storybook ai` find this instance
+   * Resolved config directory of the running Storybook. Lets `storybook tools` find this instance
    * from a different cwd in a monorepo (storybookjs/storybook#35359). Optional because records
    * written by older Storybooks lack it.
    */
@@ -75,6 +78,8 @@ export type RuntimeInstanceRecord = {
    * cannot be derived, which makes attach refuse.
    */
   storybookPath?: string;
+  /** The process namespace of this dev server on Linux, in which `pid` can be checked. */
+  pidNamespace?: string;
   startedAt: string;
   updatedAt: string;
   mcp: { status: 'not-installed' } | { status: 'ready'; endpoint: string };
@@ -96,10 +101,6 @@ export type RuntimeInstanceRegistryCleanupDecision =
   | { action: 'keep' }
   | { action: 'remove' }
   | { action: 'check-pid'; pid: number };
-
-export function getDefaultRuntimeInstanceRegistryDir() {
-  return join(homedir(), '.storybook', 'instances');
-}
 
 export function getStorybookBaseUrl(address: string) {
   const url = new URL(address);
@@ -143,6 +144,7 @@ export function createRuntimeInstanceRecord({
   mcp = { status: 'not-installed' },
   now = new Date(),
   pid = process.pid,
+  pidNamespace = getPidNamespace(),
   port,
   storybookPath = findStorybookPackageRoot(),
   storybookVersion,
@@ -156,6 +158,7 @@ export function createRuntimeInstanceRecord({
   mcp?: RuntimeInstanceRecord['mcp'];
   now?: Date;
   pid?: number;
+  pidNamespace?: string;
   port: number;
   storybookPath?: string;
   storybookVersion: string;
@@ -176,6 +179,7 @@ export function createRuntimeInstanceRecord({
     ...(agent ? { agent } : {}),
     storybookVersion,
     ...(storybookPath ? { storybookPath } : {}),
+    ...(pidNamespace ? { pidNamespace } : {}),
     startedAt: timestamp,
     updatedAt: timestamp,
     mcp,
@@ -184,7 +188,7 @@ export function createRuntimeInstanceRecord({
 
 export async function writeRuntimeInstanceRecord(
   record: RuntimeInstanceRecord,
-  registryDir = getDefaultRuntimeInstanceRegistryDir()
+  registryDir = getInstanceRegistryDir()
 ) {
   await mkdir(registryDir, { recursive: true, mode: REGISTRY_DIR_MODE });
   // `mkdir` ignores `mode` for an existing dir and umask can clear bits, so modes are enforced.
@@ -244,6 +248,12 @@ function getRecordPid(record: unknown) {
   return Number.isInteger(record.pid) && record.pid > 0 ? record.pid : undefined;
 }
 
+function getRecordPidNamespace(record: unknown) {
+  return isRecordObject(record) && typeof record.pidNamespace === 'string'
+    ? record.pidNamespace
+    : undefined;
+}
+
 function isErrnoException(error: unknown): error is NodeJS.ErrnoException {
   return typeof error === 'object' && error !== null && 'code' in error;
 }
@@ -275,7 +285,9 @@ export function getRuntimeInstanceRegistryCleanupDecision(
 
   const recordPid = getRecordPid(entry.record);
 
-  return recordPid === undefined ? { action: 'keep' } : { action: 'check-pid', pid: recordPid };
+  return recordPid === undefined || isAnotherPidNamespace(getRecordPidNamespace(entry.record))
+    ? { action: 'keep' }
+    : { action: 'check-pid', pid: recordPid };
 }
 
 function isPidInactive(pid: number) {

@@ -7,7 +7,7 @@ import React from 'react';
 
 import type { DocsContextProps } from 'storybook/internal/types';
 
-import { ThemeProvider, convert, themes } from 'storybook/theming';
+import { ThemeProvider, convert, themes } from 'storybook/theming/emotion';
 
 import { ArgTypes } from './ArgTypes.tsx';
 import { DocsContext } from './DocsContext.ts';
@@ -39,8 +39,7 @@ const renderArgTypes = (componentId: string | undefined) => {
 afterEach(() => cleanup());
 
 describe('with the docgen server on', () => {
-  beforeEach(() => vi.stubGlobal('FEATURES', { experimentalDocgenServer: true }));
-  afterEach(() => vi.unstubAllGlobals());
+  beforeEach(() => vi.stubGlobal('FEATURES', { docgenServer: true }));
 
   it('says the component is unreachable from this page, not that no story declares it', () => {
     // `getComponentId` only searches the CSF files this docs page imports (DocsContext.ts), so
@@ -54,8 +53,7 @@ describe('with the docgen server on', () => {
 });
 
 describe('with the docgen server off', () => {
-  beforeEach(() => vi.stubGlobal('FEATURES', { experimentalDocgenServer: false }));
-  afterEach(() => vi.unstubAllGlobals());
+  beforeEach(() => vi.stubGlobal('FEATURES', { docgenServer: false }));
 
   it("renders the renderer extractor's rows for the same component", () => {
     renderArgTypes(undefined);

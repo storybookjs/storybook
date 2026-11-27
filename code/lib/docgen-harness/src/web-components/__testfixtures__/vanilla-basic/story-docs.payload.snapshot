@@ -1,0 +1,49 @@
+{
+  "id": "webcomponentsfixtures-vanilla-basic",
+  "name": "vanilla-basic",
+  "path": "__PATH__",
+  "stories": {
+    "webcomponentsfixtures-vanilla-basic--args-default-render": {
+      "id": "webcomponentsfixtures-vanilla-basic--args-default-render",
+      "name": "Args Default Render",
+      "snippet": "<vanilla-basic label="Default vanilla" count="1"></vanilla-basic>",
+      "template": "<vanilla-basic⟦attr label mode="render" ~" "⟫ label="Default vanilla"⟧⟦attr count mode="render" ~" "⟫ count="1"⟧⟦attr disabled mode="render" ~" "⟫⟧⟦attr legacy-label mode="render" ~" "⟫⟧></vanilla-basic>",
+    },
+    "webcomponentsfixtures-vanilla-basic--dom-node": {
+      "id": "webcomponentsfixtures-vanilla-basic--dom-node",
+      "name": "Dom Node",
+      "snippet": "const DomNode = () => {
+  const el = document.createElement('vanilla-basic');
+  el.setAttribute('label', String('Vanilla'));
+  el.setAttribute('count', String(4));
+  if (true) {
+    el.setAttribute('disabled', '');
+  }
+  return el;
+};",
+      "template": "const DomNode = () => {
+  const el = document.createElement('vanilla-basic');
+  el.setAttribute('label', String(⟦code label⟫'Vanilla'⟧));
+  el.setAttribute('count', String(⟦code count⟫4⟧));
+  if (⟦code disabled⟫true⟧) {
+    el.setAttribute('disabled', '');
+  }
+  return el;
+};",
+    },
+    "webcomponentsfixtures-vanilla-basic--lit-template": {
+      "id": "webcomponentsfixtures-vanilla-basic--lit-template",
+      "name": "Lit Template",
+      "snippet": "html`<vanilla-basic
+  label=${'Vanilla'}
+  count=${4}
+  ?disabled=${true}
+></vanilla-basic>`",
+      "template": "html`<vanilla-basic
+  label=${⟦code label⟫'Vanilla'⟧}
+  count=${⟦code count⟫4⟧}
+  ?disabled=${⟦code disabled⟫true⟧}
+></vanilla-basic>`",
+    },
+  },
+}

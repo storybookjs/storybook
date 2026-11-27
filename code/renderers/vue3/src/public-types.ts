@@ -24,7 +24,7 @@ export type { VueRenderer };
 /**
  * Metadata to configure the stories for a component.
  *
- * @see [Default export](https://storybook.js.org/docs/api/csf#default-export)
+ * @see [Meta](https://storybook.js.org/docs/writing-stories/csf#meta)
  */
 export type Meta<TCmpOrArgs = Args> = ComponentAnnotations<
   VueRenderer,
@@ -34,7 +34,7 @@ export type Meta<TCmpOrArgs = Args> = ComponentAnnotations<
 /**
  * Story function that represents a CSFv2 component example.
  *
- * @see [Named Story exports](https://storybook.js.org/docs/api/csf#named-story-exports)
+ * @see [Stories](https://storybook.js.org/docs/writing-stories/csf#stories)
  */
 export type StoryFn<TCmpOrArgs = Args> = AnnotatedStoryFn<
   VueRenderer,
@@ -44,7 +44,7 @@ export type StoryFn<TCmpOrArgs = Args> = AnnotatedStoryFn<
 /**
  * Story object that represents a CSFv3 component example.
  *
- * @see [Named Story exports](https://storybook.js.org/docs/api/csf#named-story-exports)
+ * @see [Stories](https://storybook.js.org/docs/writing-stories/csf#stories)
  */
 export type StoryObj<TMetaOrCmpOrArgs = Args> = TMetaOrCmpOrArgs extends {
   render?: ArgsStoryFn<VueRenderer, any>;
@@ -68,7 +68,7 @@ type AllowNonFunctionSlots<Slots> = {
   [K in keyof Slots]: Slots[K] | VNodeChild;
 };
 
-export type ComponentPropsAndSlots<C> = ComponentProps<C> & ExtractSlots<C>;
+export type ComponentPropsAndSlots<C> = OmitIndexSignature<ComponentProps<C>> & ExtractSlots<C>;
 
 type ComponentPropsOrProps<TCmpOrArgs> =
   TCmpOrArgs extends Constructor<any>

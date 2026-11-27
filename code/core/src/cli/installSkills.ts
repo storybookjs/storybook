@@ -42,6 +42,7 @@ export function supportsSkills(
     renderer === SupportedRenderer.REACT ||
     renderer === SupportedRenderer.SVELTE ||
     renderer === SupportedRenderer.WEB_COMPONENTS ||
+    renderer === SupportedRenderer.ASTRO ||
     framework === SupportedFramework.VUE3_VITE ||
     framework === SupportedFramework.ANGULAR_VITE
   );

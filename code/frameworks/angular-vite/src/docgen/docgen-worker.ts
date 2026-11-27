@@ -1,16 +1,21 @@
 import {
+  createDocgenSummaryProvider,
   getStoryImportPathFromEntry,
   STORY_FILE_TEST_REGEXP,
   type TypeScriptSpecifierForDocgen,
 } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
-import type { DocgenMiddleware, DocgenProvider } from 'storybook/internal/types';
+import type {
+  DocgenMiddleware,
+  DocgenProvider,
+  DocgenSummaryProvider,
+} from 'storybook/internal/types';
 
 import type { ParsingLogger } from '@storybook/angular-cm';
 import { AngularComponentMetaManager } from '@storybook/angular-cm';
 import { loadDocgenTypeScript } from '@storybook/component-meta-typescript';
 import type { AngularDocgenOptions } from './build-docgen.ts';
-import { buildDocgenPayload } from './build-docgen.ts';
+import { buildDocgenPayload, buildDocgenSummary } from './build-docgen.ts';
 
 const workerLogger: ParsingLogger = {
   warn: (message) => logger.warn(`[storybook-angular-vite] ${message}`),
@@ -72,3 +77,6 @@ export const createDocgenProvider = (options: AngularDocgenOptions): DocgenMiddl
       return { ...(await nextDocgen(input)), ...ours };
     };
 };
+
+export const createSummaryProvider = (): DocgenSummaryProvider =>
+  createDocgenSummaryProvider({ summarize: (input) => buildDocgenSummary(input) });

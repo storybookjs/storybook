@@ -4,7 +4,6 @@
  * The raw shape below stays close to Compodoc's JSON schema, while analyzer-owned fields use the
  * stronger contracts its successor pipeline needs. This package owns these types outright.
  */
-import type { ComponentJsDocInfo } from 'storybook/internal/component-meta';
 
 import type { AnalyzerContext } from './analyzer/context.ts';
 
@@ -165,8 +164,6 @@ export interface MetadataJson {
 interface AnalyzerFields {
   /** Absolute path of the defining source file, always spelled with forward slashes. */
   file: string;
-  /** Class-level JSDoc tags, carrying plain text rather than rendered HTML. */
-  jsdoctags?: JsDocTag[];
   /** The `@Component`/`@Directive` decorator's `selector`, when statically resolvable. */
   selector?: string;
   /** The resolved value, Angular's default when omitted, or `undefined` when unreadable. */
@@ -206,8 +203,6 @@ export interface AngularComponentMetaResult {
   entry: AngularClassMeta;
   /** Every class in the file, for the extractor's alias and enum resolution. */
   json: MetadataJson;
-  /** Omitted when extraction reaches analyzer metadata without a class symbol. */
-  jsDocInfo?: ComponentJsDocInfo;
   /**
    * The live analyzer context over `json`'s file, when extraction ran beside its analyzer. ArgTypes
    * extraction uses it to resolve named types for `table.type.detail`; a result without one keeps

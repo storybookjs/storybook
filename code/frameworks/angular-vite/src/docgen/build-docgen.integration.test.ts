@@ -57,7 +57,7 @@ it('builds a real payload through the TypeScript-backed analyzer', async () => {
   expect({ description: payload?.description, jsDocTags: payload?.jsDocTags })
     .toMatchInlineSnapshot(`
       {
-        "description": "Renders with {@link IconButton } in prose.
+        "description": "Renders with {@link IconButton} in prose.
       Use together with",
         "jsDocTags": {
           "deprecated": [

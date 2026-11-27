@@ -202,7 +202,6 @@ describe('pipes, injectables and plain classes', () => {
       name: 'FormatPipe',
       type: 'pipe',
       ngname: 'sbFormat',
-      rawdescription: 'Formats things.',
     });
     expect(byName(pipe.methods, 'transform').args).toEqual([
       { name: 'value', type: 'string', optional: false },
@@ -813,13 +812,9 @@ describe('which members survive, and how they are described', () => {
     });
   });
 
-  it('carries class and member descriptions with their tags as plain text', () => {
+  it('carries member descriptions with their tags as plain text', () => {
     const component = componentIn(SOURCE) as AngularClassMeta & Directive;
 
-    expect(component.rawdescription).toBe('Shows misc collection.');
-    expect(component.jsdoctags).toEqual([
-      { tagName: { text: 'summary', escapedText: 'summary' }, comment: 'A summary line.' },
-    ]);
     expect(byName(component.inputsClass, 'onChange').rawdescription).toBe(
       'Callback invoked on change.'
     );

@@ -595,26 +595,6 @@ describe('how a member is typed', () => {
 });
 
 describe('JSDoc', () => {
-  it('carries the class description and its tags', () => {
-    const component = componentIn(`
-      import { Component } from '@angular/core';
-
-      /**
-       * Renders a colored status chip.
-       *
-       * @see https://example.com/design/chips
-       */
-      @Component({ selector: 'sb-chip', template: '' })
-      export class ChipComponent {}
-    `);
-
-    expect(component.rawdescription).toBe('Renders a colored status chip.');
-    expect(component.description).toBe('Renders a colored status chip.');
-    expect(component.jsdoctags).toEqual([
-      { tagName: { text: 'see', escapedText: 'see' }, comment: 'https://example.com/design/chips' },
-    ]);
-  });
-
   it('leaves out a line comment above the JSDoc block', () => {
     const component = componentIn(`
       import { Component, Input } from '@angular/core';

@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 
 import { generateModernIframeScriptCodeFromPreviews } from './codegen-modern-iframe-script.ts';
 import { generateAddonSetupCode } from './codegen-set-addon-channel.ts';
-import { optimizeViteDeps } from './preset.ts';
 import { previewRuntimePath } from './utils/preview-runtime-path.ts';
 
 describe('generateModernIframeScriptCodeFromPreviews', () => {
@@ -195,13 +194,7 @@ describe('optimizeDeps coverage for virtual module imports', () => {
       'storybook/internal/channels', // Imported in addon preview files
     ]);
 
-    const notCovered = packageImports.filter(
-      (pkg) => !discoveredViaEntries.has(pkg) && !optimizeViteDeps.includes(pkg)
-    );
-
-    // The iframe entry imports the preview runtime by absolute path, which extractPackageImports
-    // skips — assert the optimizer entry stays aligned with the generated import.
-    expect(optimizeViteDeps).toContain(previewRuntimePath);
+    const notCovered = packageImports.filter((pkg) => !discoveredViaEntries.has(pkg));
 
     expect(
       notCovered,

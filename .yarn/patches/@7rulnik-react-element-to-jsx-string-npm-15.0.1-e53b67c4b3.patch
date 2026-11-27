@@ -1,8 +1,17 @@
 diff --git a/dist/cjs/index.js b/dist/cjs/index.js
-index 6d1961830f978c0f3d90cc864003b0c50eb98f0d..9d48f1990ef440431e0e12ebf7560912893cd725 100644
 --- a/dist/cjs/index.js
 +++ b/dist/cjs/index.js
-@@ -373,11 +373,7 @@ var formatProp = (function (name, hasValue, value, hasDefaultValue, defaultValue
+@@ -263,7 +263,8 @@ var _parseReactElement = function parseReactElement(element, options) {
+   }
+   var displayName = displayNameFn(element);
+   var props = filterProps(element.props, noChildren);
+-  if (element.ref !== null) {
++  // React 19 moved `ref` into props and made `element.ref` a getter that logs a deprecation warning
++  if (!Object.prototype.hasOwnProperty.call(element.props, 'ref') && element.ref !== null) {
+     props.ref = element.ref;
+   }
+   var key = element.key;
+@@ -373,11 +374,7 @@ var formatProp = (function (name, hasValue, value, hasDefaultValue, defaultValue
    var attributeFormattedInline = ' ';
    var attributeFormattedMultiline = "\n".concat(spacer(lvl + 1, tabStop));
    var isMultilineAttribute = formattedPropValue.includes('\n');
@@ -16,10 +25,19 @@ index 6d1961830f978c0f3d90cc864003b0c50eb98f0d..9d48f1990ef440431e0e12ebf7560912
      attributeFormattedMultiline += "".concat(name);
    } else {
 diff --git a/dist/esm/index.js b/dist/esm/index.js
-index 1c23d38bc15c76c6f9277c39b362f01e99e561ae..4e2de641a3ddb5851f7afa18c74d5a0f22d1c364 100644
 --- a/dist/esm/index.js
 +++ b/dist/esm/index.js
-@@ -347,11 +347,7 @@ var formatProp = (function (name, hasValue, value, hasDefaultValue, defaultValue
+@@ -237,7 +237,8 @@ var _parseReactElement = function parseReactElement(element, options) {
+   }
+   var displayName = displayNameFn(element);
+   var props = filterProps(element.props, noChildren);
+-  if (element.ref !== null) {
++  // React 19 moved `ref` into props and made `element.ref` a getter that logs a deprecation warning
++  if (!Object.prototype.hasOwnProperty.call(element.props, 'ref') && element.ref !== null) {
+     props.ref = element.ref;
+   }
+   var key = element.key;
+@@ -347,11 +348,7 @@ var formatProp = (function (name, hasValue, value, hasDefaultValue, defaultValue
    var attributeFormattedInline = ' ';
    var attributeFormattedMultiline = "\n".concat(spacer(lvl + 1, tabStop));
    var isMultilineAttribute = formattedPropValue.includes('\n');

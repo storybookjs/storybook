@@ -921,17 +921,17 @@ describe('vitestSetupFile', () => {
       expect(readFixture('vitest.config.ts')).not.toContain('vitest.setup.ts');
     });
 
-    it('refuses to delete a setup file that no scanned config references', async () => {
-      const error = await migrateAndCaptureError({
+    it('clears the setup file without deleting it when an unscanned config references it', async () => {
+      const { setupFilePath } = await migrate({
         '.storybook/vitest.setup.ts': PREVIEW_ONLY_SETUP_FILE,
         'vitest.storybook.config.ts': STANDARD_VITEST_CONFIG,
       });
 
-      expect(error).toContain(
-        '1) <fixture>/.storybook/vitest.setup.ts: no Vitest or Vite config listing it in "setupFiles" was found'
+      expect(existsSync(setupFilePath)).toBe(true);
+      expect(readFileSync(setupFilePath, 'utf8')).not.toContain('setProjectAnnotations');
+      expect(readFileSync(path.join(fixtureRoot, 'vitest.storybook.config.ts'), 'utf8')).toBe(
+        STANDARD_VITEST_CONFIG
       );
-      expect(readFixture('.storybook/vitest.setup.ts')).toBe(PREVIEW_ONLY_SETUP_FILE);
-      expect(readFixture('vitest.storybook.config.ts')).toBe(STANDARD_VITEST_CONFIG);
     });
 
     it('still rewrites an unreferenced setup file that keeps other code', async () => {

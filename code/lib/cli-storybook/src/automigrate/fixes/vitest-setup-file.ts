@@ -43,7 +43,6 @@ const CONFIG_FILE_PATTERNS = [
 interface VitestSetupFileInfo {
   path: string;
   transform:
-    // The `setProjectAnnotations()` call was removed but other statements remain; `code` is written back to the file
     | { kind: 'rewritten'; code: string }
     // Nothing remains after removing the call, so the file and its `setupFiles` entries are deleted
     | { kind: 'empty' }
@@ -194,11 +193,7 @@ export const vitestSetupFile: Fix<VitestSetupFileOptions> = {
         path: filePath,
         transform:
           transform.kind === 'empty' && references.length === 0 && unresolvedEntries.length === 0
-            ? {
-                kind: 'manual',
-                reason:
-                  'no Vitest or Vite config listing it in "setupFiles" was found, so it was left in place; delete it and remove its "setupFiles" entry yourself',
-              }
+            ? { kind: 'rewritten', code: '' }
             : transform,
       });
     }

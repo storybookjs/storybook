@@ -7,27 +7,25 @@ import {
   MinimumReleaseAgeHandledError,
 } from 'storybook/internal/server-errors';
 
-import * as find from 'empathic/find';
 // eslint-disable-next-line depend/ban-dependencies
 import type { ResultPromise } from 'execa';
-import sort from 'semver/functions/sort.js';
 import { dedent } from 'ts-dedent';
 
 import type { ExecuteCommandOptions } from '../utils/command.ts';
 import { executeCommand } from '../utils/command.ts';
-import { getProjectRoot } from '../utils/paths.ts';
 import { JsPackageManager, PackageManagerName } from './JsPackageManager.ts';
 import type { PackageJson } from './PackageJson.ts';
-import type { InstallationMetadata, PackageMetadata } from './types.ts';
+import type { InstallationMetadata } from './types.ts';
 import {
+  findInstallationsInDependencyTree,
   getErrorLogs,
   getLatestStableVersionAdheringToMinimumAgeGate,
   getStorybookRerunCommand,
   getStorybookRerunInstruction,
-  hasStorybookMinimumAgeExclusions,
+  hasStorybookMinimumAgeExclusionNames,
   parsePackageTimeMap,
   parseReleaseTime,
-  STORYBOOK_PACKAGE_PATTERNS,
+  STORYBOOK_PACKAGE_NAMES,
 } from './util.ts';
 
 type NpmDependency = {
@@ -111,21 +109,6 @@ export class BUNProxy extends JsPackageManager {
 
   getPackageCommand(args: string[]): string {
     return `bunx ${args.join(' ')}`;
-  }
-
-  public async getModulePackageJSON(packageName: string): Promise<PackageJson | null> {
-    const wantedPath = join('node_modules', packageName, 'package.json');
-    const packageJsonPath = find.up(wantedPath, {
-      cwd: this.primaryPackageJson.operationDir,
-      last: getProjectRoot(),
-    });
-
-    if (!packageJsonPath) {
-      return null;
-    }
-
-    const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
-    return packageJson;
   }
 
   getInstallArgs(): string[] {
@@ -267,7 +250,8 @@ export class BUNProxy extends JsPackageManager {
       return;
     }
 
-    if (hasStorybookMinimumAgeExclusions(this.getMinimumReleaseAgeExcludes(bunfig ?? ''))) {
+    const excludes = this.getMinimumReleaseAgeExcludes(bunfig ?? '');
+    if (hasStorybookMinimumAgeExclusionNames(excludes)) {
       return;
     }
 
@@ -302,7 +286,7 @@ export class BUNProxy extends JsPackageManager {
         dedent`
           bun minimumReleaseAge would block storybook@${storybookVersion} from being installed because it was released within the configured minimumReleaseAge window, so Storybook updated minimumReleaseAgeExcludes for this project automatically.
 
-          Added patterns: ${STORYBOOK_PACKAGE_PATTERNS.join(', ')}
+          Added packages: ${STORYBOOK_PACKAGE_NAMES.join(', ')}
 
           Read more:
           - https://bun.com/docs/pm/cli/install#minimum-release-age
@@ -434,44 +418,8 @@ export class BUNProxy extends JsPackageManager {
    * @param pattern A list of package names to filter the result. * can be used as a placeholder
    */
   protected mapDependencies(input: NpmListOutput, pattern: string[]): InstallationMetadata {
-    const acc: Record<string, PackageMetadata[]> = {};
-    const existingVersions: Record<string, string[]> = {};
-    const duplicatedDependencies: Record<string, string[]> = {};
-
-    const recurse = ([name, packageInfo]: [string, NpmDependency]): void => {
-      // transform pattern into regex where `*` is replaced with `.*`
-      if (!name || !pattern.some((p) => new RegExp(`^${p.replace(/\*/g, '.*')}$`).test(name))) {
-        return;
-      }
-
-      const value = {
-        version: packageInfo.version,
-        location: '',
-      };
-
-      if (!existingVersions[name]?.includes(value.version)) {
-        if (acc[name]) {
-          acc[name].push(value);
-        } else {
-          acc[name] = [value];
-        }
-        existingVersions[name] = sort([...(existingVersions[name] || []), value.version]);
-
-        if (existingVersions[name].length > 1) {
-          duplicatedDependencies[name] = existingVersions[name];
-        }
-      }
-
-      if (packageInfo.dependencies) {
-        Object.entries(packageInfo.dependencies).forEach(recurse);
-      }
-    };
-
-    Object.entries(input.dependencies).forEach(recurse);
-
     return {
-      dependencies: acc,
-      duplicatedDependencies,
+      ...findInstallationsInDependencyTree(input.dependencies, pattern),
       infoCommand: 'npm ls --depth=1',
       dedupeCommand: 'npm dedupe',
     };
@@ -534,12 +482,13 @@ export class BUNProxy extends JsPackageManager {
     const bunfigPath = join(this.cwd, 'bunfig.toml');
     const currentContent = this.readBunfig() ?? '';
     const lineEnding = currentContent.includes('\r\n') ? '\r\n' : '\n';
-    const nextPatterns = Array.from(
-      new Set([...this.getMinimumReleaseAgeExcludes(currentContent), ...STORYBOOK_PACKAGE_PATTERNS])
+    // Bun matches these against exact package names, so a pattern such as `@storybook/*` does nothing.
+    const nextExcludes = Array.from(
+      new Set([...this.getMinimumReleaseAgeExcludes(currentContent), ...STORYBOOK_PACKAGE_NAMES])
     );
     const replacement = [
       'minimumReleaseAgeExcludes = [',
-      ...nextPatterns.map((pattern) => `  "${pattern}",`),
+      ...nextExcludes.map((name) => `  "${name}",`),
       ']',
     ].join(lineEnding);
 
@@ -607,7 +556,7 @@ export class BUNProxy extends JsPackageManager {
       return [];
     }
 
-    return Array.from(match[1].matchAll(/"([^"]+)"/g), (entry) => entry[1]);
+    return Array.from(match[1].matchAll(/(["'])([^"']+)\1/g), (entry) => entry[2]);
   }
 
   private readBunfig(): string | null {

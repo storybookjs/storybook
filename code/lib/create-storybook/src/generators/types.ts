@@ -19,7 +19,6 @@ export type GeneratorOptions = {
   builder: SupportedBuilder;
   framework: SupportedFramework;
   renderer: SupportedRenderer;
-  storybookVersionSpecifier?: string;
   linkable: boolean;
   frameworkPreviewParts?: FrameworkPreviewParts;
   // skip prompting the user
@@ -100,7 +99,6 @@ export interface GeneratorContext {
   renderer: SupportedRenderer;
   builder: SupportedBuilder;
   language: SupportedLanguage;
-  storybookVersionSpecifier?: string;
   telemetryService: TelemetryService;
   features: Set<Feature>;
   dependencyCollector: DependencyCollector;
@@ -139,7 +137,6 @@ export interface GeneratorModule {
 
 export type CommandOptions = {
   packageManager: PackageManagerName;
-  storybookVersionSpecifier?: string;
   features?: Array<Feature>;
   type?: ProjectType;
   force?: any;
@@ -150,7 +147,6 @@ export type CommandOptions = {
   /** Add `typescript` for docgen when the project has none; prompts when undefined */
   installTypescript?: boolean;
   language?: SupportedLanguage;
-  parser?: string;
   /** Automatically answer yes to prompts */
   yes?: boolean;
   builder?: SupportedBuilder;

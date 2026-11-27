@@ -19,7 +19,7 @@ import type {
   Renderer,
   Store_CSFExports,
   StoryContext,
-  StoryContextForRender,
+  StoryContextWithArgTypes,
   StrictArgTypes,
 } from 'storybook/internal/types';
 
@@ -133,7 +133,7 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
   const reporting = new ReporterAPI();
 
   const initializeContext = () => {
-    const context: StoryContextForRender<TRenderer> = prepareContext({
+    const context: StoryContextWithArgTypes<TRenderer> = prepareContext({
       hooks: new HooksContext(),
       globals,
       args: { ...story.initialArgs },
@@ -208,7 +208,7 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
     return context;
   };
 
-  let loadedContext: StoryContextForRender<TRenderer> | undefined;
+  let loadedContext: StoryContext<TRenderer> | undefined;
 
   const play = async (extraContext?: Partial<StoryContext<TRenderer, Partial<TArgs>>>) => {
     const context = initializeContext();
@@ -312,7 +312,7 @@ export function composeStories<TModule extends Store_CSFExports>(
 // Will make a follow up PR for that
 async function runStory<TRenderer extends Renderer>(
   story: PreparedStory<TRenderer>,
-  context: StoryContextForRender<TRenderer>
+  context: StoryContext<TRenderer>
 ) {
   for (const callback of [...cleanups].reverse()) {
     await callback();

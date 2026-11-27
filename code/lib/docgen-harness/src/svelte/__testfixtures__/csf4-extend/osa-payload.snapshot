@@ -1,0 +1,9 @@
+{
+  "description": "Alert with a heading, a severity level and optional body content.",
+  "id": "sveltefixtures-csf4alert",
+  "jsDocTags": {},
+  "name": "Alert",
+  "path": "./input.stories.svelte",
+  "renderer": "svelte",
+  "summary": undefined,
+}

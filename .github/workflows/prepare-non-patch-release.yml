@@ -49,15 +49,27 @@ jobs:
       run:
         working-directory: scripts
     steps:
+      - name: Create a storybook-bot token
+        id: bot-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.STORYBOOK_BOT_APP_ID }}
+          private-key: ${{ secrets.STORYBOOK_BOT_APP_PRIVATE_KEY }}
+          owner: storybookjs
+          repositories: storybook
+          permission-contents: write
+          # The pushed branch can have changes to .github/workflows
+          permission-workflows: write
+
       - name: Checkout next
-        # zizmor: ignore[artipacked]  # git push --force origin uses persisted GH_TOKEN credentials
+        # zizmor: ignore[artipacked]  # git push --force origin uses the persisted storybook-bot token
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           ref: next
           # this needs to be set to a high enough number that it will contain the last version tag
           # as of May 2023, the whole repo had 55K commits
           fetch-depth: 10000
-          token: ${{ secrets.GH_TOKEN }}
+          token: ${{ steps.bot-token.outputs.token }}
 
       - name: Setup Node.js and Install Dependencies
         uses: ./.github/actions/setup-node-and-install

@@ -1,10 +1,5 @@
 import { SourceType } from 'storybook/internal/docs-tools';
-import type {
-  ArgsStoryFn,
-  PartialStoryFn,
-  StoryContext,
-  StoryContextForRender,
-} from 'storybook/internal/types';
+import type { ArgsStoryFn, PartialStoryFn, StoryContext } from 'storybook/internal/types';
 
 import { render } from 'lit';
 import { emitTransformCode, useEffect } from 'storybook/preview-api';
@@ -43,7 +38,7 @@ export function renderStorySource(storyResult: WebComponentsRenderer['storyResul
 
 export function sourceDecorator(
   storyFn: PartialStoryFn<WebComponentsRenderer>,
-  context: StoryContextForRender<WebComponentsRenderer>
+  context: StoryContext<WebComponentsRenderer>
 ): WebComponentsRenderer['storyResult'] {
   const story = storyFn();
   const renderedForSource = context?.parameters.docs?.source?.excludeDecorators

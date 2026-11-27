@@ -1,5 +1,6 @@
 import {
   expectFinalResponseMatches,
+  expectFocusedTestRun,
   expectStoryTestsRanAndPassed,
   getWorkflowCalls,
   getWorkflowToolResults,
@@ -60,5 +61,10 @@ describe('fixing Button accessibility violations', () => {
   // fine, but the final response has to tell the user about it either way.
   test('addresses the contrast violation', () => {
     expectFinalResponseMatches([/contrast/i]);
+  });
+
+  // The workflow names the test command itself, so a request to run the tests needs no skill.
+  test('runs the Button tests through Storybook', () => {
+    expectFocusedTestRun();
   });
 });

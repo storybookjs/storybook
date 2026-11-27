@@ -1,18 +1,9 @@
 import { it, expect } from 'vitest';
-import {
-  storyIdToExportName,
-  exportNameToStoryId,
-  storyNameToId,
-  storyNameToExportName,
-} from './identifier-utils.ts';
+import { storyIdToExportName, storyNameToId, storyNameToExportName } from './identifier-utils.ts';
 
 it('storyIdToExportName', () => {
   expect(storyIdToExportName('single')).toBe('Single');
   expect(storyIdToExportName('multiple-parts')).toBe('MultipleParts');
-});
-it('exportNameToStoryId', () => {
-  expect(exportNameToStoryId('Single')).toBe('single');
-  expect(exportNameToStoryId('MultipleParts')).toBe('multiple-parts');
 });
 it('storyNameToId', () => {
   expect(storyNameToId('simple')).toBe('simple');

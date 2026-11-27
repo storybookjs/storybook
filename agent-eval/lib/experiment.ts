@@ -23,6 +23,7 @@ const CORE_STORYBOOK_EVALS = [
   '813-monorepo-leaf-create-component',
   '814-write-stories-for-fetching-component',
   '815-write-stories-for-fetching-component-without-msw',
+  '816-edit-component-and-review',
 ] as const;
 
 // The 82x block: lifecycle-skill evals (storybook-init / storybook-upgrade).
@@ -138,7 +139,7 @@ export const PLUGIN_STORYBOOK_EVALS: EvalName[] = STORYBOOK_LATEST
   : [...ACTIVE_EVALS.core, ...ACTIVE_EVALS.lifecycle];
 
 // For an experiment outside the default set: its evals run only when the experiment is named on
-// the command line (`agent-eval codex-plugin-gpt-6-luna-low`), so a bare `agent-eval`, which is
+// the command line (`agent-eval codex-plugin-gpt-6.1-sol-low`), so a bare `agent-eval`, which is
 // what CI runs, skips it.
 export function onlyWhenNamed(
   experimentUrl: string,
@@ -188,8 +189,9 @@ export const DEFAULT_EXPERIMENT_CONFIG = {
   onRunComplete: attachRunMetadata,
   // Keep runs at 1: the runner starts all attempts in parallel (earlyExit only
   // aborts in-flight runs), so runs > 1 spins up extra sandboxes even on a pass.
-  runs: 1,
-  earlyExit: true,
+  // EVAL_RUNS=<n> runs every eval n times to the end, to measure how often it passes.
+  runs: Number(process.env.EVAL_RUNS ?? 1),
+  earlyExit: process.env.EVAL_RUNS === undefined,
   // The runner default of 600s is too tight for opus-high on the plugin
   // path: passing runs have taken up to 458s (2026-07-03 CI runs).
   timeout: 900,

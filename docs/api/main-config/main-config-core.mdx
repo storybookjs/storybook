@@ -31,7 +31,7 @@ Type: `string[] | true`
 
 Default: `[]`
 
-Configures the allowed hosts for the Storybook dev server. Storybook validates the `Host` header of every request, and the `Origin` header of WebSocket connections and requests to the [MCP server](../../ai/mcp/overview.mdx), against this list. Storybook's localhost (or [`--host`](../cli-options.mdx#dev)) address is always allowed. Use this when accessing your local Storybook instance through a reverse proxy (e.g. your webapp dev server). Set to `true` to disable hostname validation (insecure).
+Configures the allowed hosts for the Storybook dev server. Storybook validates the `Host` header of every request, and the `Origin` header of WebSocket connections and requests to the [MCP server](../../ai/reference/mcp-server.mdx), against this list. Storybook's localhost (or [`--host`](../cli-options.mdx#dev)) address is always allowed. Use this when accessing your local Storybook instance through a reverse proxy (e.g. your webapp dev server). Set to `true` to disable hostname validation (insecure).
 
 <CodeSnippets path="main-config-core-allowed-hosts.md" />
 

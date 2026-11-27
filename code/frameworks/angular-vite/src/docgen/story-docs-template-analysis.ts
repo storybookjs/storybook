@@ -22,7 +22,7 @@ import {
 
 import type { TemplateExpansion } from './story-docs-markup.ts';
 
-export type StoryTemplateAnalysis =
+export type StoryTemplateAnalysis = (
   | {
       kind: 'resolved';
       markup: string;
@@ -33,14 +33,59 @@ export type StoryTemplateAnalysis =
       kind: 'unresolvable';
       markup: string;
       errors: string[];
-    };
+    }
+) & {
+  // Where `markup` puts each `argsToTemplate` expansion; see `materializeLike`.
+  replacements: readonly Replacement[];
+};
 
 interface Replacement {
   marker: string;
   start: number;
   end: number;
   text: string;
+  // The output bindings `text` holds, which an output the element binds itself leaves out.
+  outputs: readonly string[];
 }
+
+const expansionText = (expansion: TemplateExpansion, outputs: readonly string[]) =>
+  [
+    ...expansion.inputAttributes,
+    ...expansion.outputAttributes
+      .filter(({ name }) => outputs.includes(name))
+      .map(({ markup }) => markup),
+  ].join(' ');
+
+// The markup `analysis` materialized, from `markup` and `expansions` of the same shape: a story's
+// template printed with marks around the values its analyzed print holds. Each expansion is found
+// by its marker, as the marks move it.
+export const materializeLike = (
+  analysis: StoryTemplateAnalysis,
+  markup: string,
+  expansions: readonly TemplateExpansion[]
+): string => {
+  const byMarker = new Map(expansions.map((expansion) => [expansion.marker, expansion]));
+  return applyReplacements(
+    markup,
+    analysis.replacements.flatMap((replacement) => {
+      const expansion = byMarker.get(replacement.marker);
+      // Where a value holds a marker's name, the print with values picks another name, which this
+      // print does not have: the marker stays in its markup, and the two prints do not line up.
+      if (expansion === undefined) {
+        return [];
+      }
+      const start = markup.indexOf(replacement.marker);
+      return [
+        {
+          ...replacement,
+          start,
+          end: start + replacement.end - replacement.start,
+          text: expansionText(expansion, replacement.outputs),
+        },
+      ];
+    })
+  );
+};
 
 class StoryTemplateVisitor extends CombinedRecursiveAstVisitor {
   readonly referencedNames = new Set<string>();
@@ -156,13 +201,13 @@ class StoryTemplateVisitor extends CombinedRecursiveAstVisitor {
         occupiedOutputs.add(name);
         this.boundOutputs.add(name);
       });
+      const outputs = outputAttributes.map(({ name }) => name);
       this.replacements.push({
         marker: attribute.name,
         start: attribute.sourceSpan.start.offset,
         end: attribute.sourceSpan.end.offset,
-        text: [...expansion.inputAttributes, ...outputAttributes.map(({ markup }) => markup)].join(
-          ' '
-        ),
+        text: expansionText(expansion, outputs),
+        outputs,
       });
     }
   }
@@ -199,7 +244,7 @@ export const analyzeStoryTemplate = (
     if (parsed.errors) {
       return {
         kind: 'unresolvable',
-        markup: materializeWithoutAnalysis(markup, expansions),
+        ...materializeWithoutAnalysis(markup, expansions),
         errors: parsed.errors.map((error) => error.toString()),
       };
     }
@@ -211,23 +256,26 @@ export const analyzeStoryTemplate = (
     if (missingExpansion) {
       visitor.errors.add('An argsToTemplate expression is not inside an element start tag.');
     }
-    const materializedMarkup = missingExpansion
+    const materialized = missingExpansion
       ? materializeWithoutAnalysis(markup, expansions, visitor.replacements)
-      : applyReplacements(markup, visitor.replacements);
+      : {
+          markup: applyReplacements(markup, visitor.replacements),
+          replacements: visitor.replacements,
+        };
     if (visitor.errors.size > 0) {
-      return { kind: 'unresolvable', markup: materializedMarkup, errors: [...visitor.errors] };
+      return { kind: 'unresolvable', ...materialized, errors: [...visitor.errors] };
     }
 
     return {
       kind: 'resolved',
-      markup: materializedMarkup,
+      ...materialized,
       referencedNames: [...visitor.referencedNames],
       boundOutputs: [...visitor.boundOutputs],
     };
   } catch (error) {
     return {
       kind: 'unresolvable',
-      markup: materializeWithoutAnalysis(markup, expansions),
+      ...materializeWithoutAnalysis(markup, expansions),
       errors: [error instanceof Error ? error.message : String(error)],
     };
   }
@@ -249,7 +297,7 @@ const materializeWithoutAnalysis = (
   markup: string,
   expansions: readonly TemplateExpansion[],
   replacements: readonly Replacement[] = []
-): string => {
+): { markup: string; replacements: Replacement[] } => {
   const replacedMarkers = new Set(replacements.map(({ marker }) => marker));
   const fallbackReplacements = expansions.flatMap((expansion): Replacement[] => {
     if (replacedMarkers.has(expansion.marker)) {
@@ -259,17 +307,17 @@ const materializeWithoutAnalysis = (
     if (start === -1) {
       return [];
     }
+    const outputs = expansion.outputAttributes.map(({ name }) => name);
     return [
       {
         marker: expansion.marker,
         start,
         end: start + expansion.marker.length,
-        text: [
-          ...expansion.inputAttributes,
-          ...expansion.outputAttributes.map(({ markup: attribute }) => attribute),
-        ].join(' '),
+        text: expansionText(expansion, outputs),
+        outputs,
       },
     ];
   });
-  return applyReplacements(markup, [...replacements, ...fallbackReplacements]);
+  const all = [...replacements, ...fallbackReplacements];
+  return { markup: applyReplacements(markup, all), replacements: all };
 };

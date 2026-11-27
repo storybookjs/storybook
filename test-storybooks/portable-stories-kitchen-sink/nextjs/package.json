@@ -21,7 +21,6 @@
     "@storybook/angular": "file:../../../code/frameworks/angular",
     "@storybook/builder-vite": "file:../../../code/builders/builder-vite",
     "@storybook/builder-webpack5": "file:../../../code/builders/builder-webpack5",
-    "@storybook/codemod": "file:../../../code/lib/codemod",
     "@storybook/core-webpack": "file:../../../code/lib/core-webpack",
     "@storybook/ember": "file:../../../code/frameworks/ember",
     "@storybook/html": "file:../../../code/renderers/html",

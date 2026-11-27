@@ -67,11 +67,10 @@ function formatComponentLine(component: ComponentManifestEntry): string {
 }
 
 function formatDocLine(doc: DocEntry): string {
-  // `title`/`content` only exist on inline (v0) docs; v1 index rows carry just a summary.
-  const title = 'title' in doc ? doc.title : undefined;
+  // `content` only exists on inline (v0) docs; v1 index rows carry just a summary.
   const content = 'content' in doc ? doc.content : undefined;
   const summary = doc.summary ?? extractDocsSummary(content ?? '');
-  return `- ${title ?? doc.name} (${doc.id})${summary ? `: ${summary}` : ''}`;
+  return `- ${doc.title ?? doc.name} (${doc.id})${summary ? `: ${summary}` : ''}`;
 }
 
 function formatStorySubLine(story: Story): string {
@@ -350,7 +349,10 @@ function formatSubcomponentsSection(
 /**
  * Format a single component manifest into markdown.
  */
-export function formatComponentManifest(componentManifest: ComponentManifest): string {
+export function formatComponentManifest(
+  componentManifest: ComponentManifest,
+  showStoryTool = 'docs show-story'
+): string {
   const parts: string[] = [];
   const parsedDocgen = getParsedDocgen(componentManifest);
   const jsDocTags = getComponentTags(componentManifest, parsedDocgen);
@@ -422,6 +424,10 @@ export function formatComponentManifest(componentManifest: ComponentManifest): s
         parts.push('### Other Stories');
         parts.push('');
       }
+      parts.push(
+        `Get the code of one of these stories with the ${showStoryTool} tool and its story ID.`
+      );
+      parts.push('');
       for (const story of remainingStories) {
         const summary = extractSummary(story);
         const summaryPart = summary ? `: ${summary}` : '';

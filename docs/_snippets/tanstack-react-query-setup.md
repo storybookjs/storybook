@@ -13,6 +13,7 @@ const queryClient = new QueryClient({
 });
 
 export default definePreview({
+  addons: [/* ... */],
   beforeEach: () => {
     // 👇 Clear the cache between stories so each story starts fresh
     queryClient.clear();
@@ -37,7 +38,7 @@ export default definePreview({
 ```
 
 ```tsx filename=".storybook/preview.tsx" renderer="react" language="tsx" tabTitle="CSF 3"
-// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/11/writing-stories/csf/upgrade
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { Preview } from '@storybook/tanstack-react';
 

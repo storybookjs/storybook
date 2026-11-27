@@ -15,7 +15,10 @@ declare var STORYBOOK_FRAMEWORK:
   | undefined;
 declare var STORYBOOK_RENDERER: import('./types/modules/renderers').SupportedRenderer | undefined;
 declare var STORYBOOK_HOOKS_CONTEXT: any;
-declare var STORYBOOK_CURRENT_TASK_LOG: undefined | null | Array<any>;
+declare var STORYBOOK_CURRENT_TASK_LOG_SESSION:
+  | import('./node-logger/prompts/prompt-provider-clack.ts').TaskLogSession
+  | null
+  | undefined;
 declare var SB_TELEMETRY_STATE: 'enabled' | 'disabled' | undefined;
 declare var SB_TELEMETRY_QUEUE: Array<import('./telemetry').QueuedEvent>;
 declare var PAYLOAD_ERROR_HANDLER: import('./telemetry').PayloadErrorHandler | undefined;
@@ -34,7 +37,6 @@ declare var __STORYBOOK_ADDONS_MANAGER: any;
 declare var __STORYBOOK_ADDONS_PREVIEW: import('./preview-api/modules/addons/main').AddonStore;
 declare var __STORYBOOK_PREVIEW__: import('./preview-api/modules/preview-web/PreviewWeb').PreviewWeb<any>;
 declare var __STORYBOOK_STORY_STORE__: any;
-declare var __STORYBOOK_TEST__: any;
 declare var __STORYBOOK_TEST_SPY_LISTENERS__: Set<any>;
 declare var __STORYBOOK_ACTIONS__: any;
 declare var __STORYBOOK_VITEST_MOCKER__: any;

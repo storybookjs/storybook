@@ -1,5 +1,5 @@
 import { AddonVitestService } from 'storybook/internal/cli';
-import { type JsPackageManager } from 'storybook/internal/common';
+import { type JsPackageManager, isCI } from 'storybook/internal/common';
 import { CLI_COLORS, logger, prompt } from 'storybook/internal/node-logger';
 import { ErrorCollector } from 'storybook/internal/telemetry';
 
@@ -37,7 +37,9 @@ export class AddonConfigurationCommand {
     readonly packageManager: JsPackageManager,
     private readonly commandOptions: CommandOptions,
     private readonly addonVitestService = new AddonVitestService(packageManager),
-    private readonly telemetryService = new TelemetryService()
+    private readonly telemetryService = new TelemetryService(),
+    private readonly isInteractive = () =>
+      !!process.stdin.isTTY && !!process.stdout.isTTY && !isCI()
   ) {}
 
   /** Execute addon configuration */
@@ -54,7 +56,7 @@ export class AddonConfigurationCommand {
 
       if (addonResults.has('@storybook/addon-vitest')) {
         const { result } = await this.addonVitestService.installPlaywright({
-          yes: this.commandOptions.yes,
+          yes: this.commandOptions.yes || !this.isInteractive(),
           useRemotePkg: !!this.commandOptions.skipInstall,
         });
         // Map outcome to telemetry decision

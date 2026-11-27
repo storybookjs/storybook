@@ -1,4 +1,5 @@
-import { dirname, join } from 'node:path';
+import assert from 'node:assert';
+import { dirname, join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { defineMain } from '@storybook/react-vite/node';
@@ -18,6 +19,32 @@ const previewApiPath = join(currentDirPath, '../core/src/preview-api/index.ts');
 const themingCreatePath = join(currentDirPath, '../core/src/theming/create.ts');
 const themingEmotionPath = join(currentDirPath, '../core/src/theming/emotion.ts');
 const imageContextPath = join(currentDirPath, '../frameworks/nextjs/src/image-context.ts');
+
+const codeDir = join(currentDirPath, '..');
+
+// Vite's watcher crawls its whole root (code/) when the dev server starts. In these folders the
+// preview only loads files from the listed packages, so the watcher skips everything else in them.
+const loadedPackages: Record<string, string[]> = {
+  // builder-vite holds iframe.html, the document of the preview.
+  builders: ['builder-vite'],
+  'e2e-internal': [],
+  'e2e-sandbox': [],
+  // The `sb-original/image-context` alias resolves into nextjs.
+  frameworks: ['nextjs', 'react-vite'],
+  lib: [],
+  presets: [],
+  renderers: ['react'],
+  sandbox: [],
+};
+
+function isUnwatched(path: string) {
+  const [folder, name] = relative(codeDir, path).split(sep);
+  return (
+    name !== undefined &&
+    Object.hasOwn(loadedPackages, folder) &&
+    !loadedPackages[folder].includes(name)
+  );
+}
 
 const config = defineMain({
   stories: [
@@ -205,11 +232,21 @@ const config = defineMain({
             // Internal e2e writes traces under code/playwright-results while the dev server is running.
             '**/playwright-results/**',
             '**/playwright-report/**',
+            isUnwatched,
           ],
         },
       },
     } satisfies typeof viteConfig);
   },
 });
+
+assert(Array.isArray(config.stories));
+for (const entry of config.stories) {
+  const folder = join(currentDirPath, typeof entry === 'string' ? entry : entry.directory);
+  assert(
+    !isUnwatched(folder),
+    `Stories in ${folder} would not hot-reload, because Vite's watcher skips that package. List it in loadedPackages.`
+  );
+}
 
 export default config;

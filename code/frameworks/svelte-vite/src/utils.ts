@@ -24,7 +24,7 @@ export async function handleSvelteKit(plugins: PluginOption[], options: Options)
     'vite-plugin-sveltekit-compile',
   ]);
 
-  if (hasSvelteKitPlugins && !framework.includes('@storybook/sveltekit')) {
+  if (hasSvelteKitPlugins && !framework.replace(/\\/g, '/').includes('@storybook/sveltekit')) {
     throw new SvelteViteWithSvelteKitError();
   }
 }

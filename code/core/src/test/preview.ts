@@ -88,8 +88,14 @@ const nameSpiesAndWrapActionsInSpies: LoaderFunction = ({ initialArgs }) => {
 
 let focusGuarded = false;
 
-// user-event's patched focus dispatches synthetic events for a hidden document through its
-// getWindow(), which throws when ownerDocument.defaultView is null.
+// userEvent.setup() replaces HTMLElement.prototype.focus for the whole page, so every story runs
+// on user-event's focus instead of the browser's. Any change here must keep two goals:
+// 1. Focus-management libraries (react-aria, Zag, Fluent's keyborg, web components) behave as they
+//    do outside Storybook. They read, wrap and reassign `focus` on the prototype and on single
+//    elements, so it stays a plain writable data property. focus.stories.ts tests this.
+// 2. Focusing a node whose iframe was removed does not throw. user-event's focus throws "Could not
+//    determine window of node" there, and inside React's commit phase that freezes the UI (the
+//    Review UI hit this, #35398). Focus means nothing without a window, so it does nothing.
 const guardFocusWithoutBrowsingContext = () => {
   if (focusGuarded) {
     return;

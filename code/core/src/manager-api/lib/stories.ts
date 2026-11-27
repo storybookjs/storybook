@@ -231,6 +231,8 @@ export const transformStoryIndexToStoriesHash = (
   };
 
   const storiesHash: API_IndexHash = {};
+  // The tags shared by the stories (and tests) under each node; absent when no story is shown there
+  const storyTagsById = new Map<StoryId, string[]>();
 
   const addLeaf = (id: StoryId, parent: StoryId | undefined, depth: number) => {
     const item = entriesById.get(id)!;
@@ -243,6 +245,9 @@ export const transformStoryIndexToStoriesHash = (
       renderLabel,
       prepared: !!item.parameters,
     } as API_DocsEntry | API_StoryEntry;
+    if (item.type === 'story') {
+      storyTagsById.set(id, storiesHash[id].tags);
+    }
 
     const testIds = (testIdsByStoryId.get(id) ?? []).filter((testId) => includedIds.has(testId));
     if (testIds.length) {
@@ -285,15 +290,26 @@ export const transformStoryIndexToStoriesHash = (
       }
     });
 
-    entry.tags = children
-      .flatMap((id) => {
-        const child = storiesHash[id];
-        return child.type === 'story' && 'children' in child && child.children
-          ? [id, ...child.children]
-          : [id];
-      })
-      .map((id) => storiesHash[id].tags)
-      .reduce(intersect);
+    const leafIds = children.flatMap((id) => {
+      const child = storiesHash[id];
+      return child.type === 'story' && 'children' in child && child.children
+        ? [id, ...child.children]
+        : [id];
+    });
+    const storyTagLists = leafIds.flatMap((id) => {
+      const tags = storyTagsById.get(id);
+      return tags ? [tags] : [];
+    });
+    const storyTags = storyTagLists.length > 0 ? storyTagLists.reduce(intersect) : undefined;
+    if (storyTags) {
+      storyTagsById.set(node.id, storyTags);
+    }
+    // A component's tags come from its stories, also those of nested titles. Docs entries count only
+    // when no story is shown.
+    entry.tags =
+      type === 'component' && storyTags
+        ? storyTags
+        : leafIds.map((id) => storiesHash[id].tags).reduce(intersect);
     if (entry.type === 'component') {
       // Prefer the first visible own entry; fall back to a hidden one when only subcomponents pass the filters
       const isOwnEntry = (id: StoryId) => entriesById.has(id);

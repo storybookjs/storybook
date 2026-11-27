@@ -33,6 +33,7 @@ Both start long-running dev servers.
 | do sandbox, E2E, or CI-parity work                                    | [NX and `yarn task`](.agents/guidelines/nx-and-yarn-task.md) and [Sandboxes](.agents/guidelines/sandboxes.md)             |
 | call a Chromatic tool or debug a Chromatic build                      | [Chromatic projects](.agents/guidelines/chromatic-projects.md)                                                            |
 | add or change an automigration                                        | [`code/lib/cli-storybook/src/automigrate/README.md`](code/lib/cli-storybook/src/automigrate/README.md)                    |
+| security-review a PR, audit a surface, or triage a vulnerability report | [security-audit skill](.agents/skills/security-audit/SKILL.md)                                                            |
 
 Contributor skills live in `.agents/skills/`.
 Claude Code does not read `.agents/`, so each skill has a symlink in `.claude/skills/`; add one when you add a skill.

@@ -156,6 +156,114 @@ test('Rewrites tilde-prefixed source to packageName', async () => {
   );
 });
 
+test('Rewrites a relative import to packageName', async () => {
+  const code = dedent`
+    import { Button } from './components/Button';
+
+    const meta = {};
+    export default meta;
+    export const S = <Button/>;
+  `;
+  expect(await getImports(code, 'pkg')).toMatchInlineSnapshot(`
+    {
+      "components": [
+        {
+          "componentName": "Button",
+          "importId": "./components/Button",
+          "importName": "Button",
+          "isPackage": false,
+          "jsxDepth": 0,
+          "localImportName": "Button",
+        },
+      ],
+      "imports": [
+        "import { Button } from 'pkg';",
+      ],
+    }
+  `);
+});
+
+test('Rewrites a POSIX absolute path to packageName', async () => {
+  const code = dedent`
+    import { Button } from '/Users/me/Button';
+
+    const meta = {};
+    export default meta;
+    export const S = <Button/>;
+  `;
+  expect(await getImports(code, 'pkg')).toMatchInlineSnapshot(`
+    {
+      "components": [
+        {
+          "componentName": "Button",
+          "importId": "/Users/me/Button",
+          "importName": "Button",
+          "isPackage": false,
+          "jsxDepth": 0,
+          "localImportName": "Button",
+        },
+      ],
+      "imports": [
+        "import { Button } from 'pkg';",
+      ],
+    }
+  `);
+});
+
+test('Rewrites a Windows drive path to packageName', async () => {
+  const code = dedent`
+    import { Button } from 'C:/Users/me/Button';
+
+    const meta = {};
+    export default meta;
+    export const S = <Button/>;
+  `;
+  expect(await getImports(code, 'pkg')).toMatchInlineSnapshot(`
+    {
+      "components": [
+        {
+          "componentName": "Button",
+          "importId": "C:/Users/me/Button",
+          "importName": "Button",
+          "isPackage": false,
+          "jsxDepth": 0,
+          "localImportName": "Button",
+        },
+      ],
+      "imports": [
+        "import { Button } from 'pkg';",
+      ],
+    }
+  `);
+});
+
+test('Rewrites a lowercase Windows drive path to packageName', async () => {
+  const code = dedent`
+    import { Button } from 'c:/users/me/button';
+
+    const meta = {};
+    export default meta;
+    export const S = <Button/>;
+  `;
+  expect(await getImports(code, 'pkg')).toMatchInlineSnapshot(`
+    {
+      "components": [
+        {
+          "componentName": "Button",
+          "importId": "c:/users/me/button",
+          "importName": "Button",
+          "isPackage": false,
+          "jsxDepth": 0,
+          "localImportName": "Button",
+        },
+      ],
+      "imports": [
+        "import { Button } from 'pkg';",
+      ],
+    }
+  `);
+});
+
 test('Rewrites hash-prefixed source to packageName', async () => {
   const code = dedent`
     import Btn from '#Button';
@@ -370,7 +478,11 @@ describe('tsconfig path key when the file lookup misses', () => {
       configFileAbsolutePath: '/app/tsconfig.json',
       baseUrl: '.',
       absoluteBaseUrl: '/app',
-      paths: { '@/*': ['${configDir}/src/*'], '@acme/icons': ['packages/icons/src'] },
+      paths: {
+        '@/*': ['${configDir}/src/*'],
+        '@acme/icons': ['packages/icons/src'],
+        '@acme/missing': ['packages/missing/src'],
+      },
     });
     vi.mocked(createMatchPath).mockReturnValue(() => undefined);
     const resolveImport = vi.mocked(cachedResolveImport).getMockImplementation();
@@ -433,6 +545,60 @@ describe('tsconfig path key when the file lookup misses', () => {
       importId: '@acme/icons',
       isPackage: true,
     });
+  });
+
+  test('Rewrites an exact paths key when the file is missing and Node cannot resolve it', async () => {
+    const code = dedent`
+      import { Icon } from '@acme/missing';
+
+      const meta = {};
+      export default meta;
+      export const S = <Icon/>;
+    `;
+    expect(await getImports(code, 'pkg')).toMatchInlineSnapshot(`
+      {
+        "components": [
+          {
+            "componentName": "Icon",
+            "importId": "@acme/missing",
+            "importName": "Icon",
+            "isPackage": false,
+            "jsxDepth": 0,
+            "localImportName": "Icon",
+          },
+        ],
+        "imports": [
+          "import { Icon } from 'pkg';",
+        ],
+      }
+    `);
+  });
+
+  test('Keeps a specifier longer than an exact paths key', async () => {
+    const code = dedent`
+      import { Icon } from '@acme/icons/extra';
+
+      const meta = {};
+      export default meta;
+      export const S = <Icon/>;
+    `;
+    expect(await getImports(code, 'pkg')).toMatchInlineSnapshot(`
+      {
+        "components": [
+          {
+            "componentName": "Icon",
+            "importId": "@acme/icons/extra",
+            "importName": "Icon",
+            "isPackage": true,
+            "jsxDepth": 0,
+            "localImportName": "Icon",
+          },
+        ],
+        "imports": [
+          "import { Icon } from '@acme/icons/extra';",
+        ],
+      }
+    `);
   });
 });
 
@@ -597,6 +763,88 @@ describe('tsconfig star capture and baseUrl file lookup', () => {
         ],
       }
     `);
+  });
+});
+
+describe('tsconfig catch-all star', () => {
+  beforeEach(() => {
+    vi.mocked(findTsconfigPathForPath).mockReturnValue('/app/tsconfig.json');
+    vi.mocked(loadConfig).mockReturnValue({
+      resultType: 'success',
+      configFileAbsolutePath: '/app/tsconfig.json',
+      baseUrl: '.',
+      absoluteBaseUrl: '/app',
+      paths: { '*': ['src/*'] },
+    });
+    vi.mocked(createMatchPath).mockReturnValue(() => undefined);
+  });
+
+  afterEach(() => {
+    vi.mocked(findTsconfigPathForPath).mockRestore();
+    vi.mocked(loadConfig).mockRestore();
+    vi.mocked(createMatchPath).mockRestore();
+    vi.mocked(cachedResolveImport).mockRestore();
+  });
+
+  test('Keeps an unresolved package when paths has a catch-all star', async () => {
+    const code = dedent`
+      import { MemoryRouter } from 'react-router-dom';
+
+      const meta = {};
+      export default meta;
+      export const S = <MemoryRouter/>;
+    `;
+    expect(await getImports(code, 'pkg')).toMatchInlineSnapshot(`
+      {
+        "components": [
+          {
+            "componentName": "MemoryRouter",
+            "importId": "react-router-dom",
+            "importName": "MemoryRouter",
+            "isPackage": true,
+            "jsxDepth": 0,
+            "localImportName": "MemoryRouter",
+          },
+        ],
+        "imports": [
+          "import { MemoryRouter } from 'react-router-dom';",
+        ],
+      }
+    `);
+  });
+
+  describe('when Node resolves the package', () => {
+    beforeEach(() => {
+      vi.mocked(createMatchPath).mockReturnValue((id) =>
+        id === 'react-router-dom' ? '/app/src/react-router-dom.tsx' : undefined
+      );
+      const resolveImport = vi.mocked(cachedResolveImport).getMockImplementation();
+      vi.mocked(cachedResolveImport).mockImplementation((id, options) => {
+        if (id === 'react-router-dom') {
+          return './node_modules/react-router-dom/index.js';
+        }
+        if (!resolveImport) {
+          throw new Error(`Unable to resolve ${String(id)}`);
+        }
+        return resolveImport(id, options);
+      });
+    });
+
+    test('Keeps a package Node resolves when paths has a catch-all star', async () => {
+      const code = dedent`
+        import { MemoryRouter } from 'react-router-dom';
+
+        const meta = {};
+        export default meta;
+        export const S = <MemoryRouter/>;
+      `;
+      const { components, imports } = await getImports(code, 'pkg');
+      expect(imports).toEqual(["import { MemoryRouter } from 'react-router-dom';"]);
+      expect(components[0]).toMatchObject({
+        importId: 'react-router-dom',
+        isPackage: true,
+      });
+    });
   });
 });
 

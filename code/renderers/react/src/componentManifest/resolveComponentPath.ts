@@ -48,6 +48,10 @@ function pathKeyMatches(pattern: string, id: string): boolean {
 
   const prefix = pattern.slice(0, star);
   const suffix = pattern.slice(star + 1);
+  const catchesEverySpecifier = prefix.length === 0 && suffix.length === 0;
+  if (catchesEverySpecifier) {
+    return false;
+  }
   // A `*` has to consume one character.
   return id.length > prefix.length + suffix.length && id.startsWith(prefix) && id.endsWith(suffix);
 }

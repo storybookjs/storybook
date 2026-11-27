@@ -40,7 +40,7 @@ const isReactDocgenTypescriptResolvable = () => {
 
 export type { ReactDocgenConfig };
 
-// `~` and `#` are bundler and Node aliases. A paths key, or a file `matchPath` found, is local when the original specifier does not resolve.
+// `~` and `#` are bundler and Node aliases.
 function isLocalImport(
   importId: string,
   matched: string | undefined,

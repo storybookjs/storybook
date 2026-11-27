@@ -43,7 +43,7 @@ async function serverArgTypesFor(fixtureCase: string) {
   const [sfcFile] = readdirSync(testDir).filter((file) => file.endsWith('.vue'));
   const sfcPath = join(testDir, sfcFile);
 
-  const sources = await collectComponentMetaSources(checker, sfcPath, ts);
+  const sources = await collectComponentMetaSources(checker, sfcPath);
   const meta = sources.find((source) => source.exportName === 'default');
   expect(meta, `no default export found in ${fixtureCase}`).toBeDefined();
 
@@ -177,7 +177,7 @@ describe('vue3 docgen-server named-type details', () => {
   it('keeps the no-resolver extraction free of details', async () => {
     const testDir = join(fixturesDir, 'named-type-details');
     const sfcPath = join(testDir, 'NamedTypeDetails.vue');
-    const sources = await collectComponentMetaSources(checker, sfcPath, ts);
+    const sources = await collectComponentMetaSources(checker, sfcPath);
     const meta = sources.find((source) => source.exportName === 'default')!;
 
     const plainArgTypes = extractArgTypes({ __docgenInfo: meta })!;

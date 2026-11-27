@@ -126,7 +126,7 @@ describe('VueComponentMetaManager', () => {
     expect({ description: payload?.description, jsDocTags: payload?.jsDocTags })
       .toMatchInlineSnapshot(`
         {
-          "description": "Renders with {@link IconButton } in prose.
+          "description": "Renders with {@link IconButton} in prose.
         Use together with",
           "jsDocTags": {
             "deprecated": [
@@ -187,7 +187,7 @@ describe('VueComponentMetaManager', () => {
     expect({ description: payload?.description, jsDocTags: payload?.jsDocTags })
       .toMatchInlineSnapshot(`
         {
-          "description": "Renders with {@link IconButton } in prose.
+          "description": "Renders with {@link IconButton} in prose.
         Use together with",
           "jsDocTags": {
             "deprecated": [
@@ -214,12 +214,10 @@ describe('VueComponentMetaManager', () => {
 
     expect(payload?.error).toBeUndefined();
     expect({
-      componentJsDocTags: payload?.vueComponentMeta?.jsDocTags,
       description: payload?.description,
       jsDocTags: payload?.jsDocTags,
     }).toMatchInlineSnapshot(`
       {
-        "componentJsDocTags": {},
         "description": "Story-level description.",
         "jsDocTags": {
           "deprecated": [

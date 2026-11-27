@@ -12,13 +12,6 @@ import { join, parse } from 'node:path';
 
 import { getProjectRoot } from 'storybook/internal/common';
 import {
-  extractComponentJsDocInfo,
-  resolveExportedSymbol,
-  type ComponentJsDocInfo,
-} from 'storybook/internal/component-meta';
-
-import type ts from 'typescript';
-import {
   TypeMeta,
   createChecker,
   createCheckerByJson,
@@ -46,7 +39,6 @@ type Serializable<T> = T extends AnyFunction
 type MetaSourceEntry = {
   name: string;
   meta: ComponentMeta;
-  jsDocInfo: ComponentJsDocInfo | undefined;
 };
 
 /** One component's normalized `vue-component-meta` output, tagged with the export it came from. */
@@ -56,8 +48,7 @@ export type MetaSource = {
   /** Component-level TypeScript type parameters declared by the SFC. */
   typeParams?: string;
   sourceFiles: string;
-  jsDocTags?: Record<string, string[]>;
-} & Serializable<ComponentMeta> &
+} & Serializable<Omit<ComponentMeta, 'description'>> &
   MetaCheckerOptions['schema'];
 
 function toSerializableMeta<T>(obj: T): Serializable<T> {
@@ -109,8 +100,7 @@ export async function createVueComponentMetaChecker(
  */
 export async function collectComponentMetaSources(
   checker: ComponentMetaChecker,
-  id: string,
-  typescript?: typeof ts
+  id: string
 ): Promise<MetaSource[]> {
   let entries: MetaSourceEntry[] = [];
 
@@ -124,13 +114,7 @@ export async function collectComponentMetaSources(
       continue;
     }
 
-    entries.push({
-      name,
-      meta,
-      jsDocInfo: typescript
-        ? extractVueComponentJsDocInfo(typescript, checker, id, name)
-        : undefined,
-    });
+    entries.push({ name, meta });
   }
 
   if (entries.length === 0) {
@@ -147,7 +131,7 @@ export async function collectComponentMetaSources(
 
   const metaSources: MetaSource[] = [];
 
-  entries.forEach(({ name, meta, jsDocInfo }) => {
+  entries.forEach(({ name, meta }) => {
     // filter out empty meta
     const isEmpty =
       !meta.props.length && !meta.events.length && !meta.slots.length && !meta.exposed.length;
@@ -195,12 +179,12 @@ export async function collectComponentMetaSources(
         exportName: name,
         displayName: name === 'default' ? getFilenameWithoutExtension(id) : name,
         typeParams,
-        ...meta,
+        // Not spread: the `description` of the meta is a getter that reads the docblock.
+        name: meta.name,
+        type: meta.type,
         props: meta.props.filter(isDocumented),
         events: meta.events.filter(isDocumented),
         slots: meta.slots.filter(isDocumented),
-        description: jsDocInfo?.description,
-        jsDocTags: jsDocInfo?.jsDocTags,
         exposed: exposed.filter(isDocumented),
         sourceFiles: id,
       })
@@ -234,27 +218,6 @@ async function extractVueSfcTypeParams(id: string): Promise<string | undefined> 
   } catch {
     return undefined;
   }
-}
-
-function extractVueComponentJsDocInfo(
-  typescript: typeof ts,
-  checker: ComponentMetaChecker,
-  id: string,
-  exportName: string
-): ComponentJsDocInfo | undefined {
-  const program = checker.getProgram();
-  const sourceFile = program?.getSourceFile(id.replace(/\\/g, '/'));
-  if (!program || !sourceFile) {
-    return undefined;
-  }
-
-  const typeChecker = program.getTypeChecker();
-  const symbol = resolveExportedSymbol(typescript, typeChecker, sourceFile, exportName);
-  if (!symbol) {
-    return undefined;
-  }
-
-  return extractComponentJsDocInfo(typescript, typeChecker, symbol);
 }
 
 /** Gets the filename without file extension. */

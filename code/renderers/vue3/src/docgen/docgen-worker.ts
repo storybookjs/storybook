@@ -8,11 +8,15 @@
  *
  * The renderer preset contributes the descriptor that points here.
  */
-import { createLazyDocgenMiddleware, loadTypeScriptCompilerApi } from 'storybook/internal/common';
+import {
+  createDocgenSummaryProvider,
+  createLazyDocgenMiddleware,
+  loadTypeScriptCompilerApi,
+} from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
-import type { DocgenMiddleware } from 'storybook/internal/types';
+import type { DocgenMiddleware, DocgenSummaryProvider } from 'storybook/internal/types';
 
-import { buildDocgenPayload } from './component-docgen/build-docgen.ts';
+import { buildDocgenPayload, buildDocgenSummary } from './component-docgen/build-docgen.ts';
 import { VueComponentMetaManager } from './component-docgen/component-meta/vue-project-manager.ts';
 
 /**
@@ -51,3 +55,6 @@ export const createDocgenProvider = (): DocgenMiddleware =>
       return ours;
     },
   });
+
+export const createSummaryProvider = (): DocgenSummaryProvider =>
+  createDocgenSummaryProvider({ summarize: (input) => buildDocgenSummary(input) });

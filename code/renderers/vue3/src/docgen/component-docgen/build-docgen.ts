@@ -1,5 +1,5 @@
 import { readFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { join, parse } from 'node:path';
 
 import {
   extractComponentDescription,
@@ -13,6 +13,7 @@ import type {
   DocgenPayload,
   DocgenProviderInput,
   DocgenSubcomponent,
+  DocgenSummary,
 } from 'storybook/internal/types';
 
 import type ts from 'typescript';
@@ -32,8 +33,10 @@ import type { ComponentMetaChecker } from 'vue-component-meta';
 import { buildApiDescription } from './api-description/api-description.ts';
 import { createNamedTypeDetailResolver } from './arg-types/named-type-detail.ts';
 import { type MetaSource, collectComponentMetaSources } from './component-meta/component-meta.ts';
+import { readComponentDocs } from './component-docs.ts';
 import { followReExport } from './resolve-component/follow-re-export.ts';
 import {
+  type ResolvedVueComponent,
   type UnresolvedComponentReason,
   resolveMetaComponent,
 } from './resolve-component/resolve-component.ts';
@@ -57,6 +60,8 @@ export interface BuildDocgenContext {
   resolvePath?: (importPath: string) => string;
   typescript: typeof ts;
 }
+
+export type DescribeContext = Pick<BuildDocgenContext, 'resolvePath'>;
 
 /**
  * One message factory per resolver reason, parameterized by the declaration the story file names —
@@ -92,11 +97,11 @@ function unresolvedComponentError(reason: UnresolvedComponentReason, subject: st
 /**
  * Get last segment of a story title
  */
-function componentNameFromTitle(title: string): string {
+export function componentNameFromTitle(title: string): string {
   return title.split('/').at(-1)!.replace(/\s+/g, '');
 }
 
-function getUsableComponentName(component: string | undefined): string | undefined {
+export function getUsableComponentName(component: string | undefined): string | undefined {
   const name = component?.trim();
   if (!name || NON_COMPONENT_NAMES.has(name.split('.')[0]!) || !META_COMPONENT_NAME.test(name)) {
     return undefined;
@@ -105,16 +110,13 @@ function getUsableComponentName(component: string | undefined): string | undefin
 }
 
 /**
- * Either the extraction failed with a {@link DocgenError}, or it produced the fields both the
- * primary payload and a subcomponent entry need — the followed module `path` plus the
- * `vue-component-meta` source they render from.
+ * Either the extraction failed with a {@link DocgenError}, or it produced what the type checker
+ * knows of a component — the followed module `path` plus the `vue-component-meta` source and the
+ * props derived from it.
  */
 type ExtractedVueComponentDocgen =
   | { error: DocgenError }
-  | (Pick<
-      DocgenSubcomponent,
-      'description' | 'summary' | 'jsDocTags' | 'argTypes' | 'apiDescription'
-    > & {
+  | (Pick<DocgenSubcomponent, 'argTypes' | 'apiDescription'> & {
       path: string;
       componentMeta: MetaSource;
     });
@@ -122,18 +124,16 @@ type ExtractedVueComponentDocgen =
 /**
  * The one extraction chain behind the primary component and each declared subcomponent: follow
  * re-exports, collect `vue-component-meta` sources for the declaring module, then derive the
- * description, argTypes, and API description in that module's scope. Returns a {@link DocgenError}
- * instead of throwing when the module has no metadata for the export, so each caller decides how
- * the failure surfaces.
+ * argTypes and API description in that module's scope. Returns a {@link DocgenError} instead of
+ * throwing when the module has no metadata for the export, so each caller decides how the failure
+ * surfaces.
  */
 async function extractVueComponentDocgen(
   context: BuildDocgenContext,
   resolvedComponent: { path: string; exportName: string },
-  { metaJsDoc, errorContext = '' }: { metaJsDoc?: string; errorContext?: string } = {}
+  errorContext = ''
 ): Promise<ExtractedVueComponentDocgen> {
   const checker = context.getChecker(resolvedComponent.path);
-  // Resolving the barrel first also means the description pass reads the declaring SFC rather than
-  // the index file, which has no component in it to read descriptions from.
   const declaredExport = followReExport(
     checker,
     resolvedComponent.path,
@@ -142,11 +142,7 @@ async function extractVueComponentDocgen(
     path: resolvedComponent.path,
     exportName: resolvedComponent.exportName,
   };
-  const metaSources = await collectComponentMetaSources(
-    checker,
-    declaredExport.path,
-    context.typescript
-  );
+  const metaSources = await collectComponentMetaSources(checker, declaredExport.path);
   const componentMeta = metaSources.find((meta) => meta.exportName === declaredExport.exportName);
   if (!componentMeta) {
     return {
@@ -156,12 +152,6 @@ async function extractVueComponentDocgen(
       } satisfies DocgenError,
     };
   }
-
-  const { description, summary, jsDocTags } = extractComponentDescription(
-    metaJsDoc,
-    componentMeta.description,
-    componentMeta.jsDocTags
-  );
 
   // Server-only named-type expansion for `table.type.detail`; the legacy Vite-plugin path never
   // constructs one, keeping its output byte-identical. No-op when the checker has no program.
@@ -174,9 +164,6 @@ async function extractVueComponentDocgen(
   return {
     path: declaredExport.path,
     componentMeta,
-    description,
-    summary,
-    jsDocTags,
     argTypes: extractArgTypes({ __docgenInfo: componentMeta }, resolveNamedTypeDetail) ?? undefined,
     apiDescription: buildApiDescription(componentMeta),
   };
@@ -195,10 +182,13 @@ async function buildSubcomponentDocgen(
   declared: DeclaredSubcomponent,
   context: BuildDocgenContext
 ): Promise<DocgenSubcomponent> {
-  const failure = (error: DocgenError): DocgenSubcomponent => ({
+  const failure = (
+    error: DocgenError,
+    docs: Pick<DocgenSubcomponent, 'description' | 'summary' | 'jsDocTags'> = { jsDocTags: {} }
+  ): DocgenSubcomponent => ({
     name: declared.componentName,
     path: storyFilePath,
-    jsDocTags: {},
+    ...docs,
     error,
   });
 
@@ -210,20 +200,26 @@ async function buildSubcomponentDocgen(
       );
     }
 
-    const extracted = await extractVueComponentDocgen(context, resolved.component, {
-      errorContext: ` (subcomponent "${declared.name}")`,
-    });
+    const componentDocs = readComponentDocs(resolved.component);
+    const docs = extractComponentDescription(
+      undefined,
+      componentDocs?.description,
+      componentDocs?.tags
+    );
+    const extracted = await extractVueComponentDocgen(
+      context,
+      resolved.component,
+      ` (subcomponent "${declared.name}")`
+    );
     if ('error' in extracted) {
-      return failure(extracted.error);
+      return failure(extracted.error, docs);
     }
 
     return {
       name: declared.componentName,
       // Written like the story's index path, as in the other renderers, not as a machine path.
       path: componentPathFromStory(storyFilePath, storyPath, extracted.path),
-      description: extracted.description,
-      summary: extracted.summary,
-      jsDocTags: extracted.jsDocTags,
+      ...docs,
       argTypes: extracted.argTypes,
       apiDescription: extracted.apiDescription,
       renderer: 'vue3',
@@ -238,13 +234,21 @@ async function buildSubcomponentDocgen(
   }
 }
 
-/**
- * Builds a {@link DocgenPayload} for the component one CSF story file documents.
- */
-export async function buildDocgenPayload(
+type DescribedStoryComponent = {
+  // The fields of the payload that the source gives.
+  docs: Pick<VueDocgenPayload, 'id' | 'name' | 'path' | 'jsDocTags' | 'description' | 'summary'>;
+} & (
+  | { error: DocgenError }
+  | { csf: CsfFile; storyPath: string; storyFilePath: string; component: ResolvedVueComponent }
+);
+
+// The part of docgen that needs no type checker: what the source says of the component a story
+// file documents, and which component the props are to be extracted from, or why there is none.
+// `undefined` when the story file is gone.
+export async function describeStoryComponent(
   input: DocgenProviderInput,
-  context: BuildDocgenContext
-): Promise<VueDocgenPayload | undefined> {
+  context: DescribeContext = {}
+): Promise<DescribedStoryComponent | undefined> {
   const storyFilePath = getStoryImportPathFromEntry(input.entry);
   if (!storyFilePath) {
     return undefined;
@@ -268,14 +272,7 @@ export async function buildDocgenPayload(
 
   // IF the story has no meta.component
   const fallbackName = componentNameFromTitle(input.entry.title);
-
-  const baseFor = (name: string) =>
-    ({
-      id: getComponentIdFromEntry(input.entry),
-      name,
-      path: storyFilePath,
-      jsDocTags: {},
-    }) satisfies Partial<VueDocgenPayload>;
+  const id = getComponentIdFromEntry(input.entry);
 
   let csf;
   try {
@@ -285,7 +282,7 @@ export async function buildDocgenPayload(
     }).parse();
   } catch (error) {
     return {
-      ...baseFor(fallbackName),
+      docs: { id, name: fallbackName, path: storyFilePath, jsDocTags: {} },
       error: {
         name: 'Story file could not be parsed',
         message:
@@ -296,7 +293,7 @@ export async function buildDocgenPayload(
   }
 
   const authoredComponentName = getUsableComponentName(csf._meta?.component);
-  const base = baseFor(authoredComponentName ?? fallbackName);
+  const metaJsDoc = extractDescription(csf._metaStatement, csf.editor) || undefined;
 
   const resolved = resolveMetaComponent(csf, storyPath);
   if ('reason' in resolved) {
@@ -307,7 +304,12 @@ export async function buildDocgenPayload(
       resolved.reason === 'no-meta-component' ? 'your story file' : 'meta.component'
     );
     return {
-      ...base,
+      docs: {
+        id,
+        name: authoredComponentName ?? fallbackName,
+        path: storyFilePath,
+        ...extractComponentDescription(metaJsDoc, undefined),
+      },
       error: {
         name: error.name,
         message:
@@ -319,14 +321,59 @@ export async function buildDocgenPayload(
   }
 
   const { component } = resolved;
-  const metaJsDoc = extractDescription(csf._metaStatement, csf.editor) || undefined;
+  const componentDocs = readComponentDocs(component);
+  // A default export has no name of its own, so its file names it.
+  const exportedName =
+    component.exportName === 'default' ? parse(component.path).name : component.exportName;
+  return {
+    docs: {
+      id,
+      name: (authoredComponentName ?? exportedName) || fallbackName,
+      path: storyFilePath,
+      ...extractComponentDescription(metaJsDoc, componentDocs?.description, componentDocs?.tags),
+    },
+    csf,
+    storyPath,
+    storyFilePath,
+    component,
+  };
+}
+
+export async function buildDocgenSummary(
+  input: DocgenProviderInput,
+  context: DescribeContext = {}
+): Promise<DocgenSummary | undefined> {
+  const described = await describeStoryComponent(input, context);
+  if (!described) {
+    return undefined;
+  }
+  const { name, description, summary } = described.docs;
+  return { name, description, summary };
+}
+
+/**
+ * Builds a {@link DocgenPayload} for the component one CSF story file documents.
+ */
+export async function buildDocgenPayload(
+  input: DocgenProviderInput,
+  context: BuildDocgenContext
+): Promise<VueDocgenPayload | undefined> {
+  const described = await describeStoryComponent(input, context);
+  if (!described) {
+    return undefined;
+  }
+  const { docs } = described;
+  if ('error' in described) {
+    return { ...docs, error: described.error };
+  }
+  const { csf, storyPath, storyFilePath, component } = described;
 
   // The primary and its declared subcomponents share one extraction chain and run concurrently:
   // the children are independent and every failure stays isolated to its own entry, while
   // Promise.all keeps the CSF declaration order in the record. The key is omitted entirely when
   // nothing is declared, so payloads for story files without subcomponents stay byte-identical.
   const [primaryDocgen, subcomponentEntries] = await Promise.all([
-    extractVueComponentDocgen(context, component, { metaJsDoc }),
+    extractVueComponentDocgen(context, component),
     Promise.all(
       extractDeclaredSubcomponents(csf).map(
         async (declaredSubcomponent) =>
@@ -345,14 +392,11 @@ export async function buildDocgenPayload(
   ]);
 
   if ('error' in primaryDocgen) {
-    return { ...base, error: primaryDocgen.error };
+    return { ...docs, error: primaryDocgen.error };
   }
 
   return {
-    ...baseFor((authoredComponentName ?? primaryDocgen.componentMeta.displayName) || fallbackName),
-    description: primaryDocgen.description,
-    summary: primaryDocgen.summary,
-    jsDocTags: primaryDocgen.jsDocTags,
+    ...docs,
     vueComponentMeta: primaryDocgen.componentMeta,
     argTypes: primaryDocgen.argTypes,
     apiDescription: primaryDocgen.apiDescription,

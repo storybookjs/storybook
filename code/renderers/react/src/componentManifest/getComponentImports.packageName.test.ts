@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { findTsconfigPathForPath } from 'storybook/internal/common';
 import { loadCsf } from 'storybook/internal/csf-tools';
 
+import { vol } from 'memfs';
 import { dedent } from 'ts-dedent';
 import { createMatchPath, loadConfig } from 'tsconfig-paths';
 
@@ -432,6 +433,170 @@ describe('tsconfig path key when the file lookup misses', () => {
       importId: '@acme/icons',
       isPackage: true,
     });
+  });
+});
+
+describe('tsconfig star capture and baseUrl file lookup', () => {
+  beforeEach(async () => {
+    vi.mocked(findTsconfigPathForPath).mockReturnValue('/app/tsconfig.json');
+    vi.mocked(loadConfig).mockReturnValue({
+      resultType: 'success',
+      configFileAbsolutePath: '/app/tsconfig.json',
+      baseUrl: '.',
+      absoluteBaseUrl: '/app',
+      paths: { '@/*': ['src/*'], 'foo*bar': ['x/*'] },
+    });
+    // tsconfig-paths reads the real filesystem. The test files live in memfs.
+    const actual = await vi.importActual<typeof import('tsconfig-paths')>('tsconfig-paths');
+    vi.mocked(createMatchPath).mockImplementation((baseUrl, paths, mainFields, addMatchAll) => {
+      const match = actual.createMatchPath(baseUrl, paths, mainFields, addMatchAll);
+      return (id, readJson, _fileExists, extensions) =>
+        match(id, readJson, (file) => vol.existsSync(file), extensions);
+    });
+  });
+
+  afterEach(() => {
+    vi.mocked(findTsconfigPathForPath).mockRestore();
+    vi.mocked(loadConfig).mockRestore();
+    vi.mocked(createMatchPath).mockRestore();
+  });
+
+  test('Keeps an alias when the star would capture nothing', async () => {
+    const code = dedent`
+      import { Button } from '@/';
+
+      const meta = {};
+      export default meta;
+      export const S = <Button/>;
+    `;
+    expect(await getImports(code, 'pkg')).toMatchInlineSnapshot(`
+      {
+        "components": [
+          {
+            "componentName": "Button",
+            "importId": "@/",
+            "importName": "Button",
+            "isPackage": true,
+            "jsxDepth": 0,
+            "localImportName": "Button",
+          },
+        ],
+        "imports": [
+          "import { Button } from '@/';",
+        ],
+      }
+    `);
+  });
+
+  test('Keeps a star pattern when the capture would be empty', async () => {
+    const code = dedent`
+      import { Button } from 'foobar';
+
+      const meta = {};
+      export default meta;
+      export const S = <Button/>;
+    `;
+    expect(await getImports(code, 'pkg')).toMatchInlineSnapshot(`
+      {
+        "components": [
+          {
+            "componentName": "Button",
+            "importId": "foobar",
+            "importName": "Button",
+            "isPackage": true,
+            "jsxDepth": 0,
+            "localImportName": "Button",
+          },
+        ],
+        "imports": [
+          "import { Button } from 'foobar';",
+        ],
+      }
+    `);
+  });
+
+  test('Rewrites a star pattern that captures one character when the file lookup misses', async () => {
+    const code = dedent`
+      import { Button } from 'fooXbar';
+
+      const meta = {};
+      export default meta;
+      export const S = <Button/>;
+    `;
+    expect(await getImports(code, 'pkg')).toMatchInlineSnapshot(`
+      {
+        "components": [
+          {
+            "componentName": "Button",
+            "importId": "fooXbar",
+            "importName": "Button",
+            "isPackage": false,
+            "jsxDepth": 0,
+            "localImportName": "Button",
+          },
+        ],
+        "imports": [
+          "import { Button } from 'pkg';",
+        ],
+      }
+    `);
+  });
+
+  test('Rewrites a baseUrl import when the file exists', async () => {
+    vol.fromJSON({
+      '/app/src/components/Button.tsx': 'export const Button = () => null;\n',
+    });
+    const code = dedent`
+      import { Button } from 'src/components/Button';
+
+      const meta = {};
+      export default meta;
+      export const S = <Button/>;
+    `;
+    expect(await getImports(code, 'pkg')).toMatchInlineSnapshot(`
+      {
+        "components": [
+          {
+            "componentName": "Button",
+            "importId": "src/components/Button",
+            "importName": "Button",
+            "isPackage": false,
+            "jsxDepth": 0,
+            "localImportName": "Button",
+          },
+        ],
+        "imports": [
+          "import { Button } from 'pkg';",
+        ],
+      }
+    `);
+  });
+
+  test('Keeps a baseUrl import when the file is missing', async () => {
+    const code = dedent`
+      import { Button } from 'src/components/Missing';
+
+      const meta = {};
+      export default meta;
+      export const S = <Button/>;
+    `;
+    expect(await getImports(code, 'pkg')).toMatchInlineSnapshot(`
+      {
+        "components": [
+          {
+            "componentName": "Button",
+            "importId": "src/components/Missing",
+            "importName": "Button",
+            "isPackage": true,
+            "jsxDepth": 0,
+            "localImportName": "Button",
+          },
+        ],
+        "imports": [
+          "import { Button } from 'src/components/Missing';",
+        ],
+      }
+    `);
   });
 });
 

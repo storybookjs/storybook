@@ -48,7 +48,8 @@ function pathKeyMatches(pattern: string, id: string): boolean {
 
   const prefix = pattern.slice(0, star);
   const suffix = pattern.slice(star + 1);
-  return id.length >= prefix.length + suffix.length && id.startsWith(prefix) && id.endsWith(suffix);
+  // A `*` has to consume one character.
+  return id.length > prefix.length + suffix.length && id.startsWith(prefix) && id.endsWith(suffix);
 }
 
 export const getTsConfig = cached(

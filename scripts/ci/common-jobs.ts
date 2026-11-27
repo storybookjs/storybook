@@ -1,7 +1,7 @@
 import { globSync, statSync } from 'node:fs';
 import { sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { join } from 'path/posix';
+import { dirname, join } from 'path/posix';
 
 import { isGlobalInput } from './global-inputs.ts';
 import { LINUX_ROOT_DIR, WINDOWS_ROOT_DIR, WORKING_DIR } from './utils/constants.ts';
@@ -669,6 +669,17 @@ export const testUnit_windows = defineJob(
       },
       // Missing when `tests--linux` failed before writing it; then every test file runs.
       cache.attach([OS_PROBE_MANIFEST_CACHE_KEY]),
+      {
+        run: {
+          // The cache restores to the absolute Linux path it was saved from.
+          name: 'Move the manifest into the checkout',
+          command: [
+            `for saved in /c${LINUX_ROOT_DIR}/${WORKING_DIR}/${OS_PROBE_MANIFEST} ${LINUX_ROOT_DIR}/${WORKING_DIR}/${OS_PROBE_MANIFEST}; do`,
+            `  if [ -f "$saved" ]; then mkdir -p ${dirname(OS_PROBE_MANIFEST)} && cp "$saved" ${OS_PROBE_MANIFEST} && echo "Restored the manifest from $saved"; break; fi`,
+            `done`,
+          ].join('\n'),
+        },
+      },
       {
         run: {
           name: 'Install dependencies',

@@ -51,7 +51,7 @@ const InlineStory: FunctionComponent<InlineStoryProps> = (props) => {
       story,
       element,
       {
-        showMain: () => {},
+        showMain: () => setError(undefined),
         showError: ({ title, description }: { title: string; description: string }) =>
           setError(new Error(`${title} - ${description}`)),
         showException: (err: Error) => setError(err),
@@ -66,27 +66,29 @@ const InlineStory: FunctionComponent<InlineStoryProps> = (props) => {
     };
   }, [autoplay, renderStoryToElement, story]);
 
-  if (error) {
-    return (
-      <pre>
-        <ErrorFormatter error={error} />
-      </pre>
-    );
-  }
-
   return (
     <>
-      {height ? (
-        <style>{`#${storyBlockIdFromId(
-          props
-        )} { min-height: ${height}; transform: translateZ(0); overflow: auto }`}</style>
-      ) : null}
-      {showLoader && <StorySkeleton />}
+      {error ? (
+        <pre>
+          <ErrorFormatter error={error} />
+        </pre>
+      ) : (
+        <>
+          {height ? (
+            <style>{`#${storyBlockIdFromId(
+              props
+            )} { min-height: ${height}; transform: translateZ(0); overflow: auto }`}</style>
+          ) : null}
+          {showLoader && <StorySkeleton />}
+        </>
+      )}
+      {/* Stays mounted and laid out while the error shows, so a recovering story renders here at its real size */}
       <div
         ref={storyRef as any}
         id={`${storyBlockIdFromId(props)}-inner`}
         data-name={story.name}
         lang={story.parameters?.htmlLang || 'en'}
+        style={error ? { visibility: 'hidden' } : undefined}
       />
     </>
   );

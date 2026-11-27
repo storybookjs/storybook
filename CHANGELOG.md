@@ -1,3 +1,17 @@
+## 10.6.9
+
+- Telemetry: Detect renderers of React Native, Astro and unlisted frameworks - [#37678](https://github.com/storybookjs/storybook/pull/37678), thanks @ndelangen!
+
+## 10.6.8
+
+- Builder-Vite: Write the full bundler graph to preview-stats.json - [#36345](https://github.com/storybookjs/storybook/pull/36345), thanks @codykaup!
+- Manager: Improve performance of story preloading - [#37389](https://github.com/storybookjs/storybook/pull/37389), thanks @Sidnioulz!
+
+## 10.6.7
+
+- Community: Support prerelease community frameworks in init - [#37203](https://github.com/storybookjs/storybook/pull/37203), thanks @Sidnioulz!
+- MCP: Publish the composition schema a hosted Storybook actually serves - [#37290](https://github.com/storybookjs/storybook/pull/37290), thanks @Sidnioulz!
+
 ## 10.6.6
 
 - Core: Let StackBlitz embed the dev server again - [#37176](https://github.com/storybookjs/storybook/pull/37176), thanks @kasperpeulen!

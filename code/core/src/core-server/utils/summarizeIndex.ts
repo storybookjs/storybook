@@ -37,7 +37,6 @@ export function summarizeIndex(storyIndex: StoryIndex) {
   let testStoryCount = 0;
   let autodocsCount = 0;
   let mdxCount = 0;
-  let svelteCsfV4Count = 0;
   let svelteCsfV5Count = 0;
   const testsPerParentStory = new Map<string, number>();
   Object.values(storyIndex.entries).forEach((entry) => {
@@ -70,9 +69,7 @@ export function summarizeIndex(storyIndex: StoryIndex) {
         testStoryCount += 1;
         testsPerParentStory.set(entry.parent, (testsPerParentStory.get(entry.parent) ?? 0) + 1);
       }
-      if (entry.tags?.includes('svelte-csf-v4')) {
-        svelteCsfV4Count += 1;
-      } else if (entry.tags?.includes('svelte-csf-v5')) {
+      if (entry.tags?.includes('svelte-csf-v5')) {
         svelteCsfV5Count += 1;
       }
     } else if (entry.type === 'docs') {
@@ -109,7 +106,6 @@ export function summarizeIndex(storyIndex: StoryIndex) {
     exampleDocsCount,
     onboardingStoryCount,
     onboardingDocsCount,
-    svelteCsfV4Count,
     svelteCsfV5Count,
     version: storyIndex.v,
   };

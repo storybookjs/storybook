@@ -15,6 +15,13 @@ import CrossFileRuntimeProps from './CrossFileRuntimeProps.vue';
   <CrossFileRuntimeProps :count="3" label="Imported" />
 </template>",
       "summary": undefined,
+      "template": "<script lang="ts" setup>
+import CrossFileRuntimeProps from './CrossFileRuntimeProps.vue';
+</script>
+
+<template>
+  <CrossFileRuntimeProps⟦attr count ~" "⟫ :count="3"⟧⟦attr label ~" "⟫ label="Imported"⟧⟦props * except=["label","count"] ~" "⟫⟧ />
+</template>",
     },
   },
 }

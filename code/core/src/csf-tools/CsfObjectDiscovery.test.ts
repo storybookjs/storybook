@@ -294,6 +294,10 @@ describe('CsfObject discovery', () => {
         Object.assign(config, { title: 'Changed' });
       `,
     ],
+    [
+      'a destructured binding',
+      `const { config } = { config: { title: 'Example' }, title: 'Outer' };`,
+    ],
     ['a non-const binding', `let config = { title: 'Example' }`],
     ['a non-object binding', `const config = []`],
     ['an unresolved binding', ''],
@@ -319,7 +323,10 @@ describe('CsfObject discovery', () => {
       export const Basic = meta.story({ parameters: { a11y: true } });
     `);
 
-    expect(csf.objects({ meta: false, stories: true })).toEqual([]);
+    const [basic] = csf.objects({ meta: false, stories: true });
+
+    expect(csf.mutationDiagnostics).toEqual([]);
+    expect(basic.remove(['parameters', 'a11y'])).toMatchObject({ ok: false });
     expect(csf.mutationDiagnostics).toContainEqual(
       expect.objectContaining({
         code: 'unsupported-initializer',
@@ -329,22 +336,31 @@ describe('CsfObject discovery', () => {
   });
 
   it.each(['base', 'base as Story', 'makeStory()'])(
-    'reports a story initialized with %s instead of leaving it out silently',
+    'hands back a story initialized with %s, which refuses a write and removes only what it does not show',
     (initializer) => {
       const csf = parse(`
         export default { title: 'Example' };
-        const base = { args: {} };
+        const base = { args: { label: 'A' } };
         export const Basic = ${initializer};
       `);
+      const [basic] = csf.objects({ meta: false });
 
-      expect(csf.objects({ meta: false })).toEqual([]);
+      expect(csf.mutationDiagnostics).toEqual([]);
+      expect(basic.target).toEqual({ kind: 'story', exportName: 'Basic', localName: 'Basic' });
+      expect(basic.get(['args'])).toBeUndefined();
+      expect(basic.inspect(['args'])).toMatchObject({ kind: 'unreadable' });
+      expect(basic.remove(['parameters', 'layout'])).toEqual({ ok: true, changed: false });
+      expect(basic.set(['args', 'label'], 'B')).toMatchObject({ ok: false });
       expect(csf.mutationDiagnostics).toEqual([
         expect.objectContaining({
           code: 'unsupported-initializer',
           target: { kind: 'story', exportName: 'Basic', localName: 'Basic' },
-          path: [],
+          path: ['args', 'label'],
+          message:
+            'Cannot mutate story Basic because it is not a story object, function or bound template',
         }),
       ]);
+      expect(csf.changed).toBe(false);
     }
   );
 
@@ -451,8 +467,10 @@ describe('CsfObject discovery', () => {
         Shared.args.label = 'A';
         export const Secondary = Shared;
       `);
-      csf.objects({ meta: false });
+      const [, secondary] = csf.objects({ meta: false });
 
+      expect(csf.mutationDiagnostics).toEqual([]);
+      expect(secondary.remove(['args', 'label'])).toMatchObject({ ok: false });
       expect(csf.mutationDiagnostics).toEqual([
         expect.objectContaining({
           code: 'unsupported-initializer',
@@ -476,10 +494,11 @@ describe('CsfObject discovery', () => {
         ${code}
         export const Basic = ${name};
       `);
+      const [basic] = csf.objects({ meta: false });
 
-      expect(csf.objects({ meta: false })).toEqual([]);
+      expect(basic.set(['args', 'label'], 'B')).toMatchObject({ ok: false });
       expect(csf.mutationDiagnostics).toEqual([
-        expect.objectContaining({ code: 'unsupported-initializer', path: [] }),
+        expect.objectContaining({ code: 'unsupported-initializer', path: ['args', 'label'] }),
       ]);
     });
   });
@@ -826,13 +845,23 @@ export const Primary = () => null;
     it('does not add annotations to a story that holds another value', () => {
       const csf = parse(`export default { title: 'Example' };
 export const Primary = shared;
-Primary.args = {};
+Primary.args = { label: 'A' };
 `);
+      const [primary] = csf.objects({ meta: false });
 
-      expect(csf.objects({ meta: false })).toEqual([]);
+      expect(csf.mutationDiagnostics).toEqual([]);
+      expect(primary.remove(['parameters', 'layout'])).toEqual({ ok: true, changed: false });
+      expect(primary.remove(['args', 'label'])).toMatchObject({ ok: false });
+      expect(primary.set(['parameters', 'layout'], 'centered')).toMatchObject({ ok: false });
       expect(csf.mutationDiagnostics).toContainEqual(
-        expect.objectContaining({ code: 'unsupported-initializer', path: ['args'] })
+        expect.objectContaining({
+          code: 'unsupported-initializer',
+          path: ['args', 'label'],
+          message:
+            'Cannot mutate Primary.args because Primary is not a story object, function or bound template',
+        })
       );
+      expect(csf.changed).toBe(false);
     });
   });
 });
@@ -1053,5 +1082,55 @@ describe('CsfFile.storyObject', () => {
     expect(csf.storyObject('Missing')).toBeUndefined();
     expect(csf.storyObject('toString')).toBeUndefined();
     expect(csf.mutationDiagnostics).toEqual([]);
+  });
+});
+
+describe('destructured story bindings', () => {
+  it('does not edit the whole initializer a destructured story comes from', () => {
+    const source = `
+      const { A, B } = { A: { args: { label: 'a' } }, B: { args: { label: 'b' } } };
+      export default { title: 'Example' };
+      export { A, B };
+    `;
+    const csf = parse(source);
+
+    expect(csf.objects({ meta: false })).toEqual([]);
+    expect(csf.mutationDiagnostics.map(({ code, target }) => [code, target])).toEqual([
+      ['unsupported-initializer', { kind: 'story', exportName: 'A', localName: 'A' }],
+      ['unsupported-initializer', { kind: 'story', exportName: 'B', localName: 'B' }],
+    ]);
+  });
+
+  it('reports each story destructured from a namespace import on its own', () => {
+    const csf = parse(`
+      import * as stories from './Button.stories';
+      const { Primary, Secondary } = stories;
+      export default { title: 'Example' };
+      export { Primary, Secondary };
+    `);
+
+    expect(csf.objects({ meta: false })).toEqual([]);
+    expect(csf.mutationDiagnostics.map(({ code, target }) => [code, target])).toEqual([
+      ['unsupported-initializer', { kind: 'story', exportName: 'Primary', localName: 'Primary' }],
+      [
+        'unsupported-initializer',
+        { kind: 'story', exportName: 'Secondary', localName: 'Secondary' },
+      ],
+    ]);
+  });
+
+  it('carries the args of a spread destructured from an object literal', () => {
+    const csf = parse(`
+      const { base } = { base: { args: { label: 'a' } } };
+      export default { title: 'Example' };
+      export const S = { ...base };
+    `);
+    const [story] = csf.objects({ meta: false });
+
+    expect(story.set(['args', 'size'], parseExpression("'lg'"))).toEqual({
+      ok: true,
+      changed: true,
+    });
+    expect(printCsf(csf).code).toContain('args: { ...base.args, size:');
   });
 });

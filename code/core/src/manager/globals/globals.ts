@@ -16,8 +16,6 @@ export const globalsNameReferenceMap = {
   'storybook/theming/emotion': '__STORYBOOK_THEMING__',
   'storybook/theming/create': '__STORYBOOK_THEMING_CREATE__',
 
-  'storybook/test': '__STORYBOOK_TEST__',
-
   'storybook/internal/channels': '__STORYBOOK_CHANNELS__',
   'storybook/internal/client-logger': '__STORYBOOK_CLIENT_LOGGER__',
   'storybook/internal/components': '__STORYBOOK_COMPONENTS__',

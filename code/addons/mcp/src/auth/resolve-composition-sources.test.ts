@@ -1,6 +1,6 @@
 import { logger } from 'storybook/internal/node-logger';
 import type { Options } from 'storybook/internal/types';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { resolveCompositionSources } from './resolve-composition-sources.ts';
 
@@ -15,10 +15,6 @@ describe('resolveCompositionSources', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
     vi.spyOn(logger, 'warn').mockImplementation(() => {});
-  });
-
-  afterEach(() => {
-    vi.unstubAllGlobals();
   });
 
   it('strips a trailing slash from ref URLs before probing and in the resolved source', async () => {
@@ -44,6 +40,32 @@ describe('resolveCompositionSources', () => {
       { id: 'design-system', title: 'Design System', url: 'https://ds.example.com' },
     ]);
     expect(result.multiSource).toBe(true);
+  });
+
+  it('probes every ref at once and keeps the sources in config order', async () => {
+    const manifest = { ok: true, status: 200, text: () => Promise.resolve(VALID_MANIFEST) };
+    let releaseFirst!: (value: typeof manifest) => void;
+    const mockFetch = vi
+      .fn()
+      .mockImplementationOnce(() => new Promise((resolve) => (releaseFirst = resolve)))
+      .mockResolvedValue(manifest);
+    vi.stubGlobal('fetch', mockFetch);
+
+    const pending = resolveCompositionSources(
+      optionsWithRefs({
+        first: { title: 'First', url: 'https://first.example.com' },
+        second: { title: 'Second', url: 'https://second.example.com' },
+      })
+    );
+    await vi.waitFor(() => expect(mockFetch).toHaveBeenCalledTimes(2));
+    releaseFirst(manifest);
+
+    const result = await pending;
+    expect(mockFetch).toHaveBeenCalledWith(
+      'https://first.example.com/manifests/components.json',
+      expect.objectContaining({ signal: expect.any(AbortSignal) })
+    );
+    expect(result.sources?.map((source) => source.id)).toEqual(['local', 'first', 'second']);
   });
 
   it('excludes refs with disable: true, matching the UI', async () => {

@@ -12,16 +12,18 @@ import * as find from 'empathic/find';
 import type { ResultPromise } from 'execa';
 import { coerce, gte, prerelease } from 'semver';
 import { dedent } from 'ts-dedent';
-import { Document, parseDocument } from 'yaml';
+import { Document, isMap, parseDocument } from 'yaml';
 
 import type { ExecuteCommandOptions } from '../utils/command.ts';
 import { executeCommand, executeCommandSync } from '../utils/command.ts';
 import { getProjectRoot } from '../utils/paths.ts';
 import { JsPackageManager, PackageManagerName } from './JsPackageManager.ts';
 import type { PackageJson } from './PackageJson.ts';
+import { type OverrideSource, toOverrides } from './overrides.ts';
 import { hasAllowBuildsDecision, hasPnpm10ListDecision } from './pnpm-build-approvals.ts';
-import type { InstallationMetadata, PackageMetadata } from './types.ts';
+import type { InstallationMetadata } from './types.ts';
 import {
+  findInstallationsInDependencyTree,
   getAgeInMinutes,
   getErrorLogs,
   getLatestStableVersionAdheringToMinimumAgeGate,
@@ -213,20 +215,6 @@ export class PNPMProxy extends JsPackageManager {
     }
   }
 
-  public async getModulePackageJSON(packageName: string): Promise<PackageJson | null> {
-    const wantedPath = join('node_modules', packageName, 'package.json');
-    const packageJsonPath = find.up(wantedPath, {
-      cwd: this.primaryPackageJson.operationDir,
-      last: getProjectRoot(),
-    });
-
-    if (!packageJsonPath) {
-      return null;
-    }
-
-    return JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
-  }
-
   protected getResolutions(
     packageJson: PackageJson,
     versions: Record<string, string>
@@ -239,14 +227,10 @@ export class PNPMProxy extends JsPackageManager {
     };
   }
 
-  override async getDeclaredVersionSpecifier(packageName: string): Promise<string | null> {
-    const specifier = await super.getDeclaredVersionSpecifier(packageName);
-    if (specifier) {
-      return specifier;
-    }
-    const catalogName = this.#getCatalogName(this.getAllDependencies()[packageName]);
+  protected override getDeclaredRange(packageName: string, declared: string): string | null {
+    const catalogName = this.#getCatalogName(declared);
     if (catalogName === null) {
-      return null;
+      return super.getDeclaredRange(packageName, declared);
     }
     const workspace = this.#readWorkspaceYaml();
     if (!workspace) {
@@ -289,6 +273,17 @@ export class PNPMProxy extends JsPackageManager {
     }
     this.#writeWorkspaceYaml(workspace);
     return upgrades.filter(({ catalog }) => catalog === null).map(({ specifier }) => specifier);
+  }
+
+  /** Adds the `overrides` of `pnpm-workspace.yaml`, which pnpm 10 reads alongside package.json. */
+  override getOverrideSources(): OverrideSource[] {
+    const sources = super.getOverrideSources();
+    const workspace = this.#readWorkspaceYaml();
+    const node = workspace?.doc.get('overrides');
+    const overrides = isMap(node) ? toOverrides(node.toJSON()) : undefined;
+    return workspace && overrides
+      ? [...sources, { path: workspace.path, field: 'overrides', overrides }]
+      : sources;
   }
 
   override applyVersionToRelatedPackages(
@@ -379,11 +374,9 @@ export class PNPMProxy extends JsPackageManager {
     writeFileSync(path, doc.toString(), 'utf8');
   }
 
+  // pnpm reads the nearest file above the package, even past the VCS and Storybook project roots.
   #findWorkspaceYamlPath(): string | undefined {
-    return find.up('pnpm-workspace.yaml', {
-      cwd: this.primaryPackageJson.operationDir,
-      last: getProjectRoot(),
-    });
+    return find.up('pnpm-workspace.yaml', { cwd: this.primaryPackageJson.operationDir });
   }
 
   // Null when the file is missing or malformed.
@@ -475,7 +468,13 @@ export class PNPMProxy extends JsPackageManager {
     this.allowStorybookBuildScripts();
     return executeCommand({
       command: 'pnpm',
-      args: ['install', ...this.getInstallArgs('install'), ...(options?.force ? ['--force'] : [])],
+      args: [
+        'install',
+        // pnpm freezes the lockfile when CI is set.
+        '--no-frozen-lockfile',
+        ...this.getInstallArgs('install'),
+        ...(options?.force ? ['--force'] : []),
+      ],
       stdio: this.installUsesTerminal ? 'inherit' : prompt.getPreferredStdio(),
       cwd: this.cwd,
     });
@@ -667,48 +666,14 @@ export class PNPMProxy extends JsPackageManager {
   }
 
   protected mapDependencies(input: PnpmListOutput, pattern: string[]): InstallationMetadata {
-    const acc: Record<string, PackageMetadata[]> = {};
-    const existingVersions: Record<string, string[]> = {};
-    const duplicatedDependencies: Record<string, string[]> = {};
     const items: PnpmDependencies = input.reduce((curr, item) => {
       const { devDependencies, dependencies, peerDependencies } = item;
       const allDependencies = { ...devDependencies, ...dependencies, ...peerDependencies };
       return Object.assign(curr, allDependencies);
     }, {} as PnpmDependencies);
 
-    const recurse = ([name, packageInfo]: [string, PnpmDependency]): void => {
-      // transform pattern into regex where `*` is replaced with `.*`
-      if (!name || !pattern.some((p) => new RegExp(`^${p.replace(/\*/g, '.*')}$`).test(name))) {
-        return;
-      }
-
-      const value = {
-        version: packageInfo.version,
-        location: '',
-      };
-
-      if (!existingVersions[name]?.includes(value.version)) {
-        if (acc[name]) {
-          acc[name].push(value);
-        } else {
-          acc[name] = [value];
-        }
-        existingVersions[name] = [...(existingVersions[name] || []), value.version];
-
-        if (existingVersions[name].length > 1) {
-          duplicatedDependencies[name] = existingVersions[name];
-        }
-      }
-
-      if (packageInfo.dependencies) {
-        Object.entries(packageInfo.dependencies).forEach(recurse);
-      }
-    };
-    Object.entries(items).forEach(recurse);
-
     return {
-      dependencies: acc,
-      duplicatedDependencies,
+      ...findInstallationsInDependencyTree(items, pattern),
       infoCommand: 'pnpm list --depth=1',
       dedupeCommand: 'pnpm dedupe',
     };

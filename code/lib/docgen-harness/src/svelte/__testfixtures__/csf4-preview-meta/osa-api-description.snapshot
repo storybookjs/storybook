@@ -1,0 +1,12 @@
+## Props
+
+```
+export type TagProps = {
+  /** Visible label text. */
+  label: string;
+  /** Colour tone. */
+  tone?: "neutral" | "success" | "danger" = "neutral";
+  /** Shows a remove button. */
+  removable?: boolean = false;
+}
+```

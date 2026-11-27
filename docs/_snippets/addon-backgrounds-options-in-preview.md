@@ -3,6 +3,7 @@
 import { definePreview } from '@storybook/your-framework';
 
 export default definePreview({
+  addons: [/* ... */],
   parameters: {
     backgrounds: {
       options: {
@@ -26,6 +27,7 @@ export default definePreview({
 import { definePreview } from '@storybook/your-framework';
 
 export default definePreview({
+  addons: [/* ... */],
   parameters: {
     backgrounds: {
       options: {
@@ -48,6 +50,7 @@ export default definePreview({
 import { definePreview } from '@storybook/vue3-vite';
 
 export default definePreview({
+  addons: [/* ... */],
   parameters: {
     backgrounds: {
       options: {
@@ -70,6 +73,7 @@ export default definePreview({
 import { definePreview } from '@storybook/vue3-vite';
 
 export default definePreview({
+  addons: [/* ... */],
   parameters: {
     backgrounds: {
       options: {
@@ -92,6 +96,7 @@ export default definePreview({
 import { definePreview } from '@storybook/angular';
 
 export default definePreview({
+  addons: [/* ... */],
   parameters: {
     backgrounds: {
       options: {
@@ -114,6 +119,7 @@ export default definePreview({
 import { definePreview } from '@storybook/web-components-vite';
 
 export default definePreview({
+  addons: [/* ... */],
   parameters: {
     backgrounds: {
       options: {
@@ -136,6 +142,7 @@ export default definePreview({
 import { definePreview } from '@storybook/web-components-vite';
 
 export default definePreview({
+  addons: [/* ... */],
   parameters: {
     backgrounds: {
       options: {
@@ -155,7 +162,7 @@ export default definePreview({
 ```
 
 ```ts filename=".storybook/preview.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"
-// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/11/writing-stories/csf/upgrade
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
 import type { Preview } from '@storybook/your-framework';
 
@@ -181,7 +188,7 @@ export default preview;
 ```
 
 ```js filename=".storybook/preview.js|jsx" renderer="common" language="js" tabTitle="CSF 3"
-// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/11/writing-stories/csf/upgrade
 export default {
   parameters: {
     backgrounds: {

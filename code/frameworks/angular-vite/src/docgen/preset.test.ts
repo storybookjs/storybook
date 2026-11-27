@@ -6,7 +6,8 @@ import { experimental_docgenProvider } from './preset.ts';
 
 const optionsWith = (
   features: Record<string, unknown>,
-  frameworkOptions: Record<string, unknown> = {}
+  frameworkOptions: Record<string, unknown> = {},
+  typescript: Record<string, unknown> = {}
 ) =>
   ({
     configDir: '/workspace/.storybook',
@@ -20,6 +21,9 @@ const optionsWith = (
         }
         if (key === 'frameworkOptions') {
           return frameworkOptions;
+        }
+        if (key === 'typescript') {
+          return typescript;
         }
         return undefined;
       },
@@ -51,5 +55,17 @@ describe('experimental_docgenProvider', () => {
     );
 
     expect(result[0].options).toEqual({ propsTable: 'all' });
+  });
+
+  it('hands the worker the docgenSpecifier with the config directory it resolves from', async () => {
+    const result = await experimental_docgenProvider(
+      [],
+      optionsWith({}, {}, { docgenSpecifier: '@typescript/native' })
+    );
+
+    expect(result[0].options).toEqual({
+      propsTable: 'api',
+      typeScriptSpecifier: { specifier: '@typescript/native', configDir: '/workspace/.storybook' },
+    });
   });
 });

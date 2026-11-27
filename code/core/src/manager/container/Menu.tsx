@@ -3,7 +3,6 @@ import React, { useCallback, useMemo } from 'react';
 import { ActionList, ProgressSpinner } from 'storybook/internal/components';
 import { STORIES_COLLAPSE_ALL } from 'storybook/internal/core-events';
 
-import { global } from '@storybook/global';
 import {
   CheckIcon,
   CommandIcon,
@@ -195,10 +194,12 @@ export const useMenu = ({
     const keys = shortcutKeys as any;
     return Object.entries(addonsShortcuts)
       .filter(([_, { showInMenu }]) => showInMenu)
-      .map(([actionName, { label, action }]) => ({
+      .map(([actionName, { label }]) => ({
         id: actionName,
         title: label,
-        onClick: () => action(),
+        // An addon re-registers its action without a store write, so read it when the item is
+        // clicked rather than when this list is built.
+        onClick: () => api.getAddonsShortcuts()[actionName]?.action(),
         right: enableShortcuts && keys[actionName] ? <Shortcut keys={keys[actionName]} /> : null,
       }));
   }, [api, enableShortcuts, shortcutKeys]);
@@ -208,8 +209,8 @@ export const useMenu = ({
       [
         [
           about,
-          ...(global.CONFIG_TYPE === 'DEVELOPMENT' &&
-          global.FEATURES?.menuOnboardingChecklist !== false
+          ...(globalThis.CONFIG_TYPE === 'DEVELOPMENT' &&
+          globalThis.FEATURES?.menuOnboardingChecklist !== false
             ? [guide]
             : []),
           ...(enableShortcuts ? [shortcuts] : []),

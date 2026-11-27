@@ -15,6 +15,7 @@ import React from 'react';
 import { definePreview } from '@storybook/your-framework';
 
 export default definePreview({
+  addons: [/* ... */],
   decorators: [
     (Story) => (
       <div style={{ margin: '3em' }}>
@@ -33,6 +34,7 @@ import React from 'react';
 import { definePreview } from '@storybook/your-framework';
 
 export default definePreview({
+  addons: [/* ... */],
   decorators: [
     (Story) => (
       <div style={{ margin: '3em' }}>
@@ -95,6 +97,7 @@ export default preview;
 import { definePreview } from '@storybook/vue3-vite';
 
 export default definePreview({
+  addons: [/* ... */],
   decorators: [
     (story) => ({
       components: { story },
@@ -108,6 +111,7 @@ export default definePreview({
 import { definePreview } from '@storybook/vue3-vite';
 
 export default definePreview({
+  addons: [/* ... */],
   decorators: [
     (story) => ({
       components: { story },
@@ -118,7 +122,7 @@ export default definePreview({
 ```
 
 ```ts filename=".storybook/preview.ts" renderer="vue" language="ts" tabTitle="CSF 3"
-// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/11/writing-stories/csf/upgrade
 import type { Preview } from '@storybook/vue3-vite';
 
 const preview: Preview = {
@@ -133,7 +137,7 @@ export default preview;
 ```
 
 ```js filename=".storybook/preview.js" renderer="vue" language="js" tabTitle="CSF 3"
-// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/11/writing-stories/csf/upgrade
 export default {
   decorators: [
     (story) => ({
@@ -148,6 +152,7 @@ export default {
 import { componentWrapperDecorator, definePreview } from '@storybook/angular';
 
 export default definePreview({
+  addons: [/* ... */],
   decorators: [componentWrapperDecorator((story) => `<div style="margin: 3em">${story}</div>`)],
 });
 ```
@@ -173,7 +178,7 @@ export default preview;
 ```
 
 ```tsx filename=".storybook/preview.tsx" renderer="react" language="ts" tabTitle="CSF 3"
-// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/11/writing-stories/csf/upgrade
 import React from 'react';
 
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
@@ -194,7 +199,7 @@ export default preview;
 ```
 
 ```jsx filename=".storybook/preview.jsx" renderer="react" language="js" tabTitle="CSF 3"
-// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/11/writing-stories/csf/upgrade
 import React from 'react';
 
 export default {
@@ -215,6 +220,7 @@ import { definePreview } from '@storybook/web-components-vite';
 import { html } from 'lit';
 
 export default definePreview({
+  addons: [/* ... */],
   decorators: [(story) => html`<div style="margin: 3em">${story()}</div>`],
 });
 ```
@@ -225,6 +231,7 @@ import { definePreview } from '@storybook/web-components-vite';
 import { html } from 'lit';
 
 export default definePreview({
+  addons: [/* ... */],
   decorators: [(story) => html`<div style="margin: 3em">${story()}</div>`],
 });
 ```

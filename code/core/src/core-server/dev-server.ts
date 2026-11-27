@@ -94,6 +94,12 @@ export async function storybookDevServer(
   // Apply experimental_devServer preset to allow addons/frameworks to extend the dev server with middlewares, etc.
   await options.presets.apply('experimental_devServer', app);
 
+  // Register before the preview builder starts, so that a catch-all middleware the builder adds,
+  // such as SvelteKit's dev SSR handler, cannot answer these requests first.
+  if (features?.componentsManifest) {
+    registerManifests({ app, presets: options.presets });
+  }
+
   if (!core?.builder) {
     throw new MissingBuilderError();
   }
@@ -193,9 +199,6 @@ export async function storybookDevServer(
     throw e;
   }
 
-  if (features?.componentsManifest) {
-    registerManifests({ app, presets: options.presets });
-  }
   // Now the preview has successfully started, we can count this as a 'dev' event.
   doTelemetry(app, core, storyIndexGeneratorPromise, options);
 

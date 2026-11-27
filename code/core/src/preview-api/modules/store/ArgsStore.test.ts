@@ -1,5 +1,6 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
+import { parseArgsParam } from '../preview-web/parseArgsParam.ts';
 import { ArgsStore } from './ArgsStore.ts';
 
 vi.mock('storybook/internal/client-logger');
@@ -209,11 +210,26 @@ describe('ArgsStore', () => {
       expect(store.get('id')).toEqual({ a: 'a' });
     });
 
+    it('keeps numeric strings of args parsed from the URL', () => {
+      const store = new ArgsStore();
+
+      store.setInitial({ id: 'id', initialArgs: { code: 'abc', month: '01', count: 1 } } as any);
+
+      const story = {
+        id: 'id',
+        argTypes: {
+          code: stringType,
+          month: { type: { name: 'string' }, options: ['01', '02', '03'] },
+          count: { type: { name: 'number' } },
+        },
+      } as any;
+      store.updateFromPersisted(story, parseArgsParam('code:007;month:03;count:1.50'));
+      expect(store.get('id')).toEqual({ code: '007', month: '03', count: 1.5 });
+    });
+
     // Server docgen keeps `argTypes` annotation-only, so a plain `args` entry arrives here without
     // a type and would be dropped rather than applied.
     describe('with docgenServer', () => {
-      afterEach(() => vi.unstubAllGlobals());
-
       it('types args from their initial value when the story declares no argTypes', () => {
         vi.stubGlobal('FEATURES', { docgenServer: true });
         const store = new ArgsStore();

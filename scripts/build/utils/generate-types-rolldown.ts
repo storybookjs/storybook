@@ -368,6 +368,23 @@ async function emitPackageDeclarationsNative(
   copyHandwrittenDeclarations(fileNames, outDir);
 }
 
+/** Maps each export of the package at `cwd` that has a `code` condition to that source file. */
+async function selfReferencePaths(cwd: string): Promise<Record<string, string[]>> {
+  const { name, exports } = JSON.parse(await readFile(join(cwd, 'package.json'), 'utf8')) as {
+    name: string;
+    exports?: unknown;
+  };
+  if (!exports || typeof exports !== 'object') {
+    return {};
+  }
+  return Object.fromEntries(
+    Object.entries(exports).flatMap(([subpath, target]) => {
+      const code = (target as { code?: unknown } | null)?.code;
+      return typeof code === 'string' ? [[join(name, subpath), [join(cwd, code)]]] : [];
+    })
+  );
+}
+
 export async function generateTypesFiles(
   cwd: string,
   data: BuildEntries,
@@ -426,6 +443,13 @@ export async function generateTypesFiles(
   // config.
   const compilerOptions = await resolveTsconfigCompilerOptions(packageTsconfig);
   delete compilerOptions.baseUrl;
+  // tsc emits no declarations for sources it first reaches through node_modules, which is where
+  // the `code` condition sends workspace imports. Other packages resolve to their built `types`;
+  // the package's own exports map straight to its sources.
+  compilerOptions.customConditions = compilerOptions.customConditions?.filter(
+    (condition: string) => condition !== 'code'
+  );
+  compilerOptions.paths = { ...compilerOptions.paths, ...(await selfReferencePaths(cwd)) };
   await writeFile(
     wrapperTsconfig,
     JSON.stringify({

@@ -96,6 +96,8 @@ Default:
 2. Else, inferred from [`type`](#type)
 3. Else, `'object'`
 
+If the arg has no `type`, no control is inferred. For `function` and `symbol` types, no control is inferred unless the arg's name matches `parameters.controls.matchers.date`.
+
 Specify the behavior of the [controls panel](../essentials/controls.mdx) for the arg. If you specify a string, it's used as the [`type`](#controltype) of the control. If you specify an object, you can provide additional configuration. Specifying `false` will prevent the control from rendering.
 
 <CodeSnippets path="arg-types-control.md" />
@@ -204,7 +206,7 @@ Map [`options`](#options) to values.
 
 When dealing with non-primitive values, you'll notice that you'll run into some limitations. The most obvious issue is that not every value can be represented as part of the `args` param in the URL, losing the ability to share and deeplink to such a state. Beyond that, complex values such as JSX cannot be synchronized between the manager (e.g., Controls panel) and the preview (your story).
 
-`mapping` doesn't have to be exhaustive. If the currently selected option is not listed, it's used verbatim. Can be used with [`control.labels`](#labels).
+`mapping` doesn't have to be exhaustive. If the currently selected option is not listed, it's used verbatim. Can be used with [`control.labels`](#controllabels).
 
 <CodeSnippets path="arg-types-mapping.md" />
 
@@ -230,7 +232,7 @@ Type: `string[]`
 
 Default: [Inferred](#automatic-argtype-inference)
 
-If the arg accepts a finite set of values, you can specify them with `options`. If those values are [complex](../essentials/controls.mdx#dealing-with-complex-values), like JSX elements, you can use [`mapping`](#mapping) to map them to string values. You can use [`control.labels`](#labels) to provide custom labels for the options.
+If the arg accepts a finite set of values, you can specify them with `options`. If those values are [complex](../essentials/controls.mdx#dealing-with-complex-values), like JSX elements, you can use [`mapping`](#mapping) to map them to string values. You can use [`control.labels`](#controllabels) to provide custom labels for the options.
 
 <CodeSnippets path="arg-types-options.md" />
 

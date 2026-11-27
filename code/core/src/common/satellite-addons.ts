@@ -2,7 +2,6 @@
 export default [
   '@chromatic-com/storybook',
   '@storybook/addon-designs',
-  '@storybook/addon-coverage',
   '@storybook/addon-webpack5-compiler-babel',
   '@storybook/addon-webpack5-compiler-swc',
   // Storybook for React Native related packages

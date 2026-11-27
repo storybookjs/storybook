@@ -1,24 +1,43 @@
-import { getStoryTitle } from 'storybook/internal/common';
+import fs from 'node:fs/promises';
+
+import { storyNameFromExport } from 'storybook/internal/csf';
 import { vitestTransform } from 'storybook/internal/csf-tools';
+import type { IndexerOptions } from 'storybook/internal/types';
 
 import MagicString from 'magic-string';
+import { fs as memfs, vol } from 'memfs';
 import { parseAst } from 'rollup/parseAst';
 import { compile } from 'svelte/compiler';
 import { dedent } from 'ts-dedent';
-import { beforeEach, describe, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { transformStoriesCode } from './post-transform/index.ts';
+import { createIndexer } from '../indexer/index.ts';
 import { getSvelteAST } from '../parser/ast.ts';
 import { extractCompiledASTNodes } from '../parser/extract/compiled/nodes.ts';
 import { extractSvelteASTNodes } from '../parser/extract/svelte/nodes.ts';
 
-vi.mock('storybook/internal/common', { spy: true });
+vi.mock('node:fs/promises', { spy: true });
 
 beforeEach(() => {
-  vi.mocked(getStoryTitle).mockReturnValue('Button');
+  vi.mocked(fs.readFile).mockImplementation(memfs.promises.readFile as typeof fs.readFile);
+  vol.reset();
 });
 
 const filename = 'src/Button.stories.svelte';
+
+const testNamesOf = (output: string) =>
+  [...output.matchAll(/_test\("([^"]*)"/g)].map(([, name]) => name);
+
+// The names the story index gives the stories of a file: the Svelte CSF indexer, then the fallback
+// of the index generator.
+async function indexNamesOf(originalCode: string) {
+  vol.fromJSON({ [filename]: originalCode });
+  const stories = await createIndexer().createIndex(filename, {
+    makeTitle: (title) => title ?? 'Button',
+  } as IndexerOptions);
+  return stories.map(({ name, exportName }) => name ?? storyNameFromExport(exportName));
+}
 
 // The path of a `.stories.svelte` file in addon-vitest: the Svelte compiler, then Svelte CSF, then
 // the Vitest transform of core.
@@ -42,8 +61,8 @@ async function transform(originalCode: string) {
   const transformed = await vitestTransform({
     code: code.toString(),
     fileName: filename,
-    configDir: '.storybook',
-    stories: [],
+    configDir: '.',
+    stories: [{ directory: './src', files: '*.stories.svelte', titlePrefix: '' }],
     tagsFilter: { include: ['test'], exclude: [], skip: [] },
     previewLevelTags: [],
   });
@@ -51,8 +70,42 @@ async function transform(originalCode: string) {
   return typeof transformed === 'string' ? transformed : transformed.code;
 }
 
+describe('vitestTransform test names of a stories file', () => {
+  it('names each test like the index names its story', async () => {
+    const source = dedent`
+      <script module>
+        import { defineMeta } from '@storybook/svelte';
+        import Button from './Button.svelte';
+
+        const { Story } = defineMeta({ component: Button });
+      </script>
+
+      <Story name="Today" />
+
+      <Story name="Hover Shows Full Date" />
+
+      <Story name="URL input (loading)" />
+
+      <Story name="Custom" exportName="DifferentExport" />
+
+      <Story exportName="OnlyExportName" />
+    `;
+
+    const testNames = testNamesOf(await transform(source));
+
+    expect(testNames).toEqual([
+      'Today',
+      'Hover Shows Full Date',
+      'URL input (loading)',
+      'Custom',
+      'Only Export Name',
+    ]);
+    expect(testNames).toEqual(await indexNamesOf(source));
+  });
+});
+
 describe('vitestTransform of a CSF factories stories file', () => {
-  it('tests the stories with the meta of the file', async ({ expect }) => {
+  it('tests the stories with the meta of the file', async () => {
     const output = await transform(dedent`
       <script module>
         import preview from '#.storybook/preview';
@@ -79,7 +132,27 @@ describe('vitestTransform of a CSF factories stories file', () => {
     `);
   });
 
-  it('tests the stories of the Story components from meta.type<>()', async ({ expect }) => {
+  it('names each test like the index names its story', async () => {
+    const source = dedent`
+      <script module>
+        import preview from '#.storybook/preview';
+        import Button from './Button.svelte';
+
+        const { Story } = preview.meta({ component: Button });
+      </script>
+
+      <Story name="Hover Shows Full Date" />
+
+      <Story name="Without tooltip" extend="Hover Shows Full Date" />
+    `;
+
+    const testNames = testNamesOf(await transform(source));
+
+    expect(testNames).toEqual(['Hover Shows Full Date', 'Without tooltip']);
+    expect(testNames).toEqual(await indexNamesOf(source));
+  });
+
+  it('tests the stories of the Story components from meta.type<>()', async () => {
     const output = await transform(dedent`
       <script module lang="ts">
         import preview from '#.storybook/preview';
@@ -105,7 +178,7 @@ describe('vitestTransform of a CSF factories stories file', () => {
     `);
   });
 
-  it('tests the Story components declared together with Story', async ({ expect }) => {
+  it('tests the Story components declared together with Story', async () => {
     const output = await transform(dedent`
       <script module lang="ts">
         import preview from '#.storybook/preview';

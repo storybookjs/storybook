@@ -1,7 +1,5 @@
 import type { PartialStoryFn, StoryContext } from 'storybook/internal/types';
 
-import { global as globalThis } from '@storybook/global';
-
 import { useEffect, useState } from 'storybook/preview-api';
 import { userEvent, within } from 'storybook/test';
 

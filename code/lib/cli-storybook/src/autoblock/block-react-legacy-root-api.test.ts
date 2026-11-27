@@ -10,6 +10,7 @@ const check = (framework: StorybookConfig['framework']) =>
     mainConfig: { stories: [], framework } as StorybookConfig,
     mainConfigPath: '.storybook/main.ts',
     configDir: '.storybook',
+    storiesPaths: [],
   });
 
 describe('blocks', () => {

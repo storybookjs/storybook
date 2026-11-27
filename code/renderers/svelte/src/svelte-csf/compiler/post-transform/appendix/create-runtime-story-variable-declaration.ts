@@ -11,6 +11,7 @@ import type { createVariableFromRuntimeStoriesCall } from './create-variable-fro
 
 interface RuntimeStoryVariableDeclarationParams {
   exportName: string;
+  name?: string;
   // The story that this story extends, which creates it with `Parent.extend()`
   parentExportName?: string;
   filename?: string;
@@ -31,6 +32,10 @@ export function createRuntimeStoryVariableDeclaration(
   ]);
 
   const annotations = createASTObjectExpression([
+    // Core reads a story's name from the source. At runtime the spread below carries it.
+    ...(params.name === undefined
+      ? []
+      : [createASTProperty('name', { type: 'Literal', value: params.name })]),
     {
       type: 'SpreadElement',
       argument: {

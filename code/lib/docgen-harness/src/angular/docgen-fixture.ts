@@ -12,7 +12,7 @@ import { buildDocgenPayload } from '../../../../frameworks/angular-vite/src/docg
 const noopLogger = { warn: () => {}, debug: () => {} };
 
 export function createFixtureDocgen() {
-  const manager = new AngularComponentMetaManager(ts);
+  const manager = new AngularComponentMetaManager({ api: 'compiler', typescript: ts });
   return {
     getDocgenPayload: (entry: IndexEntry) => async (): Promise<AngularDocgenPayload | undefined> =>
       buildDocgenPayload(

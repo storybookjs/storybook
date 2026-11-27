@@ -7,7 +7,7 @@ import { pathToFileURL } from 'node:url';
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { formatExistingFile } from './formatter.ts';
+import { formatExistingFile, formatFileContent } from './formatter.ts';
 
 let root: string;
 
@@ -82,5 +82,26 @@ describe('formatExistingFile', () => {
     const file = createProject({ '.editorconfig': 'root = true\n[*]\nindent_size = 2\n' });
 
     await expect(formatExistingFile(file, edited)).resolves.toBe(edited);
+  });
+});
+
+describe('formatFileContent', () => {
+  afterEach(() => {
+    rmSync(root, { recursive: true, force: true });
+  });
+
+  it('prefers the Prettier of the project over the one next to Storybook', async () => {
+    const file = createProject({ '.prettierrc': '{}' });
+    const stub = join(root, 'node_modules', 'project-prettier');
+    mkdirSync(stub);
+    writeFileSync(join(stub, 'package.json'), '{ "name": "prettier", "main": "index.cjs" }');
+    writeFileSync(
+      join(stub, 'index.cjs'),
+      "module.exports = { resolveConfig: async () => ({ semi: false }), format: async (code) => 'project:' + code };\n"
+    );
+    rmSync(join(root, 'node_modules', 'prettier'));
+    symlinkSync(stub, join(root, 'node_modules', 'prettier'));
+
+    await expect(formatFileContent(file, edited)).resolves.toBe(`project:${edited}`);
   });
 });

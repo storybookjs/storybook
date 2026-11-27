@@ -7,6 +7,7 @@ import { describe, expect, it } from 'vitest';
 
 const DIST = join(import.meta.dirname, '../../dist');
 const CREATE_JS = join(DIST, 'theming/create.js');
+const EMOTION_JS = join(DIST, 'theming/emotion.js');
 const CREATE_DTS = join(DIST, 'theming/create.d.ts');
 const EMOTION_DTS = join(DIST, 'theming/emotion.d.ts');
 const CONSUMER_FIXTURE = join(import.meta.dirname, '__testfixtures__/typescript-consumer.ts');
@@ -18,7 +19,7 @@ const REPOSITORY_ROOT = join(import.meta.dirname, '../../../..');
 const compileTimeoutMs = 90_000;
 
 // A dev compile writes the JS bundle and skips declarations. CI builds both before the suite.
-const JS_BUILT = existsSync(CREATE_JS);
+const JS_BUILT = existsSync(CREATE_JS) && existsSync(EMOTION_JS);
 const DTS_BUILT = existsSync(CREATE_DTS) && existsSync(EMOTION_DTS);
 
 const REACT_OR_EMOTION = /^(react|react-dom)(\/|$)|@emotion\//;
@@ -80,7 +81,60 @@ describe('published theming entries', () => {
     expect(DTS_BUILT).toBe(true);
   });
 
-  it.runIf(JS_BUILT)('keeps storybook/theming free of React and Emotion', () => {
+  it.runIf(JS_BUILT).each([false, true])(
+    'preserves the legacy browser theming runtime with the same Emotion instance (source: %s)',
+    (source) => {
+      execFileSync(
+        process.execPath,
+        [
+          '--conditions=browser',
+          ...(source ? ['--conditions=code'] : []),
+          '--input-type=module',
+          '--eval',
+          `
+          import assert from 'node:assert/strict';
+          import * as legacy from 'storybook/theming';
+          import * as emotion from 'storybook/theming/emotion';
+
+          assert.strictEqual(legacy, emotion);
+          assert.equal(typeof legacy.css, 'function');
+          assert.equal(typeof legacy.styled, 'function');
+          assert.equal(typeof legacy.jsx, 'function');
+          `,
+        ],
+        { cwd: join(import.meta.dirname, '../..'), stdio: 'pipe' }
+      );
+    }
+  );
+
+  it.runIf(JS_BUILT)('keeps the default Node theming runtime free of React and Emotion', () => {
+    execFileSync(
+      process.execPath,
+      [
+        '--input-type=module',
+        '--eval',
+        `
+          import assert from 'node:assert/strict';
+          import { registerHooks } from 'node:module';
+
+          registerHooks({
+            resolve(specifier, context, nextResolve) {
+              assert.doesNotMatch(specifier, ${REACT_OR_EMOTION});
+              return nextResolve(specifier, context);
+            }
+          });
+
+          const legacy = await import('storybook/theming');
+          const create = await import('storybook/theming/create');
+          assert.strictEqual(legacy, create);
+          assert.equal(legacy.create({ base: 'light' }).base, 'light');
+        `,
+      ],
+      { cwd: join(import.meta.dirname, '../..'), stdio: 'pipe' }
+    );
+  });
+
+  it.runIf(JS_BUILT)('keeps storybook/theming/create free of React and Emotion', () => {
     const source = readFileSync(CREATE_JS, 'utf8');
     const exported = [...source.matchAll(/export\s*\{([^}]+)\}/g)].flatMap((match) =>
       match[1]

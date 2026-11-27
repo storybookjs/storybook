@@ -5,6 +5,7 @@ import {
 } from 'storybook/internal/common';
 import type { Options } from 'storybook/internal/types';
 
+import { REACT_DOCGEN_TYPESCRIPT_APIS } from './docgen-typescript-apis.ts';
 import type { ReactDocgenConfig } from './componentManifest/reactDocgen/utils.ts';
 
 /**
@@ -16,7 +17,11 @@ import type { ReactDocgenConfig } from './componentManifest/reactDocgen/utils.ts
 export const REACT_BUILDER_DOCGEN_PACKAGES = {
   'react-docgen': '^8.0.2',
   'react-docgen-typescript': '^2.2.2',
-  '@joshwooding/vite-plugin-react-docgen-typescript': '^0.7.0 || ^0.8.0 || ^0.9.0',
+  // TEMPORARY(ts-7.1): 0.7 only. 0.9 accepts TypeScript `>=7.1.0-0`; npm resolves optional peers when
+  // it checks for conflicts, picks a 7.1 prerelease, and fails to install a project without its own
+  // `typescript`. Once TypeScript 7.1.0 is stable, allow 0.8 and 0.9 again and drop `@^0.7.0` from the
+  // docs and MIGRATION.md.
+  '@joshwooding/vite-plugin-react-docgen-typescript': '^0.7.0',
   '@storybook/react-docgen-typescript-plugin': '1.0.6--canary.9.0c3f3b7.0',
 } as const;
 
@@ -72,7 +77,7 @@ export async function prepareReactBuilderDocgen({
   builder: 'vite' | 'webpack';
   /** Resolve from the framework package, which declares the packages as optional peers. */
   resolve: (specifier: string) => string;
-  options: Pick<Options, 'configDir'>;
+  options: Pick<Options, 'configDir' | 'presets'>;
 }): Promise<Exclude<ReactDocgenConfig, false> | undefined> {
   // react-docgen-typescript runs the TypeScript compiler API, so it falls back to react-docgen
   // without a usable `typescript`.
@@ -95,6 +100,7 @@ export async function prepareReactBuilderDocgen({
       mode !== reactDocgen
         ? '`react-docgen-typescript` needs the TypeScript compiler API, which your `typescript` package does not have, so builder docgen uses `react-docgen` instead.'
         : undefined,
+    apis: REACT_DOCGEN_TYPESCRIPT_APIS,
   });
   return missing.length > 0 ? undefined : mode;
 }

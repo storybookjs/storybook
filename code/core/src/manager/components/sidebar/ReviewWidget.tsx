@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, type SyntheticEvent } from 'react';
+import React, { type ReactNode, type SyntheticEvent, useMemo, useRef } from 'react';
 
 import { ActionList, Card } from 'storybook/internal/components';
 
@@ -72,12 +72,6 @@ export const ReviewWidget = () => {
   const storyCount = useActiveReviewStoryCount();
   const reviewTitle = useActiveReviewTitle();
 
-  const regionRef = useRef<HTMLElement>(null);
-  const { landmarkProps } = useLandmark(
-    { role: 'region', 'aria-labelledby': HEADING_ID },
-    regionRef
-  );
-
   if (!api.getIsNavShown()) {
     return null;
   }
@@ -100,7 +94,7 @@ export const ReviewWidget = () => {
   // The dismiss button is rendered last (and pinned to the top-right corner) so
   // the review action comes before it in the tab order.
   return (
-    <Region ref={regionRef} {...landmarkProps}>
+    <LandmarkRegion>
       <Card color="agentic" outlineAnimation="spin" id="storybook-review-widget">
         <ActionList as="div">
           <ActionList.Item as="div">
@@ -135,8 +129,23 @@ export const ReviewWidget = () => {
           <DismissIcon />
         </DismissButton>
       </Card>
-    </Region>
+    </LandmarkRegion>
   );
 };
+
+/** Mounted only while the widget renders, so its landmark never outlives the region element. */
+function LandmarkRegion({ children }: { children: ReactNode }): React.ReactElement {
+  const regionRef = useRef<HTMLElement>(null);
+  const { landmarkProps } = useLandmark(
+    { role: 'region', 'aria-labelledby': HEADING_ID },
+    regionRef
+  );
+
+  return (
+    <Region ref={regionRef} {...landmarkProps}>
+      {children}
+    </Region>
+  );
+}
 
 export default ReviewWidget;

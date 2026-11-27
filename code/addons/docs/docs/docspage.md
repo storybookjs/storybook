@@ -45,7 +45,7 @@ export default {
 };
 ```
 
-If you're coming from the `storiesOf` format, there's [a codemod that adds it for you](https://github.com/storybookjs/storybook/blob/next/code/lib/codemod/README.md#add-component-parameters).
+If you're coming from the `storiesOf` format, there's [a codemod that adds it for you](https://github.com/storybookjs/storybook/blob/v10.0.0/code/lib/codemod/README.md#add-component-parameters).
 
 ## Replacing DocsPage
 

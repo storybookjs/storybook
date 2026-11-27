@@ -69,6 +69,14 @@ type BaseFix<ResultType = any> = {
   /** Whether the automigration is selected by default when the user is prompted. */
   defaultSelected?: boolean;
   link?: string;
+  /**
+   * Warning logged once when the user declines this fix at the prompt or leaves it unselected in
+   * the multi-project prompt. A function receives the project's package manager, so the warning
+   * can carry a package-manager-specific command. A fix that cancels itself from `run` logs its
+   * own guidance instead, so no skip warning is printed and the doctor still reports its
+   * deprecation (see `getWarnedFixIds`).
+   */
+  skipWarning?: string | ((packageManager: JsPackageManager) => string);
 };
 
 type PromptType<ResultType = any, T = Prompt> =
@@ -170,6 +178,22 @@ export enum FixStatus {
   SUCCEEDED = 'succeeded',
   FAILED = 'failed',
 }
+
+/**
+ * The fix ids whose `skipWarning` was actually printed this run: fixes the user declined at the
+ * prompt or left unselected in the multi-project prompt. A fix that cancelled itself from `run` is
+ * skipped without a warning, so it is not warned and the doctor still reports its deprecation. A
+ * dry run printed no warning, so it returns `undefined` and the doctor owns the deprecation.
+ */
+export const getWarnedFixIds = (
+  fixResults: Record<FixId, FixStatus>,
+  { cancelledFixIds = [], dryRun }: { cancelledFixIds?: FixId[]; dryRun?: boolean } = {}
+): FixId[] | undefined =>
+  dryRun
+    ? undefined
+    : Object.entries(fixResults)
+        .filter(([id, status]) => status === FixStatus.SKIPPED && !cancelledFixIds.includes(id))
+        .map(([id]) => id);
 
 export type FixSummary = {
   skipped: FixId[];

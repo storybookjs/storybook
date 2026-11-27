@@ -1,8 +1,6 @@
 import type { Channel } from 'storybook/internal/channels';
 import { STORY_HOT_UPDATED, STORY_RENDER_PHASE_CHANGED } from 'storybook/internal/core-events';
 
-import { global } from '@storybook/global';
-
 const FREEZE_STYLE_ID = 'storybook-freeze-after-finished';
 const PRE_FREEZE_STYLE_ID = 'storybook-freeze-end-frame-preload';
 
@@ -285,8 +283,8 @@ export const setupStoryFreezer = (
   channel: Pick<Channel, 'on'>,
   options: StoryFreezerOptions = {}
 ) => {
-  const windowRef = global.window;
-  const documentRef = global.document;
+  const windowRef = globalThis.window;
+  const documentRef = globalThis.document;
   if (!windowRef || !documentRef) {
     return false;
   }

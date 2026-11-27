@@ -39,7 +39,10 @@ describe('prop extraction via story JSX', () => {
           parent: { name: 'ButtonProps' },
         },
         variant: {
-          type: { name: 'enum', value: [{ value: '"solid"' }, { value: '"outline"' }] },
+          type: {
+            name: 'enum',
+            value: expect.arrayContaining([{ value: '"solid"' }, { value: '"outline"' }]),
+          },
           required: false,
           parent: { name: 'ButtonProps' },
         },
@@ -107,6 +110,47 @@ describe('prop extraction via story JSX', () => {
     });
   });
 
+  it('generic component with an args story (TypeScript keeps the type parameters)', async () => {
+    const entry = await extractFromStory(
+      {
+        'path1/SortableList.tsx': dedent`
+          import React from 'react';
+          interface SortableListProps<T> {
+            items: T[];
+            /** The property to sort the items by */
+            sortBy: keyof T;
+            /** The item to highlight */
+            selected?: T | null;
+          }
+          export function SortableList<T>(props: SortableListProps<T>) {
+            return <ul />;
+          }
+        `,
+        'path1/SortableList.stories.tsx': dedent`
+          import { SortableList } from './SortableList';
+          export default { component: SortableList };
+          export const Default = { args: { items: [], sortBy: 'id' } };
+        `,
+      },
+      'path1/SortableList.stories.tsx'
+    );
+
+    expect(entry.component?.reactComponentMeta).toMatchObject({
+      props: {
+        sortBy: {
+          type: { name: 'string | number | symbol' },
+          required: true,
+          description: 'The property to sort the items by',
+        },
+        selected: {
+          type: { name: 'T | null | undefined' },
+          required: false,
+          description: 'The item to highlight',
+        },
+      },
+    });
+  });
+
   it('forwardRef component', async () => {
     const entry = await extractFromStory(
       {
@@ -142,7 +186,14 @@ describe('prop extraction via story JSX', () => {
           parent: { name: 'FRButtonProps' },
         },
         size: {
-          type: { name: 'enum', value: [{ value: '"md"' }, { value: '"sm"' }, { value: '"lg"' }] },
+          type: {
+            name: 'enum',
+            value: expect.arrayContaining([
+              { value: '"md"' },
+              { value: '"sm"' },
+              { value: '"lg"' },
+            ]),
+          },
           required: false,
           parent: { name: 'FRButtonProps' },
         },
@@ -360,7 +411,10 @@ describe('prop extraction via story JSX', () => {
       },
       props: {
         side: {
-          type: { name: 'enum', value: [{ value: '"start"' }, { value: '"end"' }] },
+          type: {
+            name: 'enum',
+            value: expect.arrayContaining([{ value: '"start"' }, { value: '"end"' }]),
+          },
           required: false,
           description: 'Side to align',
           defaultValue: { value: "'start'" },

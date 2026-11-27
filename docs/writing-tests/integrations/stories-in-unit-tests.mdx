@@ -2,7 +2,7 @@
 title: Stories in unit tests
 sidebar:
   title: Unit tests
-  order: 3
+  order: 2
 ---
 
 Teams test a variety of UI characteristics using different tools. Each tool requires you to replicate the same component state over and over. That’s a maintenance headache. Ideally, you’d set up your tests similarly and reuse that across tools.
@@ -20,6 +20,14 @@ Storybook provides a [`composeStories`](../../api/portable-stories/portable-stor
 <CodeSnippets path="component-test-with-testing-library.md" />
 
 These examples use Testing Library's `screen` queries because the composed stories run inside your unit test renderer. In a story's `play` function, prefer the provided `canvas` queries so interactions stay scoped to the rendered story.
+
+<Callout variant="warning">
+
+In test files that contain stories, import `userEvent` from `storybook/test` rather than `@testing-library/user-event`. Storybook uses its own copy of `user-event` when running stories, so importing `@testing-library/user-event` can cause conflicts between both copies.
+
+If you see that components don't receive click or keyboard events in a story, it could be because you imported from `@testing-library/user-event`.
+
+</Callout>
 
 <Callout variant="warning">
 

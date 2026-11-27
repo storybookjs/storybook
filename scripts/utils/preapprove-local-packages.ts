@@ -7,20 +7,10 @@ import yml from 'yaml';
 import { STORYBOOK_PACKAGE_PATTERNS } from '../../code/core/src/common/js-package-manager/util.ts';
 
 /**
- * Packages served by the local Verdaccio registry. They are published seconds before
- * they are installed, so they can never satisfy an age gate on their own.
- */
-export const LOCALLY_PUBLISHED_PACKAGE_PATTERNS = [
-  ...STORYBOOK_PACKAGE_PATTERNS,
-  'create-storybook',
-  'sb',
-  'vite-plugin-storybook-nextjs',
-];
-
-/**
  * Let the locally published Storybook packages past the age gate while keeping the gate
  * itself in force, so third-party dependencies resolved through Verdaccio are still
- * quarantined.
+ * quarantined. The local registry publishes them seconds before they are installed, so they
+ * can never satisfy an age gate on their own.
  *
  * Merges with whatever is already allowed, so a template that names its own prerelease
  * packages does not lose them. `extraPatterns` carries the template's `minAgeGateExemptions`
@@ -45,7 +35,7 @@ export async function preapproveLocallyPublishedPackages(
     : [];
 
   config.npmPreapprovedPackages = Array.from(
-    new Set([...existing, ...LOCALLY_PUBLISHED_PACKAGE_PATTERNS, ...extraPatterns])
+    new Set([...existing, ...STORYBOOK_PACKAGE_PATTERNS, ...extraPatterns])
   );
 
   await writeFile(configPath, yml.stringify(config));

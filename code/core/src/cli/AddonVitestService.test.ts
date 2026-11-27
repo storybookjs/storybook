@@ -4,14 +4,16 @@ import os from 'node:os';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { JsPackageManager } from 'storybook/internal/common';
-import { getProjectRoot } from 'storybook/internal/common';
+import { MIN_SUPPORTED_NODE_VERSIONS, getProjectRoot } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
 
 import * as find from 'empathic/find';
+import { intersects } from 'semver';
 // eslint-disable-next-line depend/ban-dependencies
 import type { ResultPromise } from 'execa';
 
 import { SupportedBuilder, SupportedFramework } from '../types/index.ts';
+import { LATEST_VITEST_TYPES_NODE_PEER } from './AddonVitestService.constants.ts';
 import { AddonVitestService, canInstallLatestVitest } from './AddonVitestService.ts';
 
 vi.mock('node:fs/promises', { spy: true });
@@ -203,6 +205,48 @@ describe('AddonVitestService', () => {
 
       expect(deps).toContain('vitest@latest');
     });
+
+    it('adds @types/node pinned to the lowest supported Node major for TypeScript projects', async () => {
+      vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({ typescript: '^5' });
+
+      const deps = await service.collectDependencies();
+
+      // The generated Vitest config uses `node:path` and `import.meta.dirname`
+      const typesNode = deps.filter((d) => d.startsWith('@types/node'));
+      expect(typesNode).toEqual([expect.stringMatching(/^@types\/node@\^\d+$/)]);
+      expect(typesNode[0]).toBe(
+        `@types/node@^${Math.min(...MIN_SUPPORTED_NODE_VERSIONS.map((v) => v.major))}`
+      );
+      // @types/node is versioned independently of Vitest
+      const [related] = vi.mocked(mockPackageManager.applyVersionToRelatedPackages).mock.calls[0];
+      expect(related).not.toContain('@types/node');
+    });
+
+    it('keeps the @types/node range it adds installable alongside the latest Vitest', () => {
+      const minNodeMajor = Math.min(...MIN_SUPPORTED_NODE_VERSIONS.map((v) => v.major));
+
+      expect(intersects(`^${minNodeMajor}`, LATEST_VITEST_TYPES_NODE_PEER)).toBe(true);
+    });
+
+    it('does not add @types/node if the project is not a TypeScript project', async () => {
+      const deps = await service.collectDependencies();
+
+      expect(deps.some((d) => d.startsWith('@types/node'))).toBe(false);
+    });
+
+    it.each(['^24', 'catalog:'])(
+      'does not add @types/node when the project already declares it (%s)',
+      async (typesNodeSpecifier) => {
+        vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({
+          typescript: '^5',
+          '@types/node': typesNodeSpecifier,
+        });
+
+        const deps = await service.collectDependencies();
+
+        expect(deps.some((d) => d.startsWith('@types/node'))).toBe(false);
+      }
+    );
   });
 
   describe('canInstallLatestVitest', () => {

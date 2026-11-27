@@ -2,9 +2,8 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 
 import type { JsPackageManager } from 'storybook/internal/common';
-import { getProjectRoot } from 'storybook/internal/common';
-import { CLI_COLORS } from 'storybook/internal/node-logger';
-import { logger, prompt } from 'storybook/internal/node-logger';
+import { MIN_SUPPORTED_NODE_VERSIONS, getProjectRoot } from 'storybook/internal/common';
+import { CLI_COLORS, logger, prompt } from 'storybook/internal/node-logger';
 import { ErrorCollector } from 'storybook/internal/telemetry';
 
 import * as find from 'empathic/find';
@@ -83,6 +82,7 @@ export class AddonVitestService {
    * - Base packages: vitest, @vitest/browser-playwright, playwright
    * - Next.js specific: @storybook/nextjs-vite
    * - Coverage reporter: @vitest/coverage-v8
+   * - Node.js type definitions: @types/node
    */
   async collectDependencies(): Promise<string[]> {
     const allDeps = this.packageManager.getAllDependencies();
@@ -116,6 +116,13 @@ export class AddonVitestService {
 
     if (!v8Version && !istanbulVersion) {
       dependencies.push('@vitest/coverage-v8');
+    }
+
+    // we use node:path in the vitest template.
+    // this can be removed the day the Vitest template no longer uses `node:path`.
+    if (allDeps.typescript && !allDeps['@types/node']) {
+      const minNodeMajor = Math.min(...MIN_SUPPORTED_NODE_VERSIONS.map((v) => v.major));
+      dependencies.push(`@types/node@^${minNodeMajor}`);
     }
 
     // Pin the vitest-related packages to the resolved vitest version, letting the package manager

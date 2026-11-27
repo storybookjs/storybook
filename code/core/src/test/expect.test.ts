@@ -74,3 +74,35 @@ it('supports the Jest aliases of the mock matchers', async () => {
   await expect(mock).nthReturnedWith(1, 2);
   await expect(mock).not.lastCalledWith(1);
 });
+
+it('supports the Vitest mock matchers that check order and a single call', async () => {
+  const first = fn();
+  const second = fn();
+  first(1);
+  second(2);
+
+  await expect(first).toHaveBeenCalledExactlyOnceWith(1);
+  await expect(first).not.toHaveBeenCalledExactlyOnceWith(2);
+  await expect(first).toHaveBeenCalledBefore(second);
+  await expect(second).toHaveBeenCalledAfter(first);
+  await expect(second).not.toHaveBeenCalledBefore(first);
+
+  first(1);
+
+  await expect(first).not.toHaveBeenCalledExactlyOnceWith(1);
+});
+
+it('supports the Vitest matchers for resolved values and runtime types', async () => {
+  const mock = fn(async (value: number) => value * 2);
+  await mock(1);
+  await mock(2);
+
+  await expect(mock).toHaveResolved();
+  await expect(mock).toHaveResolvedTimes(2);
+  await expect(mock).toHaveResolvedWith(2);
+  await expect(mock).not.toHaveResolvedWith(3);
+  await expect(mock).toHaveLastResolvedWith(4);
+  await expect(mock).toHaveNthResolvedWith(1, 2);
+  await expect('storybook').toBeTypeOf('string');
+  await expect(mock).not.toBeTypeOf('object');
+});

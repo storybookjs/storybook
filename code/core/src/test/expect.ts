@@ -19,6 +19,7 @@ import {
   getState,
   setState,
 } from '@vitest/expect';
+import type { MockInstance } from '@vitest/spy';
 import * as chai from 'chai';
 
 // The public types below avoid `ExpectStatic`, which extends Chai's global `Chai.ExpectStatic`: the
@@ -35,6 +36,25 @@ type Matchers<T> = Omit<JestAssertion<Promise<void>, T>, 'resolves' | 'rejects'>
 // We only expose the jest compatible API for now
 export interface Assertion<T> extends Matchers<T> {
   toHaveBeenCalledOnce(): Promise<void>;
+  toHaveBeenCalledExactlyOnceWith<E extends any[]>(...args: E): Promise<void>;
+  toHaveBeenCalledBefore(mock: MockInstance, failIfNoFirstInvocation?: boolean): Promise<void>;
+  toHaveBeenCalledAfter(mock: MockInstance, failIfNoFirstInvocation?: boolean): Promise<void>;
+  toHaveResolved(): Promise<void>;
+  toHaveResolvedTimes(times: number): Promise<void>;
+  toHaveResolvedWith<E>(value: E): Promise<void>;
+  toHaveLastResolvedWith<E>(value: E): Promise<void>;
+  toHaveNthResolvedWith<E>(nthCall: number, value: E): Promise<void>;
+  toBeTypeOf(
+    expected:
+      | 'bigint'
+      | 'boolean'
+      | 'function'
+      | 'number'
+      | 'object'
+      | 'string'
+      | 'symbol'
+      | 'undefined'
+  ): Promise<void>;
   toSatisfy<E>(matcher: (value: E) => boolean, message?: string): Promise<void>;
   resolves: Assertion<T>;
   rejects: Assertion<T>;

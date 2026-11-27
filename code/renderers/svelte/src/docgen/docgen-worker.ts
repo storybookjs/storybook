@@ -1,6 +1,10 @@
-import { createLazyDocgenMiddleware, loadTypeScriptCompilerApi } from 'storybook/internal/common';
+import {
+  createDocgenSummaryProvider,
+  createLazyDocgenMiddleware,
+  loadTypeScriptCompilerApi,
+} from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
-import type { DocgenMiddleware } from 'storybook/internal/types';
+import type { DocgenMiddleware, DocgenSummaryProvider } from 'storybook/internal/types';
 
 import { SVELTE_DOCGEN_STORY_FILE_TEST_REGEXP } from './story-file.ts';
 
@@ -31,4 +35,13 @@ export const createDocgenProvider = (): DocgenMiddleware =>
       }
     },
     extract: async (context, input) => context.buildDocgenPayload(input, context),
+  });
+
+export const createSummaryProvider = (): DocgenSummaryProvider =>
+  createDocgenSummaryProvider({
+    storyFileTest: SVELTE_DOCGEN_STORY_FILE_TEST_REGEXP,
+    summarize: async (input) => {
+      const { buildDocgenSummary } = await import('./component-docgen/build-docgen.ts');
+      return buildDocgenSummary(input);
+    },
   });

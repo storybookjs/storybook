@@ -73,31 +73,27 @@ async function createEngine(
     'docgen/component-docgen/component-meta/svelte-project-manager.ts'
   );
 
-  let extract: (componentPath: string, documentationSource: string) => Docgen;
+  let extract: (componentPath: string) => Docgen;
   let reportSave: (filePath: string) => void = () => {};
   if (options.engine === 'component-meta') {
     let componentMetaManager:
       | InstanceType<ComponentMetaModule['SvelteComponentMetaManager']>
       | undefined;
-    extract = (componentPath, documentationSource) => {
+    extract = (componentPath) => {
       // Created inside the cold pass: the docgen server creates it on its first request.
       componentMetaManager ??= new SvelteComponentMetaManager();
-      return componentMetaManager.generateDocgen(componentPath, {
-        server: true,
-        documentationSource,
-      });
+      return componentMetaManager.generateDocgen(componentPath, { server: true });
     };
     reportSave = (filePath) =>
       componentMetaManager?.onFilesChanged([{ filePath, type: 'changed' }]);
   } else {
     const cache = createDocgenCache();
-    extract = (componentPath, documentationSource) =>
-      generateDocgen(componentPath, cache, { server: true, documentationSource });
+    extract = (componentPath) => generateDocgen(componentPath, cache, { server: true });
   }
 
   let measuredPath = scenario.targetPaths[0];
   const extractOne = (componentPath: string): number => {
-    const docgen = extract(componentPath, fs.readFileSync(componentPath, 'utf8'));
+    const docgen = extract(componentPath);
     if (docgen.props.length === 0) {
       throw new Error(`svelte2tsx docgen returned zero props for ${componentPath}`);
     }

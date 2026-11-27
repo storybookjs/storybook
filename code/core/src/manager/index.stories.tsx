@@ -20,6 +20,7 @@ import { color } from 'storybook/theming/emotion';
 
 import preview from '../../../.storybook/preview.tsx';
 import { focusableUIElements } from '../manager-api/modules/layout.ts';
+import { mockReducedMotion } from '../shared/utils/is-reduced-motion-enabled.story-helpers.ts';
 import './components/review/review-service-story-helpers.ts';
 import { Main } from './index.tsx';
 import Provider from './provider.ts';
@@ -228,18 +229,19 @@ export const FocusRegionShortcuts = meta.story({
   },
 });
 
+const pressInPreview = (iframe: HTMLElement, shiftKey: boolean) => {
+  iframe.focus();
+  channel.emit(PREVIEW_KEYDOWN, {
+    event: { key: 'F6', code: 'F6', shiftKey, altKey: false, ctrlKey: false, metaKey: false },
+  });
+};
+
 export const LandmarkNavigationFromPreview = meta.story({
   play: async ({ canvasElement, step }) => {
     const iframe = canvasElement.querySelector('#storybook-preview-iframe') as HTMLElement;
-    const pressInPreview = (shiftKey: boolean) => {
-      iframe.focus();
-      channel.emit(PREVIEW_KEYDOWN, {
-        event: { key: 'F6', code: 'F6', shiftKey, altKey: false, ctrlKey: false, metaKey: false },
-      });
-    };
 
     await step('F6 moves to the landmark after the preview', async () => {
-      pressInPreview(false);
+      pressInPreview(iframe, false);
       const panel = canvasElement.querySelector(`#${focusableUIElements.addonPanel}`)!;
       await waitFor(() => expect(panel).toHaveFocus());
     });
@@ -252,10 +254,22 @@ export const LandmarkNavigationFromPreview = meta.story({
     });
 
     await step('Shift+F6 moves to the landmark before the preview', async () => {
-      pressInPreview(true);
+      pressInPreview(iframe, true);
       const toolbar = canvasElement.querySelector('[aria-labelledby="sb-preview-toolbar-title"]');
       await waitFor(() => expect(toolbar).toHaveFocus());
     });
+  },
+});
+
+export const LandmarkNavigationWithReducedMotion = meta.story({
+  beforeEach: mockReducedMotion,
+  play: async ({ canvasElement }) => {
+    const iframe = canvasElement.querySelector('#storybook-preview-iframe') as HTMLElement;
+    pressInPreview(iframe, false);
+
+    const panel = canvasElement.querySelector(`#${focusableUIElements.addonPanel}`)!;
+    await waitFor(() => expect(panel).toHaveFocus());
+    expect(panel.getAnimations({ subtree: true })).toHaveLength(0);
   },
 });
 

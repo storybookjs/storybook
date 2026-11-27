@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 
 import { useTheme } from 'storybook/theming/emotion';
 
-import { useMediaQuery } from '../../hooks/useMedia.tsx';
+import { isReduceMotionEnabled } from '../../../shared/utils/is-reduced-motion-enabled.ts';
 
 function findLandmarkElement(element: EventTarget | null) {
   let currentElement = element instanceof Element ? element : null;
@@ -21,7 +21,6 @@ function findLandmarkElement(element: EventTarget | null) {
 
 export function useRegionFocusAnimation() {
   const theme = useTheme();
-  const reducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)');
   const currentAnimationRef = useRef<Animation | null>(null);
 
   const animateLandmark = (elementToAnimate: HTMLElement | null) => {
@@ -35,7 +34,7 @@ export function useRegionFocusAnimation() {
       currentAnimationRef.current = null;
     }
 
-    if (!reducedMotion) {
+    if (!isReduceMotionEnabled()) {
       const animation = elementToAnimate.animate(
         [{ border: `2px solid ${theme.color.primary}` }, { border: `2px solid transparent` }],
         {

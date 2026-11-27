@@ -4,6 +4,7 @@ import { action } from 'storybook/actions';
 import { expect, fn, screen, userEvent, waitFor, within } from 'storybook/test';
 
 import preview from '../../../../../.storybook/preview.tsx';
+import { mockReducedMotion } from '../../../shared/utils/is-reduced-motion-enabled.story-helpers.ts';
 import { Button } from '../Button/Button.tsx';
 import { Modal } from './Modal.tsx';
 
@@ -302,6 +303,23 @@ export const DismissalDisabled = meta.story({
     await waitFor(() =>
       expect(canvas.getByRole('button', { name: 'Open persistent modal' })).toHaveFocus()
     );
+  },
+});
+
+export const ReducedMotion = meta.story({
+  args: {
+    ariaLabel: 'Reduced motion modal',
+    // Longer than waitFor's timeout, so the modal only closes in time if the transition is skipped.
+    transitionDuration: 5000,
+    children: <SampleModalContent />,
+  },
+  beforeEach: mockReducedMotion,
+  render: (args) => <ModalWithTrigger {...args} triggerText="Open modal" />,
+  play: async ({ canvas }) => {
+    await userEvent.click(canvas.getByRole('button', { name: 'Open modal' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Reduced motion modal' });
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(dialog).not.toBeInTheDocument());
   },
 });
 

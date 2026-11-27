@@ -19,7 +19,7 @@ import { useOverlayTriggerState } from '@react-stately/overlays';
 import type { KeyboardEvent as RAKeyboardEvent } from '@react-types/shared';
 import { useTransitionState } from 'react-transition-state';
 
-import { useMediaQuery } from '../../../manager/hooks/useMedia.tsx';
+import { isReduceMotionEnabled } from '../../../shared/utils/is-reduced-motion-enabled.ts';
 import * as Components from './Modal.styled.tsx';
 
 interface ModalProps extends HTMLAttributes<HTMLDivElement> {
@@ -86,9 +86,8 @@ function BaseModal({
 }: ModalProps) {
   const overlayRef = useRef<HTMLDivElement>(null);
 
-  const reducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)');
   const [{ status, isMounted }, toggle] = useTransitionState({
-    timeout: reducedMotion ? 0 : transitionDuration,
+    timeout: isReduceMotionEnabled() ? 0 : transitionDuration,
     mountOnEnter: true,
     unmountOnExit: true,
   });

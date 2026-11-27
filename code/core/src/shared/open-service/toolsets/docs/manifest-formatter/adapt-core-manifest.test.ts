@@ -52,6 +52,21 @@ describe('adaptCoreComponent', () => {
     expect(result.path).toBe('src/Button.tsx');
   });
 
+  it('drops docsDescription, which only the Docs Description block reads', () => {
+    const core: CoreDocgenComponent = {
+      id: 'button',
+      name: 'Button',
+      description: 'A button',
+      docsDescription: 'A button\n\n```html\n<app-button />\n```',
+      jsDocTags: { example: ['```html\n<app-button />\n```'] },
+    };
+
+    const result = adaptCoreComponent(core);
+
+    expect('docsDescription' in result).toBe(false);
+    expect(result.description).toBe('A button');
+  });
+
   it('maps the story-docs record and attached docs into the internal shape', () => {
     const core: CoreDocgenComponent = {
       id: 'button',

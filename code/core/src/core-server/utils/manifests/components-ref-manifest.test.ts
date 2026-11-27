@@ -167,6 +167,22 @@ describe('components-ref-manifest', () => {
     expect(Object.keys(merged.stories)).toEqual(['button--primary', 'button--secondary']);
   });
 
+  it('leaves docsDescription out of the merged manifest entry', () => {
+    const docgen: DocgenPayload = {
+      id: 'button',
+      name: 'Button',
+      path: './button.stories.tsx',
+      jsDocTags: { example: ['<app-button />'] },
+      description: 'A button',
+      docsDescription: 'A button\n\n```\n<app-button />\n```',
+    };
+
+    const merged = mergeManifestPayloads(docgen);
+
+    expect('docsDescription' in merged).toBe(false);
+    expect(merged.description).toBe('A button');
+  });
+
   it('carries a story warning into the manifest alongside its snippet', () => {
     const docgen: DocgenPayload = {
       id: 'button',

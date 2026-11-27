@@ -4,16 +4,14 @@ import os from 'node:os';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { JsPackageManager } from 'storybook/internal/common';
-import { MIN_SUPPORTED_NODE_VERSIONS, getProjectRoot } from 'storybook/internal/common';
+import { MIN_SUPPORTED_TYPES_NODE_RANGE, getProjectRoot } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
 
 import * as find from 'empathic/find';
-import { intersects } from 'semver';
 // eslint-disable-next-line depend/ban-dependencies
 import type { ResultPromise } from 'execa';
 
 import { SupportedBuilder, SupportedFramework } from '../types/index.ts';
-import { LATEST_VITEST_TYPES_NODE_PEER } from './AddonVitestService.constants.ts';
 import { AddonVitestService, canInstallLatestVitest } from './AddonVitestService.ts';
 
 vi.mock('node:fs/promises', { spy: true });
@@ -212,20 +210,18 @@ describe('AddonVitestService', () => {
       const deps = await service.collectDependencies();
 
       // The generated Vitest config uses `node:path` and `import.meta.dirname`
-      const typesNode = deps.filter((d) => d.startsWith('@types/node'));
-      expect(typesNode).toEqual([expect.stringMatching(/^@types\/node@\^\d+$/)]);
-      expect(typesNode[0]).toBe(
-        `@types/node@^${Math.min(...MIN_SUPPORTED_NODE_VERSIONS.map((v) => v.major))}`
-      );
-      // @types/node is versioned independently of Vitest
-      const [related] = vi.mocked(mockPackageManager.applyVersionToRelatedPackages).mock.calls[0];
-      expect(related).not.toContain('@types/node');
+      expect(deps.filter((d) => d.startsWith('@types/node'))).toEqual([
+        `@types/node@${MIN_SUPPORTED_TYPES_NODE_RANGE}`,
+      ]);
     });
 
-    it('keeps the @types/node range it adds installable alongside the latest Vitest', () => {
-      const minNodeMajor = Math.min(...MIN_SUPPORTED_NODE_VERSIONS.map((v) => v.major));
+    it('adds an @types/node range that keeps the latest Vitest installable', async () => {
+      vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({ typescript: '^5' });
 
-      expect(intersects(`^${minNodeMajor}`, LATEST_VITEST_TYPES_NODE_PEER)).toBe(true);
+      const deps = await service.collectDependencies();
+
+      const range = deps.find((d) => d.startsWith('@types/node@'))!.slice('@types/node@'.length);
+      expect(canInstallLatestVitest({ '@types/node': range })).toBe(true);
     });
 
     it('does not add @types/node if the project is not a TypeScript project', async () => {

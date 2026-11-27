@@ -2,7 +2,7 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 
 import type { JsPackageManager } from 'storybook/internal/common';
-import { MIN_SUPPORTED_NODE_VERSIONS, getProjectRoot } from 'storybook/internal/common';
+import { MIN_SUPPORTED_TYPES_NODE_RANGE, getProjectRoot } from 'storybook/internal/common';
 import { CLI_COLORS, logger, prompt } from 'storybook/internal/node-logger';
 import { ErrorCollector } from 'storybook/internal/telemetry';
 
@@ -121,13 +121,12 @@ export class AddonVitestService {
     // The Vitest config template uses `node:path` and `import.meta.dirname`, both typed by
     // `@types/node`. Remove this once the template no longer relies on Node.js APIs.
     if (allDeps.typescript && !allDeps['@types/node']) {
-      const minNodeMajor = Math.min(...MIN_SUPPORTED_NODE_VERSIONS.map((v) => v.major));
-      dependencies.push(`@types/node@^${minNodeMajor}`);
+      dependencies.push(`@types/node@${MIN_SUPPORTED_TYPES_NODE_RANGE}`);
     }
 
     // Pin the vitest-related packages to the resolved vitest version, letting the package manager
-    // apply its own convention (e.g. registering pnpm catalog entries). Playwright is versioned
-    // independently, so it is left untouched.
+    // apply its own convention (e.g. registering pnpm catalog entries). Playwright and
+    // `@types/node` are versioned independently, so they are left untouched.
     const related = dependencies.filter((pkg) => pkg.includes('vitest'));
     const rest = dependencies.filter((pkg) => !pkg.includes('vitest'));
     return [

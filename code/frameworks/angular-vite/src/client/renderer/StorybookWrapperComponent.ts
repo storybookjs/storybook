@@ -2,12 +2,12 @@ import type { AfterViewInit, ElementRef, OnDestroy, Type } from '@angular/core';
 import {
   ChangeDetectorRef,
   Component,
-  Inject,
   NgModule,
   ViewChild,
   ViewContainerRef,
+  inject,
 } from '@angular/core';
-import type { Subject, Subscription } from 'rxjs';
+import type { Subscription } from 'rxjs';
 import { map, skip } from 'rxjs/operators';
 
 import type { ICollection, NgModuleMetadata } from '../types.ts';
@@ -86,10 +86,9 @@ export const createStorybookWrapperComponent = ({
     // Used in case of a component without selector
     storyComponent = storyComponent ?? '';
 
-    constructor(
-      @Inject(STORY_PROPS) private storyProps$: Subject<ICollection | undefined>,
-      @Inject(ChangeDetectorRef) private changeDetectorRef: ChangeDetectorRef
-    ) {}
+    private storyProps$ = inject(STORY_PROPS);
+
+    private changeDetectorRef = inject(ChangeDetectorRef);
 
     ngOnInit(): void {
       // Subscribes to the observable storyProps$ to keep these properties up to date

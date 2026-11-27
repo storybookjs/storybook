@@ -15,11 +15,12 @@ import { getChannel, setChannel } from 'storybook/internal/channels';
 
 import type { API, AddonStore } from 'storybook/manager-api';
 import { addons } from 'storybook/manager-api';
-import { expect, screen, spyOn, waitFor, within } from 'storybook/test';
+import { expect, screen, waitFor, within } from 'storybook/test';
 import { color } from 'storybook/theming/emotion';
 
 import preview from '../../../.storybook/preview.tsx';
 import { focusableUIElements } from '../manager-api/modules/layout.ts';
+import { mockReducedMotion } from '../shared/utils/is-reduced-motion-enabled.story-helpers.ts';
 import './components/review/review-service-story-helpers.ts';
 import { Main } from './index.tsx';
 import Provider from './provider.ts';
@@ -260,16 +261,7 @@ export const LandmarkNavigationFromPreview = meta.story({
 });
 
 export const LandmarkNavigationWithReducedMotion = meta.story({
-  beforeEach: () => {
-    const matchMedia = window.matchMedia.bind(window);
-    const spy = spyOn(window, 'matchMedia').mockImplementation((query) => {
-      const list = matchMedia(query);
-      return query === '(prefers-reduced-motion: reduce)'
-        ? Object.defineProperty(list, 'matches', { value: true })
-        : list;
-    });
-    return () => spy.mockRestore();
-  },
+  beforeEach: mockReducedMotion,
   play: async ({ canvasElement }) => {
     const iframe = canvasElement.querySelector('#storybook-preview-iframe') as HTMLElement;
     iframe.focus();

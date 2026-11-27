@@ -1,9 +1,10 @@
 import React, { forwardRef, useRef, useState } from 'react';
 
 import { action } from 'storybook/actions';
-import { expect, fn, screen, spyOn, userEvent, waitFor, within } from 'storybook/test';
+import { expect, fn, screen, userEvent, waitFor, within } from 'storybook/test';
 
 import preview from '../../../../../.storybook/preview.tsx';
+import { mockReducedMotion } from '../../../shared/utils/is-reduced-motion-enabled.story-helpers.ts';
 import { Button } from '../Button/Button.tsx';
 import { Modal } from './Modal.tsx';
 
@@ -312,16 +313,7 @@ export const ReducedMotion = meta.story({
     transitionDuration: 5000,
     children: <SampleModalContent />,
   },
-  beforeEach: () => {
-    const matchMedia = window.matchMedia.bind(window);
-    const spy = spyOn(window, 'matchMedia').mockImplementation((query) => {
-      const list = matchMedia(query);
-      return query === '(prefers-reduced-motion: reduce)'
-        ? Object.defineProperty(list, 'matches', { value: true })
-        : list;
-    });
-    return () => spy.mockRestore();
-  },
+  beforeEach: mockReducedMotion,
   render: (args) => <ModalWithTrigger {...args} triggerText="Open modal" />,
   play: async ({ canvas }) => {
     await userEvent.click(canvas.getByRole('button', { name: 'Open modal' }));

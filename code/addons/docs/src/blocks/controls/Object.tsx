@@ -256,7 +256,9 @@ interface RawJsonEditorProps {
   parseError: string | null;
   onEdit: (raw: string) => void;
   onCommit: () => void;
-  focusOnMount: boolean;
+  /** Whether the draft was just seeded by "Set object" or "Set array" and is yet to take focus. */
+  isAwaitingSeedFocus: boolean;
+  onSeedFocused: () => void;
   readOnly: boolean;
   required?: boolean;
 }
@@ -268,7 +270,8 @@ const RawJsonEditor: FC<RawJsonEditorProps> = ({
   parseError,
   onEdit,
   onCommit,
-  focusOnMount,
+  isAwaitingSeedFocus,
+  onSeedFocused,
   readOnly,
   required,
 }) => {
@@ -276,11 +279,13 @@ const RawJsonEditor: FC<RawJsonEditorProps> = ({
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   useEffect(() => {
-    if (focusOnMount) {
+    if (isAwaitingSeedFocus) {
+      textareaRef.current?.focus();
       // Inside the brackets of the seeded `{}` or `[]`, where the first entry goes.
       textareaRef.current?.setSelectionRange(1, 1);
+      onSeedFocused();
     }
-  }, [focusOnMount]);
+  }, [isAwaitingSeedFocus, onSeedFocused]);
 
   return (
     <RawInputWrapper>
@@ -296,7 +301,6 @@ const RawJsonEditor: FC<RawJsonEditorProps> = ({
         onChange={(event) => onEdit(event.target.value)}
         onBlur={onCommit}
         placeholder="Edit JSON string..."
-        autoFocus={focusOnMount}
         valid={parseError ? 'error' : undefined}
         readOnly={readOnly}
         aria-required={required || undefined}
@@ -327,18 +331,21 @@ export const ObjectControl: FC<ObjectProps> = ({
   const readonly = !!argType?.table?.readonly;
   const isArray = argType?.type?.name === 'array';
 
-  const [forceVisible, setForceVisible] = useState(false);
-  const onForceVisible = useCallback(() => {
+  // Set by the "Set object" / "Set array" button, and cleared once the raw editor that opens on
+  // the seeded value has taken focus.
+  const [isAwaitingSeedFocus, setIsAwaitingSeedFocus] = useState(false);
+  const seedValue = useCallback(() => {
     onChange(isArray ? [] : {});
-    setForceVisible(true);
-  }, [isArray, onChange, setForceVisible]);
+    setIsAwaitingSeedFocus(true);
+  }, [isArray, onChange]);
+  const onSeedFocused = useCallback(() => setIsAwaitingSeedFocus(false), []);
 
   useEffect(() => {
-    if (!hadDataRef.current && hasData && showRaw && !forceVisible) {
+    if (!hadDataRef.current && hasData && showRaw && !isAwaitingSeedFocus) {
       setShowRaw(false);
     }
     hadDataRef.current = hasData;
-  }, [forceVisible, hasData, showRaw]);
+  }, [isAwaitingSeedFocus, hasData, showRaw]);
 
   // JSON.stringify returns undefined for values it cannot serialize, such as functions.
   const jsonString = useMemo(() => JSON.stringify(data ?? '', null, 2) ?? '', [data]);
@@ -350,7 +357,7 @@ export const ObjectControl: FC<ObjectProps> = ({
         ariaLabel={false}
         disabled={readonly}
         id={getControlSetterButtonId(name, storyId, controlsId)}
-        onClick={onForceVisible}
+        onClick={seedValue}
       >
         {isArray ? 'Set array' : 'Set object'}
       </Button>
@@ -365,7 +372,8 @@ export const ObjectControl: FC<ObjectProps> = ({
       parseError={jsonDraft.parseError}
       onEdit={jsonDraft.edit}
       onCommit={jsonDraft.commit}
-      focusOnMount={forceVisible}
+      isAwaitingSeedFocus={isAwaitingSeedFocus}
+      onSeedFocused={onSeedFocused}
       readOnly={readonly}
       required={required}
     />

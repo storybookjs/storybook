@@ -96,6 +96,27 @@ export const SetObject: Story = {
   },
 };
 
+/** The seeded value takes focus once: switching editors afterwards leaves focus on the button. */
+export const SetObjectThenSwitchEditors: Story = {
+  args: Undefined.args,
+  parameters: { chromatic: { disableSnapshot: true } },
+  play: async ({ canvas, userEvent }) => {
+    await userEvent.click(canvas.getByRole('button', { name: 'Set object' }));
+    await expect(await canvas.findByRole('textbox', { name: 'Edit object as JSON' })).toHaveFocus();
+
+    await userEvent.click(
+      canvas.getByRole('button', { name: 'Edit object with the object editor' })
+    );
+    const backToJson = canvas.getByRole('button', { name: 'Edit object as JSON' });
+    await userEvent.click(backToJson);
+
+    await expect(canvas.getByRole('textbox', { name: 'Edit object as JSON' })).not.toHaveFocus();
+    await expect(
+      canvas.getByRole('button', { name: 'Edit object with the object editor' })
+    ).toHaveFocus();
+  },
+};
+
 export const SetArray: Story = {
   args: UndefinedArray.args,
   play: async ({ canvas, args, userEvent }) => {

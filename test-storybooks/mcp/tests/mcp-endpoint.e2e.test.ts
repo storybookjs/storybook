@@ -1,4 +1,5 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
+import { readFile, writeFile } from 'node:fs/promises';
 import { x } from 'tinyexec';
 import {
 	createMCPRequestBody,
@@ -27,6 +28,16 @@ async function mcpRequest(method: string, params: any = {}, id: number = 1) {
 	}
 
 	return parseMCPResponse(response);
+}
+
+/** The story ids that a test-run report lists as passing, sorted. */
+function passingStories(report: string) {
+	const [, list = ''] = /## Passing Stories\n\n((?:- .+\n)+)/.exec(report) ?? [];
+	return list
+		.trim()
+		.split('\n')
+		.map((line) => line.slice(2))
+		.sort();
 }
 
 describe('MCP Endpoint E2E Tests', () => {
@@ -592,12 +603,13 @@ describe('MCP Endpoint E2E Tests', () => {
 				              "type": "string",
 				            },
 				          ],
-				          "description": "Test the changed stories, exactly as the stories changed tool lists them: new and modified stories, and the stories that depend on changed files. true for the uncommitted changes, or a git ref (a branch, tag or commit) for what this branch committed since it forked from that ref, plus the uncommitted changes. Combined with files or stories, only the stories that match both run.",
+				          "description": "Test the story files of the changed stories that the stories changed tool lists: new and modified stories, and the stories that depend on changed files. true for the uncommitted changes, or a git ref (a branch, tag or commit) for what this branch committed since it forked from that ref, plus the uncommitted changes. Combined with files or stories, only the stories that match both run.",
 				        },
 				        "files": {
 				          "description": "Story files to test: each entry selects the story files whose path contains it (case-insensitive), or that an absolute path or directory points to. Only story files match; to test the stories that depend on a changed component, use \`changed\`.",
 				          "items": {
 				            "minLength": 1,
+				            "pattern": "^(?!.*:\\d+(-\\d+)?$)",
 				            "type": "string",
 				          },
 				          "type": "array",
@@ -995,7 +1007,7 @@ describe('MCP Endpoint E2E Tests', () => {
 			expect(text).toContain('example-button--primary - color-contrast');
 		});
 
-		it('should run the story files that the files filters match', async () => {
+		it('should run every story of the story files that the files filters match', async () => {
 			const response = await mcpRequest('tools/call', {
 				name: 'test-run',
 				arguments: { files: ['components/Button.stories'] },
@@ -1003,9 +1015,16 @@ describe('MCP Endpoint E2E Tests', () => {
 
 			const text = response.result.content[0].text;
 			expect(response.result.isError).toBeFalsy();
-			expect(text).toContain('1 story file matches `components/Button.stories`');
-			expect(text).toContain('example-button--primary');
-			expect(text).not.toContain('page--logged-out');
+			expect(text).toContain(
+				'1 story file matches `components/Button.stories`: selected 5 stories.',
+			);
+			expect(passingStories(text)).toEqual([
+				'example-button--large',
+				'example-button--primary',
+				'example-button--secondary',
+				'example-button--small',
+				'example-button--with-a-11-y-violation',
+			]);
 		});
 
 		it('should fail when no story file matches the files filters', async () => {
@@ -1020,17 +1039,52 @@ describe('MCP Endpoint E2E Tests', () => {
 			);
 		});
 
-		it('should select the stories affected by the changed files', async () => {
-			const response = await mcpRequest('tools/call', {
-				name: 'test-run',
-				arguments: { changed: true },
-			});
+		it('should run every story of the story files that a changed file affects', async () => {
+			// Header.stories.ts and Page.stories.ts depend on this component, Button.stories.ts does not.
+			const component = new URL('../stories/components/Header.tsx', import.meta.url);
+			const original = await readFile(component, 'utf8');
+			try {
+				await writeFile(component, `${original}\n// test-run e2e\n`);
 
-			// What changed depends on the checkout, so this asserts the shape, not the selection.
-			expect(response.result.isError).toBeFalsy();
-			expect(response.result.content[0].text).toMatch(
-				/changed stor|No stories changed/,
-			);
+				// Change detection picks the edit up asynchronously, after the file watcher and a git diff.
+				await vi.waitFor(
+					async () => {
+						const changed = await mcpRequest('tools/call', {
+							name: 'stories-changed',
+							arguments: {},
+						});
+						expect(changed.result.content[0].text).toContain('`page--logged-in`');
+					},
+					{ timeout: 20_000, interval: 500 },
+				);
+
+				const changed = await mcpRequest('tools/call', {
+					name: 'test-run',
+					arguments: { changed: true },
+				});
+				expect(changed.result.isError).toBeFalsy();
+				// Other uncommitted changes in the checkout add stories to this run.
+				expect(passingStories(changed.result.content[0].text)).toEqual(
+					expect.arrayContaining([
+						'header--logged-in',
+						'header--logged-out',
+						'page--logged-in',
+						'page--logged-out',
+					]),
+				);
+
+				const changedPage = await mcpRequest('tools/call', {
+					name: 'test-run',
+					arguments: { changed: true, files: ['components/Page.stories'] },
+				});
+				expect(changedPage.result.isError).toBeFalsy();
+				expect(passingStories(changedPage.result.content[0].text)).toEqual([
+					'page--logged-in',
+					'page--logged-out',
+				]);
+			} finally {
+				await writeFile(component, original);
+			}
 		});
 
 		it('should return error for non-existent story', async () => {

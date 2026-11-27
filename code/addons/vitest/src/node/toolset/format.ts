@@ -313,7 +313,7 @@ function formatChangedConfigFiles(changed: TestRunSelection['changed']): string[
 function formatSelection(selection: TestRunSelection): string | undefined {
   const parts: string[] = [];
   if (selection.files) {
-    const { filters, storyFileCount } = selection.files;
+    const { filters, storyFileCount = 0 } = selection.files;
     parts.push(
       `${pluralize(storyFileCount, 'story file')} ${storyFileCount === 1 ? 'matches' : 'match'} ${filters.map((filter) => code(displayPath(filter))).join(', ')}`
     );

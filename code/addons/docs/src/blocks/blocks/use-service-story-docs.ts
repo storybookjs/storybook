@@ -44,7 +44,7 @@ export function useServiceStory<TSelected>(
   return useQuerySubscription(
     storyId,
     service.queries.storyDocs,
-    { id: componentId },
+    { id: componentId, scope: 'all' },
     boundSelector
   );
 }

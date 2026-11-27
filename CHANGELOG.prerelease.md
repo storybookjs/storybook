@@ -1,3 +1,29 @@
+## 11.0.0-rc.1
+
+- Addon Vitest: Run selected story files as Vitest runs test files - [#37777](https://github.com/storybookjs/storybook/pull/37777), thanks @kasperpeulen!
+- Angular: Bind inputs and outputs exposed through host directives - [#37650](https://github.com/storybookjs/storybook/pull/37650), thanks @valentinpalkovic!
+- Angular: Document inputs and outputs exposed through hostDirectives - [#36655](https://github.com/storybookjs/storybook/pull/36655), thanks @pennydesigns!
+- Builder-Vite: Explain story files that fail to parse - [#37515](https://github.com/storybookjs/storybook/pull/37515), thanks @shubham-cpp!
+- CLI: Enable nextjs-vite automigration by default and warn on opt-out - [#37789](https://github.com/storybookjs/storybook/pull/37789), thanks @obvious-autobuild!
+- CLI: Fix csf-factories automigration for React Native - [#37654](https://github.com/storybookjs/storybook/pull/37654), thanks @valentinpalkovic!
+- CLI: Handle a sandbox that blocks ports or localhost - [#37433](https://github.com/storybookjs/storybook/pull/37433), thanks @kasperpeulen!
+- CLI: Make upgrade and init work under a package age gate - [#37792](https://github.com/storybookjs/storybook/pull/37792), thanks @kasperpeulen!
+- CLI: Name the Storybooks an upgrade skips, and why - [#37440](https://github.com/storybookjs/storybook/pull/37440), thanks @kasperpeulen!
+- CLI: Read process ancestry from one snapshot, fixing version detection on Windows 11 25H2 and test timeouts - [#37420](https://github.com/storybookjs/storybook/pull/37420), thanks @ndelangen!
+- CLI: Stop argtypes-default-value from skipping a preview with mixed exports - [#37713](https://github.com/storybookjs/storybook/pull/37713), thanks @valentinpalkovic!
+- CLI: Stop upgrades that skip a major when package.json declares a range - [#37439](https://github.com/storybookjs/storybook/pull/37439), thanks @kasperpeulen!
+- CSF: Name a story the same in the index, the preview and Vitest - [#37434](https://github.com/storybookjs/storybook/pull/37434), thanks @kasperpeulen!
+- Core: Deprecate @storybook/global and stop using it internally - [#37729](https://github.com/storybookjs/storybook/pull/37729), thanks @kasperpeulen!
+- Core: Fix logger.logBox from being cut out by clack.taskLog relative cursor - [#34729](https://github.com/storybookjs/storybook/pull/34729), thanks @huang-julien!
+- Core: Keep stories without the manifest tag out of the manifests - [#37738](https://github.com/storybookjs/storybook/pull/37738), thanks @JReinhold!
+- Docs: Fallback to the original source when a source transform throws - [#37748](https://github.com/storybookjs/storybook/pull/37748), thanks @huang-julien!
+- Manager: Keep a component titled Constructor from crashing the sidebar - [#37739](https://github.com/storybookjs/storybook/pull/37739), thanks @Sidnioulz!
+- React: Import a component once when a story arg also renders it - [#37674](https://github.com/storybookjs/storybook/pull/37674), thanks @valentinpalkovic!
+- Security: Only open HTTP(s) a11y rule help links - [#37126](https://github.com/storybookjs/storybook/pull/37126), thanks @Sidnioulz!
+- Sidebar: Fix ContextMenu focus handling after pointer dismissal - [#37795](https://github.com/storybookjs/storybook/pull/37795), thanks @Sidnioulz!
+- Svelte: Parse JSDoc tags in the HTML comment above a story - [#37746](https://github.com/storybookjs/storybook/pull/37746), thanks @JReinhold!
+- Svelte: Use the component's @import tag in story snippets - [#37539](https://github.com/storybookjs/storybook/pull/37539), thanks @jackeddisciple!
+
 ## 11.0.0-rc.0
 
 - Addon-MCP: Remove toolsets option and X-MCP-Toolsets header - [#37676](https://github.com/storybookjs/storybook/pull/37676), thanks @kasperpeulen!

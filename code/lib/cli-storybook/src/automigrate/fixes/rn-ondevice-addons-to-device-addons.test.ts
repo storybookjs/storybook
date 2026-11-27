@@ -173,6 +173,40 @@ describe('rn-ondevice-addons-to-device-addons', () => {
       expect(result).toEqual({ targets: [{ mainConfigPath }] });
     });
 
+    it.each([
+      ['an npm path', true, '/repo/node_modules/@storybook/react-native'],
+      [
+        'a pnpm path',
+        true,
+        '/repo/node_modules/.pnpm/@storybook+react-native@10.0.0/node_modules/@storybook/react-native',
+      ],
+      ['`@storybook/react-native-web-vite`', false, '@storybook/react-native-web-vite'],
+      [
+        'a pnpm path to `@storybook/react-native-web-vite`',
+        false,
+        '/repo/node_modules/.pnpm/@storybook+react-native-web-vite@10.0.0/node_modules/@storybook/react-native-web-vite',
+      ],
+    ])(
+      'in `.rnstorybook/main.ts` with %s as framework, migrates: %s',
+      async (_label, migrates, framework) => {
+        const mainConfigPath = join(process.cwd(), '.rnstorybook', 'main.ts');
+
+        const result = await checkFix(rnOndeviceAddonsToDeviceAddons, {
+          packageManager: makePackageManager({ '@storybook/react-native': '^8.0.0' }),
+          mainConfig: {
+            stories: ['../stories/**/*.stories.@(js|jsx|ts|tsx)'],
+            framework,
+            addons: ['@storybook/addon-ondevice-controls'],
+          },
+          mainConfigPath,
+          storybookVersion: '8.0.0',
+          storiesPaths: [],
+        });
+
+        expect(result).toEqual(migrates ? { targets: [{ mainConfigPath }] } : null);
+      }
+    );
+
     it('migrates `.storybook/main.ts` when its framework is `@storybook/react-native`', async () => {
       const packageManager = makePackageManager({
         '@storybook/react-native': '^8.0.0',

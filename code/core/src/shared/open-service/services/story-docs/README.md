@@ -100,6 +100,22 @@ from the file the component selection picks, which is also the only file `core/d
 the import block of its own file. A file whose extraction throws keeps its stories in the payload, each with
 that `error`; a file the provider returns nothing for contributes no stories.
 
+## Stories left out of the manifests
+
+The Storybook UI shows every story, but the docs tools, the MCP and the components manifest show
+only the stories tagged `manifest`. So every `storyDocs` read names a `scope`: `all` for the UI,
+`manifest` for the others. The scope has no default, so code that leaves it out fails the type check
+and the input validation, and cannot show a hidden story by mistake.
+
+The state stores each story once. `components` holds each payload with only its stories tagged
+`manifest`, and `nonManifestStories` holds the others; the `all` scope joins them. In a build,
+`manifests/components.json` points at `components` in the same snapshot the UI loads, so a reader
+that follows the `$ref` gets only the manifest stories. Read every story through the query, not
+from `components`.
+
+The tags come from the story index, so a change to a story's `manifest` tag extracts its component
+again, even when no story file changed.
+
 ## Import snippets
 
 Story-docs builds import statements from CSF import analysis, shared across providers by

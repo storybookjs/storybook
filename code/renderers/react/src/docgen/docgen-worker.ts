@@ -41,7 +41,11 @@ export const createDocgenProvider = ({
   createLazyDocgenMiddleware({
     createManager: async () => {
       try {
-        return new ComponentMetaManager(await loadDocgenTypeScript(typeScriptSpecifier));
+        return new ComponentMetaManager(
+          await loadDocgenTypeScript(typeScriptSpecifier),
+          undefined,
+          { keepParsedFilesOnRecycle: true }
+        );
       } catch (err) {
         logger.warn(`React docgen is unavailable. ${err instanceof Error ? err.message : err}`);
         return undefined;

@@ -288,4 +288,56 @@ describe('analyzeScopes', () => {
     expect(generateUid(info, 'meta')).toBe('_meta3');
     expect(generateUid(info, 'meta')).toBe('_meta4');
   });
+
+  it('excludes type-only references from unboundValues while keeping Babel-compatible unbound', () => {
+    const cases: [string, string, string[]][] = [
+      ['as cast', "const labels = { sm: 'Small' } as Record<string, string>;", []],
+      ['satisfies', "const list = ['a'] satisfies ReadonlyArray<string>;", []],
+      ['interface method signature', 'interface Labeller { label(size: string): string; }', []],
+      [
+        'parameter name shadowed by method signature',
+        'const value = { label: (size: string) => size } satisfies { label(size: string): string };',
+        [],
+      ],
+      [
+        'abstract class method named like type',
+        'abstract class A { abstract Missing(): void; m() { return 1 as unknown as Missing; } }',
+        [],
+      ],
+      ['enum member named like type', 'enum E { Missing = 1 as unknown as Missing }', []],
+      ['generics and type params', 'function f<T extends Base = Def>(x: T) { return x; }', []],
+      ['implements and extends', 'class C extends Base<Thing> implements Iface {}', ['Base']],
+      ['angle-bracket assertion', 'const x = <Foo>val;', ['val']],
+      ['property key named like type', 'const o = { Record: 1 } as Record<string, number>;', []],
+      ['class field named like type', 'class C { Record = 1; }', []],
+    ];
+    for (const [_label, code, expected] of cases) {
+      const info = analyzeScopes(parseModule(code, 'file.ts').program);
+      expect([...info.unboundValues]).toEqual(expected);
+    }
+    const ifaceInfo = analyzeScopes(
+      parseModule('interface Labeller { label(size: string): string; }', 'file.ts').program
+    );
+    expect([...ifaceInfo.unbound]).toEqual(['label', 'size']);
+  });
+
+  it('keeps value reads inside types in unboundValues', () => {
+    const cases: [string, string, string[]][] = [
+      ['plain typeof', 'type H = typeof helper;', ['helper']],
+      ['qualified typeof', 'type H = typeof ns.helper;', ['ns']],
+      [
+        'nested typeof in type arguments',
+        'type Fn = typeof identity<typeof helper>;',
+        ['identity', 'helper'],
+      ],
+      ['typeof inside type annotation', "const value: typeof helper = () => 'other';", ['helper']],
+      ['computed key in interface', 'interface Shape { [KEY]: string; }', ['KEY']],
+      ['computed key in type literal', 'type Shape = { [KEY](size: string): void };', ['KEY']],
+      ['computed key inside type annotation', 'const value: { [KEY]: string } = {};', ['KEY']],
+    ];
+    for (const [_label, code, expected] of cases) {
+      const info = analyzeScopes(parseModule(code, 'file.ts').program);
+      expect([...info.unboundValues]).toEqual(expected);
+    }
+  });
 });

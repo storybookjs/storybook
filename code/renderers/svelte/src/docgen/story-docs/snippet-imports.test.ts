@@ -365,9 +365,31 @@ it('still resolves `typeof` value references and reports unknown values beside T
   const result = buildSnippetImportBlock('{missing as Record<string, string>}{value}', {
     bindings: bindings(''),
     moduleScript:
-      "const helper = () => 'ok'; type Helper = typeof helper; const value: Helper = helper;",
+      "const helper = () => 'ok'; type Helper = typeof helper; const value: Helper = () => 'other';",
     typescript: true,
   });
   expect(result.block).toContain("const helper = () => 'ok';");
   expect(result.unresolvedIdentifiers).toEqual(['missing']);
+});
+
+it('copies types implemented by classes and values reached only through types', () => {
+  const result = buildSnippetImportBlock('{model}{shape}{fn}', {
+    bindings: bindings(''),
+    moduleScript: [
+      'interface Props { label: string }',
+      "class Model implements Props { label = 'ok'; }",
+      'const model = new Model();',
+      "const KEY = 'k';",
+      'interface Shape { [KEY]: string }',
+      "const shape: Shape = { [KEY]: 'v' };",
+      "const ns = { helper: () => 'ok' };",
+      'type Fn = typeof ns.helper;',
+      "const fn: Fn = () => 'other';",
+    ].join(' '),
+    typescript: true,
+  });
+  expect(result.block).toContain('interface Props { label: string }');
+  expect(result.block).toContain("const KEY = 'k';");
+  expect(result.block).toContain("const ns = { helper: () => 'ok' };");
+  expect(result.unresolvedIdentifiers).toBeUndefined();
 });

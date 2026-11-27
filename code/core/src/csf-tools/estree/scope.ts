@@ -73,6 +73,11 @@ export interface ScopeInfo {
   /** Names the file reads without declaring them: globals and anything another scope provides. */
   unbound: Set<string>;
   /**
+   * Subset of `unbound` read in value positions (runtime code, `typeof` type queries, and computed
+   * signature keys), excluding names that only appear in TypeScript types.
+   */
+  unboundValues: Set<string>;
+  /**
    * Top-level names of TypeScript declarations, which bind no `Binding`: type aliases, interfaces,
    * enums, namespaces, and functions without a body (`declare function` and overloads). A name can
    * be a binding as well, such as a `type X` next to a `const X`. `declare const` and `declare class`
@@ -304,7 +309,8 @@ export const analyzeScopes = (program: E.Program): ScopeInfo => {
   const nodeScopes = new Map<Node, Scope>();
   const names = new Set<string>();
   const violations: { scope: Scope; identifier: E.IdentifierReference }[] = [];
-  const references: { scope: Scope; identifier: Node; name: string }[] = [];
+  const references: { scope: Scope; identifier: Node; name: string; isType?: boolean }[] = [];
+  const valueOnlyReferences: { scope: Scope; name: string }[] = [];
 
   const declare = (
     scope: Scope,
@@ -493,14 +499,41 @@ export const analyzeScopes = (program: E.Program): ScopeInfo => {
     }
   };
 
-  const reference = (node: Node | null | undefined, scope: Scope) => {
+  const rootIdentifier = (node: Node | null | undefined): E.IdentifierName | undefined => {
     let target = node;
     while (target?.type === 'TSQualifiedName' || target?.type === 'MemberExpression') {
       target = target.type === 'TSQualifiedName' ? target.left : target.object;
     }
-    if (target?.type === 'Identifier') {
+    return target?.type === 'Identifier' ? target : undefined;
+  };
+
+  const reference = (node: Node | null | undefined, scope: Scope, isType = false) => {
+    const target = rootIdentifier(node);
+    if (target) {
       names.add(target.name);
-      references.push({ scope, identifier: target, name: target.name });
+      references.push({ scope, identifier: target, name: target.name, isType });
+    }
+  };
+
+  // Value reads (`typeof x`, computed signature keys) inside `: Type` annotations do not enter
+  // `references` (preserving Babel parity for `unbound`), but still count in `unboundValues`.
+  const collectTypeAnnotationValues = (node: Node, scope: Scope): void => {
+    if (node.type === 'TSTypeQuery') {
+      const target = rootIdentifier(node.exprName);
+      if (target) {
+        valueOnlyReferences.push({ scope, name: target.name });
+      }
+    } else if (
+      (node.type === 'TSPropertySignature' || node.type === 'TSMethodSignature') &&
+      node.computed
+    ) {
+      const target = rootIdentifier(node.key);
+      if (target) {
+        valueOnlyReferences.push({ scope, name: target.name });
+      }
+    }
+    for (const child of childEntries(node)) {
+      collectTypeAnnotationValues(child.node, scope);
     }
   };
 
@@ -514,35 +547,36 @@ export const analyzeScopes = (program: E.Program): ScopeInfo => {
         break;
       case 'TSTypeAnnotation':
         assertKnownWithin(node);
+        collectTypeAnnotationValues(node, scope);
         return;
       case 'TSTypeReference':
-        reference(node.typeName, scope);
+        reference(node.typeName, scope, true);
         break;
       case 'TSTypeQuery':
-        reference(node.exprName, scope);
+        reference(node.exprName, scope, false);
         break;
       case 'TSClassImplements':
       case 'TSInterfaceHeritage':
-        reference(node.expression, scope);
+        reference(node.expression, scope, true);
         break;
       case 'TSImportType':
-        reference(node.qualifier, scope);
+        reference(node.qualifier, scope, true);
         break;
       case 'TSPropertySignature':
         if (node.computed) {
-          reference(node.key, scope);
+          reference(node.key, scope, false);
         }
         break;
       case 'TSMethodSignature':
         // Babel also counts a method signature's name and its parameter names.
-        reference(node.key, scope);
-        node.params.forEach((param) => reference(param, scope));
+        reference(node.key, scope, !node.computed);
+        node.params.forEach((param) => reference(param, scope, true));
         break;
       case 'TSFunctionType':
       case 'TSConstructorType':
       case 'TSCallSignatureDeclaration':
       case 'TSConstructSignatureDeclaration':
-        node.params.forEach((param) => reference(param, scope));
+        node.params.forEach((param) => reference(param, scope, true));
         break;
     }
     for (const child of childEntries(node)) {
@@ -792,13 +826,22 @@ export const analyzeScopes = (program: E.Program): ScopeInfo => {
   }
 
   const unbound = new Set<string>();
-  for (const { scope, identifier, name } of references) {
+  const unboundValues = new Set<string>();
+  for (const { scope, identifier, name, isType } of references) {
     const binding = scope.lookup(name);
     if (binding) {
       binding.references.push(identifier);
       identifierBindings.set(identifier, binding);
     } else if (identifier.type !== 'ExportNamedDeclaration') {
       unbound.add(name);
+      if (!isType) {
+        unboundValues.add(name);
+      }
+    }
+  }
+  for (const { scope, name } of valueOnlyReferences) {
+    if (!scope.lookup(name)) {
+      unboundValues.add(name);
     }
   }
   // Like Babel, an `export` of a declaration counts as a reference to the bindings it declares,
@@ -862,6 +905,7 @@ export const analyzeScopes = (program: E.Program): ScopeInfo => {
     program: declaredProgramScope,
     names,
     unbound,
+    unboundValues,
     tsDeclarationNames,
     bindingOf: (identifier) => identifierBindings.get(identifier),
     scopeOf: (node) => {

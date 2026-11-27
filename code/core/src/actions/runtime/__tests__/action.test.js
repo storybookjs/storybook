@@ -1,3 +1,5 @@
+import { Window } from 'happy-dom';
+import { stringify } from 'telejson';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { ImplicitActionsDuringRendering } from 'storybook/internal/preview-errors';
@@ -13,6 +15,49 @@ const createChannel = () => {
   return channel;
 };
 const getChannelData = (channel) => channel.emit.mock.calls[0][1].data.args;
+const getEmittedAction = (channel) => channel.emit.mock.calls[0][1];
+
+const createStoryStoreProxy = (onAccess) =>
+  new Proxy(
+    {},
+    {
+      get: (_, method) => {
+        onAccess(String(method));
+        return undefined;
+      },
+    }
+  );
+
+const createWindowWithStoryStore = (onAccess) => {
+  const win = new Window({ url: 'http://localhost/' });
+  win.__STORYBOOK_STORY_STORE__ = createStoryStoreProxy(onAccess);
+  return win;
+};
+
+const createReactSyntheticEvent = (win) => {
+  function SyntheticEvent() {}
+  const event = Object.create(SyntheticEvent.prototype);
+  const target = win.document.createElement('button');
+  event.persist = vi.fn();
+  event.view = win;
+  event.nativeEvent = new win.MouseEvent('click', { bubbles: true, view: win });
+  event.type = 'click';
+  event.target = target;
+  return event;
+};
+
+const assertNoStoryStoreAccessViaChannel = (channel, storyStoreAccesses) => {
+  const emitted = getEmittedAction(channel);
+  stringify(
+    {
+      key: 'storybook-channel',
+      event: { type: 'storybook/actions/action-event', args: [emitted] },
+    },
+    { maxDepth: emitted.options.maxDepth }
+  );
+  expect(storyStoreAccesses).toEqual([]);
+  return emitted;
+};
 
 describe('Action', () => {
   it('with one argument', () => {
@@ -136,5 +181,36 @@ describe('Implicit actions during rendering', () => {
     action('test-action', { implicit: true })('one');
 
     expect(getChannelData(channel)).toEqual('one');
+  });
+});
+
+describe('React event serialization', () => {
+  it.each([
+    {
+      name: 'a synthetic event',
+      invoke: (handler, event) => handler(event),
+      getSerialized: (emitted) => emitted.data.args,
+    },
+    {
+      // loaders.ts calls `action(name)(args)` with the mock's args array
+      name: 'the loaders.ts mock args array',
+      invoke: (handler, event) => handler([event]),
+      getSerialized: (emitted) => emitted.data.args[0],
+    },
+  ])('does not touch the deprecated story store for $name', ({ invoke, getSerialized }) => {
+    const channel = createChannel();
+    const storyStoreAccesses = [];
+    const win = createWindowWithStoryStore((method) => storyStoreAccesses.push(method));
+    expect(win.constructor.name).toBe('Window');
+    const event = createReactSyntheticEvent(win);
+
+    invoke(action('onClick'), event);
+
+    const emitted = assertNoStoryStoreAccessViaChannel(channel, storyStoreAccesses);
+    const serialized = getSerialized(emitted);
+
+    expect(serialized.view).not.toBe(win);
+    expect(serialized.nativeEvent.type).toBe('click');
+    expect(serialized.nativeEvent.view).not.toBe(win);
   });
 });

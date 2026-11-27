@@ -24,26 +24,48 @@ const isReactSyntheticEvent = (e: unknown): e is SyntheticEvent =>
     findProto(e, (proto) => /^Synthetic(?:Base)?Event$/.test(proto.constructor.name)) &&
     typeof (e as SyntheticEvent).persist === 'function'
   );
-const serializeArg = <T extends object>(a: T) => {
-  if (isReactSyntheticEvent(a)) {
-    const e: SyntheticEvent = Object.create(
-      a.constructor.prototype,
-      Object.getOwnPropertyDescriptors(a)
-    );
-    e.persist();
-    const viewDescriptor = Object.getOwnPropertyDescriptor(e, 'view');
-    // don't send the entire window object over.
-    const view: unknown = viewDescriptor?.value;
-    if (typeof view === 'object' && view?.constructor.name === 'Window') {
-      Object.defineProperty(e, 'view', {
-        ...viewDescriptor,
-        value: Object.create(view.constructor.prototype),
-      });
-    }
-    return e;
+const isWindow = (value: unknown): value is Window =>
+  typeof value === 'object' && value !== null && value.constructor?.name === 'Window';
+
+// Drop Window references so channel serialization cannot reach `__STORYBOOK_STORY_STORE__`.
+const detachWindow = (value: Window) => Object.create(value.constructor.prototype);
+
+const serializeEvent = (a: unknown): unknown => {
+  if (!isReactSyntheticEvent(a)) {
+    return a;
   }
-  return a;
+  const e: SyntheticEvent = Object.create(
+    Object.getPrototypeOf(a),
+    Object.getOwnPropertyDescriptors(a)
+  );
+  e.persist();
+  if (isWindow(e.view)) {
+    Object.defineProperty(e, 'view', {
+      configurable: true,
+      enumerable: true,
+      writable: true,
+      value: detachWindow(e.view),
+    });
+  }
+  if (e.nativeEvent && isWindow(e.nativeEvent.view)) {
+    // nativeEvent fields are prototype getters — do not spread; replace view only.
+    const nativeEvent = e.nativeEvent;
+    e.nativeEvent = new Proxy(nativeEvent, {
+      get(target, prop) {
+        if (prop === 'view') {
+          return detachWindow(target.view);
+        }
+        const value = Reflect.get(target, prop, target);
+        return typeof value === 'function' ? value.bind(target) : value;
+      },
+    });
+  }
+  return e;
 };
+
+// loaders.ts calls `action(name)(args)` with the mock args array; unwrap one level only.
+const serializeArg = (a: unknown): unknown =>
+  Array.isArray(a) ? a.map(serializeEvent) : serializeEvent(a);
 
 export function action(name: string, options: ActionOptions = {}): HandlerFunction {
   const actionOptions = {
@@ -80,7 +102,7 @@ export function action(name: string, options: ActionOptions = {}): HandlerFuncti
     const actionDisplayToEmit: ActionDisplay = {
       id,
       count: 0,
-      data: { name, args: normalizedArgs },
+      data: { name, args: normalizedArgs as any },
       options: {
         ...actionOptions,
         maxDepth: minDepth + (actionOptions.depth || 3),

@@ -11,19 +11,27 @@ type ParsedFile = { mutationDiagnostics: ConfigFile['mutationDiagnostics'] };
 const describeDiagnostic = ({ message, loc }: CsfMutationDiagnostic) =>
   loc ? `line ${loc.start.line}: ${message}` : message;
 
-/** Run `edit` on a parsed file, and throw the mutation diagnostics it left, with their lines. */
 export const editParsedFile = async <File extends ParsedFile>(
   file: File,
-  edit: (file: File) => unknown
+  edit: (file: File) => unknown,
+  errorContext?: string
 ) => {
-  const diagnosticsBefore = file.mutationDiagnostics.length;
-  await edit(file);
-  const diagnostics = file.mutationDiagnostics
-    .slice(diagnosticsBefore)
-    // An alias holds its story's object: the edit sees it, or that story reports why not.
-    .filter(({ code }) => code !== 'aliased-story');
-  if (diagnostics.length > 0) {
-    throw new HandledError([...new Set(diagnostics.map(describeDiagnostic))].join('; '));
+  try {
+    const diagnosticsBefore = file.mutationDiagnostics.length;
+    await edit(file);
+    const diagnostics = file.mutationDiagnostics
+      .slice(diagnosticsBefore)
+      // An alias holds its story's object: the edit sees it, or that story reports why not.
+      .filter(({ code }) => code !== 'aliased-story');
+    if (diagnostics.length > 0) {
+      throw new HandledError([...new Set(diagnostics.map(describeDiagnostic))].join('; '));
+    }
+  } catch (error) {
+    if (errorContext && error instanceof HandledError) {
+      const separator = /[.!?]$/.test(error.message) ? ' ' : '. ';
+      throw new HandledError(`${error.message}${separator}${errorContext}`);
+    }
+    throw error;
   }
 };
 

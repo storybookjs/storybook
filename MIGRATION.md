@@ -1097,6 +1097,8 @@ export default {
 };
 ```
 
+The `globaltypes-default-value` automigration moves literal defaults to `initialGlobals` when you upgrade, or when you run `npx storybook automigrate globaltypes-default-value`. Existing initial values take precedence. If a detected default cannot be moved safely, the preview file stays unchanged and `automigrations-summary.md` explains what needs a manual change. Defaults defined entirely in imported modules are not scanned; migrate those manually.
+
 See [From version 8.x to 9.0.0](#from-version-8x-to-900) for details on the `initialGlobals` change.
 
 This change also removes the internal helper `getValuesFromGlobalTypes` from the preview-api store barrel. It only existed to service the `defaultValue` seeding; if you imported it, derive the values from `initialGlobals` instead.

@@ -6,6 +6,7 @@ import { dedent } from 'ts-dedent';
 import invariant from 'tiny-invariant';
 
 import type { PrintResultType } from './PrintResultType.ts';
+import { type CsfKeys, getConfigKeys } from './ConfigKeys.ts';
 import { createConfigObject, locateConfigRoot } from './ConfigObject.ts';
 import {
   type CsfExpression,
@@ -47,6 +48,8 @@ import {
 } from './estree/imports.ts';
 import { isDeclared } from './estree/scope.ts';
 import { findVarInitialization } from './findVarInitialization.ts';
+
+export type { CsfKeys } from './ConfigKeys.ts';
 
 export interface CallArgumentsOptions {
   importedName: string;
@@ -442,6 +445,25 @@ export class ConfigFile implements CsfObject {
       : { kind: 'refused', diagnostic: editor.diagnostic };
   }
 
+  /**
+   * List the object keys that can be read from the config file at the given path. Return
+   * `undefined` if the path is missing or its value cannot be resolved to an object literal.
+   *
+   * @example
+   * ```ts
+   * const config = loadConfig(`
+   *   import shared from './shared';
+   *   export default { globalTypes: { theme: {}, ...shared } };
+   * `).parse();
+   *
+   * config.getKeys(['globalTypes']); // { keys: ['theme'], computed: [], external: true }
+   * config.getKeys(['parameters']); // undefined
+   * ```
+   */
+  getKeys(path: CsfPath): CsfKeys | undefined {
+    return getConfigKeys(this, path);
+  }
+
   _mutate(operation: (object: CsfObject) => CsfMutationResult): CsfMutationResult {
     const editor = createConfigObject(
       this,
@@ -547,8 +569,9 @@ export class ConfigFile implements CsfObject {
 
         // csf factory - unwrap call expressions like definePreview({...}) or definePreview({...}).type<T>()
         while (decl?.type === 'CallExpression') {
-          if (decl.arguments[0]?.type === 'ObjectExpression') {
-            decl = decl.arguments[0];
+          const argument = unwrapExpression(decl.arguments[0]);
+          if (argument?.type === 'ObjectExpression') {
+            decl = argument;
             break;
           } else if (
             decl.callee.type === 'MemberExpression' &&
@@ -681,10 +704,12 @@ export class ConfigFile implements CsfObject {
       } else if (
         node.type === 'CallExpression' &&
         isIdentifier(node.callee, 'definePreview') &&
-        node.arguments.length === 1 &&
-        node.arguments[0].type === 'ObjectExpression'
+        node.arguments.length === 1
       ) {
-        this._parseExportsObject(node.arguments[0]);
+        const argument = unwrapExpression(node.arguments[0]);
+        if (argument.type === 'ObjectExpression') {
+          this._parseExportsObject(argument);
+        }
       }
     });
     return this;

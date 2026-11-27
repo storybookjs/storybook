@@ -140,6 +140,19 @@ if (config.changed && config.mutationDiagnostics.length === 0) {
 
 `ConfigFile.changed` and `ConfigFile.mutationDiagnostics` track these editor operations. Existing `getFieldNode` reads reflect editor changes. `writeConfig` rejects files with mutation diagnostics to avoid writing partial edits.
 
+`ConfigFile.getKeys(path)` lists the object keys it can read from the config file. It returns `undefined` if the path is missing or its value cannot be resolved to an object literal.
+
+```ts
+const config = loadConfig(`
+  import shared from './shared';
+  export default { globalTypes: { theme: {}, ...shared } };
+`).parse();
+
+config.getKeys(['globalTypes']); // { keys: ['theme'], computed: [], external: true }
+```
+
+Here, `external` is `true` because `shared` may add or override keys. For a property with an unknown name, such as `[getName()]`, `computed` contains the keys of its value, or `undefined` if its keys cannot be read.
+
 `appendValueToArray` and `appendNodeToArray` are deprecated: use `append`. `removeEntryFromArray`, deprecated too, removes the first entry of an array that names a value: a string, a `{ name }` object, or a call like `getAbsolutePath(value)`; find the entry's index in the list `inspectList(path)` returns and `remove([...path, index])` it instead. The three helpers edit the array literal the field resolves to, through local constants and type assertions, and return a `CsfMutationResult` like the editor operations. A field that is not an array literal, a call included, leaves the file as it is and adds an `unsupported-value` diagnostic; a missing field or entry is a no-op for `removeEntryFromArray`, unless a spread or a computed key leaves the field unproven. Like `append` and `remove`, they refuse an array that a later spread could replace, and one in a constant that other code refers to as well.
 
 Discovery rejects shared or reassigned bindings, unresolved re-exports, and conditional or repeated CommonJS assignments. Inline object methods and exported function declarations can be transformed as function expressions while retaining their declaration form. Path edits use the same spread, duplicate-key, occupied-destination, and dynamic-value checks as story edits. Unsupported input produces diagnostics without rewriting that input.

@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import type {
   Args,
+  DecoratorFunction,
   Globals,
   RenderContext,
   StoryContext,
@@ -10,7 +11,18 @@ import type {
 } from 'storybook/internal/types';
 
 import { expectTypeOf } from 'expect-type';
-import { computed, defineComponent, h, nextTick, reactive, type VNode } from 'vue';
+import {
+  computed,
+  createApp,
+  defineComponent,
+  h,
+  KeepAlive,
+  nextTick,
+  onActivated,
+  reactive,
+  resolveComponent,
+  type VNode,
+} from 'vue';
 
 import { decorateStory } from './decorateStory.ts';
 import { render, renderToCanvas, updateArgs } from './render.ts';
@@ -229,5 +241,59 @@ describe('renderToCanvas', () => {
     expect(canvasElement.textContent).toBe('Repaired');
     teardown();
     expect(calls).toEqual(['showMain', 'showException', 'showMain']);
+  });
+});
+
+describe('decorateStory', () => {
+  const storyContext = { args: {}, globals: {} } as unknown as StoryContext<VueRenderer>;
+  const mountDecorated = (
+    story: VueRenderer['storyResult'],
+    decorator: DecoratorFunction<VueRenderer>
+  ) => {
+    const decorated = decorateStory(() => story, [decorator])(storyContext);
+    const canvasElement = document.createElement('div');
+    const app = createApp({ render: () => h(decorated) });
+    app.mount(canvasElement);
+    return { canvasElement, unmount: () => app.unmount() };
+  };
+
+  it('keeps the story alive when a decorator wraps it in <KeepAlive>', async () => {
+    const calls: string[] = [];
+    const story = defineComponent({
+      setup() {
+        onActivated(() => calls.push('activated'));
+        return () => h('p', 'story');
+      },
+    });
+
+    const { unmount } = mountDecorated(story, () => ({
+      render: () => h(KeepAlive, null, [h(resolveComponent('story'))]),
+    }));
+    await nextTick();
+
+    expect(calls).toEqual(['activated']);
+    unmount();
+  });
+
+  it('passes only class, style and listeners from the story tag to the story', () => {
+    const story = defineComponent({
+      inheritAttrs: false,
+      render() {
+        return h('p', Object.keys(this.$attrs).sort().join(','));
+      },
+    });
+
+    const { canvasElement, unmount } = mountDecorated(story, () => ({
+      render: () =>
+        h(resolveComponent('story'), {
+          class: 'wrapped',
+          style: 'color: red',
+          onClick: () => {},
+          title: 'not passed',
+        }),
+    }));
+
+    expect(canvasElement.textContent).toBe('class,onClick,style');
+    unmount();
   });
 });

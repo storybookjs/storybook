@@ -50,9 +50,7 @@ describe('sourceDecorator – raw HTML string stories', () => {
 
   it('still serializes lit `html` templates correctly (no regression)', async () => {
     const storyFn = () =>
-      html`
-        <deepgram-header active="playground" debug="false"></deepgram-header>
-      ` as any;
+      html` <deepgram-header active="playground" debug="false"></deepgram-header> ` as any;
 
     sourceDecorator(storyFn, makeContext() as any);
     await tick();

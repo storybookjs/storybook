@@ -30,8 +30,13 @@ type ExtractionServiceState = { components: Record<string, unknown> };
 
 type AllComponentsQuery = { get(): unknown };
 
+// An extraction still running, with the runtime state it writes to.
+type RunningExtraction = { state: object; extraction: Promise<unknown> };
+
 type RegisteredExtraction = {
   idsToExtractAgain: Set<string>;
+  // By component id. A call joins the one running in its runtime; a refresh never joins.
+  running: Map<string, RunningExtraction>;
   storySignature: (entry: IndexEntry) => string;
   isExtracted: (id: string) => boolean;
 };
@@ -121,14 +126,20 @@ export function subscribeExtractionServiceToModuleGraphChanges<
   const allQuery: AllComponentsQuery = runtime.queries[options.allQueryName];
   const registered = registeredExtractions.get(runtime);
   invariant(registered, `Extraction service "${definition.id}" is not registered.`);
-  const { idsToExtractAgain, storySignature, isExtracted } = registered;
+  const { idsToExtractAgain, running, storySignature, isExtracted } = registered;
   const extract = (runtime.commands as Record<string, (input: { id: string }) => Promise<unknown>>)[
     options.extractCommand
   ];
-  const refreshComponent = (id: string) => extract({ id }).catch(() => undefined);
+  const refreshComponent = (id: string) => {
+    running.delete(id);
+    return extract({ id }).catch(() => undefined);
+  };
 
   const refreshExtracted = async (componentIds: Iterable<string>) => {
-    const idsToRefresh = Array.from(componentIds).filter(isExtracted);
+    // An extraction still running read the files before the change, so it is refreshed too.
+    const idsToRefresh = Array.from(componentIds).filter(
+      (id) => isExtracted(id) || running.has(id)
+    );
     if (idsToRefresh.length === 0) {
       return;
     }
@@ -263,6 +274,7 @@ export function registerExtractionService<
   );
 
   const idsToExtractAgain = new Set<string>();
+  const running = new Map<string, RunningExtraction>();
   // The latest extraction of each component in each runtime, so an older one that finishes later
   // does not overwrite its payload. The static build runs these handlers on runtimes of its own.
   const latestRunsByState = new WeakMap<object, Map<string, Promise<void>>>();
@@ -391,13 +403,20 @@ export function registerExtractionService<
     },
     commands: {
       [extractCommand]: {
-        handler: async (input: { id: string }, ctx: CommandCtx<TState>) => {
-          const run = startRun(ctx, input.id);
-          try {
-            return await extractComponent(input.id, ctx, run.isLatest);
-          } finally {
-            await run.settle();
+        handler: (input: { id: string }, ctx: CommandCtx<TState>) => {
+          const joined = running.get(input.id);
+          if (joined?.state === ctx.self.state) {
+            return joined.extraction;
           }
+          const run = startRun(ctx, input.id);
+          const extraction = extractComponent(input.id, ctx, run.isLatest).finally(async () => {
+            if (running.get(input.id)?.extraction === extraction) {
+              running.delete(input.id);
+            }
+            await run.settle();
+          });
+          running.set(input.id, { state: ctx.self.state, extraction });
+          return extraction;
         },
       },
       [extractAllCommand]: {
@@ -420,6 +439,7 @@ export function registerExtractionService<
     ];
     registeredExtractions.set(service, {
       idsToExtractAgain,
+      running,
       storySignature,
       isExtracted: (id) => componentQuery.get(toQueryInput(id)) !== undefined,
     });

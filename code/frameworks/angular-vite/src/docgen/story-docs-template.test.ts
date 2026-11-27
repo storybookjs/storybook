@@ -11,6 +11,7 @@ import { vol } from 'memfs';
 
 import {
   type SnippetTemplate,
+  argChanges,
   fillTemplate,
   formatTemplate,
   stripHoles,
@@ -69,7 +70,7 @@ const fill = (story: StoryDoc, initialArgs: Record<string, unknown>, args = init
   expect(stripHoles(story.template!)).toBe(story.snippet);
   // The build writes Angular's places, which the payload type leaves to the renderer.
   const template = story.template as SnippetTemplate<AngularHolePlace>;
-  return fillTemplate(template, { initialArgs, unmappedArgs: args }, printHole);
+  return fillTemplate(template, argChanges({ initialArgs, unmappedArgs: args }), printHole);
 };
 
 const IMPORTS = dedent`

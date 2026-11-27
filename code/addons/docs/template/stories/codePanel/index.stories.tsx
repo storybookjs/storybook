@@ -18,6 +18,21 @@ export const Default = {
   },
 };
 
+/**
+ * Without a `docs.source.transform`, also not the one of the project, so the manager fills this
+ * story's snippet itself.
+ */
+export const WithoutTransform = {
+  args: { label: 'Without transform' },
+  parameters: {
+    docs: {
+      source: {
+        transform: null,
+      },
+    },
+  },
+};
+
 export const CustomCode = {
   args: { label: 'Custom code' },
   parameters: {

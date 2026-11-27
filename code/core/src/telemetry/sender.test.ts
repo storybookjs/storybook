@@ -4,6 +4,7 @@ import { type ChildProcess, spawn } from 'node:child_process';
 import { once } from 'node:events';
 import { type Server, type ServerResponse, createServer } from 'node:http';
 import type { AddressInfo } from 'node:net';
+import { fileURLToPath } from 'node:url';
 
 import { importMetaResolve } from '../shared/utils/module.ts';
 import { set as saveToCache } from './event-cache.ts';
@@ -86,4 +87,34 @@ it('still posts an event when this process lets go right after sending it', asyn
 
   expect(await exited).toEqual([0, null]);
   expect(requests).toEqual([expect.objectContaining({ eventType: 'build' })]);
+});
+
+it('still posts an event when the process that sent it exits as soon as the event is written', async () => {
+  const script = fileURLToPath(new URL('./sender.ts', import.meta.url));
+  // What handOver and startSender do, in a process that really exits.
+  const command = `
+    const sender = require('node:child_process').spawn(process.execPath, [${JSON.stringify(script)}], {
+      detached: true,
+      stdio: ['ignore', 'ignore', 'ignore', 'ipc'],
+      windowsHide: true,
+    });
+    sender.send({ eventType: 'build' }, () => process.exit());
+  `;
+
+  const [exitCode] = await once(spawn(process.execPath, ['--eval', command]), 'exit');
+  await received;
+
+  expect(exitCode).toBe(0);
+  expect(requests).toEqual([{ eventType: 'build' }]);
+});
+
+it('still posts an event when the temp directory does not exist', async () => {
+  for (const name of ['TMPDIR', 'TEMP', 'TMP']) {
+    vi.stubEnv(name, fileURLToPath(new URL('./does-not-exist', import.meta.url)));
+  }
+
+  await sendTelemetry({ eventType: 'dev', payload: {} });
+  await received;
+
+  expect(requests).toEqual([expect.objectContaining({ eventType: 'dev' })]);
 });

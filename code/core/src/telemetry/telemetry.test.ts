@@ -61,7 +61,7 @@ it('sends every event to one detached process, with its data and context', async
   });
 });
 
-it('sends an event before its first await, so an exit right after the call does not lose it', () => {
+it('starts sending an event before its first await', () => {
   void sendTelemetry({ eventType: 'dev', payload: {} });
 
   expect(sentEvents()).toEqual([expect.objectContaining({ eventType: 'dev' })]);
@@ -83,6 +83,40 @@ it('resolves only when the event is written to the process', async () => {
   written();
   await sent;
   expect(resolved).toBe(true);
+});
+
+it('still waits for the event to be written when the local event cache cannot be saved', async () => {
+  vi.mocked(saveToCache).mockRejectedValue(new Error('EACCES'));
+  let written = () => {};
+  sender.send.mockImplementationOnce((_event, callback) => {
+    written = callback;
+  });
+  let resolved = false;
+  const sent = sendTelemetry({ eventType: 'dev', payload: {} }).then(() => {
+    resolved = true;
+  });
+
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  expect(resolved).toBe(false);
+
+  written();
+  await sent;
+  expect(resolved).toBe(true);
+});
+
+it('resolves when the process exits before it has read the event', async () => {
+  sender.send.mockImplementationOnce(() => {});
+  const sent = sendTelemetry({ eventType: 'dev', payload: {} });
+
+  sender.emit('exit', 1, null);
+
+  await expect(sent).resolves.toBeUndefined();
+});
+
+it('stops listening for the exit of the process once the event is written', async () => {
+  await sendTelemetry({ eventType: 'dev', payload: {} });
+
+  expect(sender.listenerCount('exit')).toBe(0);
 });
 
 it('saves the event it sends to the local event cache', async () => {
@@ -122,12 +156,17 @@ it('starts a new process when the last one is gone', async () => {
 });
 
 it('starts the process without the debugger flags of this one, and keeps its other options', async () => {
-  vi.stubEnv('NODE_OPTIONS', '--inspect-brk=0 --use-openssl-ca --inspect');
+  vi.stubEnv(
+    'NODE_OPTIONS',
+    '--inspect-brk=0 --require /my--inspect-app/.pnp.cjs --use-openssl-ca --inspect'
+  );
 
   await sendTelemetry({ eventType: 'dev', payload: {} });
 
   const [, , options] = vi.mocked(spawn).mock.calls[0];
-  expect(options.env?.NODE_OPTIONS?.trim()).toBe('--use-openssl-ca');
+  expect(options.env?.NODE_OPTIONS?.trim()).toBe(
+    '--require /my--inspect-app/.pnp.cjs --use-openssl-ca'
+  );
 });
 
 it('still resolves when the process cannot be started', async () => {

@@ -3,6 +3,9 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { postEvent } from './post-event.ts';
 import type { TelemetryEvent } from './types.ts';
 
+// The URL is read when the module loads.
+vi.hoisted(() => vi.stubEnv('STORYBOOK_TELEMETRY_URL', ''));
+
 const fetchMock = vi.fn();
 const event = { eventId: 'a' } as TelemetryEvent;
 

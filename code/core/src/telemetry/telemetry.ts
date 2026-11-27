@@ -85,14 +85,15 @@ export async function sendTelemetry(data: TelemetryData, options: Partial<Option
       payload,
       context,
     };
-    await Promise.all([handOver(body), saveToCache(eventType, body)]);
+    // Not Promise.all: a cache that cannot be written must not end the wait for the hand-over.
+    await Promise.allSettled([handOver(body), saveToCache(eventType, body)]);
   } catch (err) {
     //
   }
 }
 
-// Resolves when the event is written. On Windows that is asynchronous, so an exit right after
-// the call would lose the event.
+// Resolves when the event is written. That is asynchronous on Windows, and elsewhere for an event
+// larger than the pipe buffer, so an exit right after the call would lose the event.
 async function handOver(event: TelemetryEvent) {
   try {
     // On globalThis, because this module can load more than once in one process. Every copy sends
@@ -100,7 +101,15 @@ async function handOver(event: TelemetryEvent) {
     const sender = globalThis.SB_TELEMETRY_SENDER?.connected
       ? globalThis.SB_TELEMETRY_SENDER
       : (globalThis.SB_TELEMETRY_SENDER = startSender());
-    await new Promise<void>((resolve) => sender.send(event, () => resolve()));
+    await new Promise<void>((resolve) => {
+      const done = () => {
+        sender.off('exit', done);
+        resolve();
+      };
+      // Bun never calls back when the child died before it read the event.
+      sender.once('exit', done);
+      sender.send(event, done);
+    });
   } catch {
     //
   }
@@ -112,13 +121,18 @@ function startSender() {
   const script = fileURLToPath(importMetaResolve('storybook/internal/telemetry/sender'));
   const child = spawn(process.execPath, [script], {
     // With an inherited --inspect-brk the child would wait for a debugger forever.
-    env: { ...process.env, NODE_OPTIONS: process.env.NODE_OPTIONS?.replace(/--inspect\S*/g, '') },
+    env: {
+      ...process.env,
+      NODE_OPTIONS: process.env.NODE_OPTIONS?.replace(/(?<=^|\s)--inspect\S*/g, ''),
+    },
     detached: true,
     stdio: ['ignore', 'ignore', 'ignore', 'ipc'],
     windowsHide: true,
   });
   // Without a listener, a spawn that fails later would crash this process.
   child.on('error', () => {});
+  // Every event that is being written listens for the child's exit.
+  child.setMaxListeners(0);
   // Neither the child nor its channel may keep this process from exiting. Bun has no channel.unref.
   child.unref();
   child.channel?.unref?.();

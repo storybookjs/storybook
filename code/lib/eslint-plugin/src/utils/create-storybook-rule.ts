@@ -1,7 +1,6 @@
 import type { TSESLint } from '@typescript-eslint/utils';
-import { RuleCreator } from '@typescript-eslint/utils/eslint-utils';
 
-import type { StorybookRuleMeta } from '../types/index.ts';
+import type { StorybookRule, StorybookRuleMeta } from '../types/index.ts';
 import { docsUrl } from './index.ts';
 
 export function createStorybookRule<
@@ -11,7 +10,8 @@ export function createStorybookRule<
 >({
   create,
   meta,
-  ...remainingConfig
+  name,
+  defaultOptions,
 }: Readonly<{
   name: string;
   meta: StorybookRuleMeta<TMessageIds>;
@@ -20,17 +20,23 @@ export function createStorybookRule<
     context: Readonly<TSESLint.RuleContext<TMessageIds, TOptions>>,
     optionsWithDefault: Readonly<TOptions>
   ) => TRuleListener;
-}>) {
-  const ruleCreator = RuleCreator(docsUrl);
-  return ruleCreator({
-    ...remainingConfig,
-    create,
+}>): StorybookRule<TMessageIds, TOptions> {
+  return {
+    name,
     meta: {
       ...meta,
       docs: {
         ...meta.docs!,
+        url: docsUrl(name),
       },
-      defaultOptions: remainingConfig.defaultOptions,
+      defaultOptions,
     },
-  });
+    defaultOptions,
+    create(context: Readonly<TSESLint.RuleContext<TMessageIds, TOptions>>) {
+      const options = defaultOptions.map(
+        (option, index) => context.options[index] ?? option
+      ) as unknown as TOptions;
+      return create(context, options);
+    },
+  };
 }

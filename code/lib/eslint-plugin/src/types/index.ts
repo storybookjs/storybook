@@ -6,6 +6,13 @@ export type RuleModule = TSESLint.RuleModule<'', []> & {
   meta: { hasSuggestions?: boolean };
 };
 
+export type StorybookRule<
+  TMessageIds extends string,
+  TOptions extends readonly unknown[],
+> = TSESLint.RuleModule<TMessageIds, TOptions, StorybookRuleMetaDocs> & {
+  name: string;
+};
+
 // These 2 types are copied from @typescript-eslint/experimental-utils' CreateRuleMeta
 // and modified to our needs
 export type StorybookRuleMetaDocs = TSESLint.RuleMetaDataDocs & {

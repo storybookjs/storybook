@@ -11,7 +11,7 @@ import type { TSESTree } from '@typescript-eslint/types';
 import type { TSESLint } from '@typescript-eslint/utils';
 
 import {
-  ASTUtils,
+  findVariable,
   isCallExpression,
   isFunctionDeclaration,
   isIdentifier,
@@ -55,7 +55,7 @@ export const getMetaObjectExpression = (
 ) => {
   let meta: TSESTree.Node | null = node.declaration;
   if (isIdentifier(meta)) {
-    const variable = ASTUtils.findVariable(getScope(context, node), meta.name);
+    const variable = findVariable(getScope(context, node), meta.name);
     const decl = variable && variable.defs.find((def) => isVariableDeclarator(def.node));
     if (decl && isVariableDeclarator(decl.node)) {
       meta = decl.node.init;
@@ -76,7 +76,7 @@ export const resolveConstantInit = (
   context: RuleContext,
   identifier: TSESTree.Identifier
 ): TSESTree.Expression | null => {
-  const variable = ASTUtils.findVariable(getScope(context, identifier), identifier.name);
+  const variable = findVariable(getScope(context, identifier), identifier.name);
   const def = variable?.defs.length === 1 ? variable.defs[0] : undefined;
   if (!def || !isVariableDeclarator(def.node) || !def.node.init) {
     return null;
@@ -130,7 +130,7 @@ export const parseFactoryMetaCall = (
     return null;
   }
 
-  const variable = ASTUtils.findVariable(getScope(context, root), root.name);
+  const variable = findVariable(getScope(context, root), root.name);
   const importDeclaration = variable?.defs
     .map((def) => def.parent)
     .find((parent) => isImportDeclaration(parent));

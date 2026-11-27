@@ -74,7 +74,7 @@ const generateRule = async () => {
        * @author ${authorName}
        */
 
-      import { TSESTree } from '@typescript-eslint/utils'
+      import type { TSESTree } from '@typescript-eslint/utils'
       import { createStorybookRule } from '../utils/create-storybook-rule'
       import { CategoryId } from '../utils/constants'
       import { isIdentifier, isVariableDeclaration } from '../utils/ast'

@@ -4,6 +4,7 @@ import { dirname, join } from 'pathe';
 
 import type { NextConfigComplete } from 'next/dist/server/config-shared.js';
 import type { PluginContext } from 'rollup';
+import { parseAst } from 'rollup/parseAst';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { vol } from 'memfs';
 
@@ -186,6 +187,40 @@ describe('vitePluginNextImage load', () => {
 
     expect(result).toContain('width: 1');
     expect(result).toContain('height: 1');
+  });
+
+  describe.each([true, false])('disableStaticImages: %s', (disableStaticImages) => {
+    it.each([
+      {
+        name: 'Windows separators',
+        imagePath: String.raw`D:\Dev\next-app\src\assets\context.png`,
+        expectedPath: 'D:/Dev/next-app/src/assets/context.png?ignore',
+      },
+      {
+        name: 'quotes',
+        imagePath: '/project/src/assets/"context".png',
+        expectedPath: '/project/src/assets/"context".png?ignore',
+      },
+    ])('preserves image imports containing $name', async ({ imagePath, expectedPath }) => {
+      resolveMock.mockResolvedValueOnce({ id: imagePath });
+      vi.mocked(fs.promises.readFile).mockResolvedValue(pngFixture);
+      const plugin = vitePluginNextImage({
+        ...nextConfigResolver,
+        promise: Promise.resolve({ images: { disableStaticImages } } as NextConfigComplete),
+      });
+      const id = await plugin.resolveId!.call(
+        createContext(),
+        '@/assets/context.png',
+        'D:/Dev/next-app/src/Component.tsx'
+      );
+
+      const result = await plugin.load!.call({} as PluginContext, id as string);
+
+      expect(parseAst(result as string).body[0]).toMatchObject({
+        type: 'ImportDeclaration',
+        source: { value: expectedPath },
+      });
+    });
   });
 
   it('does not hang on malformed image data', async () => {

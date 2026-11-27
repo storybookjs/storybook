@@ -17,6 +17,12 @@ const STORY_FILE_RE = /\.stories\.[^/]+$/i;
 const CHUNK_SIZE = 50;
 const MAX_UNREACHABLE_FILES = 10;
 
+export type GitChanges = {
+  /** Repo-root-relative paths, as git reports them. */
+  changedFiles: Awaited<ReturnType<StoriesGitAccess['getChangedFiles']>>;
+  repoRoot: string;
+};
+
 export type ChangedFilesOutsideStories = Pick<
   ChangedStoriesOutput,
   'unreachableFiles' | 'unreachableFilesTruncated' | 'unindexedStoryFiles' | 'changedConfigFiles'
@@ -50,10 +56,13 @@ export async function detectChangedFilesOutsideStories({
   git,
   moduleGraph,
   storybookDirs,
+  changes,
 }: {
   git: StoriesGitAccess;
   moduleGraph: ModuleGraphAccess;
   storybookDirs: StorybookDirsAccess;
+  /** The changed files when the caller has read them already; the uncommitted ones otherwise. */
+  changes?: GitChanges;
 }): Promise<ChangedFilesOutsideStories> {
   const none: ChangedFilesOutsideStories = {
     unreachableFiles: [],
@@ -67,15 +76,19 @@ export async function detectChangedFilesOutsideStories({
     return none;
   }
 
-  let changedFiles: Awaited<ReturnType<StoriesGitAccess['getChangedFiles']>>;
+  let changedFiles: GitChanges['changedFiles'];
   let repoRoot: string;
-  try {
-    [changedFiles, repoRoot] = await Promise.all([git.getChangedFiles(), git.getRepoRoot()]);
-  } catch (error) {
-    // Without git, change detection already answers "no changes detected"; this note must not turn
-    // that into an error.
-    logger.debug(`Changed-file detection skipped, git is unavailable: ${error}`);
-    return none;
+  if (changes) {
+    ({ changedFiles, repoRoot } = changes);
+  } else {
+    try {
+      [changedFiles, repoRoot] = await Promise.all([git.getChangedFiles(), git.getRepoRoot()]);
+    } catch (error) {
+      // Without git, change detection already answers "no changes detected"; this note must not
+      // turn that into an error.
+      logger.debug(`Changed-file detection skipped, git is unavailable: ${error}`);
+      return none;
+    }
   }
 
   const matchesStories = await storybookDirs.getStoriesMatcher();

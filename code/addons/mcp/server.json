@@ -3,7 +3,7 @@
   "name": "io.github.storybookjs/addon-mcp",
   "title": "Storybook MCP Addon",
   "description": "Help agents automatically write and test stories for your UI components.",
-  "websiteUrl": "https://storybook.js.org/docs/ai/mcp/overview",
+  "websiteUrl": "https://storybook.js.org/docs/ai/reference/mcp-server",
   "icons": [
     {
       "src": "https://raw.githubusercontent.com/storybookjs/brand/main/icon/icon-storybook-default.svg",

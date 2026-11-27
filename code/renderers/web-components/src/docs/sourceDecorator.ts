@@ -1,10 +1,5 @@
 import { SourceType } from 'storybook/internal/docs-tools';
-import type {
-  ArgsStoryFn,
-  PartialStoryFn,
-  StoryContext,
-  StoryContextForRender,
-} from 'storybook/internal/types';
+import type { ArgsStoryFn, PartialStoryFn, StoryContext } from 'storybook/internal/types';
 
 import { render } from 'lit';
 import { emitTransformCode, useEffect } from 'storybook/preview-api';
@@ -29,6 +24,9 @@ function skipSourceRender(context: StoryContext<WebComponentsRenderer>) {
 }
 
 export function renderStorySource(storyResult: WebComponentsRenderer['storyResult']): string {
+  if (typeof storyResult === 'string') {
+    return storyResult.replace(LIT_EXPRESSION_COMMENTS, '');
+  }
   const container = window.document.createElement('div');
   if (storyResult instanceof DocumentFragment) {
     render(storyResult.cloneNode(true), container);
@@ -40,7 +38,7 @@ export function renderStorySource(storyResult: WebComponentsRenderer['storyResul
 
 export function sourceDecorator(
   storyFn: PartialStoryFn<WebComponentsRenderer>,
-  context: StoryContextForRender<WebComponentsRenderer>
+  context: StoryContext<WebComponentsRenderer>
 ): WebComponentsRenderer['storyResult'] {
   const story = storyFn();
   const renderedForSource = context?.parameters.docs?.source?.excludeDecorators

@@ -1,6 +1,8 @@
+import { getSourceSnippetRuntime } from 'storybook/internal/docs-tools';
+
 import './docs/register-print-hole.ts';
 import { sourceDecorator } from './docgen/story-docs/source-decorator/sourceDecorator.ts';
 
-const isDocgenServerEnabled = globalThis.FEATURES?.docgenServer;
+const snippetRuntime = getSourceSnippetRuntime();
 
-export const decorators = isDocgenServerEnabled ? [] : [sourceDecorator];
+export const decorators = snippetRuntime === 'preview' ? [sourceDecorator] : [];

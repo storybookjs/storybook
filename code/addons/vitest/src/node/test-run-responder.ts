@@ -204,7 +204,7 @@ export const wireTestRunResponder = async ({
   let requestInFlight = false;
 
   channel.on(TRIGGER_TEST_RUN_REQUEST, async (payload: TriggerTestRunRequestPayload) => {
-    const { requestId, actor, storyIds, config: configOverride } = payload;
+    const { requestId, actor, storyIds, fileFilters, storyFiles, config: configOverride } = payload;
 
     const sendResponse = (response: Omit<TriggerTestRunResponsePayload, 'requestId'>) => {
       channel.emit(TRIGGER_TEST_RUN_RESPONSE, { requestId, ...response });
@@ -280,6 +280,8 @@ export const wireTestRunResponder = async ({
       type: 'TRIGGER_RUN',
       payload: {
         storyIds,
+        fileFilters,
+        storyFiles,
         triggeredBy: `external:${actor}`,
         ...(configOverride && {
           configOverride: { ...config, ...configOverride },

@@ -9,11 +9,15 @@ import {
 import { defineService } from 'storybook/open-service';
 import type { ServiceInstanceOf } from '../../types.ts';
 import { readComponent } from '../component-state-key.ts';
-import type { StoryDocsPayload } from './types.ts';
+import type { StoryDocsById, StoryDocsPayload } from './types.ts';
 import { selectLiveSnippetForStory } from './live-snippet.ts';
 import { storyDocsQueryStaticPath } from './paths.ts';
 
-const storyDocsInputSchema = v.object({ id: v.string() });
+const storyDocsScopeSchema = v.picklist(['all', 'manifest']);
+export type StoryDocsScope = v.InferOutput<typeof storyDocsScopeSchema>;
+
+const storyDocsQueryInputSchema = v.object({ id: v.string(), scope: storyDocsScopeSchema });
+const storyDocsCommandInputSchema = v.object({ id: v.string() });
 
 const argsSchema = v.record(v.string(), v.unknown());
 
@@ -74,9 +78,42 @@ const storyDocsPayloadSchema = v.object({
 const storyDocsOutputSchema = v.optional(storyDocsPayloadSchema);
 
 export type StoryDocsServiceState = {
-  /** Extracted story docs keyed by component id. Populated by the `extractStoryDocs` command. */
+  /** Holds only the stories tagged `manifest`. The others are in `nonManifestStories`. */
   components: Record<string, StoryDocsPayload>;
+  nonManifestStories: Record<string, StoryDocsById>;
 };
+
+const storyDocsServiceStateSchema = v.object({
+  components: v.record(v.string(), storyDocsPayloadSchema),
+  nonManifestStories: v.record(v.string(), v.record(v.string(), storyDocSchema)),
+});
+
+export function isStoryDocsServiceState(value: unknown): value is StoryDocsServiceState {
+  return v.is(storyDocsServiceStateSchema, value);
+}
+
+export function readStoryDocs(
+  state: StoryDocsServiceState,
+  id: string,
+  scope: StoryDocsScope
+): StoryDocsPayload | undefined {
+  const storyDocs = readComponent(state.components, id);
+  if (!storyDocs) {
+    return undefined;
+  }
+  switch (scope) {
+    case 'manifest':
+      return Object.keys(storyDocs.stories).length > 0 ? storyDocs : undefined;
+    case 'all': {
+      const nonManifestStories = readComponent(state.nonManifestStories, id);
+      return nonManifestStories
+        ? { ...storyDocs, stories: { ...storyDocs.stories, ...nonManifestStories } }
+        : storyDocs;
+    }
+    default:
+      return scope satisfies never;
+  }
+}
 
 /**
  * Definition for the `core/story-docs` open service.
@@ -88,16 +125,16 @@ export const storyDocsServiceDef = defineService({
   id: 'core/story-docs',
   internal: true,
   description: 'Story documentation (snippets, descriptions, imports) keyed by component id.',
-  initialState: { components: {} } as StoryDocsServiceState,
+  initialState: { components: {}, nonManifestStories: {} } as StoryDocsServiceState,
   queries: {
     storyDocs: {
       description:
-        'Returns the story-docs payload for one component id, or undefined when not loaded.',
-      input: storyDocsInputSchema,
+        'Returns the story-docs payload for one component id, or undefined when not loaded. `scope` picks every story or only those in the manifests.',
+      input: storyDocsQueryInputSchema,
       output: storyDocsOutputSchema,
-      handler: (input, ctx) => readComponent(ctx.self.state.components, input.id),
-      load: async (input, ctx) => {
-        await ctx.self.commands.extractStoryDocs(input);
+      handler: ({ id, scope }, ctx) => readStoryDocs(ctx.self.state, id, scope),
+      load: async ({ id }, ctx) => {
+        await ctx.self.commands.extractStoryDocs({ id });
       },
       staticPath: (input) => storyDocsQueryStaticPath(input.id),
     },
@@ -110,14 +147,15 @@ export const storyDocsServiceDef = defineService({
       // story docs again.
       handler: (input, ctx) =>
         selectLiveSnippetForStory(
-          ctx.self.queries.storyDocs.get({ id: input.storyId.split('--')[0]! }),
+          ctx.self.queries.storyDocs.get({ id: input.storyId.split('--')[0]!, scope: 'all' }),
           input.storyId,
           { args: input.args, unset: input.unset },
           getPrintHole()
         ),
     },
     storyDocsForAllComponents: {
-      description: 'Returns story-docs payloads for every component in the story index.',
+      description:
+        'Returns the story-docs payload of every extracted component, with only its stories tagged `manifest`.',
       input: v.void(),
       output: v.record(v.string(), storyDocsPayloadSchema),
       handler: (_input, ctx) => ctx.self.state.components,
@@ -130,7 +168,7 @@ export const storyDocsServiceDef = defineService({
     extractStoryDocs: {
       description:
         'Resolves the story entry for a component id, runs the registered provider chain, writes the result into state, and returns it (or undefined when no provider produced story docs).',
-      input: storyDocsInputSchema,
+      input: storyDocsCommandInputSchema,
       output: storyDocsOutputSchema,
     },
     extractAllStoryDocs: {

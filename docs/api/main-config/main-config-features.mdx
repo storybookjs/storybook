@@ -20,6 +20,7 @@ Type:
   developmentModeForBuild?: boolean;
   docgenServer?: boolean;
   experimentalCodeExamples?: boolean;
+  experimentalLiveServerSnippets?: boolean;
   experimentalTestSyntax?: boolean;
   highlight?: boolean;
   interactions?: boolean;
@@ -46,6 +47,7 @@ Type:
   controls?: boolean;
   developmentModeForBuild?: boolean;
   docgenServer?: boolean;
+  experimentalLiveServerSnippets?: boolean;
   highlight?: boolean;
   interactions?: boolean;
   measure?: boolean;
@@ -70,6 +72,7 @@ Type:
   controls?: boolean;
   developmentModeForBuild?: boolean;
   docgenServer?: boolean;
+  experimentalLiveServerSnippets?: boolean;
   highlight?: boolean;
   interactions?: boolean;
   measure?: boolean;
@@ -93,6 +96,7 @@ Type:
   controls?: boolean;
   developmentModeForBuild?: boolean;
   docgenServer?: boolean;
+  experimentalLiveServerSnippets?: boolean;
   highlight?: boolean;
   interactions?: boolean;
   measure?: boolean;
@@ -116,6 +120,7 @@ Type:
   controls?: boolean;
   developmentModeForBuild?: boolean;
   docgenServer?: boolean;
+  experimentalLiveServerSnippets?: boolean;
   highlight?: boolean;
   interactions?: boolean;
   measure?: boolean;
@@ -200,7 +205,7 @@ Type: `boolean`
 
 Default: `true` for React, Angular Vite, Vue 3 Vite, and Svelte
 
-Generate [manifests](../../ai/manifests.mdx), used by the [MCP server](../../ai/mcp/overview.mdx).
+Generate [manifests](../../ai/reference/manifests.mdx), used by the [MCP server](../../ai/reference/mcp-server.mdx).
 
 </If>
 
@@ -256,7 +261,7 @@ Set `NODE_ENV` to `'development'` in built Storybooks for better testing and deb
 
 Type: `boolean`
 
-Prefer [`docgenServer`](#docgenserver), which supersedes this flag and provides the same static snippet behavior along with faster, more accurate docgen.
+Prefer [`docgenServer`](#docgenserver), which supersedes this flag. It also reads the stories source file, gives faster and more accurate docgen, and lets snippets follow the Controls table (see [`experimentalLiveServerSnippets`](#experimentalliveserversnippets)).
 
 Enable the new code example generation method for React components (as seen in the story previews in an [autodocs](../../writing-docs/autodocs.mdx) page).
 
@@ -298,9 +303,9 @@ When the `typescript` package is not installed, Vue 3 falls back to builder docg
 
 <If renderer={['react','angular','vue','svelte','web-components']}>
 
-Enable server-side docgen. Storybook extracts component metadata on the dev server using the TypeScript Language Service instead of injecting docgen into the preview bundle. This provides faster startup, more accurate [Controls](../../essentials/controls.mdx) and ArgTypes tables in [autodocs](../../writing-docs/autodocs.mdx), and improved static code snippets in docs and the Code panel. [Manifests](../../ai/manifests.mdx) and the [MCP server](../../ai/mcp/overview.mdx) use an optimized, ref-based format that loads faster for AI agents.
+Enable server-side docgen. Storybook extracts component metadata on the dev server using the TypeScript Language Service instead of injecting docgen into the preview bundle. This provides faster startup, more accurate [Controls](../../essentials/controls.mdx) and ArgTypes tables in [autodocs](../../writing-docs/autodocs.mdx), and improved code snippets in docs and the Code panel. [Manifests](../../ai/reference/manifests.mdx) and the [MCP server](../../ai/reference/mcp-server.mdx) use an optimized, ref-based format that loads faster for AI agents.
 
-Snippets are static: they won't update if you change values in the Controls table.
+Snippets follow the Controls table by default. To keep them static, see [`experimentalLiveServerSnippets`](#experimentalliveserversnippets).
 
 </If>
 
@@ -321,6 +326,24 @@ There is no translation for `reactDocgenTypescriptOptions`, including `propFilte
 Set `docgenServer: false` if your project depends on those settings.
 
 On `@storybook/angular-vite`, `framework.options.compodoc: false` only prevents Compodoc from running on the legacy path. It does not turn off `docgenServer`; use the feature option for that.
+
+## `experimentalLiveServerSnippets`
+
+(⚠️ **Experimental**)
+
+Type: `boolean`
+
+Default: `true`
+
+Make story snippets follow the Controls table. When you change a control, the snippet in the Code panel, the Canvas **Show code** view, and the MDX `<Source>` block show the new arg values. This needs [`docgenServer`](#docgenserver).
+
+If a snippet cannot follow a changed arg, Storybook shows the static snippet with a warning.
+
+Manifests and the MCP server always read the static snippet, with the args written in the story file.
+
+To keep snippets static, turn the feature off:
+
+<CodeSnippets path="main-config-features-experimental-live-server-snippets.md" />
 
 </If>
 

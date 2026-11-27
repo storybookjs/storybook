@@ -1,22 +1,22 @@
-import { SourceType } from 'storybook/internal/docs-tools';
+import { SourceType, getSourceSnippetRuntime } from 'storybook/internal/docs-tools';
 import type { DecoratorFunction, Parameters } from 'storybook/internal/types';
 
 import './register-print-hole.ts';
 import { sourceDecorator } from './sourceDecorator';
 
-// With the docgen server on, the Source block and Code panel show the story-docs snippet, which is
-// the TypeScript host component that renders the story; without it they show the template the
-// runtime source decorator builds. Read at module scope because the preview's <head> assigns
-// `FEATURES` from a blocking script, before any preview module evaluates.
-const useStaticServiceSnippets = globalThis.FEATURES?.docgenServer === true;
+// Read at module scope because the preview's <head> assigns `FEATURES` from a blocking script,
+// before any preview module evaluates.
+const snippetRuntime = getSourceSnippetRuntime();
 
 export const parameters: Parameters = {
   docs: {
     source: {
       type: SourceType.DYNAMIC,
-      language: useStaticServiceSnippets ? 'ts' : 'html',
+      // The server snippet is the TypeScript host component that renders the story.
+      language: snippetRuntime === 'server' ? 'ts' : 'html',
     },
   },
 };
 
-export const decorators: DecoratorFunction[] = useStaticServiceSnippets ? [] : [sourceDecorator];
+export const decorators: DecoratorFunction[] =
+  snippetRuntime === 'preview' ? [sourceDecorator] : [];

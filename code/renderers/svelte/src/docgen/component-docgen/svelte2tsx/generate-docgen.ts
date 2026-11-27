@@ -1,11 +1,11 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { extractJSDocInfo } from 'storybook/internal/csf-tools';
-
 import svelte2tsx, { internalHelpers } from 'svelte2tsx';
 import { VERSION, parse } from 'svelte/compiler';
 import ts from 'typescript';
+
+import { extractComponentComment } from '../component-comment.ts';
 
 export type Docgen = {
   name?: string;
@@ -788,22 +788,10 @@ export function extractDocgen(
   });
 
   const source = options.documentationSource;
-  const ast = source ? parse(source, { modern: true }) : undefined;
-  const comment = ast?.fragment.nodes.find(
-    (node) => node.type === 'Comment' && /@component\b/.test(node.data)
-  );
+  const docs = source ? extractComponentComment(parse(source, { modern: true })) : undefined;
   // svelte2tsx gives the render function the type params of both the `generics` attribute and
   // Svelte 4's `type T = $$Generic<string>`.
   const typeParams = renderFunction.typeParameters?.map((param) => param.getText()).join(', ');
-  const docs =
-    comment && comment.type === 'Comment'
-      ? extractJSDocInfo(
-          comment.data
-            .replace(/@component\b/, '')
-            .replace(/\s+(@[a-zA-Z]+\b)/g, '\n$1')
-            .trim()
-        )
-      : undefined;
   const omittedTypes =
     propsType && omitted.size
       ? [...new Set(libraryTypesWithOmittedProps(propsType, omitted, checker))]

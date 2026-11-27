@@ -250,6 +250,7 @@ export const features: PresetProperty<'features'> = async (existing, options) =>
   backgrounds: true,
   componentsManifest: false,
   experimentalChunkedPreviewRuntime: false,
+  experimentalLiveServerSnippets: true,
   controls: true,
   docgenServer: await options.presets.apply('isDocgenProviderEnabled', false),
   highlight: true,
@@ -417,7 +418,7 @@ export const services = async (_value: void, options: Options): Promise<void> =>
       storyIndex,
       git: {
         getRepoRoot: () => gitDiffProvider.getRepoRoot(),
-        getChangedFiles: () => gitDiffProvider.getChangedFiles(),
+        getChangedFiles: (since) => gitDiffProvider.getChangedFiles(since),
       },
       changeStatuses: { getAll: getSyncedStatuses },
       // Real paths, because git reports the repo root as one; on Windows the cwd can differ in case.

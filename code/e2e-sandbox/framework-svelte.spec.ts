@@ -27,6 +27,39 @@ test.describe('Svelte', () => {
     );
   });
 
+  test('State passed to Svelte CSF args updates the story until the controls change or reset', async ({
+    page,
+  }) => {
+    const sbPage = new SbPage(page, expect);
+
+    await sbPage.navigateToStory(
+      'stories/renderers/svelte/svelte-csf/reactive-args',
+      'module-state'
+    );
+    const root = sbPage.previewRoot();
+    const count = root.getByTestId('count');
+    const increment = root.getByRole('button', { name: 'Increment' });
+    await expect(count).toHaveText('Count: 0');
+
+    await increment.click();
+    await expect(count).toHaveText('Count: 1');
+
+    await sbPage.viewAddonPanel('Controls');
+    const countControl = sbPage.panelContent().locator('#control-count');
+    await expect(countControl).toHaveValue('1');
+
+    await countControl.fill('10');
+    await expect(count).toHaveText('Count: 10');
+
+    await increment.click();
+    await expect(count).toHaveText('Count: 2');
+    await expect(countControl).toHaveValue('2');
+
+    await sbPage.panelContent().locator('[aria-label="Reset controls"]').click();
+    await expect(count).toHaveText('Count: 0');
+    await expect(countControl).toHaveValue('0');
+  });
+
   test.describe('SvelteKit', () => {
     test.skip(!templateName?.includes('svelte-kit'), 'Only run this test on SvelteKit');
 

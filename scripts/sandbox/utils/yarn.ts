@@ -9,10 +9,7 @@ import { BEFORE_SANDBOX_NPM_MIN_VERSION, ROOT_DIRECTORY } from '../../utils/cons
 export { BEFORE_SANDBOX_NPM_MIN_VERSION };
 import { runCommand } from '../generate.ts';
 
-export {
-  LOCALLY_PUBLISHED_PACKAGE_PATTERNS,
-  preapproveLocallyPublishedPackages,
-} from '../../utils/preapprove-local-packages.ts';
+export { preapproveLocallyPublishedPackages } from '../../utils/preapprove-local-packages.ts';
 
 interface SetupYarnOptions {
   cwd: string;
@@ -56,14 +53,16 @@ export async function localizeYarnConfigFiles(baseDir: string, beforeDir: string
 }
 
 /**
- * 7-day age gate for generated sandboxes.
+ * Age gate for generated sandboxes.
  *
  * - Yarn: `BEFORE_SANDBOX_MIN_AGE_GATE`
  * - npm scaffold: `BEFORE_SANDBOX_NPM_MIN_RELEASE_AGE_DAYS` → `NPM_CONFIG_MIN_RELEASE_AGE`
+ *
+ * The Yarn gate is derived from the npm day count so the two cannot drift.
  */
-export const BEFORE_SANDBOX_MIN_AGE_GATE = '7d';
 /** npm `min-release-age` is in days (npm 11.10+). */
-export const BEFORE_SANDBOX_NPM_MIN_RELEASE_AGE_DAYS = 7;
+export const BEFORE_SANDBOX_NPM_MIN_RELEASE_AGE_DAYS = 3;
+export const BEFORE_SANDBOX_MIN_AGE_GATE = `${BEFORE_SANDBOX_NPM_MIN_RELEASE_AGE_DAYS}d`;
 export async function ensureNpmSupportsMinReleaseAge() {
   const { stdout } = await runCommand('npm --version', { cwd: process.cwd() });
   const version = String(stdout).trim();
@@ -115,7 +114,8 @@ interface RefreshLockfileOptions {
  *    legacy `yarn.lock`, `pnpm-lock.yaml`).
  * 2. Pin Yarn 4 via the `package.json` `packageManager` field so corepack
  *    resolves it deterministically (no network `yarn set version`).
- * 3. Set `npmMinimalAgeGate` to 7 days so resolution skips quarantined versions,
+ * 3. Set `npmMinimalAgeGate` to the `BEFORE_SANDBOX_MIN_AGE_GATE` duration so
+ *    resolution skips quarantined versions,
  *    plus any per-template `npmPreapprovedPackages` allowlist.
  * 4. Run `yarn install --mode=update-lockfile`, narrowing only the ranges that
  *    the gate leaves with no installable version (see `narrowQuarantinedRanges`).

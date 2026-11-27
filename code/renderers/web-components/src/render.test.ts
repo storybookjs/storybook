@@ -1,7 +1,7 @@
 /** @vitest-environment happy-dom */
-import type { StoryContextForRender } from 'storybook/internal/types';
+import type { StoryContext } from 'storybook/internal/types';
 
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { render } from './render.ts';
 import type { WebComponentsRenderer } from './types.ts';
@@ -19,13 +19,9 @@ if (!customElements.get(X_CARD_TAG)) {
 const CONTEXT = {
   id: 'x-card--a',
   component: X_CARD_TAG,
-} as StoryContextForRender<WebComponentsRenderer>;
+} as StoryContext<WebComponentsRenderer>;
 
 describe('render', () => {
-  afterEach(() => {
-    vi.unstubAllGlobals();
-  });
-
   it('assigns every arg as a property when the flag is off', () => {
     const element = render({ label: 'x', 'my-change-event': vi.fn() }, CONTEXT) as HTMLElement & {
       label?: string;

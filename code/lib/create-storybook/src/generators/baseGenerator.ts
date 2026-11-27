@@ -1,5 +1,4 @@
 import { mkdir } from 'node:fs/promises';
-import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import {
@@ -20,6 +19,7 @@ import {
 import { prompt } from 'storybook/internal/node-logger';
 import { SupportedFramework, SupportedLanguage } from 'storybook/internal/types';
 
+import { dirname, join } from 'pathe';
 import invariant from 'tiny-invariant';
 import { dedent } from 'ts-dedent';
 
@@ -136,15 +136,7 @@ const hasFrameworkTemplates = (framework?: string) => {
 export async function baseGenerator(
   packageManager: JsPackageManager,
   npmOptions: NpmOptions,
-  {
-    language,
-    builder,
-    framework,
-    renderer,
-    features,
-    dependencyCollector,
-    storybookVersionSpecifier,
-  }: GeneratorOptions,
+  { language, builder, framework, renderer, features, dependencyCollector }: GeneratorOptions,
   _options: FrameworkOptions
 ) {
   const options = { ...defaultOptions, ..._options };
@@ -243,8 +235,7 @@ export async function baseGenerator(
   }
 
   const versionedPackages = await packageManager.getVersionedPackages(
-    packagesToInstall as string[],
-    { storybookVersionSpecifier }
+    packagesToInstall as string[]
   );
 
   if (versionedPackages.length > 0) {

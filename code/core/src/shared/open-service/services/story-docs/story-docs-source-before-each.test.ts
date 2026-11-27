@@ -123,7 +123,6 @@ describe('selectLiveSnippetForStory', () => {
     vi.stubGlobal('FEATURES', { experimentalLiveServerSnippets: true });
   });
   afterEach(() => {
-    vi.unstubAllGlobals();
     vi.restoreAllMocks();
   });
 
@@ -301,7 +300,6 @@ describe('selectLiveSnippetForStory without experimentalLiveServerSnippets', () 
       snippet: selectSnippetForStory(payloadWithWarning, storyId),
       warning,
     });
-    vi.unstubAllGlobals();
   });
 });
 
@@ -313,10 +311,6 @@ describe('storyDocsSourceBeforeEach', () => {
     registerPrintHole(printHole);
     mockedEmitTransformCode.mockResolvedValue(undefined);
     mockStoryDocsService(() => Promise.resolve(payload));
-  });
-
-  afterEach(() => {
-    vi.unstubAllGlobals();
   });
 
   it('emits the service snippet through emitTransformCode', async () => {

@@ -1,6 +1,6 @@
 {
   "name": "@storybook/mcp",
-  "version": "11.0.0-beta.2",
+  "version": "11.0.0-rc.1",
   "description": "MCP server that serves knowledge about your components based on your Storybook stories and documentation",
   "keywords": [
     "mcp",
@@ -39,8 +39,8 @@
   ],
   "dependencies": {
     "@tmcp/adapter-valibot": "^0.1.5",
-    "@tmcp/transport-http": "^0.8.5",
-    "tmcp": "^1.19.4",
+    "@tmcp/transport-http": "^0.9.1",
+    "tmcp": "^1.20.1",
     "valibot": "^1.4.0"
   },
   "devDependencies": {

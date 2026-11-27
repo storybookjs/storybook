@@ -7,14 +7,21 @@ import { dedent } from 'ts-dedent';
 
 import { getStorybookData } from '../automigrate/helpers/mainConfigFile.ts';
 import { shortenPath } from '../util.ts';
+import { getAppliedDeprecations, getDeprecatedPackagesMessage } from './deprecatedPackages.ts';
 import { getDuplicatedDepsWarnings } from './getDuplicatedDepsWarnings.ts';
 import {
   getIncompatiblePackagesSummary,
   getIncompatibleStorybookPackages,
 } from './getIncompatibleStorybookPackages.ts';
 import { getMismatchingVersionsWarnings } from './getMismatchingVersionsWarning.ts';
+import {
+  STORYBOOK_OVERRIDES_TITLE,
+  getStorybookOverrides,
+  getStorybookOverridesSummary,
+} from './getStorybookOverrides.ts';
 import { DiagnosticType as DiagType, DiagnosticStatus } from './types.ts';
 import type {
+  DiagnosticMessage,
   DiagnosticResult,
   DiagnosticType,
   DoctorCheckResult,
@@ -176,6 +183,8 @@ export async function runMultiProjectDoctor(
     packageManager: project.packageManager,
     storybookVersion: project.storybookVersion,
     mainConfig: project.mainConfig,
+    configurationError: project.configurationError,
+    warnedFixIds: project.warnedFixIds,
   }));
 
   // Always return the project-based results structure
@@ -186,41 +195,34 @@ export async function runMultiProjectDoctor(
 export const doctor = async ({
   configDir: userSpecifiedConfigDir,
   packageManager: packageManagerName,
+  warnedFixIds,
 }: DoctorOptions) => {
   logger.step('Checking the health of your Storybook..');
 
-  const diagnosticResults: DiagnosticResult[] = [];
-
   let packageManager!: JsPackageManager;
-  let configDir!: string;
+  let configDir = userSpecifiedConfigDir ?? '.storybook';
   let versionInstalled: string | undefined;
   let mainConfig!: StorybookConfigRaw;
+  let configurationError: DiagnosticMessage | undefined;
 
   try {
     ({ packageManager, configDir, versionInstalled, mainConfig } = await getStorybookData({
       configDir: userSpecifiedConfigDir,
       packageManagerName,
     }));
-  } catch (err: any) {
-    const title = 'Configuration Error';
-    let message: string;
+  } catch (error: unknown) {
+    const reason = error instanceof Error ? error.message : String(error);
 
-    if (err.message.includes('No configuration files have been found')) {
-      message = dedent`
+    configurationError = {
+      title: 'Configuration Error',
+      message: reason.includes('No configuration files have been found')
+        ? dedent`
           Could not find or evaluate your Storybook main.js config directory at ${picocolors.blue(
-            configDir || '.storybook'
+            configDir
           )} so the doctor command cannot proceed. You might be running this command in a monorepo or a non-standard project structure. If that is the case, please rerun this command by specifying the path to your Storybook config directory via the --config-dir option.
-        `;
-    } else {
-      message = `❌ ${err.message}`;
-    }
-
-    diagnosticResults.push({
-      type: DiagType.CONFIGURATION_ERROR,
-      title,
-      message,
-      projects: [{ configDir }],
-    });
+        `
+        : `❌ ${reason}`,
+    };
   }
 
   const doctorResults = await collectDoctorResultsByProject([
@@ -229,6 +231,8 @@ export const doctor = async ({
       packageManager,
       storybookVersion: versionInstalled,
       mainConfig,
+      configurationError,
+      warnedFixIds,
     },
   ]);
 
@@ -245,13 +249,20 @@ export async function getDoctorDiagnostics({
   packageManager,
   storybookVersion,
   mainConfig,
-}: {
-  configDir: string;
-  packageManager: JsPackageManager;
-  storybookVersion?: string;
-  mainConfig: StorybookConfigRaw;
-}): Promise<DoctorCheckResult[]> {
+  configurationError,
+  warnedFixIds,
+}: ProjectDoctorData): Promise<DoctorCheckResult[]> {
   const results: DoctorCheckResult[] = [];
+
+  if (configurationError) {
+    results.push({
+      type: DiagType.CONFIGURATION_ERROR,
+      title: configurationError.title,
+      message: configurationError.message,
+      project: { configDir },
+    });
+    return results;
+  }
 
   if (!storybookVersion) {
     results.push({
@@ -293,6 +304,27 @@ export async function getDoctorDiagnostics({
     });
   }
 
+  // Deprecations come from the one table in ./deprecatedPackages.ts, applied to the version and the
+  // project's dependencies. A fix whose skip warning was printed this run already told the user,
+  // so its packages stay silent here and the deprecation shows exactly once per run. A fix that
+  // cancelled itself from `run` printed no warning and is not in the list, so it still gets the
+  // doctor's deprecation.
+  const appliedDeprecations = getAppliedDeprecations({
+    storybookVersion,
+    installedDependencies: packageManager.getAllDependencies(),
+  }).filter(
+    ({ entry }) => !(entry.automigrateFixId && warnedFixIds?.includes(entry.automigrateFixId))
+  );
+
+  if (appliedDeprecations.length > 0) {
+    results.push({
+      type: DiagType.DEPRECATED_PACKAGES,
+      title: 'Deprecated packages',
+      message: getDeprecatedPackagesMessage(appliedDeprecations),
+      project: { configDir },
+    });
+  }
+
   // Check for incompatible packages
   const incompatibleStorybookPackagesList = await getIncompatibleStorybookPackages({
     currentStorybookVersion: storybookVersion,
@@ -308,6 +340,21 @@ export async function getDoctorDiagnostics({
       type: DiagType.INCOMPATIBLE_PACKAGES,
       title: 'Incompatible packages found',
       message: incompatiblePackagesMessage,
+      project: { configDir },
+    });
+  }
+
+  const overrides = getStorybookOverrides({ packageManager, targetVersion: storybookVersion });
+
+  if (overrides.length > 0) {
+    results.push({
+      type: DiagType.STORYBOOK_OVERRIDES,
+      title: STORYBOOK_OVERRIDES_TITLE,
+      message: getStorybookOverridesSummary(
+        overrides,
+        storybookVersion,
+        'reinstall your dependencies'
+      ),
       project: { configDir },
     });
   }

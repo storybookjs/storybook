@@ -138,6 +138,13 @@ export default class Store {
 
     const delta: Patch =
       typeof inputPatch === 'function' ? resolveUpdater(inputPatch, this.getState()) : inputPatch;
+    // Nothing to commit or persist: every React setState re-renders the provider, and persisting
+    // rewrites the whole stored state.
+    if (Object.keys(delta).length === 0) {
+      const state = this.getState();
+      callback?.(state);
+      return state;
+    }
     const pending: PendingPatch = { patch: delta, committed: false };
     this.pendingPatches.push(pending);
 

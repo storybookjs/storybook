@@ -1,7 +1,6 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { global as globalRef } from '@storybook/global';
 import { STORY_HOT_UPDATED, STORY_RENDER_PHASE_CHANGED } from 'storybook/internal/core-events';
 
 import { setupStoryFreezer, shouldFreeze } from './setupStoryFreezer.ts';
@@ -207,7 +206,7 @@ describe('setupStoryFreezer', () => {
       finish = vi.fn();
       pause = vi.fn();
       getAnimations = vi.fn(() => [{ finish, pause } as unknown as Animation]);
-      const storyDocument = globalRef.document as StoryDocument;
+      const storyDocument = globalThis.document as StoryDocument;
       previousGetAnimations = storyDocument.getAnimations;
       storyDocument.getAnimations = getAnimations as StoryDocument['getAnimations'];
       previousQueueMicrotask = window.queueMicrotask;
@@ -220,7 +219,7 @@ describe('setupStoryFreezer', () => {
     });
 
     afterEach(() => {
-      const storyDocument = globalRef.document as StoryDocument;
+      const storyDocument = globalThis.document as StoryDocument;
       if (previousGetAnimations) {
         storyDocument.getAnimations = previousGetAnimations;
       } else {

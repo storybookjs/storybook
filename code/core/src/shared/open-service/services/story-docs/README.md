@@ -15,10 +15,10 @@ for a story with a `transform`; for any other story it fills the snippet itself 
 The goal: after you change a control, the snippet shows code you can copy into your project, and
 it reads like code you would write. It does not have to be perfect; it has to be logical.
 
-Live snippets are behind `features.experimentalLiveServerSnippets`. While it is off, the service
-leaves every `template` out of the story docs, so agents and the components manifest read what they
-read before live snippets, and `storyArgsChanged` never reports a change, so every runtime shows the
-static snippet.
+Live snippets are on by default; `features.experimentalLiveServerSnippets: false` opts out. While
+it is off, the service leaves every `template` out of the story docs, so agents and the components
+manifest read what they read before live snippets, and `storyArgsChanged` never reports a change,
+so every runtime shows the static snippet.
 
 A story's `snippet` is static: it shows the args written in the story file, and it is what agents
 and the components manifest read. So that the snippet follows the controls with `docgenServer` on,
@@ -139,6 +139,22 @@ from the file the component selection picks, which is also the only file `core/d
 the import block of its own file. A file whose extraction throws keeps its stories in the payload, each with
 that `error`; a file the provider returns nothing for contributes no stories.
 
+## Stories left out of the manifests
+
+The Storybook UI shows every story, but the docs tools, the MCP and the components manifest show
+only the stories tagged `manifest`. So every `storyDocs` read names a `scope`: `all` for the UI,
+`manifest` for the others. The scope has no default, so code that leaves it out fails the type check
+and the input validation, and cannot show a hidden story by mistake.
+
+The state stores each story once. `components` holds each payload with only its stories tagged
+`manifest`, and `nonManifestStories` holds the others; the `all` scope joins them. In a build,
+`manifests/components.json` points at `components` in the same snapshot the UI loads, so a reader
+that follows the `$ref` gets only the manifest stories. Read every story through the query, not
+from `components`.
+
+The tags come from the story index, so a change to a story's `manifest` tag extracts its component
+again, even when no story file changed.
+
 ## Import snippets
 
 Story-docs builds import statements from CSF import analysis, shared across providers by
@@ -151,5 +167,12 @@ second import block would produce source that does not parse. New providers shou
 and leave `import` unset; the field stays until React and Vue move over, and goes away with them.
 
 The component `@import` JSDoc override tag is honored only where a provider already reads the
-component source. Angular reads it from the docgen payload's JSDoc tags; React and Vue derive
-imports from resolved import paths and package name rewriting only.
+component source. Angular and Vue read it from the docgen payload's JSDoc tags; React derives
+imports from resolved import paths and package name rewriting only. Svelte reads it from the
+`@component` comment of the component file, and an `@import` on the meta wins over it. A member
+such as `UI.Tag` keeps its namespace, imported from the tag's source when the tag names the member
+and nothing else in the snippet reads the namespace.
+
+Reading `core/docgen` from a story-docs build has a cost: a static build extracts each component a
+second time, and in dev the stored docgen can still be the one from before an edit, because both
+services refresh on the same module graph change.

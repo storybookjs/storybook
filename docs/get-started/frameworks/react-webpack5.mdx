@@ -61,7 +61,15 @@ If you're working on an app that was initialized manually, ensure that your app 
 
 ## Component documentation
 
-Storybook 11 reads React component props on the server by default, with the [`typescript`](../../configure/integration/typescript.mdx) package (TypeScript 5.9 or 6, even in JavaScript projects, where it reads types from JSDoc comments). New projects need no docgen configuration and no extra packages.
+Storybook reads your components' props and JSDoc comments, a step called docgen, to generate [controls](../../essentials/controls.mdx) and [documentation](../../writing-docs/autodocs.mdx), and to improve [skill output](../../ai/skills/component-docs.mdx). New projects need no docgen configuration and no extra packages.
+
+This framework supports three docgen engines:
+
+| Docgen engine             | Runs         | Status                         |
+| ------------------------- | ------------ | ------------------------------ |
+| `react-component-meta`    | Server-side  | Recommended, AI-ready, default |
+| `react-docgen`            | Builder-side | Deprecated                     |
+| `react-docgen-typescript` | Builder-side | Deprecated                     |
 
 <Callout variant="info">
 

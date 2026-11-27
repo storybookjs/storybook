@@ -10,6 +10,11 @@ import {
   storyDocsStaticStorePath,
 } from '../../../shared/open-service/services/story-docs/paths.ts';
 import type { StoryDocsPayload } from '../../../shared/open-service/services/story-docs/types.ts';
+import {
+  type StoryDocsScope,
+  isStoryDocsServiceState,
+  readStoryDocs,
+} from '../../../shared/open-service/services/story-docs/definition.ts';
 import { getOwn } from '../../../shared/open-service/plain-object.ts';
 import { readComponent } from '../../../shared/open-service/services/component-state-key.ts';
 import type { ComponentManifest, ComponentsManifest } from '../../../types/modules/core-common.ts';
@@ -53,12 +58,12 @@ function readDocgenSnapshotPayload(document: unknown, id: string): DocgenPayload
   return payload !== null && typeof payload === 'object' ? (payload as DocgenPayload) : undefined;
 }
 
-function readStoryDocsSnapshotPayload(document: unknown, id: string): StoryDocsPayload | undefined {
-  const components = (document as { components?: Record<string, unknown> } | null)?.components;
-  const payload = components && readComponent(components, id);
-  return payload !== null && typeof payload === 'object'
-    ? (payload as StoryDocsPayload)
-    : undefined;
+function readStoryDocsSnapshotPayload(
+  document: unknown,
+  id: string,
+  scope: StoryDocsScope
+): StoryDocsPayload | undefined {
+  return isStoryDocsServiceState(document) ? readStoryDocs(document, id, scope) : undefined;
 }
 
 /**
@@ -105,7 +110,8 @@ export async function loadDocgenPayloadsFromDisk(
  */
 export async function loadStoryDocsPayloadsFromDisk(
   outputDir: string,
-  componentIds: string[]
+  componentIds: string[],
+  scope: StoryDocsScope
 ): Promise<Record<string, StoryDocsPayload>> {
   const entries = await Promise.all(
     componentIds.map(async (id) => {
@@ -113,7 +119,7 @@ export async function loadStoryDocsPayloadsFromDisk(
 
       try {
         const document = JSON.parse(await readFile(snapshotPath, 'utf8')) as unknown;
-        const payload = readStoryDocsSnapshotPayload(document, id);
+        const payload = readStoryDocsSnapshotPayload(document, id, scope);
         return payload ? ([id, payload] as const) : null;
       } catch {
         return null;

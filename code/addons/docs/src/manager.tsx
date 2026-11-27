@@ -27,10 +27,13 @@ const LiveSnippetCodePanel = ({
   // Loads only missing story docs: in dev the server's story docs sync to the manager, and a load
   // would extract them again. Static story docs do not sync, so there the manager fetches its own.
   useEffect(() => {
-    if (componentId === undefined || service.queries.storyDocs.get({ id: componentId })) {
+    if (
+      componentId === undefined ||
+      service.queries.storyDocs.get({ id: componentId, scope: 'all' })
+    ) {
       return;
     }
-    service.queries.storyDocs.loaded({ id: componentId }).catch((error: unknown) => {
+    service.queries.storyDocs.loaded({ id: componentId, scope: 'all' }).catch((error: unknown) => {
       logger.debug(`Story docs of ${componentId} unavailable: ${String(error)}`);
     });
   }, [service, componentId]);

@@ -87,6 +87,11 @@ export type ToolsetObjectOutputSchema = StandardSchemaV1<
   Record<string, unknown>
 >;
 
+/** The keys of an input that take a list of strings: what the CLI fills from bare arguments. */
+type StringListKey<TInput> = {
+  [K in keyof TInput & string]-?: string[] extends NonNullable<TInput[K]> ? K : never;
+}[keyof TInput & string];
+
 /**
  * One public method: description, input schema, optional output schema, and one handler.
  *
@@ -121,6 +126,13 @@ export type ToolsetMethod<
    * start the dev server first. Adapters that always have a dev server (MCP) ignore the trait.
    */
   requiresDevServer?: true;
+  /**
+   * The input key, an array, that the `storybook tools` CLI also takes as bare arguments:
+   * `npx storybook tools test run Button Card` is `--files Button Card`. The CLI passes the values
+   * as typed; what they mean is up to the handler. Other transports have no bare arguments and
+   * ignore the trait.
+   */
+  positional?: StringListKey<StandardSchemaV1.InferInput<TSchema>>;
   handler: (
     input: StandardSchemaV1.InferOutput<TSchema>,
     context: ToolsetCtx
@@ -160,6 +172,16 @@ type MethodOutcomeContract<TMethod> = TMethod extends {
   ? ToolsetOutcome<SchemaBoundData<TOut>> | Promise<ToolsetOutcome<SchemaBoundData<TOut>>>
   : unknown;
 
+// An object type, so a wrong key fails on its own line instead of collapsing the whole method.
+type PositionalContract<TMethod> = TMethod extends {
+  input: infer TInput extends AnySchema;
+  positional: infer TKey;
+}
+  ? TKey extends StringListKey<StandardSchemaV1.InferInput<TInput>>
+    ? unknown
+    : { error: 'positional must name an input key that takes a list of strings' }
+  : unknown;
+
 // Brackets make a ternary input fail when either branch is not strict.
 type StrictInputContract<TInput> = [TInput] extends [{ '~standard': { vendor: 'valibot' } }]
   ? [TInput] extends [{ type: 'strict_object' }]
@@ -170,13 +192,15 @@ type StrictInputContract<TInput> = [TInput] extends [{ '~standard': { vendor: 'v
 /**
  * Second contextual-typing pass for the methods literal: `handler` input comes from that method's
  * own `input`, and its outcome data from the method's `output` where one is declared — so
- * renaming or removing a published field is a compile error at the definition site. Intersecting
+ * renaming or removing a published field is a compile error at the definition site. `positional`
+ * is checked against the same `input`: it must name a key that takes a list of strings. Intersecting
  * this with the inferred map is what makes the flow work on both the stable and the native
  * TypeScript compiler — inferring a separate record does not.
  */
 type MethodContracts<TMethods extends ToolsetMethods> = {
   [TKey in keyof TMethods]: {
     input: StrictInputContract<TMethods[TKey]['input']>;
+    positional?: PositionalContract<TMethods[TKey]>;
     handler: (
       input: StandardSchemaV1.InferOutput<TMethods[TKey]['input']>,
       context: ToolsetCtx

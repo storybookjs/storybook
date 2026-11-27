@@ -4,8 +4,6 @@ import * as CORE_EVENTS from 'storybook/internal/core-events';
 import * as CORE_EVENTS_PREVIEW_ERRORS from 'storybook/internal/preview-errors';
 import * as TYPES from 'storybook/internal/types';
 
-import * as GLOBAL from '@storybook/global';
-
 import * as ACTIONS from 'storybook/actions';
 import * as PREVIEW_API from 'storybook/preview-api';
 import * as TEST from 'storybook/test';
@@ -14,7 +12,15 @@ import type { globalsNameReferenceMap } from './globals.ts';
 
 // Here we map the name of a module to their VALUE in the global scope.
 export const globalsNameValueMap: Required<Record<keyof typeof globalsNameReferenceMap, any>> = {
-  '@storybook/global': GLOBAL,
+  // Deprecated, see globals.ts. `@storybook/global` only exported `globalThis` as `global`.
+  '@storybook/global': {
+    get global() {
+      CLIENT_LOGGER.deprecate(
+        '`@storybook/global` is deprecated and will be removed in Storybook 12, use `globalThis` instead. See https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#storybookglobal-is-deprecated'
+      );
+      return globalThis;
+    },
+  },
 
   'storybook/test': TEST,
   'storybook/actions': ACTIONS,

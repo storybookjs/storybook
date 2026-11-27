@@ -122,6 +122,16 @@ export const addWorkaroundResolutions = async ({
     };
   }
 
+  // Vue 3.5.46 and 3.6.0-rc.16 need these at versions still inside the age gate.
+  // Remove once source-map-js 1.2.3 (2026-11-18) is older than the gate.
+  if (key === 'vue3-vite/prerelease-ts') {
+    additionalResolutions = {
+      ...additionalResolutions,
+      'source-map-js': '1.2.2',
+      csstype: '3.2.3',
+    };
+  }
+
   packageJson.resolutions = {
     ...packageJson.resolutions,
     '@testing-library/dom': '^9.3.4',

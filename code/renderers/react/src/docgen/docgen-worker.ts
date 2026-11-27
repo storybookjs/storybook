@@ -23,7 +23,7 @@ import type { DocgenMiddleware } from 'storybook/internal/types';
 import { loadDocgenTypeScript } from '@storybook/component-meta-typescript';
 
 import { ComponentMetaManager } from '../componentManifest/componentMeta/ComponentMetaManager.ts';
-import { buildDocgenPayload } from './buildDocgen.ts';
+import { buildDocgenPayloads } from './buildDocgen.ts';
 
 export interface ReactDocgenOptions {
   typeScriptSpecifier?: TypeScriptSpecifierForDocgen;
@@ -47,5 +47,6 @@ export const createDocgenProvider = ({
         return undefined;
       }
     },
-    extract: (componentMetaManager, input) => buildDocgenPayload(input, { componentMetaManager }),
+    extractBatch: (componentMetaManager, inputs) =>
+      buildDocgenPayloads(inputs, { componentMetaManager }),
   });

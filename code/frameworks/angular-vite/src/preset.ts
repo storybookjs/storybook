@@ -452,8 +452,14 @@ export function angularOptionsPlugin(
     name: 'storybook-angular-vite-options-plugin',
     config(userConfig: UserConfig) {
       resolvedPreviewPath = findConfigFile('preview', options.configDir) ?? undefined;
+      // Outside a builder (the addon-vitest child), the parent builder's workspace root arrives
+      // through the bridged options; `userConfig.root` there is the project folder, not the workspace.
+      const bridgedWorkspaceRoot = options.angularBuilderOptions?.workspaceRoot;
       workspaceRoot =
-        options.angularBuilderContext?.workspaceRoot ?? userConfig?.root ?? process.cwd();
+        options.angularBuilderContext?.workspaceRoot ??
+        (typeof bridgedWorkspaceRoot === 'string' ? bridgedWorkspaceRoot : undefined) ??
+        userConfig?.root ??
+        process.cwd();
       const stylePreprocessorOptions =
         options?.angularBuilderOptions?.stylePreprocessorOptions ?? {};
       // Angular's builder schema (and this framework's builder schema) names the

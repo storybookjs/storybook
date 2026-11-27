@@ -135,9 +135,9 @@ describe('ProjectTypeService', () => {
       // @ts-expect-error private method spy
       vi.spyOn(service, 'isNxProject').mockReturnValue(false);
 
-      await expect(
-        service.autoDetectProjectType({ html: false } as CommandOptions)
-      ).resolves.toBeUndefined();
+      await expect(service.autoDetectProjectType({ html: false } as CommandOptions)).resolves.toBe(
+        'undetected'
+      );
     });
 
     it('detects SVELTEKIT via @sveltejs/kit', async () => {

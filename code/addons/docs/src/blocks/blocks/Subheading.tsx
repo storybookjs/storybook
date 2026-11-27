@@ -10,11 +10,17 @@ import { HeaderMdx } from './mdx';
 import { withMdxComponentOverride } from './with-mdx-component-override';
 
 const SubheadingImpl: FC<PropsWithChildren<HeadingProps>> = ({ children, disableAnchor }) => {
-  if (disableAnchor || typeof children !== 'string') {
+  const slugger = React.useContext(DocsSluggerContext) ?? slugs;
+  const text = typeof children === 'string' ? children : undefined;
+  // See `Heading`: re-rendering the docs tree must not consume another slug.
+  const tagID = React.useMemo(
+    () => (disableAnchor || text === undefined ? undefined : slugger.slug(text.toLowerCase())),
+    [disableAnchor, slugger, text]
+  );
+
+  if (tagID === undefined) {
     return <H3>{children}</H3>;
   }
-  const slugger = React.useContext(DocsSluggerContext) ?? slugs;
-  const tagID = slugger.slug(children.toLowerCase());
   return (
     <HeaderMdx as="h3" id={tagID}>
       {children}

@@ -39,6 +39,7 @@ type TemplateConfiguration = {
   peerDependencies?: string[] | { [dependency: string]: (version: string) => boolean };
   files?: string[];
   matcherFunction: (matcher: TemplateMatcher) => boolean;
+  detectionMessage?: string;
 };
 
 /** Service encapsulating helpers for ProjectType usage */
@@ -160,6 +161,7 @@ export class ProjectTypeService {
         matcherFunction: ({ dependencies }) => {
           return dependencies?.every(Boolean) ?? false;
         },
+        detectionMessage: 'Remix 3 detected, using the HTML renderer',
       },
       // DO NOT MOVE ANY TEMPLATES BELOW THIS LINE
       // React is part of every Template, after Storybook is initialized once
@@ -260,6 +262,9 @@ export class ProjectTypeService {
   private async detectFrameworkPreset(packageJson: PackageJsonWithMaybeDeps): Promise<ProjectType> {
     for (const framework of [...this.getSupportedTemplates(), this.getUnsupportedTemplate()]) {
       if ((await this.getProjectType(packageJson, framework)) !== null) {
+        if (framework.detectionMessage) {
+          logger.step(framework.detectionMessage);
+        }
         return framework.preset;
       }
     }

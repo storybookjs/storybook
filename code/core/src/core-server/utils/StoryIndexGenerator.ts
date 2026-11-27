@@ -49,7 +49,11 @@ import { type IndexStatsSummary, addStats } from './summarizeStats.ts';
 
 // Extended type to keep track of the csf meta id so we know the component id when resolving docs
 type StoryIndexEntryWithExtra = StoryIndexEntry & {
-  extra: { metaId?: string; stats: IndexInputStats };
+  extra: {
+    metaId?: string;
+    metaTags?: Tag[];
+    stats: IndexInputStats;
+  };
 };
 type StoriesFile = {
   type: 'stories';
@@ -385,8 +389,8 @@ export class StoryIndexGenerator {
       return slash(normalizeStoryPath(relative(this.options.workingDir, path)));
     };
 
-    const storyEntries: ((StoryIndexEntryWithExtra | DocsIndexEntry) & { tags: Tag[] })[] =
-      indexInputs.map((input) => {
+    const storyEntries: (StoryIndexEntryWithExtra & { tags: Tag[] })[] = indexInputs.map(
+      (input) => {
         const name = input.name ?? storyNameFromExport(input.exportName);
         const componentPath =
           input.rawComponentPath &&
@@ -403,6 +407,7 @@ export class StoryIndexGenerator {
           id,
           extra: {
             metaId: input.metaId,
+            ...(input.metaTags && { metaTags: input.metaTags }),
             stats: input.__stats ?? {},
           },
           name,
@@ -421,7 +426,8 @@ export class StoryIndexGenerator {
         }
 
         return entry;
-      });
+      }
+    );
 
     // We need a docs entry attached to the CSF file if either:
     //  a) autodocs is globally enabled
@@ -432,10 +438,15 @@ export class StoryIndexGenerator {
     if (createDocEntry && this.options.build?.test?.disableAutoDocs !== true) {
       const docsName = this.options.docs?.defaultName ?? 'Docs';
       const name = docsName;
-      const { metaId } = indexInputs[0];
+      const { metaId, metaTags } = indexInputs[0];
       const entry = storyEntries[0];
       const id = toId(metaId ?? entry.title, name);
-      const tags = combineTags(...projectTags, ...(indexInputs[0].tags ?? []));
+      // Without `metaTags`, keep the fallback this entry had before: the first story's input tags
+      const tags = combineTags(
+        ...projectTags,
+        ...(metaTags ?? indexInputs[0].tags ?? []),
+        Tag.AUTODOCS
+      );
 
       const docsEntry: DocsIndexEntry & { tags: Tag[] } = {
         id,
@@ -568,7 +579,8 @@ export class StoryIndexGenerator {
 
     const tags = combineTags(
       ...projectTags,
-      ...(csfEntry?.tags ?? []),
+      // Without `metaTags`, keep the fallback this entry had before: the first story's resolved tags
+      ...(csfEntry?.extra.metaTags ?? csfEntry?.tags ?? []),
       ...(analysis.metaTags ?? []),
       csfEntry ? Tag.ATTACHED_MDX : Tag.UNATTACHED_MDX
     );

@@ -62,6 +62,12 @@ To remove a tag from a story, prefix it with `!`. For example:
 
 Tags can be removed for all stories in your project (in `.storybook/preview.*`), all stories for a component (in the CSF file meta), or a single story (as above).
 
+## Tags on docs pages
+
+The [autodocs](../writing-docs/autodocs.mdx) page of a component and the [MDX](../writing-docs/mdx.mdx) pages attached to it with `<Meta of={...} />` get their tags from the project and the CSF file meta. In CSF files, story-level tags don't change them. For example, if you remove `manifest` in the meta, the attached MDX pages aren't in the manifest, unless you add the tag again in their own `<Meta tags={['manifest']} />`.
+
+The autodocs page always has the `autodocs` tag.
+
 ## Filtering the sidebar by tags
 
 Both built-in and custom tags are available as filters in Storybook's sidebar. Selecting a tag in the filter causes the sidebar to only show stories with that tag. Selecting multiple tags shows stories that contain any of those tags.

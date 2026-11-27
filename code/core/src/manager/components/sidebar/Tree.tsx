@@ -45,6 +45,7 @@ import {
   createContextMenuStore,
   type ContextMenuStore,
 } from './ContextMenuStore.tsx';
+import { DEFAULT_REF_ID } from './Sidebar.tsx';
 import { ScrollAreaContext } from './SidebarScrollArea.tsx';
 import {
   createStatusStore,
@@ -86,14 +87,13 @@ const TreeWrapper = styled.div({
   },
 });
 
-// Without CSS anchor positioning the note cannot follow the focused row, and without
-// `position-visibility` (not yet in Chrome) nothing hides it while no row holds the anchor
-// (mouse focus is not :focus-visible) — either way it would sit as a stray pill over the
-// sidebar, so it only renders where both work.
+// Without CSS anchor positioning the note cannot follow the focused row, so it only renders
+// where that works. `anchors-visible` keeps it off screen while the row is scrolled past the
+// visible band; the render gate on keyboard focus hides it the rest of the time.
 const supportsAnchorPositioning =
   typeof CSS !== 'undefined' &&
   !!CSS.supports?.('anchor-name: --sb-probe') &&
-  !!CSS.supports?.('position-visibility: anchors-valid');
+  !!CSS.supports?.('position-visibility: anchors-visible');
 
 const FocusTooltipNote = styled(TooltipNote)({
   marginBlockStart: 8,
@@ -102,7 +102,7 @@ const FocusTooltipNote = styled(TooltipNote)({
   zIndex: 2,
   positionAnchor: '--focused-treenode',
   positionArea: 'span-x-start y-end',
-  positionVisibility: 'anchors-valid',
+  positionVisibility: 'anchors-visible',
 });
 
 interface TreeProps {
@@ -199,14 +199,14 @@ export const Tree = React.memo<TreeProps>(function Tree({
   // What each row shows, with the change status already masked by the modified filter. Rows read
   // this from the store, so toggling the filter reaches only the rows whose own icon changes.
   const rowStatuses = useMemo(() => {
-    const result: Record<string, RowStatus> = {};
-    for (const [itemId, { change, test }] of Object.entries(groupDualStatus)) {
-      result[itemId] = {
+    const result = new Map<string, RowStatus>();
+    for (const [itemId, { change, test }] of groupDualStatus) {
+      result.set(itemId, {
         change: shouldShowChangeStatus(change.value, isModifiedFilterActive)
           ? change.value
           : 'status-value:unknown',
         test: test.value,
-      };
+      });
     }
     return result;
   }, [groupDualStatus, isModifiedFilterActive]);
@@ -229,13 +229,14 @@ export const Tree = React.memo<TreeProps>(function Tree({
   );
 
   // The note that tells the user which shortcut opens the actions of the focused row. Rows compute
-  // the same availability for their own ⋯ button (see TreeNode).
+  // the same availability for their own ⋯ button (see TreeNode). Gated on keyboard focus so a
+  // pointer-focused row never renders an anchorless note at the viewport origin.
   const focusedItemShortcutLabel = useMemo(() => {
-    if (!supportsAnchorPositioning || !focusedItemId || !contextMenuShortcut) {
+    if (!supportsAnchorPositioning || !keyboardFocusedItemId || !contextMenuShortcut) {
       return null;
     }
 
-    const item = hoistedData[focusedItemId];
+    const item = hoistedData[keyboardFocusedItemId];
     if (!item) {
       return null;
     }
@@ -244,14 +245,21 @@ export const Tree = React.memo<TreeProps>(function Tree({
       return null;
     }
 
-    const itemStatus = groupDualStatus?.[focusedItemId];
+    const itemStatus = groupDualStatus.get(keyboardFocusedItemId);
     const changeStatus = itemStatus?.change.value ?? 'status-value:unknown';
     const testStatus = itemStatus?.test.value ?? 'status-value:unknown';
 
     return changeStatus !== 'status-value:unknown' || testStatus !== 'status-value:unknown'
       ? 'Status and actions'
       : 'Actions';
-  }, [focusedItemId, contextMenuShortcut, hoistedData, groupDualStatus, hasTestProviders, api]);
+  }, [
+    keyboardFocusedItemId,
+    contextMenuShortcut,
+    hoistedData,
+    groupDualStatus,
+    hasTestProviders,
+    api,
+  ]);
 
   // React-aria expects a Set for selectedKeys. Memoize so Tree's children see a stable ref.
   const selectedKeys = useMemo(
@@ -346,6 +354,8 @@ export const Tree = React.memo<TreeProps>(function Tree({
   expandedRef.current = expanded;
   const hoistedDataRef = useRef(hoistedData);
   hoistedDataRef.current = hoistedData;
+  const setExpandedRef = useRef(setExpanded);
+  setExpandedRef.current = setExpanded;
   const selectedStoryIdRef = useRef(selectedStoryId);
   selectedStoryIdRef.current = selectedStoryId;
 
@@ -416,6 +426,17 @@ export const Tree = React.memo<TreeProps>(function Tree({
     });
   }, []);
   const closeContextMenu = useCallback(() => contextMenuStoreRef.current!.setState(null), []);
+
+  // Expand all branch descendants of a root without expanding the root's own rows' siblings.
+  const expandUnder = useCallback((rootId: string) => {
+    const branches = getBranchDescendants(hoistedDataRef.current, rootId);
+    setExpandedRef.current({ ids: branches, append: true, value: true });
+  }, []);
+
+  const collapseUnder = useCallback((rootId: string) => {
+    const branches = getBranchDescendants(hoistedDataRef.current, rootId);
+    setExpandedRef.current({ ids: branches, append: true, value: false });
+  }, []);
 
   // Geometry of the visible rows, in render order.
   const rows = useMemo(() => flattenRows(tree, expanded), [tree, expanded]);
@@ -511,8 +532,8 @@ export const Tree = React.memo<TreeProps>(function Tree({
     };
   }, [rows, scrollerRef]);
 
-  // One delegated listener preloads a hovered branch's first story. It sits on the wrapper, so
-  // it also sees the sticky rows, which are outside the scroller.
+  // One delegated listener preloads the story a hovered row would open. It sits on the wrapper,
+  // so it also sees the sticky rows, which are outside the scroller.
   useEffect(() => {
     const wrapper = treeWrapperRef.current;
     if (!wrapper) {
@@ -527,11 +548,24 @@ export const Tree = React.memo<TreeProps>(function Tree({
       hoveredRowRef.current = next;
 
       const item = next && !next.sticky ? hoistedDataRef.current[next.id] : undefined;
-      if (item && next!.id !== preloadedId && isBranch(item)) {
-        preloadedId = next!.id;
-        // The preview has then usually started to load by the time the user clicks.
-        api.emit(PRELOAD_ENTRIES, { ids: [item.children[0]], options: { target: refId } });
+      if (!item || next!.id === preloadedId) {
+        return;
       }
+      // A component stands for the entry that selecting it opens. A root or group opens nothing.
+      const entry =
+        item.type === 'component'
+          ? api.resolveLeafEntry(item.id, refId === DEFAULT_REF_ID ? undefined : refId)
+          : item;
+      if (entry?.type !== 'story' && entry?.type !== 'docs') {
+        return;
+      }
+      preloadedId = next!.id;
+      // The preview has then usually started to load by the time the user clicks.
+      api.emit(PRELOAD_ENTRIES, {
+        ids: [isStoryRow(entry) ? entry.storyRowOf : entry.id],
+        source: 'hover',
+        options: { target: refId },
+      });
     };
     const onOver = (event: Event) => {
       const target = event.target as Element | null;
@@ -728,6 +762,9 @@ export const Tree = React.memo<TreeProps>(function Tree({
         hasTestProviders,
         onRowFocus: reportRowFocus,
         collectionDependencies,
+        hoistedDataRef,
+        expandUnder,
+        collapseUnder,
       }),
     [
       api,
@@ -742,6 +779,8 @@ export const Tree = React.memo<TreeProps>(function Tree({
       hasTestProviders,
       reportRowFocus,
       collectionDependencies,
+      expandUnder,
+      collapseUnder,
     ]
   );
 
@@ -752,6 +791,51 @@ export const Tree = React.memo<TreeProps>(function Tree({
   const collapseStickyRow = useCallback(
     (itemId: string) => setExpanded({ ids: [itemId], append: true, value: false }),
     [setExpanded]
+  );
+
+  // The react-aria tree re-renders every visible row whenever it renders, and it renders whenever
+  // it receives new props. The element is therefore built only from the inputs the tree reads, so
+  // that this component's own state (the focused row, the sticky rows) leaves the rows alone.
+  const ariaTree = useMemo(
+    () => (
+      <Virtualizer layout={treeLayout} layoutOptions={treeLayoutOptions}>
+        <StyledAriaTree
+          ref={containerRef}
+          aria-label="Stories"
+          selectionMode="single"
+          // With the default 'toggle' behavior react-aria treats Enter as a no-op while a
+          // selection exists; 'replace' keeps Enter firing onAction on every row.
+          selectionBehavior="replace"
+          // The selection mirrors the current story, so it is never empty and clearing it
+          // must not be offered.
+          disallowEmptySelection
+          // Stop react-aria from consuming Escape to clear the selection, which swallowed
+          // the key before ancestors (like the mobile menu drawer) could act on it.
+          escapeKeyBehavior="none"
+          expandedKeys={expanded}
+          onExpandedChange={handleExpandedChange}
+          selectedKeys={selectedKeys}
+          onSelectionChange={handleSelectionChange}
+          onAction={handleAction}
+        >
+          <Collection items={tree} dependencies={collectionDependencies}>
+            {nodeRenderer}
+          </Collection>
+        </StyledAriaTree>
+      </Virtualizer>
+    ),
+    [
+      treeLayout,
+      treeLayoutOptions,
+      expanded,
+      handleExpandedChange,
+      selectedKeys,
+      handleSelectionChange,
+      handleAction,
+      tree,
+      collectionDependencies,
+      nodeRenderer,
+    ]
   );
 
   return (
@@ -771,32 +855,10 @@ export const Tree = React.memo<TreeProps>(function Tree({
               accentId={keyboardFocusedItemId}
               selectionLine={selectionLine}
               onCollapse={collapseStickyRow}
+              openContextMenu={openContextMenu}
+              hasTestProviders={hasTestProviders}
             />
-            <Virtualizer layout={treeLayout} layoutOptions={treeLayoutOptions}>
-              <StyledAriaTree
-                ref={containerRef}
-                aria-label="Stories"
-                selectionMode="single"
-                // With the default 'toggle' behavior react-aria treats Enter as a no-op while a
-                // selection exists; 'replace' keeps Enter firing onAction on every row.
-                selectionBehavior="replace"
-                // The selection mirrors the current story, so it is never empty and clearing it
-                // must not be offered.
-                disallowEmptySelection
-                // Stop react-aria from consuming Escape to clear the selection, which swallowed
-                // the key before ancestors (like the mobile menu drawer) could act on it.
-                escapeKeyBehavior="none"
-                expandedKeys={expanded}
-                onExpandedChange={handleExpandedChange}
-                selectedKeys={selectedKeys}
-                onSelectionChange={handleSelectionChange}
-                onAction={handleAction}
-              >
-                <Collection items={tree} dependencies={collectionDependencies}>
-                  {nodeRenderer}
-                </Collection>
-              </StyledAriaTree>
-            </Virtualizer>
+            {ariaTree}
           </TreeWrapper>
           {focusedItemShortcutLabel && (
             <FocusTooltipNote note={focusedItemShortcutLabel} shortcut={contextMenuShortcut} />
@@ -823,6 +885,34 @@ interface RenderNodeProps extends Pick<
   onRowFocus: ReportRowFocus;
   /** Shared with every Collection level so react-aria invalidates its node cache consistently. */
   collectionDependencies: unknown[];
+  /** Ref to the latest hoistedData, for computing per-root expand state without adding it as a dep. */
+  hoistedDataRef: React.MutableRefObject<IndexHash>;
+  /** Expand all branch descendants of a given root. */
+  expandUnder: (rootId: string) => void;
+  /** Collapse all branch descendants of a given root. */
+  collapseUnder: (rootId: string) => void;
+}
+
+/** Returns all branch (non-leaf) descendant ids of a root, for bulk expand/collapse. */
+function getBranchDescendants(data: IndexHash, rootId: string): string[] {
+  const entry = data[rootId];
+  if (!entry || !('children' in entry)) {
+    return [];
+  }
+  const result: string[] = [];
+  const stack = [...(entry.children ?? [])];
+  while (stack.length) {
+    const id = stack.pop()!;
+    const child = data[id];
+    if (!child) {
+      continue;
+    }
+    if ('children' in child && child.children?.length) {
+      result.push(id);
+      stack.push(...child.children);
+    }
+  }
+  return result;
 }
 
 function renderNode({
@@ -833,9 +923,31 @@ function renderNode({
   hasTestProviders,
   onRowFocus,
   collectionDependencies,
+  hoistedDataRef,
+  expandUnder,
+  collapseUnder,
   ...props
 }: RenderNodeProps) {
   const renderNodeLevel = (item: TreeEntry) => {
+    let isFullyExpanded: boolean | undefined;
+    let onExpandCollapseAll: (() => void) | undefined;
+
+    if (item.type === 'root') {
+      const branches = getBranchDescendants(hoistedDataRef.current, item.id);
+      if (branches.length > 0) {
+        isFullyExpanded = branches.every((id) => expanded.has(id));
+        const targetExpand = !isFullyExpanded;
+        const rootId = item.id;
+        onExpandCollapseAll = () => {
+          if (targetExpand) {
+            expandUnder(rootId);
+          } else {
+            collapseUnder(rootId);
+          }
+        };
+      }
+    }
+
     return (
       <TreeNode
         {...props}
@@ -847,6 +959,8 @@ function renderNode({
         closeContextMenu={closeContextMenu}
         hasTestProviders={hasTestProviders}
         onRowFocus={onRowFocus}
+        isFullyExpanded={isFullyExpanded}
+        onExpandCollapseAll={onExpandCollapseAll}
       >
         {item.resolvedChildren && (
           <Collection items={item.resolvedChildren} dependencies={collectionDependencies}>

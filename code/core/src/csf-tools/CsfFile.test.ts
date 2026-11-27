@@ -6,14 +6,7 @@ import { logger } from 'storybook/internal/node-logger';
 import yaml from 'js-yaml';
 import { dedent } from 'ts-dedent';
 
-import {
-  type CsfOptions,
-  formatCsf,
-  isModuleMock,
-  isValidPreviewPath,
-  loadCsf,
-  printCsf,
-} from './CsfFile.ts';
+import { type CsfOptions, formatCsf, isModuleMock, loadCsf, printCsf } from './CsfFile.ts';
 import { parseExpression } from './estree/ast.ts';
 
 expect.addSnapshotSerializer({
@@ -838,7 +831,7 @@ describe('CsfFile', () => {
           title: foo/bar/baz
         stories:
           - id: foo-bar-baz--a
-            name: A
+            name: Story A
             localName: story1
             parameters:
               __id: foo-bar-baz--a
@@ -853,7 +846,7 @@ describe('CsfFile', () => {
               mount: false
               moduleMock: false
           - id: foo-bar-baz--あ
-            name: あ
+            name: Story B
             localName: story2
             parameters:
               __id: foo-bar-baz--あ
@@ -1108,16 +1101,16 @@ describe('CsfFile', () => {
         parse(
           dedent`
           export default { title: 'foo/bar' };
-          export { default as A } from './A';
-          export { B } from './B';
+          export { default as PrimaryButton } from './A';
+          export { SecondaryButton } from './B';
         `
         )
       ).toMatchInlineSnapshot(`
         meta:
           title: foo/bar
         stories:
-          - id: foo-bar--a
-            name: A
+          - id: foo-bar--primary-button
+            name: Primary Button
             localName: default
             __stats:
               play: false
@@ -1129,9 +1122,9 @@ describe('CsfFile', () => {
               storyFn: false
               mount: false
               moduleMock: false
-          - id: foo-bar--b
-            name: B
-            localName: B
+          - id: foo-bar--secondary-button
+            name: Secondary Button
+            localName: SecondaryButton
             __stats:
               play: false
               render: false
@@ -1143,6 +1136,21 @@ describe('CsfFile', () => {
               mount: false
               moduleMock: false
       `);
+    });
+
+    it('names an export specifier story after its export when it has no name of its own', () => {
+      const { stories } = loadCsf(
+        dedent`
+          export default { title: 'foo/bar' };
+          const Primary = { name: 'Local' };
+          const emptyName = { name: '' };
+          export { Primary as Local, emptyName as EmptyName };
+          export { Primary as RemoteStory } from './other.stories';
+        `,
+        { makeTitle }
+      ).parse();
+
+      expect(stories.map(({ name }) => name)).toEqual(['Local', 'Empty Name', 'Remote Story']);
     });
 
     it('named exports order', () => {
@@ -1285,6 +1293,18 @@ describe('CsfFile', () => {
         expect.objectContaining({ code: 'unsupported-initializer', target: { kind: 'meta' } })
       );
       expect(formatCsf(csf)).toBe(source);
+    });
+
+    it('does not read the meta of a destructured factory meta configuration', () => {
+      const source = dedent`
+        import preview from './preview';
+        const { config } = { config: { title: 'Inner' }, title: 'Outer' };
+        const meta = preview.meta(config);
+        export const Basic = meta.story({});
+      `;
+      const csf = loadCsf(source, { makeTitle }).parse();
+
+      expect(csf.meta.title).toBe('Default Title');
     });
 
     it('bad meta', () => {
@@ -1937,7 +1957,7 @@ describe('CsfFile', () => {
             - X
         stories:
           - id: foo-bar--exported-name
-            name: exportedName
+            name: Exported Name
             localName: localName
             parameters:
               __id: foo-bar--exported-name
@@ -3560,24 +3580,5 @@ describe('isModuleMock', () => {
 
     expect(isModuleMock('#foo.mocktail')).toBe(false);
     expect(isModuleMock('#foo.mock.test.ts')).toBe(false);
-  });
-});
-
-describe('isValidPreviewPath', () => {
-  it.each([
-    ['#.storybook/preview', true],
-    ['../../.storybook/preview', true],
-    ['/path/to/.storybook/preview', true],
-    ['./preview', true],
-    ['./preview.ts', true],
-    ['./preview.tsx', true],
-    ['./preview.js', true],
-    ['./preview.jsx', true],
-    ['./preview.mjs', true],
-    ['foo', false],
-    ['#.storybook/bad-preview', false],
-    ['preview', false],
-  ])('isValidPreviewPath("%s") === %s', (path, expected) => {
-    expect(isValidPreviewPath(path)).toBe(expected);
   });
 });

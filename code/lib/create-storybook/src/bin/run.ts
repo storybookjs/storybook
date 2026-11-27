@@ -46,15 +46,7 @@ const createStorybookProgram = program
       Object.values(PackageManagerName)
     )
   )
-  .addOption(
-    new Option('--parser <type>', 'jscodeshift parser').choices([
-      'babel',
-      'babylon',
-      'flow',
-      'ts',
-      'tsx',
-    ])
-  )
+  .addOption(new Option('--parser <type>', 'Ignored').hideHelp())
   .addOption(
     new Option('--type <type>', 'Add Storybook for a specific project type').choices(
       Object.values(ProjectType).filter(

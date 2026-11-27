@@ -1,4 +1,4 @@
-import { expectStoryTestsRanAndPassed } from '#test-utils';
+import { expectFocusedTestRun, expectStoryTestsRanAndPassed } from '#test-utils';
 import { readFileSync } from 'node:fs';
 import { describe, expect, test } from 'vitest';
 
@@ -24,5 +24,10 @@ describe('fixing failing Button story tests', () => {
     expect(stories, 'Expected the Default story to keep asserting the onClick behavior').toMatch(
       /toHaveBeenCalled/
     );
+  });
+
+  // The workflow names the test command itself, so a request to run the tests needs no skill.
+  test('runs the Button tests through Storybook', () => {
+    expectFocusedTestRun();
   });
 });

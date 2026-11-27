@@ -5,6 +5,8 @@ import {
   GLOBALS_UPDATED,
   NAVIGATE_URL,
   PRELOAD_ENTRIES,
+  type PreloadEntriesPayload,
+  type PreloadSource,
   PREVIEW_KEYDOWN,
   SET_CURRENT_STORY,
   STORY_CHANGED,
@@ -92,6 +94,10 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
 
   currentRender?: PossibleRender<TRenderer>;
 
+  private pendingPreloads = new Map<PreloadSource | undefined, PreloadEntriesPayload>();
+
+  private preloadsDrained: Promise<void> | null = null;
+
   constructor(
     public importFn: ModuleImportFn,
 
@@ -114,8 +120,8 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
     // A story that navigates its own landmarks with React Aria stops F6 from reaching onKeydown
     // for as long as it has a landmark to go to. React Aria asks before wrapping around at the end
     // of those; declining leaves the key unhandled, so it reaches onKeydown and moves on to the
-    // manager's landmarks instead.
-    globalWindow.addEventListener('react-aria-landmark-navigation', (event) => {
+    // manager's landmarks instead. React Native has no addEventListener on its global.
+    globalWindow.addEventListener?.('react-aria-landmark-navigation', (event) => {
       if (isEmbedded()) {
         event.preventDefault();
       }
@@ -308,18 +314,30 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
     super.onUpdateArgs({ storyId, updatedArgs });
   }
 
-  async onPreloadStories({ ids }: { ids: string[] }) {
-    await this.storeInitializationPromise;
+  async onPreloadStories(request: PreloadEntriesPayload) {
+    this.pendingPreloads.set(request.source, request);
+    this.preloadsDrained ??= this.drainPreloads();
+    await this.preloadsDrained;
+  }
 
-    if (this.storyStoreValue) {
-      /**
-       * It's possible that we're trying to preload a story in a ref we haven't loaded the iframe
-       * for yet. Because of the way the targeting works, if we can't find the targeted iframe,
-       * we'll use the currently active iframe which can cause the event to be targeted to the wrong
-       * iframe, causing an error if the storyId does not exists there.
-       */
-      await Promise.allSettled(ids.map((id) => this.storyStoreValue?.loadEntry(id)));
+  // Sidebar hovers request preloads faster than a dev server compiles them, so batches run one at
+  // a time and a request received while a batch runs replaces the one its source has waiting.
+  // Sibling preloads are a guess, so they wait until no other source has a request waiting.
+  private async drainPreloads() {
+    await this.storeInitializationPromise;
+    while (this.pendingPreloads.size > 0) {
+      const request = this.takePreload();
+      // One unknown id from a ref's fallback iframe must not fail the batch.
+      await Promise.allSettled(request.ids.map((id) => this.storyStoreValue?.loadEntry(id)));
     }
+    this.preloadsDrained = null;
+  }
+
+  private takePreload() {
+    const waiting = [...this.pendingPreloads];
+    const [source, request] = waiting.find(([key]) => key !== 'sibling') ?? waiting[0] ?? [];
+    this.pendingPreloads.delete(source);
+    return request;
   }
 
   // RENDERING

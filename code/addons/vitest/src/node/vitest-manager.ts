@@ -4,6 +4,7 @@ import type { CoverageOptions, TestProject, TestSpecification, Vitest } from 'vi
 
 import { getProjectRoot, resolvePathInStorybookCache } from 'storybook/internal/common';
 import { Tag } from 'storybook/internal/core-server';
+import { logger } from 'storybook/internal/node-logger';
 import type { StoryId, StoryIndexEntry } from 'storybook/internal/types';
 
 import * as find from 'empathic/find';
@@ -33,6 +34,12 @@ process.env.VITEST_STORYBOOK = 'true';
  * double spaces, we circumvent the issue.
  */
 export const DOUBLE_SPACES = '  ';
+
+/**
+ * Turns a story index `importPath` into the absolute module ID Vitest uses for the test file. Test
+ * files are registered and test specifications are matched to stories by this exact key.
+ */
+export const toModuleId = (importPath: string) => path.join(process.cwd(), importPath);
 const getTestName = (name: string) => `${name}${DOUBLE_SPACES}`;
 
 export class VitestManager {
@@ -334,7 +341,7 @@ export class VitestManager {
     const storiesByImportPath: Record<StoryIndexEntry['importPath'], StoryIndexEntry[]> = {};
 
     for (const story of stories) {
-      const absoluteImportPath = path.join(process.cwd(), story.importPath);
+      const absoluteImportPath = toModuleId(story.importPath);
       if (!storiesByImportPath[absoluteImportPath]) {
         storiesByImportPath[absoluteImportPath] = [];
       }
@@ -393,7 +400,11 @@ export class VitestManager {
     const { watching } = this.testManager.store.getState();
     const runConfig = this.getCurrentRunConfig();
     const coverageShouldBeEnabled =
-      !!runConfig.coverage && !watching && (runPayload?.storyIds?.length ?? 0) === 0;
+      !!runConfig.coverage &&
+      !watching &&
+      !runPayload.fileFilters &&
+      !runPayload.storyFiles &&
+      (runPayload?.storyIds?.length ?? 0) === 0;
 
     if (!this.vitest) {
       await this.startVitest({ coverage: coverageShouldBeEnabled });
@@ -407,12 +418,21 @@ export class VitestManager {
 
     await this.cancelCurrentRun();
 
-    const testSpecifications = await this.getStorybookTestSpecifications();
     const allStories = this.getStories();
+    const matchedSpecifications = await this.getStorybookTestSpecifications(runPayload.fileFilters);
+    const storyFiles = runPayload.storyFiles && new Set(runPayload.storyFiles.map(toModuleId));
+    const testSpecifications = storyFiles
+      ? matchedSpecifications.filter(({ moduleId }) => storyFiles.has(moduleId))
+      : matchedSpecifications;
+    const matchedFiles =
+      (runPayload.fileFilters || storyFiles) &&
+      new Set(testSpecifications.map(({ moduleId }) => moduleId));
 
-    const filteredStories = runPayload.storyIds
-      ? allStories.filter((story) => runPayload.storyIds?.includes(story.id))
-      : allStories;
+    const filteredStories = allStories.filter(
+      (story) =>
+        (!runPayload.storyIds || runPayload.storyIds.includes(story.id)) &&
+        (!matchedFiles || matchedFiles.has(toModuleId(story.importPath)))
+    );
 
     if (runPayload.storyIds?.length) {
       const regex = this.buildTestNamePatternForStories(filteredStories, allStories);
@@ -426,6 +446,13 @@ export class VitestManager {
       filteredStories
     );
 
+    if (matchedFiles) {
+      this.testManager.setRunStories(
+        filteredStories.map((story) => story.id),
+        runPayload.fileFilters &&
+          new Set(matchedSpecifications.map(({ moduleId }) => moduleId)).size
+      );
+    }
     this.testManager.store.setState((s) => ({
       ...s,
       currentRun: {
@@ -443,8 +470,37 @@ export class VitestManager {
     await this.runningPromise;
   }
 
-  async getStorybookTestSpecifications() {
-    const globTestSpecifications = (await this.vitest?.globTestSpecifications()) ?? [];
+  /**
+   * Makes sure every Storybook project knows about the given test files.
+   *
+   * Vitest caches its list of test files after the first glob and only adds new files when its
+   * Vite watcher reports them. Story files created outside the Vite root after startup never reach
+   * that watcher, even though Storybook has already indexed them, so they'd be silently dropped
+   * from every run. `matchesTestGlob` both checks a file against a project's include/exclude globs
+   * and adds it to that project's cached list (it returns early for files the project already
+   * has), so this mirrors what Vitest itself does on file creation.
+   */
+  registerTestFiles(moduleIds: Iterable<string>) {
+    if (!this.vitest) {
+      // Vitest globs all test files when it starts, nothing to register yet
+      return;
+    }
+    const storybookProjects = this.vitest.projects.filter((p) => this.isStorybookProject(p));
+    for (const moduleId of moduleIds) {
+      for (const project of storybookProjects) {
+        try {
+          project.matchesTestGlob(moduleId);
+        } catch (e) {
+          // e.g. a stale index entry for a file that was just deleted, with includeSource enabled
+          logger.debug(`Could not check ${moduleId} against the Vitest test globs: ${e}`);
+        }
+      }
+    }
+  }
+
+  // With file filters: the story files they match, as `vitest Button` finds its test files
+  async getStorybookTestSpecifications(fileFilters?: string[]) {
+    const globTestSpecifications = (await this.vitest?.globTestSpecifications(fileFilters)) ?? [];
     return (
       globTestSpecifications.filter((workspaceSpec) =>
         this.isStorybookProject(workspaceSpec.project)
@@ -458,10 +514,7 @@ export class VitestManager {
     this.updateLastChanged(id);
 
     if (event === 'add') {
-      const project = this.vitest?.projects.find(this.isStorybookProject.bind(this));
-      // This function not only tests whether a file matches the test globs, but it also
-      // adds the file to the project's internal testFilesList
-      project?.matchesTestGlob(id);
+      this.registerTestFiles([id]);
     }
 
     // when watch mode is disabled, don't trigger any tests (below)

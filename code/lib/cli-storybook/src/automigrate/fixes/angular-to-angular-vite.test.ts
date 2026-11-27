@@ -329,21 +329,21 @@ describe('angular-to-angular-vite', () => {
       }
     );
 
-    it('reports hasWebpackFinal: true when main config contains webpackFinal', async () => {
+    it('reports hasWebpackFinal: true when the parsed main config contains webpackFinal', async () => {
       vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({
         [ANGULAR_PACKAGE]: '^9.0.0',
       });
       mockAngularCore({ declared: '^21.0.0', resolved: '21.0.4' });
 
-      vol.fromJSON({
-        [MAIN]: `export default { framework: '${ANGULAR_PACKAGE}', webpackFinal: async (c) => c };`,
-      });
-
       const result = await checkFix(angularToAngularVite, {
         packageManager: mockPackageManager,
-        mainConfig: { framework: ANGULAR_PACKAGE },
+        mainConfig: {
+          framework: ANGULAR_PACKAGE,
+          stories: [],
+          webpackFinal: async (c: unknown) => c,
+        },
         mainConfigPath: MAIN,
-      } as CheckOptions);
+      } as unknown as CheckOptions);
 
       expect(result?.hasWebpackFinal).toBe(true);
     });
@@ -479,6 +479,10 @@ describe('angular-to-angular-vite', () => {
       await runMigration({ result: { ...baseResult, hasWebpackFinal: true } });
 
       expect(mockPromptConfirm).toHaveBeenCalledOnce();
+      // The cancel message names the exact command to run after porting the hook.
+      expect(logger.log).toHaveBeenCalledWith(
+        expect.stringContaining('npx storybook automigrate angular-to-angular-vite')
+      );
       expect(mockPackageManager.removeDependencies).not.toHaveBeenCalled();
     });
 

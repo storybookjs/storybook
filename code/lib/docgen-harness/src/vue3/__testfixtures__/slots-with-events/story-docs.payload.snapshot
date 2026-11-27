@@ -20,6 +20,18 @@ import SlotsWithEvents from './SlotsWithEvents.vue';
   </SlotsWithEvents>
 </template>",
       "summary": undefined,
+      "template": "<script lang="ts" setup>
+import SlotsWithEvents from './SlotsWithEvents.vue';
+</script>
+
+<template>
+  <SlotsWithEvents⟦attr title ~" "⟫ title="Notice"⟧⟦props * except=["title","leading","default"] ~" "⟫⟧>
+    ⟦text default slot=true⟫Body text⟧
+    <template #leading>
+      ⟦text leading slot=true⟫!⟧
+    </template>
+  </SlotsWithEvents>
+</template>",
     },
   },
 }

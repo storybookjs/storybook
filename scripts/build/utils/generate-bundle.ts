@@ -8,7 +8,6 @@ import { basename, dirname, join, relative } from 'pathe';
 import picocolors from 'picocolors';
 import type { Plugin as RolldownPlugin } from 'rolldown';
 import { rolldown } from 'rolldown';
-import { dedent } from 'ts-dedent';
 
 import { globalsModuleInfoMap } from '../../../code/core/src/manager/globals/globals-module-info.ts';
 import {
@@ -23,6 +22,7 @@ import {
   type EsbuildContextOptions,
   getExternal,
 } from './entry-utils.ts';
+import { cjsRequirePlugin } from './cjs-require-plugin.ts';
 import { tiePreviewRuntimeSetup } from './preview-runtime-entry.ts';
 
 // repo root/bench/esbuild-metafiles/core
@@ -36,6 +36,55 @@ const DIR_METAFILE_BASE = join(
   'esbuild-metafiles'
 );
 export const DIR_CODE = join(import.meta.dirname, '..', '..', '..', 'code');
+
+// react-aria and react-stately import this exact specifier; a shorter key would also match
+// subpaths such as `shim/with-selector`.
+const USE_SYNC_EXTERNAL_STORE_ALIAS = {
+  'use-sync-external-store/shim/index.js': join(
+    import.meta.dirname,
+    'use-sync-external-store-shim.ts'
+  ),
+};
+
+// In ES module output, a `require()` of an external becomes `__require("…")`, which throws
+// "Dynamic require of … is not supported" in the browser. Browser builds fail on it instead.
+const dynamicRequireError = (file: string, specifier: string) =>
+  `${file} calls require("${specifier}") on an external, which fails in the browser. Alias the import to an ES module, or import it statically.`;
+
+// Put this plugin first: esbuild runs `onEnd` callbacks in order, and later ones such as
+// `postbuild` then see its errors.
+export const esbuildNoDynamicRequireGuard: esbuild.Plugin = {
+  name: 'no-dynamic-require-in-browser-output',
+  setup(build) {
+    build.initialOptions.metafile = true;
+    build.onEnd((result) => ({
+      // A failed build has no metafile, and already fails.
+      errors: Object.entries(result.metafile?.outputs ?? {}).flatMap(([file, output]) =>
+        output.imports
+          .filter(
+            ({ external, kind }) =>
+              external && (kind === 'require-call' || kind === 'require-resolve')
+          )
+          .map(({ path }) => ({ text: dynamicRequireError(file, path) }))
+      ),
+    }));
+  },
+};
+
+// Put this plugin first, so that `this.resolve` asks every other plugin.
+export const rolldownNoDynamicRequireGuard: RolldownPlugin = {
+  name: 'no-dynamic-require-in-browser-output',
+  async resolveId(source, importer, { kind }) {
+    if (kind !== 'require-call') {
+      return null;
+    }
+    const resolved = await this.resolve(source, importer, { kind });
+    if (!resolved || resolved.external) {
+      this.error(dynamicRequireError(importer ?? source, source));
+    }
+    return resolved;
+  },
+};
 
 function rolldownGlobalExternalsPlugin(): RolldownPlugin {
   const prefix = '\0storybook-global:';
@@ -116,6 +165,7 @@ export async function generateBundle({
     treeShaking: true,
     color: true,
     external,
+    alias: USE_SYNC_EXTERNAL_STORE_ALIAS,
     loader: {
       // The MCP packages import markdown/html instruction and template files as text
       '.md': 'text',
@@ -162,9 +212,11 @@ export async function generateBundle({
       // The actual function which calls these modules is not imported
       // and therefore we can externalize them.
       'msw/browser',
-      'msw/core/http',
+      'msw/http',
     ], // Prefer `alias` over `external` because we're using aliases to bundle everything into the runtimes
+    plugins: [esbuildNoDynamicRequireGuard, ...sharedOptions.plugins],
     alias: {
+      ...USE_SYNC_EXTERNAL_STORE_ALIAS,
       // The following aliases ensures that the runtimes bundles in the actual sources of these modules
       // instead of attempting to resolve them to the dist files, because the dist files are not available yet.
       'storybook/preview-api': './src/preview-api',
@@ -213,7 +265,10 @@ export async function generateBundle({
       cwd: DIR_CWD,
       input: { [name]: entryPoint },
       platform: 'browser',
-      plugins: useGlobals ? [rolldownGlobalExternalsPlugin()] : [],
+      plugins: [
+        rolldownNoDynamicRequireGuard,
+        ...(useGlobals ? [rolldownGlobalExternalsPlugin()] : []),
+      ],
       resolve: {
         alias,
         conditionNames: ['browser', 'module', 'default'],
@@ -252,42 +307,35 @@ export async function generateBundle({
         ...sharedOptions,
         entryPoints: entries.node.map(({ entryPoint }) => entryPoint),
         platform: 'node',
+        ignoreAnnotations: false,
         target: NODE_TARGET,
+        external: [
+          ...external,
+          // Optional native speedups that `ws` requires inside try/catch. Keeping them external
+          // means the bundle never inlines them, even when they happen to be installed.
+          'bufferutil',
+          'utf-8-validate',
+        ],
         alias: {
+          ...sharedOptions.alias,
           // Keep a single bundled acorn copy when CommonJS dependencies such as
           // acorn-jsx require('acorn') alongside ESM imports.
           acorn: join(resolvePackageDir('acorn'), 'dist/acorn.mjs'),
           // Avoid a nested @polka/url@0.5.0 CJS copy that drops polka's named `parse` export.
           '@polka/url': join(resolvePackageDir('@polka/url'), 'build.mjs'),
+          // jsonc-parser's `main` is a UMD build whose requires esbuild cannot follow.
+          'jsonc-parser': join(resolvePackageDir('jsonc-parser'), 'lib/esm/main.js'),
         },
         chunkNames: '_node-chunks/[name]-[hash]',
-        banner: {
-          /*
-          This banner injects CJS compatibility code into the bundle, for when
-          dependencies need require, __filename, or __dirname.
-
-          We're adding unique names to the imports to avoid collisions
-          when one of our packages bundles in another of our packages,
-          like create-storybook bundling in parts of storybook core.
-          Similarly we're using var definitions as they can be redefined
-          without causing errors.
-          */
-          js: dedent`
-            import CJS_COMPAT_NODE_URL_${uid} from 'node:url';
-            import CJS_COMPAT_NODE_PATH_${uid} from 'node:path';
-            import CJS_COMPAT_NODE_MODULE_${uid} from "node:module";
-
-            var __filename = CJS_COMPAT_NODE_URL_${uid}.fileURLToPath(import.meta.url);
-            var __dirname = CJS_COMPAT_NODE_PATH_${uid}.dirname(__filename);
-            var require = CJS_COMPAT_NODE_MODULE_${uid}.createRequire(import.meta.url);
-
-            // ------------------------------------------------------------
-            // end of CJS compatibility banner, injected by Storybook's esbuild configuration
-            // ------------------------------------------------------------
-            `,
+        define: {
+          ...sharedOptions.define,
+          // Only free references are replaced, so a local `const __dirname` keeps working.
+          __dirname: 'import.meta.dirname',
+          __filename: 'import.meta.filename',
         },
         plugins: [
           ...sharedOptions.plugins,
+          cjsRequirePlugin(uid),
           metafileWriterPlugin('node', join(DIR_METAFILE_BASE, PACKAGE_DIR_NAME)),
         ],
       })
@@ -308,6 +356,7 @@ export async function generateBundle({
         target: BROWSER_TARGETS,
         supported: SUPPORTED_FEATURES,
         plugins: [
+          esbuildNoDynamicRequireGuard,
           ...sharedOptions.plugins,
           metafileWriterPlugin('browser', join(DIR_METAFILE_BASE, PACKAGE_DIR_NAME)),
         ],

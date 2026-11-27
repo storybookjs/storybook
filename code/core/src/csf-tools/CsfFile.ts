@@ -2,6 +2,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 
 import {
   isExportStory,
+  isValidPreviewPath,
   storyNameFromExport,
   toId,
   toTestId,
@@ -42,6 +43,11 @@ import {
   locationOf,
   outerSpan,
   unwrapExpression,
+  isCanonicalCsf2BindCall,
+  withoutTypeCalls,
+  isCsfFactoryCall,
+  csfFactoryReceiver,
+  type CsfFactoryCall,
 } from './estree/ast.ts';
 import {
   type GeneratedMap,
@@ -51,7 +57,7 @@ import {
   insertStatementAfter,
 } from './estree/editor.ts';
 import { type ImportBindings, removeImport, setImport } from './estree/imports.ts';
-import { generateUid, isDeclared } from './estree/scope.ts';
+import { constantInit, generateUid, isDeclared } from './estree/scope.ts';
 import { findVarInitialization } from './findVarInitialization.ts';
 
 type CsfMutationState = {
@@ -61,51 +67,7 @@ type CsfMutationState = {
 
 const mutationStates = new WeakMap<CsfFile, CsfMutationState>();
 
-const PREVIEW_FILE_REGEX = /\/preview(.(js|jsx|mjs|ts|tsx))?$/;
-export const isValidPreviewPath = (filepath: string) => PREVIEW_FILE_REGEX.test(filepath);
-
-type StaticIdentifierMemberCall = E.CallExpression & {
-  callee: E.StaticMemberExpression & { object: E.IdentifierReference; property: E.IdentifierName };
-};
-
-type CsfFactoryCall = E.CallExpression & {
-  callee: E.StaticMemberExpression & { property: E.IdentifierName };
-};
-
-export const isCanonicalCsf2BindCall = (
-  node: Node | null | undefined
-): node is StaticIdentifierMemberCall =>
-  node?.type === 'CallExpression' &&
-  node.callee.type === 'MemberExpression' &&
-  !node.callee.computed &&
-  node.callee.object.type === 'Identifier' &&
-  isIdentifier(node.callee.property, 'bind') &&
-  (node.arguments.length === 0 ||
-    (node.arguments.length === 1 &&
-      node.arguments[0].type === 'ObjectExpression' &&
-      node.arguments[0].properties.length === 0));
-
-/** Receiver of a `.type<T>()` chain, which returns its receiver: `meta` for `meta.type<T>()`. */
-export const withoutTypeCalls = (object: Node): Node =>
-  object.type === 'CallExpression' &&
-  object.arguments.length === 0 &&
-  object.callee.type === 'MemberExpression' &&
-  !object.callee.computed &&
-  isIdentifier(object.callee.property, 'type')
-    ? withoutTypeCalls(object.callee.object)
-    : object;
-
-export const isCsfFactoryCall = (node: Node | null | undefined): node is CsfFactoryCall =>
-  node?.type === 'CallExpression' &&
-  node.callee.type === 'MemberExpression' &&
-  !node.callee.computed &&
-  withoutTypeCalls(node.callee.object).type === 'Identifier' &&
-  node.callee.property.type === 'Identifier' &&
-  (node.callee.property.name === 'story' || node.callee.property.name === 'extend');
-
-/** Identifier a CSF factory call is made on: `meta` in `meta.type<T>().story()`. */
-export const csfFactoryReceiver = (node: CsfFactoryCall): E.IdentifierReference =>
-  withoutTypeCalls(node.callee.object) as E.IdentifierReference;
+export { isCanonicalCsf2BindCall, withoutTypeCalls, isCsfFactoryCall, csfFactoryReceiver };
 
 function parseIncludeExclude(prop: Node) {
   if (prop.type === 'ArrayExpression') {
@@ -506,7 +468,9 @@ export class CsfFile {
 
   /**
    * Discover editors for the meta and stories; a story's CSF2 annotation assignments are its fields.
-   * Unsupported targets are skipped and reported in `mutationDiagnostics`.
+   * A story whose value it cannot read, such as `export const A = makeStory()`, gets an editor that
+   * reads nothing, removes a field its value does not show as a no-op, and refuses any other edit.
+   * Other unsupported targets are skipped and reported in `mutationDiagnostics`.
    *
    * @example
    * ```ts
@@ -531,7 +495,8 @@ export class CsfFile {
 
   /**
    * Find the editor of the story exported as `exportName`, as `objects()` would give it, or the
-   * diagnostic that says why it has none, which is added to `mutationDiagnostics` as well. Returns
+   * diagnostic that says why it has none, which is added to `mutationDiagnostics` as well. Unlike
+   * `objects()`, it refuses a story whose value it cannot read. Returns
    * `undefined` when the file has no story of that name. A story that shares its object with
    * another story, such as `Secondary` in `export { Primary as Secondary }` or `export const
    * Secondary = Primary`, has none: it is refused as `aliased-story`, naming `Primary`, whose
@@ -1064,10 +1029,13 @@ export class CsfFile {
           }
           this._storyAnnotations[exportName] = annotations;
           this._storyStatements[exportName] = decl as Node;
+          // A story of another file has its name there, and the preview takes an empty name as none
+          const ownName =
+            !node.source && isStringLiteral(annotations.name) && annotations.name.value;
           this._stories[exportName] = {
             exportName,
             id: 'FIXME',
-            name: exportName,
+            name: ownName || storyNameFromExport(exportName),
             localName,
             parameters: {},
             factory: storyIsFactory,
@@ -1180,10 +1148,7 @@ export class CsfFile {
             const [argument] = node.arguments;
             const argumentBinding =
               argument?.type === 'Identifier' ? this.editor.scopes.bindingOf(argument) : undefined;
-            const argumentNode =
-              argumentBinding?.constant && argumentBinding.node.type === 'VariableDeclarator'
-                ? argumentBinding.node.init
-                : argument;
+            const argumentNode = argumentBinding ? constantInit(argumentBinding) : argument;
             const unwrappedArgument = argumentNode && unwrapExpression(argumentNode as Node);
             if (unwrappedArgument?.type === 'ObjectExpression') {
               this._parseMeta(unwrappedArgument, this.program);

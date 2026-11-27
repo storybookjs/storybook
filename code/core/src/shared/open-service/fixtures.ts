@@ -95,21 +95,20 @@ export const awaitedPreloadValueServiceDef = defineService({
       input: entryIdInputSchema,
       output: preloadedValueOutputSchema,
       handler: (input, ctx) => ctx.self.state[input.entryId] ?? null,
-      load: (input, ctx) => {
-        if (!(input.entryId in ctx.self.state)) {
-          return ctx.self.commands.preloadValue(input).then(() => undefined);
-        }
-      },
+      load: (input, ctx) => ctx.self.commands.preloadValue(input),
       staticPath: () => 'state.json',
       staticInputs: async () => [{ entryId: 'entry-a' }, { entryId: 'entry-b' }],
     },
   },
   commands: {
     preloadValue: {
-      description: 'Loads a deterministic value for one entry id.',
+      description: 'Loads a deterministic value for one entry id, unless it is already loaded.',
       input: entryIdInputSchema,
       output: voidOutputSchema,
       handler: async (input, ctx) => {
+        if (ctx.self.state[input.entryId] !== undefined) {
+          return;
+        }
         await Promise.resolve();
         ctx.self.setState((state) => {
           state[input.entryId] = 'preloaded';
@@ -126,24 +125,24 @@ export const fireAndForgetPreloadValueServiceDef = defineService({
   initialState: {} as PreloadedValueState,
   queries: {
     preloadedValue: {
-      description:
-        'Returns the current value; load fires a command in the background when missing.',
+      description: 'Returns the current value; load fires a command in the background to fill it.',
       input: entryIdInputSchema,
       output: preloadedValueOutputSchema,
       handler: (input, ctx) => ctx.self.state[input.entryId] ?? null,
       load: (input, ctx) => {
-        if (!(input.entryId in ctx.self.state)) {
-          void ctx.self.commands.preloadValue(input);
-        }
+        void ctx.self.commands.preloadValue(input);
       },
     },
   },
   commands: {
     preloadValue: {
-      description: 'Loads a deterministic value for one entry id.',
+      description: 'Loads a deterministic value for one entry id, unless it is already loaded.',
       input: entryIdInputSchema,
       output: voidOutputSchema,
       handler: async (input, ctx) => {
+        if (ctx.self.state[input.entryId] !== undefined) {
+          return;
+        }
         await Promise.resolve();
         ctx.self.setState((state) => {
           state[input.entryId] = 'preloaded';

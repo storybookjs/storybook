@@ -19,6 +19,11 @@ ruleTester.run('meta-satisfies-type', rule, {
       component: AccountForm,
     } satisfies Meta<typeof AccountForm>;
     export default meta;`,
+    // CSF factories are typed by the factory itself, so `satisfies` has no place there
+    `
+      import preview from '../../.storybook/preview'
+      const meta = preview.meta({ component: AccountForm })
+    `,
   ],
 
   invalid: [

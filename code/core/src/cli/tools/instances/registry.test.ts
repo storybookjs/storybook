@@ -1,3 +1,4 @@
+import { readlinkSync } from 'node:fs';
 import { readFile, readdir, rm } from 'node:fs/promises';
 
 import { vol } from 'memfs';
@@ -8,10 +9,13 @@ import { readRegistry } from './registry.ts';
 // Spy-only mock: keep the real `node:fs/promises` module shape, then redirect the calls used by
 // the registry reader to `memfs` so disk state stays scoped to `vol`.
 vi.mock('node:fs/promises', { spy: true });
+vi.mock('node:fs', { spy: true });
 
 const REGISTRY_DIR = '/registry';
 
 beforeEach(async () => {
+  // This process runs in process namespace `pid:[2]`.
+  vi.mocked(readlinkSync).mockReturnValue('pid:[2]');
   const memfs = await vi.importActual<typeof import('memfs')>('memfs');
 
   vi.mocked(readdir).mockImplementation(
@@ -88,6 +92,32 @@ describe('readRegistry', () => {
 
   it('removes the registry file of a dead PID', async () => {
     const dead = { ...aliveRecord, instanceId: 'dead-uuid', pid: 2147483646 };
+    vol.fromNestedJSON({ [REGISTRY_DIR]: { 'dead.json': JSON.stringify(dead) } });
+
+    await expect(readRegistry(REGISTRY_DIR)).resolves.toEqual([]);
+    expect(vol.toJSON()[`${REGISTRY_DIR}/dead.json`]).toBeUndefined();
+  });
+
+  it('keeps a record whose dev server runs in another process namespace', async () => {
+    const hidden = {
+      ...aliveRecord,
+      instanceId: 'hidden-uuid',
+      pid: 2147483646,
+      pidNamespace: 'pid:[1]',
+    };
+    vol.fromNestedJSON({ [REGISTRY_DIR]: { 'hidden.json': JSON.stringify(hidden) } });
+
+    await expect(readRegistry(REGISTRY_DIR)).resolves.toEqual([hidden]);
+    expect(vol.toJSON()[`${REGISTRY_DIR}/hidden.json`]).toBeDefined();
+  });
+
+  it('removes a record with a dead PID from its own process namespace', async () => {
+    const dead = {
+      ...aliveRecord,
+      instanceId: 'dead-uuid',
+      pid: 2147483646,
+      pidNamespace: 'pid:[2]',
+    };
     vol.fromNestedJSON({ [REGISTRY_DIR]: { 'dead.json': JSON.stringify(dead) } });
 
     await expect(readRegistry(REGISTRY_DIR)).resolves.toEqual([]);
@@ -183,5 +213,27 @@ describe('readRegistry', () => {
     });
 
     await expect(readRegistry(REGISTRY_DIR)).resolves.toEqual([]);
+  });
+
+  it('merges records from both the preferred and legacy registry dirs', async () => {
+    const legacyDir = '/legacy-registry';
+    const legacyRecord = { ...aliveRecord, instanceId: 'legacy-uuid' };
+    vol.fromNestedJSON({
+      [REGISTRY_DIR]: { 'alive.json': JSON.stringify(aliveRecord) },
+      [legacyDir]: { 'legacy.json': JSON.stringify(legacyRecord) },
+    });
+
+    const records = await readRegistry(REGISTRY_DIR, legacyDir);
+
+    expect(records).toEqual(expect.arrayContaining([aliveRecord, legacyRecord]));
+    expect(records).toHaveLength(2);
+  });
+
+  it('reads a dir only once when it is both the preferred and legacy path', async () => {
+    vol.fromNestedJSON({ [REGISTRY_DIR]: { 'alive.json': JSON.stringify(aliveRecord) } });
+
+    const records = await readRegistry(REGISTRY_DIR, REGISTRY_DIR);
+
+    expect(records).toEqual([aliveRecord]);
   });
 });

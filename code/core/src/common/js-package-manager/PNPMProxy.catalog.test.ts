@@ -10,6 +10,7 @@ import { fs as memfs, vol } from 'memfs';
 
 import { executeCommandSync } from '../utils/command.ts';
 import { getProjectRoot } from '../utils/paths.ts';
+import { JsPackageManager } from './JsPackageManager.ts';
 import { PNPMProxy } from './PNPMProxy.ts';
 
 vi.mock('node:fs', { spy: true });
@@ -41,6 +42,45 @@ describe('PNPMProxy catalogs', () => {
     // Drive the version resolution through controllable inputs.
     vi.spyOn(pnpmProxy, 'getInstalledVersion').mockResolvedValue(null);
     vi.spyOn(pnpmProxy, 'getAllDependencies').mockReturnValue({});
+  });
+
+  describe('getOverrideSources', () => {
+    const PACKAGE_JSON_SOURCE = {
+      path: '/root/package.json',
+      field: 'overrides',
+      overrides: { react: '18.0.0' },
+    };
+
+    beforeEach(() => {
+      vi.spyOn(JsPackageManager.prototype, 'getOverrideSources').mockReturnValue([
+        PACKAGE_JSON_SOURCE,
+      ]);
+    });
+
+    it('keeps the package.json sources when there is no workspace file', () => {
+      vi.mocked(find.up).mockReturnValue(undefined);
+
+      expect(pnpmProxy.getOverrideSources()).toEqual([PACKAGE_JSON_SOURCE]);
+    });
+
+    it.each([
+      { name: 'without overrides', yaml: 'packages:\n  - apps/*\n', expected: [] },
+      {
+        name: 'with overrides, reading bare numeric pins as strings',
+        yaml: 'overrides:\n  storybook: 10\n  "a>@storybook/addon-docs": ~10.5.3\n',
+        expected: [
+          {
+            path: WORKSPACE_YAML,
+            field: 'overrides',
+            overrides: { storybook: '10', 'a>@storybook/addon-docs': '~10.5.3' },
+          },
+        ],
+      },
+    ])('adds a workspace file $name', ({ yaml, expected }) => {
+      vol.fromJSON({ [WORKSPACE_YAML]: yaml });
+
+      expect(pnpmProxy.getOverrideSources()).toEqual([PACKAGE_JSON_SOURCE, ...expected]);
+    });
   });
 
   describe('getDeclaredVersionSpecifier', () => {
@@ -82,6 +122,12 @@ describe('PNPMProxy catalogs', () => {
 
     it('falls back to a plain declared semver range when not a catalog and not installed', async () => {
       vi.spyOn(pnpmProxy, 'getAllDependencies').mockReturnValue({ vitest: '^3.2.0' });
+
+      await expect(pnpmProxy.getDeclaredVersionSpecifier('vitest')).resolves.toBe('^3.2.0');
+    });
+
+    it('falls back to the range of an npm: alias of the same package', async () => {
+      vi.spyOn(pnpmProxy, 'getAllDependencies').mockReturnValue({ vitest: 'npm:vitest@^3.2.0' });
 
       await expect(pnpmProxy.getDeclaredVersionSpecifier('vitest')).resolves.toBe('^3.2.0');
     });
@@ -282,6 +328,41 @@ describe('PNPMProxy catalogs', () => {
       expect(writtenYaml()).toBe(
         '# Storybook\ncatalog:\n  storybook: ^11.0.0\ncatalogs:\n  sb:\n    "@storybook/react-vite": 11.0.0\n'
       );
+    });
+  });
+
+  describe('upgradeDeclaredDependency', () => {
+    const PACKAGE_JSON = '/root/packages/app/package.json';
+
+    it('upgrades the catalog entry and keeps the catalog reference in package.json', () => {
+      vol.fromJSON({
+        [WORKSPACE_YAML]: 'catalog:\n  typescript: ~7.0.2\n',
+        [PACKAGE_JSON]: '{\n  "devDependencies": {\n    "typescript": "catalog:"\n  }\n}\n',
+      });
+      JsPackageManager.packageJsonCache.clear();
+      pnpmProxy.packageJsonPaths = [PACKAGE_JSON];
+
+      pnpmProxy.upgradeDeclaredDependency('typescript@^7.1', '7.0.2');
+
+      expect(writtenYaml()).toBe('catalog:\n  typescript: ^7.1\n');
+      expect(vol.toJSON()[PACKAGE_JSON]).toContain('"typescript": "catalog:"');
+    });
+
+    it('leaves a catalog entry that the installed version does not satisfy alone', () => {
+      const ROOT_PACKAGE_JSON = '/root/package.json';
+      vol.fromJSON({
+        [WORKSPACE_YAML]: 'catalog:\n  typescript: ^6.0.3\n',
+        [ROOT_PACKAGE_JSON]: '{\n  "devDependencies": {\n    "typescript": "catalog:"\n  }\n}\n',
+        [PACKAGE_JSON]: '{\n  "devDependencies": {\n    "typescript": "~7.0.2"\n  }\n}\n',
+      });
+      JsPackageManager.packageJsonCache.clear();
+      pnpmProxy.packageJsonPaths = [PACKAGE_JSON, ROOT_PACKAGE_JSON];
+
+      pnpmProxy.upgradeDeclaredDependency('typescript@^7.1', '7.0.2');
+
+      expect(writtenYaml()).toBe('catalog:\n  typescript: ^6.0.3\n');
+      expect(vol.toJSON()[ROOT_PACKAGE_JSON]).toContain('"typescript": "catalog:"');
+      expect(vol.toJSON()[PACKAGE_JSON]).toContain('"typescript": "^7.1"');
     });
   });
 

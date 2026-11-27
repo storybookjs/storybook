@@ -1,6 +1,18 @@
-import path from 'path';
+import path from 'pathe';
 import fs from 'node:fs/promises';
-import { getMdxFiles, readFileLines, getHeadingSlugs, getLineContexts } from './utils';
+import { resolve } from 'node:path';
+import {
+  getMdxFiles,
+  getSnippetFiles,
+  readFileLines,
+  getHeadingSlugs,
+  getLineContexts,
+  getMisorderedCsfSegments,
+  getLegacyCsfTitleSegments,
+  getCsf3SegmentsWithoutDeprecation,
+  getCsf3DeprecationComment,
+  getRenamedCsfTabTitle,
+} from './utils.ts';
 import { esMain } from '../utils/esmain.ts';
 
 export interface RelativeLinkError {
@@ -46,6 +58,7 @@ export async function checkRelativeLinks(docsDir: string): Promise<RelativeLinkE
 
   for (const file of mdxFiles) {
     const lines = await readFileLines(file);
+    const contexts = getLineContexts(lines);
     await Promise.all(
       lines.map(async (line, idx) => {
         // Create a new regex per line to avoid shared lastIndex state across concurrent promises
@@ -82,6 +95,24 @@ export async function checkRelativeLinks(docsDir: string): Promise<RelativeLinkE
                 message: `Broken fragment: ${relPath}${anchor} (heading "#${fragment}" not found in target)`,
               });
             }
+          }
+        }
+
+        // Same-page fragments, such as `[text](#heading)`. Code examples are not links.
+        if (contexts[idx] !== 'content') return;
+        const samePageRegex = /\[[^\]]+\]\(#([^)\s]+)\)/g;
+        while ((match = samePageRegex.exec(line))) {
+          const fragment = match[1];
+          if (!slugCache.has(file)) {
+            slugCache.set(file, await getHeadingSlugs(file));
+          }
+          if (!slugCache.get(file)!.has(fragment)) {
+            errors.push({
+              file,
+              line: idx + 1,
+              link: match[0],
+              message: `Broken fragment: #${fragment} (heading not found on this page)`,
+            });
           }
         }
       })
@@ -352,6 +383,54 @@ export async function checkRedundantSidebarTitle(docsDir: string): Promise<DocLi
 }
 
 /**
+ * Checks that "More ... resources" lists link to individual skill pages, not the skills index.
+ */
+export async function checkResourcesSkillsIndex(docsDir: string): Promise<DocLineError[]> {
+  const mdxFiles = await getMdxFiles(docsDir);
+  const errors: DocLineError[] = [];
+  // getMdxFiles returns paths under the glob's resolved cwd, which carries the drive on Windows
+  const skillsIndex = path.join(resolve(docsDir), 'ai/skills/index.mdx');
+
+  for (const file of mdxFiles) {
+    const lines = await readFileLines(file);
+    const contexts = getLineContexts(lines);
+    let inResources = false;
+
+    for (let i = 0; i < lines.length; i++) {
+      // Code blocks can show an example list, which is not a real resources list
+      if (contexts[i] !== 'content') {
+        inResources = false;
+        continue;
+      }
+      const line = lines[i];
+      if (/^\*\*More .*resources\*\*\s*$/i.test(line)) {
+        inResources = true;
+        continue;
+      }
+      // The list ends at the first line that is neither a list item nor blank
+      if (inResources && line.trim() !== '' && !/^\s*-\s/.test(line)) {
+        inResources = false;
+      }
+      if (!inResources) continue;
+
+      const linkRegex = /\]\((\.\.?\/[^)#]+)(#[^)]*)?\)/g;
+      let match;
+      while ((match = linkRegex.exec(line))) {
+        if (path.resolve(path.dirname(file), match[1]) === skillsIndex) {
+          errors.push({
+            file,
+            line: i + 1,
+            message:
+              'Resources list links to the skills index. Link to the individual skill pages instead.',
+          });
+        }
+      }
+    }
+  }
+  return errors;
+}
+
+/**
  * Checks for bare URLs (not wrapped in markdown link syntax) in prose.
  */
 export async function checkBareUrls(docsDir: string): Promise<DocLineError[]> {
@@ -414,6 +493,69 @@ export async function checkBareUrls(docsDir: string): Promise<DocLineError[]> {
 }
 
 /**
+ * Checks that each CSF 4 snippet comes before its CSF 3 counterpart in snippet files.
+ */
+export async function checkSnippetCsfOrder(docsDir: string): Promise<DocLineError[]> {
+  const snippetFiles = await getSnippetFiles(docsDir);
+  const errors: DocLineError[] = [];
+
+  for (const file of snippetFiles) {
+    const lines = await readFileLines(file);
+    for (const segment of getMisorderedCsfSegments(lines)) {
+      errors.push({
+        file,
+        line: segment.fenceLine + 1,
+        message:
+          'CSF 3 snippet comes before its CSF 4 snippet. Run `yarn --cwd scripts docs:fix-snippets` to fix.',
+      });
+    }
+  }
+  return errors;
+}
+
+/**
+ * Checks that snippet tab titles use `CSF 3` and `CSF 4`, not the old `CSF Next` and `Svelte CSF`
+ * names.
+ */
+export async function checkSnippetLegacyCsfTitle(docsDir: string): Promise<DocLineError[]> {
+  const snippetFiles = await getSnippetFiles(docsDir);
+  const errors: DocLineError[] = [];
+
+  for (const file of snippetFiles) {
+    const lines = await readFileLines(file);
+    for (const segment of getLegacyCsfTitleSegments(lines)) {
+      const { tabTitle } = segment.attributes;
+      errors.push({
+        file,
+        line: segment.fenceLine + 1,
+        message: `Snippet tabTitle "${tabTitle}" uses an old CSF name. Use "${getRenamedCsfTabTitle(tabTitle)}" instead.`,
+      });
+    }
+  }
+  return errors;
+}
+
+/**
+ * Checks that each CSF 3 snippet starts with the deprecation comment.
+ */
+export async function checkSnippetCsf3Deprecation(docsDir: string): Promise<DocLineError[]> {
+  const snippetFiles = await getSnippetFiles(docsDir);
+  const errors: DocLineError[] = [];
+
+  for (const file of snippetFiles) {
+    const lines = await readFileLines(file);
+    for (const segment of getCsf3SegmentsWithoutDeprecation(lines)) {
+      errors.push({
+        file,
+        line: segment.fenceLine + 1,
+        message: `CSF 3 snippet must start with \`${getCsf3DeprecationComment(segment.syntax)}\`. Run \`yarn --cwd scripts docs:fix-snippets\` to fix.`,
+      });
+    }
+  }
+  return errors;
+}
+
+/**
  * Runs all checks and prints a summary. Exits 1 if any errors are found.
  */
 export async function runAllChecks(docsDir: string) {
@@ -428,7 +570,11 @@ export async function runAllChecks(docsDir: string) {
     iconMismatch,
     fmQuotes,
     redundantSidebar,
+    resourcesSkillsIndex,
     bareUrls,
+    snippetCsfOrder,
+    snippetLegacyCsfTitle,
+    snippetCsf3Deprecation,
   ] = await Promise.all([
     checkRelativeLinks(docsDir),
     checkCodeSnippetPaths(docsDir),
@@ -440,7 +586,11 @@ export async function runAllChecks(docsDir: string) {
     checkCalloutIconMismatch(docsDir),
     checkFrontmatterQuotes(docsDir),
     checkRedundantSidebarTitle(docsDir),
+    checkResourcesSkillsIndex(docsDir),
     checkBareUrls(docsDir),
+    checkSnippetCsfOrder(docsDir),
+    checkSnippetLegacyCsfTitle(docsDir),
+    checkSnippetCsf3Deprecation(docsDir),
   ]);
   const all = [
     ...rel.map((e) => ({ ...e, type: 'relative-link' })),
@@ -453,7 +603,11 @@ export async function runAllChecks(docsDir: string) {
     ...iconMismatch.map((e) => ({ ...e, type: 'callout-icon-mismatch' })),
     ...fmQuotes.map((e) => ({ ...e, type: 'frontmatter-quotes' })),
     ...redundantSidebar.map((e) => ({ ...e, type: 'redundant-sidebar-title' })),
+    ...resourcesSkillsIndex.map((e) => ({ ...e, type: 'resources-skills-index' })),
     ...bareUrls.map((e) => ({ ...e, type: 'bare-url' })),
+    ...snippetCsfOrder.map((e) => ({ ...e, type: 'snippet-csf-order' })),
+    ...snippetLegacyCsfTitle.map((e) => ({ ...e, type: 'snippet-legacy-csf-title' })),
+    ...snippetCsf3Deprecation.map((e) => ({ ...e, type: 'snippet-csf3-deprecation' })),
   ];
   if (all.length === 0) {
     console.log('✅ Docs check: no errors found.');
@@ -470,7 +624,11 @@ export async function runAllChecks(docsDir: string) {
     'callout-icon-mismatch': 'CalloutIconMismatch',
     'frontmatter-quotes': 'FrontmatterQuotes',
     'redundant-sidebar-title': 'RedundantSidebarTitle',
+    'resources-skills-index': 'ResourcesSkillsIndex',
     'bare-url': 'BareUrl',
+    'snippet-csf-order': 'SnippetCsfOrder',
+    'snippet-legacy-csf-title': 'SnippetLegacyCsfTitle',
+    'snippet-csf3-deprecation': 'SnippetCsf3Deprecation',
   };
   for (const err of all) {
     const loc = `${err.file}:${err.line}`;

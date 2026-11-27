@@ -14,8 +14,8 @@ export const McpStatusSchema = v.picklist(['not-installed', 'starting', 'ready',
 export type McpStatus = v.InferOutput<typeof McpStatusSchema>;
 
 /**
- * A single Storybook runtime record written under the registry dir (default
- * `~/.storybook/instances`). One file per running `storybook dev` instance.
+ * A single Storybook runtime record written under the registry dir (`$XDG_STATE_HOME/storybook/instances`,
+ * or `~/.storybook/instances` when unset). One file per running `storybook dev` instance.
  * Spec: storybookjs/storybook#34826.
  */
 export const StorybookInstanceRecordSchema = v.object({
@@ -45,6 +45,11 @@ export const StorybookInstanceRecordSchema = v.object({
    * Storybooks lack it, which makes attach refuse.
    */
   storybookPath: v.optional(v.string()),
+  /**
+   * The process namespace of the dev server on Linux. `pid` can only be checked from that
+   * namespace. Optional: other systems and older Storybooks do not record it.
+   */
+  pidNamespace: v.optional(v.string()),
   startedAt: v.optional(v.string()),
   updatedAt: v.optional(v.string()),
   mcp: v.object({

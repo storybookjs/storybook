@@ -8,11 +8,13 @@ import { logger } from 'storybook/internal/node-logger';
 import { normalize } from 'pathe';
 import type { ViteDevServer } from 'vite';
 
+import { getImportConditions } from './import-conditions.ts';
+
 /**
  * Vite implementation of {@link ChangeDetectionAdapter}.
  *
- * - `getResolveConfig()` snapshots `server.config.resolve.alias`, `server.config.resolve.conditions`
- *   and `server.config.root` once at startup. The detector caches the result.
+ * - `getResolveConfig()` snapshots `server.config.resolve.alias`, `server.config.root` and the
+ *   conditions Vite matches for an ESM import once at startup. The detector caches the result.
  * - `onFileChange()` subscribes to `server.watcher` (chokidar) and forwards `add`/`change`/`unlink`
  *   events with normalised absolute paths. Other chokidar event names (`addDir`, `unlinkDir`,
  *   `ready`, `raw`, `error`) are intentionally filtered out.
@@ -37,7 +39,7 @@ export function createViteChangeDetectionAdapter(server: ViteDevServer): ChangeD
       // before we ever see it. The detector accepts both Record and Array shapes, so we pass
       // the array through unchanged.
       const alias = resolveOpts?.alias as ModuleResolveConfig['alias'];
-      const conditions = resolveOpts?.conditions;
+      const conditions = getImportConditions(server.config);
 
       return {
         projectRoot: server.config.root,

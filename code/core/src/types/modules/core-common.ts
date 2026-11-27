@@ -222,8 +222,16 @@ export interface ModuleResolveConfig {
    * terminal.
    */
   alias?: Record<string, string> | Array<{ find: string | RegExp; replacement: string }>;
-  /** Conditions for package `exports` resolution. */
+  /**
+   * Conditions for package `exports` resolution, as the builder applies them to an ESM import:
+   * `import` included and placeholders such as Vite's `development|production` replaced.
+   */
   conditions?: string[];
+  /**
+   * The conditions the builder applies to a CommonJS `require()`, with `require` in place of
+   * `import`. Defaults to `conditions`.
+   */
+  requireConditions?: string[];
 }
 
 export type PackageJson = PackageJsonFromTypeFest & Record<string, any>;
@@ -372,6 +380,17 @@ export interface TypescriptOptions {
    * @default false
    */
   skipCompiler: boolean;
+
+  /**
+   * The TypeScript package that React and Angular (`@storybook/angular-vite`) docgen load, resolved
+   * as if the main config imported it: a package name, a `file:` URL, or a path to the package's
+   * folder, absolute or relative to the config directory. Use it when the `typescript` package must stay on
+   * TypeScript 6 and TypeScript 7.1 or newer is installed under another name, such as
+   * `@typescript/native`.
+   *
+   * @default 'typescript'
+   */
+  docgenSpecifier?: string;
 }
 
 export type Preset =
@@ -594,22 +613,6 @@ export interface StorybookFeatures {
   /**
    * @temporary This feature flag is a migration assistant, and is scheduled to be removed.
    *
-   * Filter args with a "target" on the type from the render function (EXPERIMENTAL)
-   */
-  argTypeTargetsV7?: boolean;
-
-  /**
-   * @temporary This feature flag is a migration assistant, and is scheduled to be removed.
-   *
-   * Disallow implicit actions during rendering. This will be the default in Storybook 8.
-   *
-   * This will make sure that your story renders the same no matter if docgen is enabled or not.
-   */
-  disallowImplicitActionsInRenderV8?: boolean;
-
-  /**
-   * @temporary This feature flag is a migration assistant, and is scheduled to be removed.
-   *
    * Enable asynchronous component rendering in React renderer
    */
   experimentalRSC?: boolean;
@@ -638,10 +641,12 @@ export interface StorybookFeatures {
   /**
    * Enable component manifest generation for MCP and other tooling integrations.
    *
-   * `@storybook/react`, `@storybook/vue3`, and `@storybook/angular-vite` default this to `true`.
-   * Set it to `false` to opt out.
+   * `@storybook/react`, `@storybook/vue3`, `@storybook/svelte`, and `@storybook/angular-vite` default
+   * this to `true`. Frameworks built on these renderers inherit it, such as `@storybook/nextjs`,
+   * `@storybook/react-vite`, `@storybook/vue3-vite`, and `@storybook/sveltekit`. Set it to `false`
+   * to opt out.
    *
-   * @default false // `true` for React, Vue 3, and `@storybook/angular-vite`
+   * @default false // `true` for React, Vue 3, and Svelte frameworks, and `@storybook/angular-vite`
    */
   componentsManifest?: boolean;
 
@@ -680,6 +685,16 @@ export interface StorybookFeatures {
   docgenServer?: boolean;
 
   /**
+   * Let story snippets follow the controls. With `docgenServer` on, a snippet in the Code panel,
+   * Canvas › Show code and the MDX `<Source>` block shows the args a control changed. Set it to
+   * `false` to keep snippets static.
+   *
+   * @default true
+   * @experimental
+   */
+  experimentalLiveServerSnippets?: boolean;
+
+  /**
    * Keep Vite from merging the pre-split preview runtime back into one output chunk.
    *
    * Webpack always serves the chunked `dist/preview` at `/sb-preview`. This flag only
@@ -696,6 +711,8 @@ export interface SecurityConfig {
   /**
    * In dev mode, the manager and preview can only be embedded by a website running on localhost.
    * This prevents attacks that hijack a local Storybook embedded in an iframe from a malicious domain.
+   * The restriction does not apply in a WebContainer, such as StackBlitz, which shows the dev server
+   * in an iframe on its own page.
    *
    * If you need remote Storybooks to compose this Storybook while it is running in dev mode,
    * you may set `insecureRemoteIframeEmbed` to `true`.

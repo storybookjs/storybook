@@ -1,6 +1,6 @@
 {
   "name": "@storybook/vue3",
-  "version": "11.0.0-alpha.8",
+  "version": "11.0.0-rc.1",
   "description": "Storybook Vue 3 renderer: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -54,7 +54,6 @@
     "!src/**/*"
   ],
   "dependencies": {
-    "@storybook/global": "^5.0.0",
     "@types/pug": "2.0.10",
     "@vue/compiler-dom": "^3.2.47",
     "@vue/language-core": "^3.2.7",

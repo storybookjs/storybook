@@ -325,7 +325,7 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
           {entry ? (
             <ActionList.Text>Interactions</ActionList.Text>
           ) : (
-            <ActionList.Action as="label" readOnly>
+            <ActionList.Action as="label" readOnly ariaLabel={false}>
               <ActionList.Icon>
                 <Form.Checkbox name="Interactions" checked disabled />
               </ActionList.Icon>

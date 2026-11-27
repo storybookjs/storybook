@@ -13,7 +13,7 @@ describe('isGlobalInput', () => {
     'code/core/tsconfig.build.json',
     'code/vitest.shared.ts',
     'code/vitest-setup.ts',
-    'code/vitest.config.storybook.ts',
+    'code/vitest.config.ts',
     'code/lib/eslint-plugin/vitest.integration.config.ts',
     'code/addons/a11y/vitest.config.ts',
     'code/builders/builder-vite/vite.config.ts',

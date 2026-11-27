@@ -1,4 +1,5 @@
 import { print } from 'esrap';
+import ts from 'esrap/languages/ts';
 import type MagicString from 'magic-string';
 
 import { createExportOrderVariableDeclaration } from './appendix/create-export-order.ts';
@@ -39,10 +40,12 @@ export async function createAppendix(params: Params) {
     filename,
   });
   const exportNames = stories.map(({ exportName }) => exportName);
+  const names = new Map(stories.map(({ exportName, name }) => [exportName, name]));
   // A story that extends another one reads it, so the parent is declared first
   const storiesVariableDeclarations = orderByParents(exportNames, parents).map((exportName) =>
     createRuntimeStoryVariableDeclaration({
       exportName,
+      name: names.get(exportName),
       parentExportName: parents.get(exportName),
       filename,
       nodes: {
@@ -56,7 +59,7 @@ export async function createAppendix(params: Params) {
     })
   );
 
-  const appendix = print({
+  const appendix: ESTreeAST.Program = {
     type: 'Program',
     sourceType: 'module',
     body: [
@@ -64,13 +67,16 @@ export async function createAppendix(params: Params) {
       variableFromRuntimeStoriesCall,
       // A CSF factories file has no default export: core finds the meta through the stories
       ...(factoryMeta ? [] : [createExportDefaultMeta()]),
-      createExportOrderVariableDeclaration({ storiesIdentifiers: stories, filename }),
+      createExportOrderVariableDeclaration({
+        storiesIdentifiers: stories,
+        filename,
+      }),
       ...storiesVariableDeclarations,
       createNamedExportStories({ storiesIdentifiers: stories }),
     ],
-  });
+  };
 
-  code.append('\n' + appendix.code);
+  code.append('\n' + print(appendix, ts()).code);
 }
 
 function createExportDefaultMeta(): ESTreeAST.ExportDefaultDeclaration {
@@ -86,9 +92,17 @@ interface GetStoryTagsParams {
 }
 function getStoryTags(params: GetStoryTagsParams): ESTreeAST.ArrayExpression | undefined {
   const storyComponent = params.storyComponents[params.idx];
-  const tags = storyComponent.component.attributes.find((a) => a.name === 'tags');
+  const tags = storyComponent.component.attributes.find(
+    (attribute): attribute is SvelteAST.Attribute =>
+      attribute.type === 'Attribute' && attribute.name === 'tags'
+  );
 
   if (!tags) return;
 
-  return (tags.value as SvelteAST.ExpressionTag).expression as ESTreeAST.ArrayExpression;
+  const { value } = tags;
+  // A `tags` attribute is either `true` (no value), a single `{...}` expression tag, or an array of
+  // text/expression tags for quoted strings. Only the expression tag holds `.expression`.
+  if (value === true || Array.isArray(value)) return;
+
+  return value.expression as ESTreeAST.ArrayExpression;
 }

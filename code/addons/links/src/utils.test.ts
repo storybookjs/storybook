@@ -8,12 +8,6 @@ import { addons } from 'storybook/preview-api';
 import { hrefTo, hrefToSync, linkTo } from './utils.ts';
 
 vi.mock('storybook/preview-api');
-vi.mock('@storybook/global', () => ({
-  global: {
-    document: global.document,
-    window: global,
-  },
-}));
 
 const mockAddons = vi.mocked(addons);
 

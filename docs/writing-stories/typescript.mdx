@@ -1,5 +1,7 @@
 ---
 title: Writing stories in TypeScript
+sidebar:
+  order: 12
 ---
 
 Writing your stories in [TypeScript](https://www.typescriptlang.org/) makes you more productive. You don't have to jump between files to look up component props. Your code editor will alert you about missing required props and even autocomplete prop values, just like when using your components within your app. Plus, Storybook infers those component types to auto-generate the [Controls](../api/doc-blocks/doc-block-controls.mdx) table.
@@ -10,7 +12,7 @@ Storybook has built-in TypeScript support, so you can get started with zero conf
 
 <Callout variant="info" icon="💡">
 
-[CSF Next](../api/csf/csf-next.mdx) (currently in preview) provides significantly improved TypeScript support, which infers component types automatically and requires no explicit typing for most cases. We recommend using CSF Next for all new TypeScript stories.
+[CSF 4](./csf/index.mdx) provides significantly improved TypeScript support over earlier versions of CSF, which infers component types automatically and requires no explicit typing for most cases. We recommend using CSF 4 for all new TypeScript stories.
 
 You only need to add types when using [custom args](#typing-custom-args).
 
@@ -18,9 +20,9 @@ You only need to add types when using [custom args](#typing-custom-args).
 
 </If>
 
-## Typing stories with `Meta` and `StoryObj`
+## Typing CSF 3 stories with `Meta` and `StoryObj`
 
-When writing stories, there are two aspects that are helpful to type. The first is the [component meta](./index.mdx#default-export), which describes and configures the component and its stories. In a [CSF file](../api/csf/index.mdx), this is the default export. The second is the [stories themselves](./index.mdx#defining-stories).
+When writing stories, there are two aspects that are helpful to type. The first is the [component meta](./index.mdx#meta), which describes and configures the component and its stories. In a [CSF 3 file](../../release-10-6/docs/api/csf/index.mdx), this is the default export. The second is the [stories themselves](./index.mdx#defining-stories).
 
 Storybook provides utility types for each of these, named `Meta` and `StoryObj`. Here's an example CSF file using those types:
 
@@ -63,7 +65,7 @@ Finally, use of `satisfies` allows you to pass `typeof meta` to the `StoryObj` g
 
 ## Typing custom args
 
-Sometimes stories need to define args that aren’t included in the component's props. In CSF 3, you can use an [intersection type](https://www.typescriptlang.org/docs/handbook/2/objects.html#intersection-types) to combine a component's props type and your custom args' type. In [CSF Next](../api/csf/csf-next.mdx), the component's props are already inferred, so you only pass the type of your custom args to `preview.type`. For example, here's how you could use a `footer` arg to populate a child component:
+Sometimes stories need to define args that aren’t included in the component's props. In [CSF 4](./csf/index.mdx), the component's props are already inferred, so you only pass the type of your custom args to `preview.type`. In CSF 3, you can use an [intersection type](https://www.typescriptlang.org/docs/handbook/2/objects.html#intersection-types) to combine a component's props type and your custom args' type. For example, here's how you could use a `footer` arg to populate a child component:
 
 <CodeSnippets path="page-story-slots.md" />
 
@@ -96,7 +98,7 @@ You can type check SFC files with `vue-tsc` and get editor support in VSCode by 
 
 This setup will add type support for `*.vue` imports to your `*.stories.ts` files, providing the same type safety and autocomplete features.
 
-[CSF Next](../api/csf/csf-next.mdx) adds support for [Generic Vue components](https://vuejs.org/api/sfc-script-setup.html#generics) (using `<script lang="ts" setup generic="T">`). Simply pass the type parameter directly to the component:
+[CSF 4](./csf/index.mdx) adds support for [Generic Vue components](https://vuejs.org/api/sfc-script-setup.html#generics) (using `<script lang="ts" setup generic="T">`). Simply pass the type parameter directly to the component:
 
 ```ts title="GenericList.stories.ts"
 import preview from '../.storybook/preview';
@@ -125,7 +127,7 @@ Prior CSF versions suffer from a [long-standing type inference issue](https://gi
 
 ## Svelte specific tips
 
-Svelte offers excellent TypeScript support for .svelte files. For example, consider the following component. You can run type checks using svelte-check and add VSCode editor support with the [Svelte for VSCode extension](https://marketplace.visualstudio.com/items?itemName=svelte.svelte-vscode).
+Svelte offers excellent TypeScript support for `.svelte` files. For example, consider the following component. You can run type checks using svelte-check and add VSCode editor support with the [Svelte for VSCode extension](https://marketplace.visualstudio.com/items?itemName=svelte.svelte-vscode).
 
 ```svelte
 <script lang="ts">
@@ -150,7 +152,7 @@ Svelte offers excellent TypeScript support for .svelte files. For example, consi
 
 The same setup works with Svelte stories files too, providing both type safety and autocompletion.
 
-In [CSF Next](../api/csf/csf-next.mdx), `preview.meta` infers the args from the props of the component, in `.stories.svelte` and `.stories.ts` files. A story must set every required prop that the meta doesn't set.
+In [CSF 4](./csf/index.mdx), `preview.meta` infers the args from the props of the component, in `.stories.svelte` and `.stories.ts` files. A story must set every required prop that the meta doesn't set.
 
 For a [generic component](https://svelte.dev/docs/svelte/typescript#Generic-$props) (using `<script lang="ts" generics="T">`), pass the type argument directly to the component:
 
@@ -176,7 +178,7 @@ For a [generic component](https://svelte.dev/docs/svelte/typescript#Generic-$pro
 />
 ```
 
-To add args that only some stories use, such as an arg that a story template reads, use [`meta.type`](../api/csf/csf-next.mdx#metatypestory). In a Svelte CSF file, it returns another `Story` component with those args.
+To add args that only some stories use, such as an arg that a story template reads, use [`meta.type`](./csf/api.mdx#metatypestory). In a Svelte CSF file, it returns another `Story` component with those args.
 
 </If>
 
@@ -184,9 +186,7 @@ To add args that only some stories use, such as an arg that a story template rea
 
 ## Angular specific tips
 
-[CSF 3](../api/csf/index.mdx) offers basic TypeScript support for Angular components, but it does not infer component types.
-
-[CSF Next](../api/csf/csf-next.mdx) is able to infer types for Angular components, but the inferred types will be optional (i.e. `Partial<T>`). In other words, required props will not be enforced.
+[CSF 4](./csf/index.mdx) is able to infer types for Angular components, but the inferred types will be optional (i.e. `Partial<T>`). In other words, required props will not be enforced.
 
 If you wish to have required props enforced, you can explicitly provide the component's props type to `preview.type` as shown in the following example:
 
@@ -205,15 +205,15 @@ const meta = preview.type<{ args: MyComponentProps }>().meta({
 });
 ```
 
+[CSF 3](../../release-10-6/docs/api/csf/index.mdx) offers basic TypeScript support for Angular components, but it does not infer component types.
+
 </If>
 
 <If renderer="web-components">
 
 ## Web Components specific tips
 
-[CSF 3](../api/csf/index.mdx) offers basic TypeScript support for web components, but it does not infer component types and provides no type generics for `Meta` and `StoryObj`.
-
-[CSF Next](../api/csf/csf-next.mdx) is able to infer types for web components, but only if the [custom element is declared in the global `HTMLElementTagNameMap` interface](https://lit.dev/docs/components/defining/#typescript-typings). You can do this by adding a declaration like the following to your project:
+[CSF 4](./csf/index.mdx) is able to infer types for web components, but only if the [custom element is declared in the global `HTMLElementTagNameMap` interface](https://lit.dev/docs/components/defining/#typescript-typings). You can do this by adding a declaration like the following to your project:
 
 ```ts
 declare global {
@@ -239,5 +239,7 @@ const meta = preview.type<{ args: MyElementProps }>().meta({
   component: 'my-element',
 });
 ```
+
+[CSF 3](../../release-10-6/docs/api/csf/index.mdx) offers basic TypeScript support for web components, but it does not infer component types and provides no type generics for `Meta` and `StoryObj`.
 
 </If>

@@ -1,36 +1,55 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
 import fs from 'node:fs/promises';
-import path from 'path';
-import os from 'os';
+import { vol } from 'memfs';
+import path from 'pathe';
+import { glob, type GlobOptions } from 'tinyglobby';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-  checkRelativeLinks,
+  checkBareUrls,
+  checkCalloutIconMismatch,
+  checkCalloutVariant,
+  checkCalloutVariantPositive,
   checkCodeSnippetPaths,
   checkDeprecatedIfRenderer,
-  checkCalloutVariant,
-  checkNoBodyH1,
-  checkHeadingHierarchy,
-  checkCalloutVariantPositive,
-  checkCalloutIconMismatch,
   checkFrontmatterQuotes,
+  checkHeadingHierarchy,
+  checkNoBodyH1,
   checkRedundantSidebarTitle,
-  checkBareUrls,
+  checkRelativeLinks,
+  checkResourcesSkillsIndex,
+  checkSnippetCsf3Deprecation,
+  checkSnippetCsfOrder,
+  checkSnippetLegacyCsfTitle,
   runAllChecks,
-} from '../check-docs';
+} from '../check-docs.ts';
+import { fixSnippets } from '../fix-snippets.ts';
+
+const CSF3_DEPRECATION_COMMENT =
+  '// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/11/writing-stories/csf/upgrade';
 
 async function writeFile(filePath: string, content: string) {
   await fs.mkdir(path.dirname(filePath), { recursive: true });
   await fs.writeFile(filePath, content);
 }
 
+vi.mock('node:fs/promises', { spy: true });
+vi.mock('tinyglobby', { spy: true });
+
+beforeEach(async () => {
+  const memfs = await vi.importActual<typeof import('memfs')>('memfs');
+  const actualGlob = await vi.importActual<typeof import('tinyglobby')>('tinyglobby');
+  vol.reset();
+  for (const method of ['access', 'mkdir', 'readFile', 'writeFile'] as const) {
+    vi.mocked(fs[method]).mockImplementation(memfs.fs.promises[method] as any);
+  }
+  vi.mocked(glob).mockImplementation(((patterns: string[], options: GlobOptions) =>
+    actualGlob.glob(patterns, { ...options, fs: memfs.fs as any })) as typeof glob);
+});
+
 describe('check-docs', () => {
-  let tmpDir: string;
-  let docsDir: string;
-  let snippetsDir: string;
+  const docsDir = '/docs';
+  const snippetsDir = path.join(docsDir, '_snippets');
 
   beforeEach(async () => {
-    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'docs-check-'));
-    docsDir = path.join(tmpDir, 'docs');
-    snippetsDir = path.join(docsDir, '_snippets');
     await fs.mkdir(snippetsDir, { recursive: true });
   });
 
@@ -99,6 +118,43 @@ describe('check-docs', () => {
       );
       const errors = await checkRelativeLinks(docsDir);
       expect(errors).toEqual([]);
+    });
+    it('passes for same-page links to existing headings', async () => {
+      await writeFile(path.join(docsDir, 'bar.mdx'), '## My section\n\nSee [above](#my-section).');
+      const errors = await checkRelativeLinks(docsDir);
+      expect(errors).toEqual([]);
+    });
+    it('errors for same-page links to non-existent headings', async () => {
+      await writeFile(path.join(docsDir, 'bar.mdx'), '## My section\n\nSee [below](#missing).');
+      const errors = await checkRelativeLinks(docsDir);
+      expect(errors.length).toBe(1);
+      expect(errors[0].message).toContain('#missing');
+    });
+    it('ignores same-page links inside code blocks', async () => {
+      await writeFile(path.join(docsDir, 'bar.mdx'), '```md\n[example](#missing)\n```');
+      const errors = await checkRelativeLinks(docsDir);
+      expect(errors).toEqual([]);
+    });
+    it('numbers repeated headings like rehype-slug', async () => {
+      await writeFile(
+        path.join(docsDir, 'bar.mdx'),
+        '## Mock files\n\n## Mock files\n\n[first](#mock-files) [second](#mock-files-1)'
+      );
+      const errors = await checkRelativeLinks(docsDir);
+      expect(errors).toEqual([]);
+    });
+    it('keeps underscores in SNAKE_CASE headings', async () => {
+      await writeFile(
+        path.join(docsDir, 'bar.mdx'),
+        '#### `HIGHLIGHT_MENU_CLICK`\n\n[event](#highlight_menu_click)'
+      );
+      const errors = await checkRelativeLinks(docsDir);
+      expect(errors).toEqual([]);
+    });
+    it('ignores headings inside code blocks', async () => {
+      await writeFile(path.join(docsDir, 'bar.mdx'), '```md\n## Example\n```\n\n[link](#example)');
+      const errors = await checkRelativeLinks(docsDir);
+      expect(errors.length).toBe(1);
     });
   });
 
@@ -308,6 +364,49 @@ describe('check-docs', () => {
     });
   });
 
+  describe('checkResourcesSkillsIndex', () => {
+    const page = path.join(docsDir, 'ai/connect.mdx');
+
+    it('passes when a resources list links to skill pages', async () => {
+      await writeFile(
+        page,
+        '**More AI resources**\n\n- [Setup](./skills/setup.mdx)\n- [UI workflow](./skills/ui-workflow.mdx)'
+      );
+      expect(await checkResourcesSkillsIndex(docsDir)).toEqual([]);
+    });
+
+    it('errors when a resources list links to the skills index', async () => {
+      await writeFile(
+        page,
+        '**More AI resources**\n\n- [Setup](./skills/setup.mdx)\n- [Skills](./skills/index.mdx)'
+      );
+      const errors = await checkResourcesSkillsIndex(docsDir);
+      expect(errors.length).toBe(1);
+      expect(errors[0].line).toBe(4);
+    });
+
+    it('errors for a relative path from another folder', async () => {
+      await writeFile(
+        path.join(docsDir, 'ai/reference/mcp-server.mdx'),
+        '**More AI resources**\n\n- [Skills](../skills/index.mdx#install)'
+      );
+      expect((await checkResourcesSkillsIndex(docsDir)).length).toBe(1);
+    });
+
+    it('ignores a resources list inside a code block', async () => {
+      await writeFile(page, '```md\n**More AI resources**\n\n- [Skills](./skills/index.mdx)\n```');
+      expect(await checkResourcesSkillsIndex(docsDir)).toEqual([]);
+    });
+
+    it('ignores links to the skills index outside a resources list', async () => {
+      await writeFile(
+        page,
+        'See the [skills](./skills/index.mdx).\n\n**More AI resources**\n\n- [Setup](./skills/setup.mdx)\n\nThe [skills](./skills/index.mdx) again.'
+      );
+      expect(await checkResourcesSkillsIndex(docsDir)).toEqual([]);
+    });
+  });
+
   describe('checkBareUrls', () => {
     it('passes for URLs in markdown link syntax', async () => {
       await writeFile(
@@ -357,6 +456,207 @@ describe('check-docs', () => {
       );
       const errors = await checkBareUrls(docsDir);
       expect(errors).toEqual([]);
+    });
+  });
+
+  describe('checkSnippetCsfOrder', () => {
+    const block = (attrs: string, body = 'code') => `\`\`\`ts ${attrs}\n${body}\n\`\`\``;
+    // CSF 3 blocks include the deprecation comment, so the fixer only changes their order here
+    const csf3 = (renderer = 'react', language = 'ts', title = 'CSF 3') =>
+      block(
+        `renderer="${renderer}" language="${language}" tabTitle="${title}"`,
+        `${CSF3_DEPRECATION_COMMENT}\n${renderer} ${title}`
+      );
+    const csf4 = (renderer = 'react', language = 'ts', title = 'CSF 4') =>
+      block(
+        `renderer="${renderer}" language="${language}" tabTitle="${title}"`,
+        `${renderer} ${title}`
+      );
+
+    it('passes when CSF 4 comes first', async () => {
+      await writeFile(path.join(snippetsDir, 'foo.md'), [csf4(), csf3()].join('\n\n'));
+      const errors = await checkSnippetCsfOrder(docsDir);
+      expect(errors).toEqual([]);
+    });
+    it('errors when CSF 3 comes first', async () => {
+      await writeFile(path.join(snippetsDir, 'foo.md'), [csf3(), csf4()].join('\n\n'));
+      const errors = await checkSnippetCsfOrder(docsDir);
+      expect(errors.length).toBe(1);
+      expect(errors[0].line).toBe(1);
+      expect(errors[0].message).toContain('CSF 3 snippet comes before its CSF 4 snippet');
+    });
+    it('compares only blocks with the same renderer and language', async () => {
+      await writeFile(
+        path.join(snippetsDir, 'foo.md'),
+        [csf3('vue'), csf4('react'), csf3('react', 'js'), csf4('react', 'ts')].join('\n\n')
+      );
+      const errors = await checkSnippetCsfOrder(docsDir);
+      expect(errors).toEqual([]);
+    });
+    it('pairs titles that share a base, like "Head (CSF 3)"', async () => {
+      await writeFile(
+        path.join(snippetsDir, 'foo.md'),
+        [
+          csf3('react', 'ts', 'Head (CSF 3)'),
+          csf4('react', 'ts', 'Body (CSF 4)'),
+          csf4('react', 'ts', 'Head (CSF 4)'),
+        ].join('\n\n')
+      );
+      const errors = await checkSnippetCsfOrder(docsDir);
+      expect(errors.length).toBe(1);
+    });
+    it('errors when a common CSF 3 block comes before a renderer CSF 4 block', async () => {
+      await writeFile(
+        path.join(snippetsDir, 'foo.md'),
+        [csf3('common'), csf4('react')].join('\n\n')
+      );
+      const errors = await checkSnippetCsfOrder(docsDir);
+      expect(errors.length).toBe(1);
+      expect(errors[0].line).toBe(1);
+    });
+    it('fixes the order across common and renderer blocks', async () => {
+      const file = path.join(snippetsDir, 'foo.md');
+      await writeFile(
+        file,
+        [csf3('common'), csf4('react'), csf4('vue'), block('renderer="svelte"'), ''].join('\n\n')
+      );
+
+      await fixSnippets(docsDir);
+
+      expect(await fs.readFile(file, 'utf8')).toBe(
+        [csf4('react'), csf4('vue'), csf3('common'), block('renderer="svelte"'), ''].join('\n\n')
+      );
+      expect(await checkSnippetCsfOrder(docsDir)).toEqual([]);
+    });
+    it('does not move blocks that are in order in every view', async () => {
+      // A common block links the svelte and react blocks into one group, but each view is in order
+      const content = [csf4('svelte'), csf3('svelte'), csf4('react'), csf3('common'), ''].join(
+        '\n\n'
+      );
+      const file = path.join(snippetsDir, 'foo.md');
+      await writeFile(file, content);
+
+      expect(await checkSnippetCsfOrder(docsDir)).toEqual([]);
+      expect(await fixSnippets(docsDir)).toEqual([]);
+      expect(await fs.readFile(file, 'utf8')).toBe(content);
+    });
+    it('fixes the order, moving attached comments with their block', async () => {
+      const file = path.join(snippetsDir, 'foo.md');
+      await writeFile(
+        file,
+        [
+          csf3('react', 'js'),
+          csf3('react', 'ts'),
+          block('renderer="vue" language="ts"'),
+          csf4('react', 'ts'),
+          '<!-- comment -->\n\n' + csf4('react', 'js'),
+          '',
+        ].join('\n\n')
+      );
+
+      const changed = await fixSnippets(docsDir);
+
+      // tinyglobby returns drive-absolute paths on Windows.
+      expect(changed.map((p) => p.replace(/^[A-Za-z]:/, ''))).toEqual([file]);
+      expect(await fs.readFile(file, 'utf8')).toBe(
+        [
+          '<!-- comment -->\n\n' + csf4('react', 'js'),
+          csf4('react', 'ts'),
+          block('renderer="vue" language="ts"'),
+          csf3('react', 'ts'),
+          csf3('react', 'js'),
+          '',
+        ].join('\n\n')
+      );
+      expect(await checkSnippetCsfOrder(docsDir)).toEqual([]);
+      expect(await fixSnippets(docsDir)).toEqual([]);
+    });
+  });
+
+  describe('checkSnippetLegacyCsfTitle', () => {
+    it('passes for current CSF tab titles', async () => {
+      await writeFile(
+        path.join(snippetsDir, 'foo.md'),
+        '```ts renderer="react" language="ts" tabTitle="Head (CSF 4)"\ncode\n```\n\n' +
+          '```svelte renderer="svelte" language="ts" tabTitle="CSF 3"\ncode\n```'
+      );
+      const errors = await checkSnippetLegacyCsfTitle(docsDir);
+      expect(errors).toEqual([]);
+    });
+    it('errors for CSF Next tab titles', async () => {
+      await writeFile(
+        path.join(snippetsDir, 'foo.md'),
+        '```ts renderer="react" language="ts" tabTitle="Head (CSF Next 🧪)"\ncode\n```'
+      );
+      const errors = await checkSnippetLegacyCsfTitle(docsDir);
+      expect(errors.length).toBe(1);
+      expect(errors[0].message).toContain('Use "Head (CSF 4)" instead');
+    });
+    it.each([
+      ['Svelte CSF', 'CSF 3'],
+      ['Svelte CSF 3', 'CSF 3'],
+      ['Svelte CSF 4', 'CSF 4'],
+    ])('errors for the "%s" tab title', async (tabTitle, renamed) => {
+      await writeFile(
+        path.join(snippetsDir, 'foo.md'),
+        `\`\`\`svelte renderer="svelte" language="ts" tabTitle="${tabTitle}"\ncode\n\`\`\``
+      );
+      const errors = await checkSnippetLegacyCsfTitle(docsDir);
+      expect(errors.length).toBe(1);
+      expect(errors[0].message).toContain(`Use "${renamed}" instead`);
+    });
+  });
+
+  describe('checkSnippetCsf3Deprecation', () => {
+    const fence = (syntax: string, title: string, body: string) =>
+      `\`\`\`${syntax} renderer="react" language="ts" tabTitle="${title}"\n${body}\n\`\`\``;
+
+    it('passes when CSF 3 blocks start with the comment', async () => {
+      await writeFile(
+        path.join(snippetsDir, 'foo.md'),
+        [
+          fence('ts', 'CSF 4', 'code'),
+          fence('ts', 'CSF 3', `${CSF3_DEPRECATION_COMMENT}\ncode`),
+        ].join('\n\n')
+      );
+      const errors = await checkSnippetCsf3Deprecation(docsDir);
+      expect(errors).toEqual([]);
+    });
+    it('errors when a CSF 3 block lacks the comment', async () => {
+      await writeFile(path.join(snippetsDir, 'foo.md'), fence('ts', 'Head (CSF 3)', 'code'));
+      const errors = await checkSnippetCsf3Deprecation(docsDir);
+      expect(errors.length).toBe(1);
+      expect(errors[0].line).toBe(1);
+      expect(errors[0].message).toContain(CSF3_DEPRECATION_COMMENT);
+    });
+    it('adds the comment in the syntax of each block', async () => {
+      const file = path.join(snippetsDir, 'foo.md');
+      await writeFile(
+        file,
+        [
+          fence('ts', 'CSF 4', 'code'),
+          fence('ts', 'CSF 3', 'code'),
+          fence('svelte', 'CSF 3', '<script module></script>'),
+          fence('mdx', 'CSF 3', 'import x from "y";'),
+          '',
+        ].join('\n\n')
+      );
+
+      await fixSnippets(docsDir);
+
+      const message =
+        '⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/11/writing-stories/csf/upgrade';
+      expect(await fs.readFile(file, 'utf8')).toBe(
+        [
+          fence('ts', 'CSF 4', 'code'),
+          fence('ts', 'CSF 3', `// ${message}\ncode`),
+          fence('svelte', 'CSF 3', `<!-- ${message} -->\n<script module></script>`),
+          fence('mdx', 'CSF 3', `{/* ${message} */}\nimport x from "y";`),
+          '',
+        ].join('\n\n')
+      );
+      expect(await checkSnippetCsf3Deprecation(docsDir)).toEqual([]);
+      expect(await fixSnippets(docsDir)).toEqual([]);
     });
   });
 

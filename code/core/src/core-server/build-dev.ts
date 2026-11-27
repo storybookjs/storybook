@@ -18,7 +18,6 @@ import { CLI_COLORS, deprecate, logger, prompt } from 'storybook/internal/node-l
 import { MissingBuilderError, NoStatsForViteDevError } from 'storybook/internal/server-errors';
 import { detectAgent, oneWayHash, telemetry } from 'storybook/internal/telemetry';
 import type { BuilderOptions, CLIOptions, LoadOptions, Options } from 'storybook/internal/types';
-import { global } from '@storybook/global';
 
 import { join, relative, resolve } from 'pathe';
 import invariant from 'tiny-invariant';
@@ -80,6 +79,9 @@ export async function buildDevStandalone(
       previewConfigPath?: string;
     }
 ): Promise<{ port: number; address: string; networkAddress: string }> {
+  // lets a Vite plugin loaded through vite.config.ts tell a CLI run from an embedded one
+  process.env.STORYBOOK_CLI = 'true';
+
   const { packageJson, versionUpdates } = options;
   let { storybookVersion, previewConfigPath } = options;
   const configDir = resolve(options.configDir);
@@ -97,7 +99,7 @@ export async function buildDevStandalone(
   }
   // updateInfo are cached, so this is typically pretty fast
   const [port, versionCheck] = await Promise.all([
-    getServerPort(options.port, { exactPort: options.exactPort }),
+    getServerPort(options.port, { exactPort: options.exactPort, host: options.host }),
     versionUpdates
       ? updateCheck(storybookVersion)
       : Promise.resolve({ success: false, cached: false, data: {}, time: Date.now() }),
@@ -277,7 +279,7 @@ export async function buildDevStandalone(
   });
 
   const features = await presets.apply('features');
-  global.FEATURES = features;
+  globalThis.FEATURES = features;
 
   await presets.apply('experimental_serverChannel', channel);
 

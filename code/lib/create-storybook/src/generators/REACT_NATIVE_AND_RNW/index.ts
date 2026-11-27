@@ -22,10 +22,7 @@ export default defineGeneratorModule({
   },
   configure: async (packageManager, context) => {
     await reactNativeGeneratorModule.configure(packageManager, context);
-    const configurationResult = await reactNativeWebGeneratorModule.configure(
-      packageManager,
-      context
-    );
+    const configurationResult = await reactNativeWebGeneratorModule.configure();
 
     const previewExtension = context.language === SupportedLanguage.JAVASCRIPT ? 'jsx' : 'tsx';
     const { packageJson, operationDir } = packageManager.primaryPackageJson;

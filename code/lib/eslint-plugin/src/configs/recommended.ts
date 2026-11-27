@@ -18,6 +18,7 @@ export default {
         'storybook/no-redundant-story-name': 'warn',
         'storybook/no-renderer-packages': 'error',
         'storybook/prefer-pascal-case': 'warn',
+        'storybook/static-csf-properties': 'error',
         'storybook/story-exports': 'error',
         'storybook/use-storybook-expect': 'error',
         'storybook/use-storybook-testing-library': 'error',

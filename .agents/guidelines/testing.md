@@ -10,7 +10,7 @@ This document is canonical for testing practice: which kind of test to write, ho
 
 | Suite                     | Command                                                                                                          |
 | ------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| Story tests (components)  | `yarn storybook:vitest`, or `vitest run --config code/vitest.config.storybook.ts <story-file>`                   |
+| Story tests (components)  | `yarn storybook:vitest`, or `vitest run --config code/vitest.config.ts <story-file>`                             |
 | Unit tests                | `yarn test <pattern>` (e.g. `yarn test csf-tools`); the full suite is large, so run focused patterns while iterating |
 | Unit tests in watch mode  | `yarn test:watch`                                                                                                |
 | Visual validation         | Storybook UI or Chromatic                                                                                        |
@@ -19,6 +19,11 @@ This document is canonical for testing practice: which kind of test to write, ho
 | Tools attach coverage     | `cd code && yarn playwright test -c e2e-internal/playwright.config.ts e2e-internal/tools-attach.spec.ts` (same checkout as the running internal UI) |
 
 Fork CI compiles with `--no-link` before unit tests to generate the declarations required by distribution contract tests.
+
+Test runs print console output only for failing tests (`silent: 'passed-only'` in the root `vitest.config.ts`).
+In `code/` packages, `code/vitest-setup.ts` routes direct `process.stdout` and `process.stderr` writes, such as `@clack/prompts` output, through the console, so the same rule applies to them.
+Add `--silent=false` to see the logs of passing tests, for example `yarn test csf-tools --silent=false`.
+`code/vitest-setup.ts` also stubs `getProcessAncestry` to return an empty ancestry; a test that needs the real one calls `vi.unmock`, as `process-ancestry.test.ts` does.
 
 When writing tests for components:
 
@@ -53,9 +58,9 @@ Do **not** use `/tmp` paths or replace `node:fs/promises` with a full async fact
 Use Vitest's global stubbing instead, which is tracked and restorable:
 
 - Set a global with `vi.stubGlobal('FEATURES', { docgenServer: true })`.
-- Restore in `afterEach(() => vi.unstubAllGlobals())` (or enable `unstubGlobals: true` in the Vitest config so it resets before each test automatically).
-- For a value used by every test in a file, stub it in `beforeEach` and unstub in `afterEach`; for a one-off override, call `vi.stubGlobal` inside that single test.
-- Never capture-and-restore by hand (`const original = globalThis.X; ... globalThis.X = original`); `vi.stubGlobal` + `vi.unstubAllGlobals()` does this correctly, including deleting keys that did not previously exist.
+- Under `code/`, don't unstub by hand: `code/vitest.shared.ts` sets `unstubGlobals: true`, so Vitest undoes every stub before each test. The Vitest configs outside `code/`, such as `scripts/`, don't set it; restore there in `afterEach(() => vi.unstubAllGlobals())`.
+- For a value used by every test in a file, stub it in `beforeEach`; for a one-off override, call `vi.stubGlobal` inside that single test. Never stub at module level, in `vi.hoisted` or in `beforeAll`: Vitest undoes those before the first test. The one exception is a global that the code under test reads once at import; stub that in `vi.hoisted` and say why in a comment.
+- Never capture-and-restore by hand (`const original = globalThis.X; ... globalThis.X = original`); `vi.stubGlobal` and its unstubbing do this correctly, including deleting keys that did not previously exist.
 
 This applies to all ambient globals, not just `FEATURES` (e.g. `window`, `document`, `navigator`, `fetch`, `IS_REACT_ACT_ENVIRONMENT`).
 

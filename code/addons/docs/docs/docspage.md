@@ -34,7 +34,7 @@ However, `DocsPage` brings the following improvements:
 
 Storybook uses `component` to extract the component's description and props, and will rely on it further in future releases. We encourage you to add it to existing stories and use it in all new stories.
 
-Here's how to set the component in [Component Story Format (CSF)](https://storybook.js.org/docs/api/csf):
+Here's how to set the component in [Component Story Format (CSF)](https://storybook.js.org/docs/writing-stories/csf):
 
 ```js
 import { Badge } from './Badge';
@@ -45,7 +45,7 @@ export default {
 };
 ```
 
-If you're coming from the `storiesOf` format, there's [a codemod that adds it for you](https://github.com/storybookjs/storybook/blob/next/code/lib/codemod/README.md#add-component-parameters).
+If you're coming from the `storiesOf` format, there's [a codemod that adds it for you](https://github.com/storybookjs/storybook/blob/v10.0.0/code/lib/codemod/README.md#add-component-parameters).
 
 ## Replacing DocsPage
 

@@ -3,15 +3,8 @@ import type { CleanupCallback } from 'storybook/internal/csf';
 const ANIMATION_TIMEOUT = 5000;
 
 export function isTestEnvironment() {
-  try {
-    return (
-      // @ts-expect-error This property exists in Vitest browser mode
-      !!globalThis.__vitest_browser__ ||
-      !!globalThis.window?.navigator?.userAgent?.match(/StorybookTestRunner/)
-    );
-  } catch {
-    return false;
-  }
+  // @ts-expect-error This property exists in Vitest browser mode
+  return !!globalThis.__vitest_browser__;
 }
 
 /** Snap document-timeline CSS animations and transitions. Finite animations finish when `atEnd` is true; otherwise they pause at t=0. */

@@ -6,9 +6,8 @@ import {
   STORIES_EXPAND_ALL,
 } from 'storybook/internal/core-events';
 
-import { global } from '@storybook/global';
-
 import copy from 'copy-to-clipboard';
+import { isEqual } from 'es-toolkit/predicate';
 
 import { logger } from 'storybook/internal/client-logger';
 import type { KeyboardEventLike } from '../lib/shortcut.ts';
@@ -16,7 +15,7 @@ import { eventToShortcut, shortcutMatchesShortcut } from '../lib/shortcut.ts';
 import type { ModuleFn } from '../lib/types.tsx';
 import { focusableUIElements, isDesktopViewport } from './layout.ts';
 
-const { navigator, document } = global;
+const { navigator, document } = globalThis;
 
 function wasFocusInElement(element: HTMLElement | null) {
   return document.activeElement && element?.contains(document.activeElement);
@@ -264,11 +263,21 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
       return value;
     },
     async setAddonShortcut(addon: string, shortcut: API_AddonShortcut) {
-      await api.setShortcuts((shortcuts) => ({
-        ...shortcuts,
-        [`${addon}-${shortcut.actionName}`]: shortcut.defaultShortcut,
-      }));
-      addonsShortcuts[`${addon}-${shortcut.actionName}`] = shortcut;
+      const id = `${addon}-${shortcut.actionName}`;
+      const previous = addonsShortcuts[id];
+      addonsShortcuts[id] = shortcut;
+      // The store holds the key binding, which the user may have customised. A registration writes
+      // it when it is new or its default changed, not to replace the binding with the default.
+      const isRegistered =
+        !!previous &&
+        isEqual(previous.defaultShortcut, shortcut.defaultShortcut) &&
+        id in (store.getState().shortcuts ?? {});
+      if (!isRegistered) {
+        await api.setShortcuts((shortcuts) => ({
+          ...shortcuts,
+          [id]: shortcut.defaultShortcut,
+        }));
+      }
       return shortcut;
     },
     async restoreDefaultShortcut(action) {
@@ -493,7 +502,7 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
           break;
         }
         case 'openInEditor': {
-          if (global.CONFIG_TYPE === 'DEVELOPMENT') {
+          if (globalThis.CONFIG_TYPE === 'DEVELOPMENT') {
             fullAPI.openInEditor({
               file: fullAPI.getCurrentStoryData().importPath,
             });

@@ -1,0 +1,9 @@
+{
+  "description": "Tag with a label, a tone and an optional remove button.",
+  "id": "sveltefixtures-csf4tag",
+  "jsDocTags": {},
+  "name": "Tag",
+  "path": "./input.stories.svelte",
+  "renderer": "svelte",
+  "summary": undefined,
+}

@@ -15,7 +15,9 @@ export default defineConfig({
   test: {
     name: 'scripts',
     clearMocks: true,
-    pool: 'threads',
+    // Not 'threads': ending a worker thread unloads the native addons it loaded, such as rolldown,
+    // while their Tokio threads can still run, which crashes Node on Windows.
+    pool: 'forks',
     maxWorkers: threadCount,
   },
 });

@@ -110,7 +110,7 @@ const guideMdx = {
   },
 };
 
-const docgenForAllComponents = vi.fn();
+const summarizeComponents = vi.fn();
 const docgen = vi.fn();
 const storyDocs = vi.fn();
 const mdxForAllComponents = vi.fn();
@@ -118,10 +118,8 @@ const mdxForComponent = vi.fn();
 
 const services: Record<string, unknown> = {
   'core/docgen': {
-    queries: {
-      docgenForAllComponents: { loaded: docgenForAllComponents },
-      docgen: { loaded: docgen },
-    },
+    queries: { docgen: { loaded: docgen } },
+    commands: { summarizeComponents },
   },
   'core/story-docs': { queries: { storyDocs: { loaded: storyDocs } } },
   'addon-docs/mdx': {
@@ -153,7 +151,12 @@ beforeEach(() => {
     return services[id];
   }) as ToolsetGetService;
 
-  docgenForAllComponents.mockResolvedValue({ zebra: zebraDocgen, alpha: alphaDocgen });
+  // As the docgen service answers: every component of the index, by its id when nothing names it.
+  summarizeComponents.mockResolvedValue([
+    { id: 'zebra', name: 'Zebra', description: 'Striped', summary: 'A zebra' },
+    { id: 'alpha', name: 'Alpha' },
+    { id: 'only-docs', name: 'only-docs' },
+  ]);
   mdxForAllComponents.mockResolvedValue({ 'guide--docs': guideMdx });
   // The real per-id loads reject for ids with no component entry in the index.
   const componentPayloads: Record<string, Record<string, unknown>> = {
@@ -195,7 +198,8 @@ describe('createServiceDocsAccess listNames', () => {
       { id: 'only-docs', name: 'only-docs' },
       { id: 'guide--docs', name: 'guide' },
     ]);
-    expect(docgenForAllComponents).not.toHaveBeenCalled();
+    expect(summarizeComponents).not.toHaveBeenCalled();
+    expect(docgen).not.toHaveBeenCalled();
   });
 
   it('names a component by the last segment of its title, without spaces', async () => {
@@ -216,7 +220,7 @@ describe('createServiceDocsAccess listNames', () => {
 });
 
 describe('createServiceDocsAccess list', () => {
-  it('lists manifest-tagged components in story-index order', async () => {
+  it('lists manifest-tagged components in story-index order, without extracting docgen', async () => {
     const manifests = await createAccess().list({ withStoryIds: false });
 
     expect(Object.keys(manifests.componentManifest.components)).toEqual([
@@ -230,11 +234,11 @@ describe('createServiceDocsAccess list', () => {
       description: 'Striped',
       summary: 'A zebra',
     });
-    // No docgen payload yet: the id stands in for the name.
     expect(manifests.componentManifest.components['only-docs']).toEqual({
       id: 'only-docs',
       name: 'only-docs',
     });
+    expect(docgen).not.toHaveBeenCalled();
   });
 
   it('omits untagged entries from both manifests', async () => {

@@ -47,6 +47,7 @@ import {
   withoutTypeCalls,
   isCsfFactoryCall,
   csfFactoryReceiver,
+  metaCallRoot,
   type CsfFactoryCall,
 } from './estree/ast.ts';
 import {
@@ -57,7 +58,7 @@ import {
   insertStatementAfter,
 } from './estree/editor.ts';
 import { type ImportBindings, removeImport, setImport } from './estree/imports.ts';
-import { constantInit, generateUid, isDeclared } from './estree/scope.ts';
+import { constantInit, generateUid, isDeclared, metaCallImport } from './estree/scope.ts';
 import { findVarInitialization } from './findVarInitialization.ts';
 
 type CsfMutationState = {
@@ -1116,60 +1117,43 @@ export class CsfFile {
         \`storiesOf\` was removed in Storybook 8.0. Write stories in CSF instead.
       `);
     }
-    if (
-      callee.type === 'MemberExpression' &&
-      isIdentifier(callee.property, 'meta') &&
-      !callee.computed
-    ) {
-      // Find the root object for factory pattern:
-      // - preview.meta() => preview
-      // - preview.type().meta() => preview
-      let rootObject: Node = callee.object;
-      if (rootObject.type === 'CallExpression' && rootObject.callee.type === 'MemberExpression') {
-        rootObject = rootObject.callee.object;
-      }
+    const metaImport = metaCallImport(node, this.editor.scopes);
+    if (metaImport) {
+      if (isValidPreviewPath(metaImport.source.value)) {
+        this._metaIsFactory = true;
+        this._metaFactoryCall = node;
+        const metaDeclarator = ancestors.findLast(
+          (ancestor): ancestor is E.VariableDeclarator => ancestor.type === 'VariableDeclarator'
+        );
 
-      if (rootObject.type === 'Identifier') {
-        const configCandidate = this.editor.scopes.bindingOf(rootObject);
-        const configParent = configCandidate?.declaration;
-        if (configParent?.type === 'ImportDeclaration') {
-          if (isValidPreviewPath(configParent.source.value)) {
-            this._metaIsFactory = true;
-            this._metaFactoryCall = node;
-            const metaDeclarator = ancestors.findLast(
-              (ancestor): ancestor is E.VariableDeclarator => ancestor.type === 'VariableDeclarator'
-            );
-
-            // find the name of the meta variable declaration
-            // e.g. const foo = preview.meta({ ... });
-            // otherwise fallback to meta
-            this._metaVariableName =
-              metaDeclarator?.id.type === 'Identifier' ? metaDeclarator.id.name : 'meta';
-            const [argument] = node.arguments;
-            const argumentBinding =
-              argument?.type === 'Identifier' ? this.editor.scopes.bindingOf(argument) : undefined;
-            const argumentNode = argumentBinding ? constantInit(argumentBinding) : argument;
-            const unwrappedArgument = argumentNode && unwrapExpression(argumentNode as Node);
-            if (unwrappedArgument?.type === 'ObjectExpression') {
-              this._parseMeta(unwrappedArgument, this.program);
-            } else {
-              this._metaNodeIsSynthetic = true;
-              this._parseMeta(
-                { type: 'ObjectExpression', properties: [], start: node.start, end: node.start },
-                this.program
-              );
-            }
-          } else if (rootObject.name === 'preview') {
-            // Only throw if the variable is named "preview" - this indicates
-            // the user is trying to use CSF Factories but with a wrong import path.
-            // Other .meta() calls (e.g., Zod v4's .meta()) are silently ignored.
-            throw new BadMetaError(
-              'meta() factory must be imported from .storybook/preview configuration',
-              this._loc(configParent),
-              this._options.fileName
-            );
-          }
+        // find the name of the meta variable declaration
+        // e.g. const foo = preview.meta({ ... });
+        // otherwise fallback to meta
+        this._metaVariableName =
+          metaDeclarator?.id.type === 'Identifier' ? metaDeclarator.id.name : 'meta';
+        const [argument] = node.arguments;
+        const argumentBinding =
+          argument?.type === 'Identifier' ? this.editor.scopes.bindingOf(argument) : undefined;
+        const argumentNode = argumentBinding ? constantInit(argumentBinding) : argument;
+        const unwrappedArgument = argumentNode && unwrapExpression(argumentNode as Node);
+        if (unwrappedArgument?.type === 'ObjectExpression') {
+          this._parseMeta(unwrappedArgument, this.program);
+        } else {
+          this._metaNodeIsSynthetic = true;
+          this._parseMeta(
+            { type: 'ObjectExpression', properties: [], start: node.start, end: node.start },
+            this.program
+          );
         }
+      } else if (metaCallRoot(node)?.name === 'preview') {
+        // Only throw if the variable is named "preview" - this indicates
+        // the user is trying to use CSF Factories but with a wrong import path.
+        // Other .meta() calls (e.g., Zod v4's .meta()) are silently ignored.
+        throw new BadMetaError(
+          'meta() factory must be imported from .storybook/preview configuration',
+          this._loc(metaImport),
+          this._options.fileName
+        );
       }
     }
   }

@@ -14,6 +14,22 @@ const authoredSourceOf = (source: string, exportName = 'Default') => {
 };
 
 describe('authoredSource', () => {
+  it('keeps the name of source code the story file changes', () => {
+    expect(
+      authoredSourceOf(dedent`
+        const docs = { source: { code: 'x' } };
+        docs.source.code = 'y';
+        export default { title: 'Example/Button' };
+        export const Default = { parameters: { docs } };
+      `)
+    ).toMatchInlineSnapshot(`
+      {
+        "kind": "unresolvable",
+        "source": "docs",
+      }
+    `);
+  });
+
   it('follows local names through every level of the source path', () => {
     expect(
       authoredSourceOf(dedent`

@@ -1,4 +1,12 @@
-import { TYPE_KEYS, type E, type Node, childEntries, children, isNode } from './ast.ts';
+import {
+  TYPE_KEYS,
+  type E,
+  type Node,
+  childEntries,
+  children,
+  isNode,
+  metaCallRoot,
+} from './ast.ts';
 
 export type BindingKind =
   | 'var'
@@ -39,6 +47,16 @@ export const constantInit = (binding: Binding | undefined) =>
   binding.node.id.type === 'Identifier'
     ? (binding.node.init ?? undefined)
     : undefined;
+
+// The import a `.meta()` call is made on: `import preview from './preview'` for `preview.meta()`.
+export const metaCallImport = (
+  node: Node,
+  scopes: Pick<ScopeInfo, 'bindingOf'>
+): E.ImportDeclaration | undefined => {
+  const root = metaCallRoot(node);
+  const declaration = root && scopes.bindingOf(root)?.declaration;
+  return declaration?.type === 'ImportDeclaration' ? declaration : undefined;
+};
 
 export class Scope {
   readonly bindings = new Map<string, Binding>();
@@ -81,9 +99,9 @@ export interface ScopeInfo {
   tsDeclarationNames: ReadonlySet<string>;
 }
 
-// The name a TS declaration's id declares: `namespace A.B {}` declares `A`, and
+// The root of a qualified name: `A` in `A.B`. So `namespace A.B {}` declares `A`, and
 // `declare module 'x' {}` none.
-const declaredName = (id: Node | null | undefined): string | undefined => {
+export const qualifiedNameRoot = (id: Node | null | undefined): string | undefined => {
   while (id?.type === 'TSQualifiedName') {
     id = id.left;
   }
@@ -557,7 +575,7 @@ export const analyzeScopes = (program: E.Program): ScopeInfo => {
   // Enums, namespaces and ambient functions bind no name in the analysis, but a generated name
   // must not collide with theirs.
   const reserveName = (id: Node | null | undefined) => {
-    const name = declaredName(id);
+    const name = qualifiedNameRoot(id);
     if (name !== undefined) {
       names.add(name);
     }
@@ -821,7 +839,7 @@ export const analyzeScopes = (program: E.Program): ScopeInfo => {
         TS_DECLARATIONS.has(declaration.type) ||
         (exported && EXPORTED_DECLARATIONS.has(declaration.type))
       ) {
-        const name = declaredName((declaration as { id?: Node | null }).id);
+        const name = qualifiedNameRoot((declaration as { id?: Node | null }).id);
         if (name !== undefined) {
           declared.push(name);
         }
@@ -852,7 +870,7 @@ export const analyzeScopes = (program: E.Program): ScopeInfo => {
     ) {
       continue;
     }
-    const name = declaredName((declaration as { id?: Node | null }).id);
+    const name = qualifiedNameRoot((declaration as { id?: Node | null }).id);
     if (name !== undefined) {
       tsDeclarationNames.add(name);
     }

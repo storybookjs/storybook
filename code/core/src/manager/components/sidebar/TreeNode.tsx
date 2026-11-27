@@ -1,11 +1,4 @@
-import React, {
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useSyncExternalStore,
-} from 'react';
+import React, { useCallback, useContext, useEffect, useMemo, useSyncExternalStore } from 'react';
 
 import type { StatusValue } from 'storybook/internal/types';
 
@@ -104,22 +97,28 @@ const StyledTreeItem = styled(TreeItem)<{
     background: theme.base === 'dark' ? darken(0.18, theme.color.secondary) : theme.color.secondary,
   },
 
-  // Focus colors. The ring is inset so neighboring rows and the scroller edges never crop it.
+  // Focus colors. Like the hover colors, the ring follows react-aria's data-focus-visible rather
+  // than the browser's :focus-visible. react-aria moves focus onto rows by script, for example
+  // when a popover closes, and browsers differ in whether scripted focus matches :focus-visible;
+  // react-aria decides from the last input, so focus that follows a pointer press stays unmarked
+  // everywhere. The ring is inset so neighboring rows and the scroller edges never crop it.
   '&:focus-visible': {
     outline: 'none',
+  },
+  '&[data-focus-visible]': {
     anchorName: '--focused-treenode',
     zIndex: 1,
   },
-  '&:focus-visible::before': {
+  '&[data-focus-visible]::before': {
     boxShadow: `inset 0 0 0 2px ${theme.color.secondary}, inset 0 0 0 4px ${theme.background.app}`,
   },
 
   /* ContextMenu and StatusIcon visibility.
    * ContextMenu button is shown on hover, on keyboard focus (of the row, through react-aria's
    * data-focus-visible as above, or of the button itself) and when already open; StatusIcon is
-   * hidden when ContextMenu button is visible. A pointer press leaves DOM focus on the row, so
-   * plain focus (or :focus-within) must not reveal it, or the button would stay after every
-   * click. */
+   * hidden when ContextMenu button is visible. A pointer press leaves DOM focus on the row, and
+   * so does a context menu dismissed by pointer, so plain focus (or :focus-within) must not
+   * reveal it, or the button would stay after every click. */
   '& [data-displayed="off"]': {
     display: 'none',
   },
@@ -139,7 +138,7 @@ const StyledTreeItem = styled(TreeItem)<{
     },
 
   // Show the expand/collapse icon instead of the type icon while the row is active.
-  ...iconSwap(['&:hover', '&:focus-visible']),
+  ...iconSwap(['&:hover', '&[data-focus-visible]']),
 }));
 
 const StyledContent = styled.div({
@@ -344,73 +343,22 @@ const TreeRowContent = React.memo<TreeRowContentProps>(function TreeRowContent({
   const isContextMenuOpen = openedBy !== undefined;
   const stopRowPress = useCallback((event: React.SyntheticEvent) => event.stopPropagation(), []);
 
-  // Record how the open menu is dismissed. The tree's own modality listeners cannot see the
-  // dismissal: an outside click lands beyond the tree, and Escape lands in the portaled popover.
-  const dismissedByPointerRef = useRef(false);
-  useEffect(() => {
-    if (!isContextMenuOpen) {
-      return;
-    }
-    const doc = globalThis.document;
-    const onPointerDown = () => (dismissedByPointerRef.current = true);
-    const onKeyDown = () => (dismissedByPointerRef.current = false);
-    doc.addEventListener('pointerdown', onPointerDown, true);
-    doc.addEventListener('keydown', onKeyDown, true);
-    return () => {
-      doc.removeEventListener('pointerdown', onPointerDown, true);
-      doc.removeEventListener('keydown', onKeyDown, true);
-    };
-  }, [isContextMenuOpen]);
-
   // Toggles the context menu open/close, suitable as the `setIsOpen` parameter for the popover.
   // The entry method (pointer vs keyboard) is derived by the tree from the last input modality,
   // so Enter/Space on the ⋯ button count as keyboard entry while a mouse click counts as pointer.
   //
-  // When the closing popover held focus, react-aria restores it to the row or the ⋯ trigger,
-  // even after the focus already left for the body. That restore is right for Escape, which
-  // returns keyboard users to the row, and wrong for a pointer dismissal, where it keeps the row
-  // in its focused look although the user pressed elsewhere. The restore lands after an
-  // animation frame of react-aria's own, so a pointer dismissal watches for it through focusin
-  // and blurs it as it arrives.
+  // As the popover closes, react-aria hands focus back to the row, unless the dismissal moved it
+  // elsewhere, such as onto another row or the search field. The row's styles follow react-aria's
+  // input modality rather than DOM focus, so a pointer dismissal leaves the row focused but at
+  // rest, and Escape shows the keyboard focus. Moving focus off the row here would fight the
+  // tree's own focus management, which puts focus straight back on the row.
   const handleContextMenuOpenChange = useCallback(
     (open: boolean) => {
       if (open) {
         openContextMenu?.(item.id);
-        return;
+      } else {
+        closeContextMenu?.();
       }
-      closeContextMenu?.();
-      if (!dismissedByPointerRef.current) {
-        return;
-      }
-      const doc = globalThis.document;
-      const row = doc.querySelector(`[data-item-id="${CSS.escape(item.id)}"]`);
-      const cancel = () => {
-        doc.removeEventListener('focusin', onFocusIn, true);
-        clearTimeout(timer);
-      };
-      // A focus scope that restores focus to the row synchronously inside our own blur call
-      // would recurse through this handler forever. The flag breaks the sync loop by standing
-      // the handler down on the first re-entrant focusin; layered scopes that restore in later
-      // ticks still land their own blur, because the flag has cleared by then.
-      let blurring = false;
-      const onFocusIn = (event: FocusEvent) => {
-        if (event.target instanceof HTMLElement && row?.contains(event.target)) {
-          if (blurring) {
-            cancel();
-            return;
-          }
-          blurring = true;
-          try {
-            event.target.blur();
-          } finally {
-            blurring = false;
-          }
-          return;
-        }
-        cancel();
-      };
-      doc.addEventListener('focusin', onFocusIn, true);
-      const timer = setTimeout(cancel, 500);
     },
     [openContextMenu, closeContextMenu, item.id]
   );

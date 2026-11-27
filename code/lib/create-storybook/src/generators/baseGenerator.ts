@@ -136,15 +136,7 @@ const hasFrameworkTemplates = (framework?: string) => {
 export async function baseGenerator(
   packageManager: JsPackageManager,
   npmOptions: NpmOptions,
-  {
-    language,
-    builder,
-    framework,
-    renderer,
-    features,
-    dependencyCollector,
-    storybookVersionSpecifier,
-  }: GeneratorOptions,
+  { language, builder, framework, renderer, features, dependencyCollector }: GeneratorOptions,
   _options: FrameworkOptions
 ) {
   const options = { ...defaultOptions, ..._options };
@@ -243,8 +235,7 @@ export async function baseGenerator(
   }
 
   const versionedPackages = await packageManager.getVersionedPackages(
-    packagesToInstall as string[],
-    { storybookVersionSpecifier }
+    packagesToInstall as string[]
   );
 
   if (versionedPackages.length > 0) {

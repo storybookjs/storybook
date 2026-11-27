@@ -24,7 +24,7 @@ Include a command a maintainer can rerun with the finding.
 - Follow `package.json` `exports` and declaration generation; an internal filename does not establish a public export.
 - Check accepted consumer expressions, inference, supported versions, and dependency ranges in affected sibling packages.
 - A caller search inside this repository does not establish compatibility for external consumers.
-- Check migration guidance when supported usage or peer dependency floors change.
+- A breaking change or a deprecation, such as a raised peer dependency floor, needs a `MIGRATION.md` entry, and no other change does. [Pull requests](../../guidelines/pull-requests.md#migration-notes) defines both.
 - Internal APIs follow "migrate every caller, then delete the old path" in the same PR. Public APIs follow the deprecation process instead, so a compatibility layer there is expected, not debt.
 
 ### Shared core, docs blocks, framework or renderer adapters

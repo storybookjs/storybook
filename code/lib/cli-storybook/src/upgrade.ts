@@ -9,10 +9,10 @@ import {
   HandledError,
   type JsPackageManager,
   JsPackageManagerFactory,
-  isCI,
   isCorePackage,
   isNpmPeerResolutionError,
   resolveStorybookVersionSpecifier,
+  runStorybookInstallPrecheck,
 } from 'storybook/internal/common';
 import {
   CLI_COLORS,
@@ -23,7 +23,6 @@ import {
 } from 'storybook/internal/node-logger';
 import type { LogLevel } from 'storybook/internal/node-logger';
 import {
-  MinimumReleaseAgeHandledError,
   UpgradeStorybookToLowerVersionError,
   UpgradeStorybookUnknownCurrentVersionError,
 } from 'storybook/internal/server-errors';
@@ -72,25 +71,6 @@ export const getStorybookVersion = (line: string) => {
   };
 };
 
-const deprecatedPackages = [
-  {
-    minVersion: '6.0.0-alpha.0',
-    url: 'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#60-deprecations',
-    deprecations: [
-      '@storybook/addon-notes',
-      '@storybook/addon-info',
-      '@storybook/addon-contexts',
-      '@storybook/addon-options',
-      '@storybook/addon-centered',
-    ],
-  },
-  {
-    minVersion: '11.0.0',
-    url: 'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#nextjs-storybooknextjs-is-deprecated',
-    deprecations: ['@storybook/nextjs'],
-  },
-];
-
 const formatPackage = (pkg: Package) => `${pkg.package}@${pkg.version}`;
 
 const warnPackages = (pkgs: Package[]) => pkgs.map((pkg) => `- ${formatPackage(pkg)}`).join('\n');
@@ -119,19 +99,6 @@ export const checkVersionConsistency = () => {
       ${warnPackages(outdated)}`
     );
   }
-
-  deprecatedPackages.forEach(({ minVersion, url, deprecations }) => {
-    if (semver.gte(latestVersion, minVersion)) {
-      const deprecated = storybookPackages.filter((pkg) => deprecations.includes(pkg.package));
-      if (deprecated.length > 0) {
-        logger.warn(
-          dedent`Found ${deprecated.length} deprecated packages since ${minVersion}
-          See ${url}
-          ${warnPackages(deprecated)}`
-        );
-      }
-    }
-  });
   logger.debug('End of version consistency check');
 };
 
@@ -425,21 +392,11 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
     // Update dependencies in package.jsons for all projects
     if (!options.dryRun) {
       for (const project of storybookProjects) {
-        try {
-          await project.packageManager.precheckStorybookPackageInstall({
-            storybookVersion: project.currentCLIVersion,
-            nonInteractive: !!options.yes || !process.stdout.isTTY || !!isCI(),
-            installContext: 'upgrade',
-          });
-        } catch (error) {
-          if (error instanceof MinimumReleaseAgeHandledError) {
-            throw error;
-          }
-
-          logger.debug(
-            `Skipping minimum-release-age precheck for ${project.configDir} after an unexpected failure: ${error}`
-          );
-        }
+        await runStorybookInstallPrecheck(project.packageManager, {
+          storybookVersion: project.currentCLIVersion,
+          installContext: 'upgrade',
+          yes: !!options.yes,
+        });
       }
 
       const task = prompt.taskLog({
@@ -587,6 +544,7 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
       packageManager: project.packageManager,
       storybookVersion: project.currentCLIVersion,
       mainConfig: project.mainConfig,
+      warnedFixIds: automigrationResults[project.configDir]?.warnedFixIds,
     }));
 
     logger.step('Checking the health of your project(s)..');

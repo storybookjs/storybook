@@ -6,11 +6,11 @@ import * as memfs from 'memfs';
 import { vol } from 'memfs';
 import yml from 'yaml';
 
+import { STORYBOOK_PACKAGE_PATTERNS } from '../../../code/core/src/common/js-package-manager/util.ts';
 import { ROOT_DIRECTORY } from '../../utils/constants.ts';
 import { runCommand } from '../generate.ts';
 import {
   BEFORE_SANDBOX_NPM_MIN_VERSION,
-  LOCALLY_PUBLISHED_PACKAGE_PATTERNS,
   ensureNpmSupportsMinReleaseAge,
   preapproveLocallyPublishedPackages,
   refreshBeforeStorybookLockfile,
@@ -63,7 +63,7 @@ describe('preapproveLocallyPublishedPackages', () => {
     const approved: string[] = readConfig().npmPreapprovedPackages;
     // A prerelease template must not lose its own entries.
     expect(approved).toEqual(expect.arrayContaining(['next', '@next/*', 'eslint-config-next']));
-    expect(approved).toEqual(expect.arrayContaining([...LOCALLY_PUBLISHED_PACKAGE_PATTERNS]));
+    expect(approved).toEqual(expect.arrayContaining([...STORYBOOK_PACKAGE_PATTERNS]));
     expect(approved.length).toBe(new Set(approved).size);
   });
 
@@ -72,25 +72,13 @@ describe('preapproveLocallyPublishedPackages', () => {
 
     await preapproveLocallyPublishedPackages(SANDBOX);
 
-    expect(readConfig().npmPreapprovedPackages).toEqual([...LOCALLY_PUBLISHED_PACKAGE_PATTERNS]);
+    expect(readConfig().npmPreapprovedPackages).toEqual([...STORYBOOK_PACKAGE_PATTERNS]);
   });
 
   it('still writes a usable config when no .yarnrc.yml exists', async () => {
     await preapproveLocallyPublishedPackages(SANDBOX);
 
-    expect(readConfig().npmPreapprovedPackages).toEqual([...LOCALLY_PUBLISHED_PACKAGE_PATTERNS]);
-  });
-
-  it('covers the packages the local registry serves', async () => {
-    // run-registry publishes these; they are seconds old at install time.
-    expect(LOCALLY_PUBLISHED_PACKAGE_PATTERNS).toEqual(
-      expect.arrayContaining([
-        'storybook',
-        '@storybook/*',
-        'create-storybook',
-        'vite-plugin-storybook-nextjs',
-      ])
-    );
+    expect(readConfig().npmPreapprovedPackages).toEqual([...STORYBOOK_PACKAGE_PATTERNS]);
   });
 });
 

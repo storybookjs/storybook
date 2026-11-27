@@ -831,7 +831,7 @@ describe('CsfFile', () => {
           title: foo/bar/baz
         stories:
           - id: foo-bar-baz--a
-            name: A
+            name: Story A
             localName: story1
             parameters:
               __id: foo-bar-baz--a
@@ -846,7 +846,7 @@ describe('CsfFile', () => {
               mount: false
               moduleMock: false
           - id: foo-bar-baz--あ
-            name: あ
+            name: Story B
             localName: story2
             parameters:
               __id: foo-bar-baz--あ
@@ -1101,16 +1101,16 @@ describe('CsfFile', () => {
         parse(
           dedent`
           export default { title: 'foo/bar' };
-          export { default as A } from './A';
-          export { B } from './B';
+          export { default as PrimaryButton } from './A';
+          export { SecondaryButton } from './B';
         `
         )
       ).toMatchInlineSnapshot(`
         meta:
           title: foo/bar
         stories:
-          - id: foo-bar--a
-            name: A
+          - id: foo-bar--primary-button
+            name: Primary Button
             localName: default
             __stats:
               play: false
@@ -1122,9 +1122,9 @@ describe('CsfFile', () => {
               storyFn: false
               mount: false
               moduleMock: false
-          - id: foo-bar--b
-            name: B
-            localName: B
+          - id: foo-bar--secondary-button
+            name: Secondary Button
+            localName: SecondaryButton
             __stats:
               play: false
               render: false
@@ -1136,6 +1136,21 @@ describe('CsfFile', () => {
               mount: false
               moduleMock: false
       `);
+    });
+
+    it('names an export specifier story after its export when it has no name of its own', () => {
+      const { stories } = loadCsf(
+        dedent`
+          export default { title: 'foo/bar' };
+          const Primary = { name: 'Local' };
+          const emptyName = { name: '' };
+          export { Primary as Local, emptyName as EmptyName };
+          export { Primary as RemoteStory } from './other.stories';
+        `,
+        { makeTitle }
+      ).parse();
+
+      expect(stories.map(({ name }) => name)).toEqual(['Local', 'Empty Name', 'Remote Story']);
     });
 
     it('named exports order', () => {
@@ -1942,7 +1957,7 @@ describe('CsfFile', () => {
             - X
         stories:
           - id: foo-bar--exported-name
-            name: exportedName
+            name: Exported Name
             localName: localName
             parameters:
               __id: foo-bar--exported-name

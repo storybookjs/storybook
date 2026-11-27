@@ -6,7 +6,11 @@ import { CHANGE_DETECTION_STATUS_TYPE_ID } from 'storybook/internal/types';
 import type { StoryIndex } from 'storybook/internal/types';
 import { clearToolsetRegistry, getToolset, registerToolset } from 'storybook/open-service';
 
-import { TRIGGER_TEST_RUN_REQUEST, TRIGGER_TEST_RUN_RESPONSE } from '../../constants.ts';
+import {
+  TRIGGER_TEST_RUN_REQUEST,
+  TRIGGER_TEST_RUN_RESPONSE,
+  type TriggerTestRunRequestPayload,
+} from '../../constants.ts';
 import { createTestToolset, type TestRunResult } from './definition.ts';
 import {
   createAsyncQueue,
@@ -94,20 +98,23 @@ describe('createAsyncQueue', () => {
   });
 });
 
-// A channel that answers every run request with `sampleResult`, recording the requested ids.
-function respondingChannel() {
+// A channel that answers every run request with `result`, recording the requested ids and files.
+function respondingChannel(result: TestRunResult = sampleResult) {
   const channel = createMockChannel();
   const requested: unknown[] = [];
+  const requestedFiles: unknown[] = [];
+  const requestedStoryFiles: unknown[] = [];
   channel.emit = (event, payload) => {
     if (event === TRIGGER_TEST_RUN_REQUEST) {
-      const { requestId, storyIds } = payload as { requestId: string; storyIds?: string[] };
+      const { requestId, storyIds, fileFilters, storyFiles } =
+        payload as TriggerTestRunRequestPayload;
       requested.push(storyIds);
-      queueMicrotask(() =>
-        respond(channel, { requestId, status: 'completed', result: sampleResult })
-      );
+      requestedFiles.push(fileFilters);
+      requestedStoryFiles.push(storyFiles);
+      queueMicrotask(() => respond(channel, { requestId, status: 'completed', result }));
     }
   };
-  return { channel, requested };
+  return { channel, requested, requestedFiles, requestedStoryFiles };
 }
 
 function channelResponding(response: Omit<TriggerTestRunResponse, 'requestId'>) {
@@ -260,8 +267,12 @@ describe('runStoryTests', () => {
     expect(result).toEqual({ status: 'completed', result: sampleResult });
   });
 
-  it('runs the story files a file filter matches', async () => {
-    const { channel, requested } = respondingChannel();
+  it('passes file filters on as they are, and takes what they matched from the run', async () => {
+    const { channel, requested, requestedFiles } = respondingChannel({
+      ...sampleResult,
+      storyIds: ['button--primary'],
+      matchedFileCount: 1,
+    });
 
     const result = await runStoryTests({
       channel,
@@ -269,15 +280,16 @@ describe('runStoryTests', () => {
       files: ['button'],
     });
 
-    expect(requested).toEqual([['button--primary']]);
+    expect(requested).toEqual([undefined]);
+    expect(requestedFiles).toEqual([['button']]);
     expect(result).toMatchObject({
       status: 'completed',
       selection: { files: { filters: ['button'], storyFileCount: 1 }, storyCount: 1 },
     });
   });
 
-  it('fails without running when no story file matches the filters', async () => {
-    const { channel, requested } = respondingChannel();
+  it('fails when the file filters match no story file', async () => {
+    const { channel } = respondingChannel({ ...sampleResult, storyIds: [], matchedFileCount: 0 });
 
     const result = await runStoryTests({
       channel,
@@ -288,9 +300,8 @@ describe('runStoryTests', () => {
     expect(result).toEqual({
       status: 'no-stories',
       notFoundMessages: ['No story files found for `src/Button.tsx`.'],
-      selection: { files: { filters: ['src/Button.tsx'], storyFileCount: 0 } },
+      selection: { files: { filters: ['src/Button.tsx'], storyFileCount: 0 }, storyCount: 0 },
     });
-    expect(requested).toEqual([]);
   });
 
   it('treats an empty filter list as no filter, as Vitest does', async () => {
@@ -302,8 +313,11 @@ describe('runStoryTests', () => {
   });
 
   describe('changed', () => {
-    it('runs exactly the stories that stories changed lists', async () => {
-      const { channel, requested } = respondingChannel();
+    it('runs the story files of the stories that stories changed lists', async () => {
+      const { channel, requested, requestedStoryFiles } = respondingChannel({
+        ...sampleResult,
+        storyIds: ['button--primary'],
+      });
 
       const result = await runStoryTests({
         channel,
@@ -311,12 +325,14 @@ describe('runStoryTests', () => {
         changed: true,
         getChangedStories: async () => ({
           storyIds: ['button--primary'],
+          storyFiles: ['./src/Button.stories.tsx'],
           changedConfigFiles: ['.storybook/preview.ts'],
           pendingFiles: [],
         }),
       });
 
-      expect(requested).toEqual([['button--primary']]);
+      expect(requested).toEqual([undefined]);
+      expect(requestedStoryFiles).toEqual([['./src/Button.stories.tsx']]);
       expect(result).toMatchObject({
         status: 'completed',
         selection: {
@@ -334,6 +350,7 @@ describe('runStoryTests', () => {
       const { channel } = respondingChannel();
       const getChangedStories = vi.fn(async () => ({
         storyIds: ['button--primary'],
+        storyFiles: ['./src/Button.stories.tsx'],
         changedConfigFiles: [],
         pendingFiles: [],
       }));
@@ -360,7 +377,12 @@ describe('runStoryTests', () => {
         channel,
         getIndex: async () => index,
         changed: true,
-        getChangedStories: async () => ({ storyIds: [], changedConfigFiles: [], pendingFiles: [] }),
+        getChangedStories: async () => ({
+          storyIds: [],
+          storyFiles: [],
+          changedConfigFiles: [],
+          pendingFiles: [],
+        }),
       });
 
       expect(result).toEqual({
@@ -371,8 +393,12 @@ describe('runStoryTests', () => {
       expect(requested).toEqual([]);
     });
 
-    it('runs only the stories both a file filter and the changes select', async () => {
-      const { channel, requested } = respondingChannel();
+    it('runs only the story files both a file filter and the changes select', async () => {
+      const { channel, requested, requestedFiles, requestedStoryFiles } = respondingChannel({
+        ...sampleResult,
+        storyIds: [],
+        matchedFileCount: 1,
+      });
 
       const result = await runStoryTests({
         channel,
@@ -381,17 +407,24 @@ describe('runStoryTests', () => {
         changed: true,
         getChangedStories: async () => ({
           storyIds: ['header--default'],
+          storyFiles: ['./src/Header.stories.tsx'],
           changedConfigFiles: [],
           pendingFiles: [],
         }),
       });
 
-      expect(result).toMatchObject({ status: 'no-stories', notFoundMessages: [] });
-      expect(requested).toEqual([]);
+      expect(requested).toEqual([undefined]);
+      expect(requestedFiles).toEqual([['button']]);
+      expect(requestedStoryFiles).toEqual([['./src/Header.stories.tsx']]);
+      expect(result).toMatchObject({
+        status: 'no-stories',
+        notFoundMessages: [],
+        selection: { files: { storyFileCount: 1 }, storyCount: 0 },
+      });
     });
 
     it('passes when no story file matches the filters, as Vitest does with --changed', async () => {
-      const { channel, requested } = respondingChannel();
+      const { channel } = respondingChannel({ ...sampleResult, storyIds: [], matchedFileCount: 0 });
 
       const result = await runStoryTests({
         channel,
@@ -400,16 +433,58 @@ describe('runStoryTests', () => {
         changed: true,
         getChangedStories: async () => ({
           storyIds: ['button--primary'],
+          storyFiles: ['./src/Button.stories.tsx'],
           changedConfigFiles: [],
           pendingFiles: [],
         }),
       });
 
-      expect(result).toMatchObject({ status: 'no-stories', notFoundMessages: [] });
-      expect(requested).toEqual([]);
+      expect(result).toMatchObject({
+        status: 'no-stories',
+        notFoundMessages: [],
+        selection: { files: { storyFileCount: 0 } },
+      });
     });
 
-    it('still checks the ref and the story ids when no story file matches', async () => {
+    it('completes a run of changed story files that Vitest does not include', async () => {
+      const { channel } = respondingChannel({ ...sampleResult, storyIds: [] });
+
+      const result = await runStoryTests({
+        channel,
+        getIndex: async () => index,
+        changed: true,
+        getChangedStories: async () => ({
+          storyIds: ['button--primary'],
+          storyFiles: ['./src/Button.stories.tsx'],
+          changedConfigFiles: [],
+          pendingFiles: [],
+        }),
+      });
+
+      expect(result).toMatchObject({ status: 'completed', selection: { storyCount: 0 } });
+    });
+
+    it('narrows stories asked for by id to the changed ones, and sends no story files', async () => {
+      const { channel, requested, requestedStoryFiles } = respondingChannel();
+
+      await runStoryTests({
+        channel,
+        getIndex: async () => index,
+        changed: true,
+        stories: [{ storyId: 'button--primary' }],
+        getChangedStories: async () => ({
+          storyIds: ['button--primary'],
+          storyFiles: ['./src/Button.stories.tsx'],
+          changedConfigFiles: [],
+          pendingFiles: [],
+        }),
+      });
+
+      expect(requested).toEqual([['button--primary']]);
+      expect(requestedStoryFiles).toEqual([undefined]);
+    });
+
+    it('fails on an unknown ref or story id before Vitest is asked for the story files', async () => {
       const { channel, requested } = respondingChannel();
       const unknownRef = new Error('`nope` is not a known git ref.');
 
@@ -431,7 +506,12 @@ describe('runStoryTests', () => {
         files: ['src/Button.tsx'],
         changed: true,
         stories: [{ storyId: 'missing--story' }],
-        getChangedStories: async () => ({ storyIds: [], changedConfigFiles: [], pendingFiles: [] }),
+        getChangedStories: async () => ({
+          storyIds: [],
+          storyFiles: [],
+          changedConfigFiles: [],
+          pendingFiles: [],
+        }),
       });
 
       expect(result).toMatchObject({
@@ -576,7 +656,7 @@ describe('createTestToolset channel identity', () => {
 });
 
 describe('test run --changed and stories changed', () => {
-  it('select the same stories for the same working tree', async () => {
+  it('select the same story files for the same working tree', async () => {
     const parityIndex: StoryIndex = {
       v: 5,
       entries: Object.fromEntries(
@@ -637,7 +717,7 @@ describe('test run --changed and stories changed', () => {
         },
       })
     );
-    const { channel, requested } = respondingChannel();
+    const { channel, requestedStoryFiles } = respondingChannel();
     const testToolset = createTestToolset({
       channel,
       storyIndex: { getIndex: async () => parityIndex },
@@ -655,8 +735,11 @@ describe('test run --changed and stories changed', () => {
       clearToolsetRegistry();
     }
 
-    const listedIds = listed.data.stories.map((story) => story.storyId);
-    expect(listedIds.sort()).toEqual(['button--primary', 'page--default']);
-    expect((requested[0] as string[]).sort()).toEqual(listedIds);
+    const listedFiles = listed.data.stories.map((story) => story.importPath);
+    expect(listedFiles.sort()).toEqual([
+      './src/button--primary.stories.tsx',
+      './src/page--default.stories.tsx',
+    ]);
+    expect((requestedStoryFiles[0] as string[]).sort()).toEqual(listedFiles);
   });
 });

@@ -3,9 +3,10 @@ import type { StoryIndexGenerator } from 'storybook/internal/core-server';
 import { extractMockCalls, findMockRedirect } from 'storybook/internal/mocking-utils';
 import type { Options, PreviewAnnotation, StoryIndex } from 'storybook/internal/types';
 
-import { resolve } from 'pathe';
+import { isAbsolute, resolve } from 'pathe';
 import { type Plugin } from 'vite';
 
+import { getModuleImporters } from '../utils/module-importer.ts';
 import { processPreviewAnnotation } from '../utils/process-preview-annotation.ts';
 import { getUniqueImportPaths } from '../utils/unique-import-paths.ts';
 
@@ -45,11 +46,13 @@ export function storybookOptimizeDepsPlugin(options: Options): Plugin {
 
       const projectRoot = resolve(options.configDir, '..');
 
-      const [extraOptimizeDeps, storyIndexGenerator, previewAnnotations] = await Promise.all([
-        options.presets.apply<string[]>('optimizeViteDeps', []),
-        options.presets.apply<StoryIndexGenerator>('storyIndexGenerator'),
-        options.presets.apply<PreviewAnnotation[]>('previewAnnotations', [], options),
-      ]);
+      const [extraOptimizeDeps, storyIndexGenerator, previewAnnotations, moduleImporters] =
+        await Promise.all([
+          options.presets.apply<string[]>('optimizeViteDeps', []),
+          options.presets.apply<StoryIndexGenerator>('storyIndexGenerator'),
+          options.presets.apply<PreviewAnnotation[]>('previewAnnotations', [], options),
+          getModuleImporters(options),
+        ]);
 
       const index: StoryIndex = await storyIndexGenerator.getIndex();
 
@@ -89,6 +92,8 @@ export function storybookOptimizeDepsPlugin(options: Options): Plugin {
             ...mockRedirectIncludeEntries,
             ...getUniqueImportPaths(index).map(escapeGlobPath),
             ...previewAnnotationEntries.map(escapeGlobPath),
+            // The module importers' own dependencies, for those that are files of the project
+            ...moduleImporters.filter((path) => isAbsolute(path)).map(escapeGlobPath),
           ],
           // Extra deps explicitly included by Storybook presets (e.g. framework-specific packages).
           include: [...extraOptimizeDeps, ...(config.optimizeDeps?.include ?? [])],

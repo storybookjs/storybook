@@ -9,6 +9,8 @@ import {
   ɵgetComponentDef as getComponentDef,
 } from '@angular/core';
 
+import type { ICollection } from '../../types.ts';
+
 const reflectionCapabilities = new ReflectionCapabilities();
 
 export type ComponentInputsOutputs = {
@@ -20,6 +22,38 @@ export type ComponentInputsOutputs = {
     propName: string;
     templateName: string;
   }[];
+};
+
+/**
+ * Matches story args to a component's inputs. An arg can be keyed by the input's template name
+ * (its alias) or by its class property name; the alias wins when both are set. A property name that
+ * is also another input's template name stays with that input.
+ *
+ * Returns the bindings for the template, and every arg key that belongs to a matched input, which
+ * must not also be assigned onto the component instance.
+ */
+export const resolveInputArgs = (
+  inputs: ComponentInputsOutputs['inputs'],
+  props: ICollection = {}
+) => {
+  const templateNames = new Set(inputs.map((input) => input.templateName));
+  const bindings: { bindingName: string; propKey: string }[] = [];
+  const argKeys = new Set<string>();
+
+  for (const { propName, templateName } of inputs) {
+    let propKey: string | undefined;
+    if (templateName in props) {
+      propKey = templateName;
+    } else if (propName in props && !templateNames.has(propName)) {
+      propKey = propName;
+    }
+    if (propKey !== undefined) {
+      bindings.push({ bindingName: templateName, propKey });
+      argKeys.add(templateName).add(propName);
+    }
+  }
+
+  return { bindings, argKeys };
 };
 
 /** Returns component Inputs / Outputs by browsing these properties and decorator */

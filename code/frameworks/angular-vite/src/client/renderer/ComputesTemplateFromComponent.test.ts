@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, Input } from '@angular/core';
 import { describe, it, expect } from 'vitest';
 import {
   computesTemplateFromComponent,
@@ -713,5 +713,56 @@ describe('angular source decorator', () => {
         ].join('\n')
       );
     });
+  });
+});
+
+describe('with aliased inputs', () => {
+  @Component({ selector: 'doc-aliased', template: '', standalone: true })
+  class AliasedInputComponent {
+    @Input('background-color') backgroundColor = '';
+  }
+
+  it('binds an arg named after the class property through the alias', () => {
+    const source = computesTemplateFromComponent(AliasedInputComponent, {
+      backgroundColor: 'blue',
+    });
+    expect(source).toEqual(`<doc-aliased [background-color]="backgroundColor"></doc-aliased>`);
+  });
+
+  it('keeps binding an arg named after the alias', () => {
+    const source = computesTemplateFromComponent(AliasedInputComponent, {
+      'background-color': 'blue',
+    });
+    expect(source).toEqual(
+      `<doc-aliased [background-color]="this['background-color']"></doc-aliased>`
+    );
+  });
+
+  it('shows the arg value under the alias in the source snippet', () => {
+    const source = computesTemplateSourceFromComponent(AliasedInputComponent, {
+      backgroundColor: 'blue',
+    });
+    expect(source).toEqual(`<doc-aliased [background-color]="'blue'"></doc-aliased>`);
+  });
+
+  it('binds only the alias when an arg is set under both names', () => {
+    const source = computesTemplateFromComponent(AliasedInputComponent, {
+      backgroundColor: 'blue',
+      'background-color': 'red',
+    });
+    expect(source).toEqual(
+      `<doc-aliased [background-color]="this['background-color']"></doc-aliased>`
+    );
+  });
+
+  it('leaves a property name that is another input alias to that input', () => {
+    @Component({ selector: 'doc-crossed', template: '', standalone: true })
+    class CrossedAliasComponent {
+      @Input('bar') foo = '';
+      @Input('foo') baz = '';
+    }
+
+    const source = computesTemplateFromComponent(CrossedAliasComponent, { foo: 'x' });
+    expect(source).toEqual(`<doc-crossed [foo]="foo"></doc-crossed>`);
   });
 });

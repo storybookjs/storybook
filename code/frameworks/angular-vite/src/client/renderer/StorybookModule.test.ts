@@ -428,6 +428,74 @@ describe('StorybookModule', () => {
       });
     });
 
+    describe('with an aliased input', () => {
+      @Component({
+        selector: 'foo',
+        template: `
+          <p id="value">{{ backgroundColor }}</p>
+          <p id="changes">{{ changes }}</p>
+        `,
+      })
+      class AliasedInputComponent {
+        @Input('background-color')
+        public backgroundColor?: string;
+
+        public changes = 0;
+
+        ngOnChanges() {
+          this.changes += 1;
+        }
+      }
+
+      const render = async (props: ICollection) => {
+        const storyProps$ = new BehaviorSubject<ICollection | undefined>(props);
+        const analyzedMetadata = new PropertyExtractor({}, AliasedInputComponent);
+        await analyzedMetadata.init();
+
+        const application = getApplication({
+          storyFnAngular: { props },
+          component: AliasedInputComponent,
+          targetSelector: 'my-selector',
+          analyzedMetadata,
+        });
+        const { fixture } = await configureTestingModule({
+          imports: [application],
+          providers: [storyPropsProvider(storyProps$)],
+        });
+        fixture.detectChanges();
+
+        const text = (id: string) => fixture.nativeElement.querySelector(`p#${id}`).innerHTML;
+        return { fixture, storyProps$, text };
+      };
+
+      it('should bind an arg named after the class property as the input', async () => {
+        const { fixture, storyProps$, text } = await render({ backgroundColor: 'blue' });
+
+        expect(text('value')).toEqual('blue');
+        expect(text('changes')).toEqual('1');
+
+        storyProps$.next({ backgroundColor: 'green' });
+        fixture.detectChanges();
+
+        expect(text('value')).toEqual('green');
+        expect(text('changes')).toEqual('2');
+      });
+
+      it('should use the alias when an arg is set under both names', async () => {
+        const { fixture, storyProps$, text } = await render({
+          backgroundColor: 'blue',
+          'background-color': 'red',
+        });
+
+        expect(text('value')).toEqual('red');
+
+        storyProps$.next({ backgroundColor: 'blue', 'background-color': 'orange' });
+        fixture.detectChanges();
+
+        expect(text('value')).toEqual('orange');
+      });
+    });
+
     it('should keep template with an empty value', async () => {
       @Component({
         selector: 'foo',

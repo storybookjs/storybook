@@ -13,20 +13,18 @@ import { map, skip } from 'rxjs/operators';
 import type { ICollection, NgModuleMetadata } from '../types.ts';
 import { STORY_PROPS } from './StorybookProvider.ts';
 import type { ComponentInputsOutputs } from './utils/NgComponentAnalyzer.ts';
-import { getComponentInputsOutputs } from './utils/NgComponentAnalyzer.ts';
+import { getComponentInputsOutputs, resolveInputArgs } from './utils/NgComponentAnalyzer.ts';
 import { PropertyExtractor } from './utils/PropertyExtractor.ts';
 
 const getNonInputsOutputsProps = (
   ngComponentInputsOutputs: ComponentInputsOutputs,
   props: ICollection = {}
 ) => {
-  const inputs = ngComponentInputsOutputs.inputs
-    .filter((i) => i.templateName in props)
-    .map((i) => i.templateName);
+  const { argKeys } = resolveInputArgs(ngComponentInputsOutputs.inputs, props);
   const outputs = ngComponentInputsOutputs.outputs
     .filter((o) => o.templateName in props)
     .map((o) => o.templateName);
-  return Object.keys(props).filter((k) => ![...inputs, ...outputs].includes(k));
+  return Object.keys(props).filter((k) => !argKeys.has(k) && !outputs.includes(k));
 };
 
 /** Wraps the story template into a component */

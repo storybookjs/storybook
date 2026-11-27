@@ -11,15 +11,14 @@ import type { ComponentInputsOutputs } from './utils/NgComponentAnalyzer.ts';
 import {
   getComponentDecoratorMetadata,
   getComponentInputsOutputs,
+  resolveInputArgs,
 } from './utils/NgComponentAnalyzer.ts';
 
 const separateInputsOutputsAttributes = (
   ngComponentInputsOutputs: ComponentInputsOutputs,
   props: ICollection = {}
 ) => ({
-  inputs: ngComponentInputsOutputs.inputs
-    .filter((i) => i.templateName in props)
-    .map((i) => i.templateName),
+  inputs: resolveInputArgs(ngComponentInputsOutputs.inputs, props).bindings,
   outputs: ngComponentInputsOutputs.outputs
     .filter((o) => o.templateName in props)
     .map((o) => o.templateName),
@@ -49,7 +48,10 @@ export const computesTemplateFromComponent = (
   );
 
   return buildTemplate(ngComponentMetadata.selector, {
-    inputs: inputs.map((name) => ({ name, expression: formatPropInTemplate(name) })),
+    inputs: inputs.map(({ bindingName, propKey }) => ({
+      name: bindingName,
+      expression: formatPropInTemplate(propKey),
+    })),
     outputs,
     innerTemplate,
   });
@@ -77,7 +79,10 @@ export const computesTemplateSourceFromComponent = (
   );
 
   return buildTemplate(ngComponentMetadata.selector, {
-    inputs: inputs.map((name) => ({ name, expression: formatInputValue(initialProps?.[name]) })),
+    inputs: inputs.map(({ bindingName, propKey }) => ({
+      name: bindingName,
+      expression: formatInputValue(initialProps?.[propKey]),
+    })),
     outputs,
   });
 };

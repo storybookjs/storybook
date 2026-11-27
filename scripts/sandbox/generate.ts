@@ -46,7 +46,7 @@ const isCI = process.env.GITHUB_ACTIONS === 'true' || process.env.CI === 'true';
 class BeforeScriptExecutionError extends Error {}
 class StorybookInitError extends Error {}
 
-const sbInit = async (
+export const sbInit = async (
   cwd: string,
   envVars: Record<string, unknown> = {},
   flags?: string[],
@@ -54,9 +54,24 @@ const sbInit = async (
 ) => {
   const sbCliBinaryPath = join(__dirname, `../../code/lib/create-storybook/dist/bin/index.js`);
   console.log(`🎁 Installing Storybook`);
-  const env = { STORYBOOK_DISABLE_TELEMETRY: 'true', ...envVars, CI: 'true' };
-  const fullFlags = ['--yes', ...(flags || [])];
-  await runCommand(`${sbCliBinaryPath} ${fullFlags.join(' ')}`, { cwd, env }, debug);
+  const configHome = await temporaryDirectory();
+  try {
+    const settingsDir = join(configHome, 'storybook');
+    await mkdir(settingsDir);
+    // Seed the file so init's XDG migration skips the developer's legacy settings.
+    await writeFile(join(settingsDir, 'settings.json'), JSON.stringify({ version: 1 }));
+
+    const env = {
+      STORYBOOK_DISABLE_TELEMETRY: 'true',
+      ...envVars,
+      CI: 'true',
+      XDG_CONFIG_HOME: configHome,
+    };
+    const fullFlags = ['--yes', ...(flags || [])];
+    await runCommand(`${sbCliBinaryPath} ${fullFlags.join(' ')}`, { cwd, env }, debug);
+  } finally {
+    await rm(configHome, { recursive: true, force: true });
+  }
 };
 
 type LocalRegistryProps = {

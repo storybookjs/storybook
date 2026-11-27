@@ -1,0 +1,35 @@
+{
+  "argTypes": {
+    "data": {
+      "name": "data",
+      "table": {
+        "category": "properties",
+        "defaultValue": {},
+        "type": {
+          "summary": "ResourceRef<string | undefined>"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "empty-enum"
+      }
+    },
+    "status": {
+      "name": "status",
+      "table": {
+        "category": "properties",
+        "defaultValue": {},
+        "type": {
+          "summary": "() => \"Loading forever\" | \"Loaded\""
+        }
+      },
+      "type": {
+        "name": "function"
+      }
+    }
+  },
+  "id": "stories-frameworks-angular-vite-core-rendering-pending-resource",
+  "jsDocTags": {},
+  "name": "PendingResourceComponent",
+  "path": "./src/stories/frameworks/angular-vite/core/rendering/pending-resource.stories.ts"
+}

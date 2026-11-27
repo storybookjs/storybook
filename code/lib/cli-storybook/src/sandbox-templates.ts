@@ -702,6 +702,7 @@ export const baseTemplates = {
       mainConfig: {
         features: {
           componentsManifest: true,
+          previewTestBedRenderer: true,
         },
       },
     },

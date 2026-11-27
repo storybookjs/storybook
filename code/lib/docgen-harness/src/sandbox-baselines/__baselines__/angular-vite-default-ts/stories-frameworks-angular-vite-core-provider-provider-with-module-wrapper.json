@@ -1,0 +1,21 @@
+{
+  "argTypes": {
+    "label": {
+      "name": "label",
+      "table": {
+        "category": "properties",
+        "defaultValue": {},
+        "type": {
+          "summary": "string"
+        }
+      },
+      "type": {
+        "name": "string"
+      }
+    }
+  },
+  "id": "stories-frameworks-angular-vite-core-provider-provider-with-module-wrapper",
+  "jsDocTags": {},
+  "name": "ProviderButtonComponent",
+  "path": "./src/stories/frameworks/angular-vite/core/provider/provider-with-module-wrapper.stories.ts"
+}

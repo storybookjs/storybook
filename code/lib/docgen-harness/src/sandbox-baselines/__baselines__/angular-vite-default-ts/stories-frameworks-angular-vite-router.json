@@ -1,0 +1,22 @@
+{
+  "argTypes": {
+    "routeToNonExistingUrl": {
+      "name": "routeToNonExistingUrl",
+      "table": {
+        "category": "methods",
+        "defaultValue": {},
+        "type": {
+          "summary": "() => void"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "void"
+      }
+    }
+  },
+  "id": "stories-frameworks-angular-vite-router",
+  "jsDocTags": {},
+  "name": "ProvideRouterComponent",
+  "path": "./src/stories/frameworks/angular-vite/router/router.stories.ts"
+}

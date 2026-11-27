@@ -20,7 +20,10 @@ export async function renderToCanvas(
 ) {
   showMain();
 
-  const renderer = await rendererFactory.getRendererInstance(element);
+  const renderer = await rendererFactory.getRendererInstance(
+    element,
+    globalThis.FEATURES?.previewTestBedRenderer ?? false
+  );
 
   await renderer.render({
     storyId,

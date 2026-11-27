@@ -96,6 +96,14 @@ describe('analyzeScopes', () => {
     expect(first.references).toBe(references);
   });
 
+  it.each(['[size] as const', '<const>[size]', '[size] as const satisfies readonly string[]'])(
+    'does not read the `const` of a const assertion: %s',
+    (expression) => {
+      const { program } = parseModule(`const sizes = ${expression};`, 'file.ts');
+      expect(analyzeScopes(program).unbound).toEqual(new Set(['size']));
+    }
+  );
+
   it('resolves parameter defaults outside the function body', () => {
     expect(
       programBindings('const q = 1; function f(a = q) { const q = 2; return a; }')

@@ -516,7 +516,9 @@ export const analyzeScopes = (program: E.Program): ScopeInfo => {
         assertKnownWithin(node);
         return;
       case 'TSTypeReference':
-        reference(node.typeName, scope);
+        if (node.typeName.type !== 'Identifier' || node.typeName.name !== 'const') {
+          reference(node.typeName, scope);
+        }
         break;
       case 'TSTypeQuery':
         reference(node.exprName, scope);

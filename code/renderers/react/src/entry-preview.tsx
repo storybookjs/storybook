@@ -32,6 +32,7 @@ export const decorators: Decorator[] = [
       throw new Error('React Server Components require React >= 18.3');
     }
 
+    // applyDecorators.ts adds a second boundary around the story's own output.
     return <React.Suspense>{story()}</React.Suspense>;
   },
   (story, context) => {

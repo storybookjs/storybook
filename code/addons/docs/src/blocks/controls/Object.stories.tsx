@@ -242,6 +242,7 @@ export const ArraySmallViewport: Story = {
 };
 
 const invalidJson = /^Invalid JSON: /;
+const lockedReason = 'Fix the invalid JSON to switch editors';
 
 /** A parse error is raised when the raw editor is left, not while typing in it. */
 export const JsonEditorValidation: Story = {
@@ -308,20 +309,17 @@ export const JsonEditorInvalidDraftLocksSwitch: Story = {
   play: async ({ args, canvas, step, userEvent }) => {
     await userEvent.click(canvas.getByRole('button', { name: 'Edit object as JSON' }));
     const rawInput = canvas.getByRole('textbox', { name: 'Edit object as JSON' });
-    const lockedName = 'Fix the invalid JSON in object to switch editors';
+    const getSwitchButton = () =>
+      canvas.getByRole('button', { name: 'Edit object with the object editor' });
 
     await step('Clicking the switch while the draft is invalid keeps the draft', async () => {
       await userEvent.clear(rawInput);
       await userEvent.type(rawInput, '{{"label":');
       // The click itself moves focus out of the editor, which is what raises the error.
-      await userEvent.click(
-        canvas.getByRole('button', { name: 'Edit object with the object editor' })
-      );
+      await userEvent.click(getSwitchButton());
 
-      await expect(canvas.getByRole('button', { name: lockedName })).toHaveAttribute(
-        'aria-disabled',
-        'true'
-      );
+      await expect(getSwitchButton()).toHaveAttribute('aria-disabled', 'true');
+      await expect(getSwitchButton()).toHaveAccessibleDescription(lockedReason);
       await expect(rawInput).toBeVisible();
       await expect(rawInput).toHaveValue('{"label":');
       await expect(rawInput).toHaveAttribute('aria-invalid', 'true');
@@ -330,11 +328,9 @@ export const JsonEditorInvalidDraftLocksSwitch: Story = {
     await step('The switch works again once the draft is valid', async () => {
       await userEvent.type(rawInput, '"updated"}');
 
-      const switchButton = canvas.getByRole('button', {
-        name: 'Edit object with the object editor',
-      });
-      await expect(switchButton).not.toHaveAttribute('aria-disabled');
-      await userEvent.click(switchButton);
+      await expect(getSwitchButton()).not.toHaveAttribute('aria-disabled');
+      await expect(getSwitchButton()).not.toHaveAccessibleDescription();
+      await userEvent.click(getSwitchButton());
 
       await expect(rawInput).not.toBeInTheDocument();
       await expect(canvas.getByRole('button', { name: 'Edit object as JSON' })).toBeVisible();
@@ -358,8 +354,9 @@ export const JsonEditorSwitchWithoutLeavingEditor: Story = {
     await userEvent.click(canvas.getByRole('button', { name: 'Edit object as JSON' }));
     const rawInput = canvas.getByRole('textbox', { name: 'Edit object as JSON' });
     // fireEvent dispatches the click alone, where userEvent would move focus to the button first.
-    const clickSwitchWithoutMovingFocus = () =>
-      fireEvent.click(canvas.getByRole('button', { name: 'Edit object with the object editor' }));
+    const getSwitchButton = () =>
+      canvas.getByRole('button', { name: 'Edit object with the object editor' });
+    const clickSwitchWithoutMovingFocus = () => fireEvent.click(getSwitchButton());
 
     await step('An invalid draft keeps the raw editor open and raises the error', async () => {
       await userEvent.clear(rawInput);
@@ -370,9 +367,8 @@ export const JsonEditorSwitchWithoutLeavingEditor: Story = {
       await expect(rawInput).toHaveValue('{"label":');
       await expect(rawInput).toHaveAttribute('aria-invalid', 'true');
       await expect(rawInput).toHaveAccessibleDescription(invalidJson);
-      await expect(
-        canvas.getByRole('button', { name: 'Fix the invalid JSON in object to switch editors' })
-      ).toHaveAttribute('aria-disabled', 'true');
+      await expect(getSwitchButton()).toHaveAttribute('aria-disabled', 'true');
+      await expect(getSwitchButton()).toHaveAccessibleDescription(lockedReason);
       await expect(args.onChange).not.toHaveBeenCalled();
     });
 

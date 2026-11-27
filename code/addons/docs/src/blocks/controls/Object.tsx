@@ -384,7 +384,7 @@ export const ObjectControl: FC<ObjectProps> = ({
 
   // Leaving the raw editor drops its draft, so a draft that does not parse keeps the user there.
   const isLockedInRaw = !!jsonDraft.parseError;
-  const lockedLabel = `Fix the invalid JSON in ${name} to switch editors`;
+  const lockedReason = isLockedInRaw ? 'Fix the invalid JSON to switch editors' : undefined;
   const switchLabel = showRaw
     ? `Edit ${name} with the ${Array.isArray(value) ? 'array' : 'object'} editor`
     : `Edit ${name} as JSON`;
@@ -394,7 +394,9 @@ export const ObjectControl: FC<ObjectProps> = ({
       {isObjectOrArray && (
         <EditorSwitchButton
           disabled={readonly || isLockedInRaw}
-          ariaLabel={isLockedInRaw ? lockedLabel : switchLabel}
+          ariaLabel={switchLabel}
+          ariaDescription={lockedReason}
+          tooltip={lockedReason}
           onClick={(e: SyntheticEvent) => {
             e.preventDefault();
             // Losing focus commits the draft, but not every click moves focus out of the editor:

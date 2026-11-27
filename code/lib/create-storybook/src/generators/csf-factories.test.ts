@@ -7,7 +7,6 @@ import { fileURLToPath } from 'node:url';
 import { SupportedFramework } from 'storybook/internal/types';
 
 import { vol } from 'memfs';
-import ts from 'typescript';
 
 import {
   previewImportFromStory,

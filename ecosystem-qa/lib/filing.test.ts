@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  createdIssue,
+  filedIssues,
   missingPrerequisites,
   planFiling,
   renderDry,
@@ -496,6 +498,33 @@ describe('renderFilingReport', () => {
   });
 });
 
+describe('filedIssues', () => {
+  it('hands over the issue each issue proposal created or was found filed as, and none for a failure', () => {
+    const created = proposalFor({ checkId: 'core.hmr.stories-file' });
+    const found = proposalFor({ checkId: 'core.build.static' });
+    const failed = proposalFor({ checkId: 'core.docs.autodocs' });
+    const printed = 'https://github.com/storybookjs/storybook/issues/37595';
+
+    const handedOver = filedIssues([
+      { proposal: created, state: 'done', detail: printed, issue: createdIssue(printed) },
+      { proposal: found, state: 'skipped', detail: 'already filed as #37581', issue: 37581 },
+      { proposal: failed, state: 'failed', detail: 'HTTP 502' },
+    ]);
+
+    expect(new Set([created, found, failed].map(({ fingerprint }) => fingerprint)).size).toBe(3);
+    expect(handedOver).toStrictEqual({
+      [created.fingerprint]: 37595,
+      [found.fingerprint]: 37581,
+    });
+  });
+
+  it('takes no issue from what a comment printed', () => {
+    expect(
+      createdIssue('https://github.com/storybookjs/storybook/issues/37581#issuecomment-1')
+    ).toBeUndefined();
+  });
+});
+
 describe('renderDry', () => {
   it('lists every finding that a suppressed group silences', () => {
     const [hmr, build] = groupFindings([
@@ -520,7 +549,7 @@ describe('renderDry', () => {
     expect(summary).toContain(`<code>${hmr!.fingerprint}</code> and 1 more</summary>`);
     expect(summary).toContain('Silenced with it:');
     expect(summary).toContain(
-      '- `build.static` on storybookjs/mealdrop (linux, claude): Build fails'
+      '- `build.static` on storybookjs/mealdrop (linux, claude): `Build fails`'
     );
   });
 
@@ -542,7 +571,7 @@ describe('renderDry', () => {
     ]);
     expect(summary).toContain('Skip: skipped by hand: by design.');
     expect(summary).toContain(
-      '- `build.static` on storybookjs/mealdrop (linux, claude): Build fails'
+      '- `build.static` on storybookjs/mealdrop (linux, claude): `Build fails`'
     );
   });
 

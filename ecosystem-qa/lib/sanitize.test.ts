@@ -36,6 +36,12 @@ describe('sanitizeTitle', () => {
     );
   });
 
+  it('wraps a mention or reference inside emphasis, and a GH- reference', () => {
+    expect(sanitizeTitle('_@octocat_ __@storybookjs/core__ _#6_ see GH-5')).toBe(
+      '_`@octocat_` __`@storybookjs/core__` _`#6`_ see `GH-5`'
+    );
+  });
+
   it('turns backticks into quotes so an unbalanced one cannot reopen a mention', () => {
     expect(sanitizeTitle('a ` @someone `b')).toBe("a ' `@someone` 'b");
   });

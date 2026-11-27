@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+import { planBatches, planRuns, type Plan } from './qa-plan.ts';
 import { Engine, RepoClass, type CatalogEntry } from './schema.ts';
 
 const RunnerOs = z.enum(['linux', 'windows']);
@@ -117,8 +118,37 @@ export const sweepMatrix = (
     : { problems: [`Nothing to run for ${names.join(', ')} on ${oses} with ${engines}`] };
 };
 
+export interface PlanJob extends SweepJob {
+  part: number;
+}
+
+export const planMatrix = (
+  plan: Plan,
+  batch: number,
+  engines: string
+): { include: PlanJob[] } | { problems: string[] } => {
+  const batches = planBatches(plan);
+  const names = listOf(engines);
+  const engine = pick(Engine, names);
+  const problems = [
+    ...(batches.includes(batch)
+      ? []
+      : [`The plan has no batch ${batch}, only 1 to ${batches.length}`]),
+    ...(names.length === 0 ? ['No engine was named'] : engine.problems),
+  ];
+  if (problems.length > 0) {
+    return { problems };
+  }
+  return {
+    include: planRuns(plan, batch).flatMap(({ repo, part }) =>
+      engine.values.map((agent) => ({ repo, part, os: 'linux', engine: agent, ...RUNNER.linux }))
+    ),
+  };
+};
+
 interface Run {
   repo: string;
+  part?: number | undefined;
   os: string;
   engine: string;
 }
@@ -131,7 +161,12 @@ export const withoutResult = (planned: Run[], results: Run[]): string[] =>
       (job) =>
         !results.some(
           (result) =>
-            result.repo === job.repo && result.os === job.os && result.engine === job.engine
+            result.repo === job.repo &&
+            result.part === job.part &&
+            result.os === job.os &&
+            result.engine === job.engine
         )
     )
-    .map((job) => `${job.repo} on ${job.os} with ${job.engine}`);
+    .map(
+      (job) => `${job.repo}${job.part ? ` part ${job.part}` : ''} on ${job.os} with ${job.engine}`
+    );

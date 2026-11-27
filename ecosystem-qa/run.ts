@@ -22,22 +22,29 @@ import { bwrap } from '@ai-hero/sandcastle/sandboxes/bwrap';
 import { docker } from '@ai-hero/sandcastle/sandboxes/docker';
 import { noSandbox } from '@ai-hero/sandcastle/sandboxes/no-sandbox';
 import { seatbelt } from '@ai-hero/sandcastle/sandboxes/seatbelt';
-import { join, relative, resolve } from 'pathe';
+import { basename, dirname, join, relative, resolve } from 'pathe';
 import { z } from 'zod';
 
-import { checksFor, renderChecklist } from './checks.ts';
 import { answerAfterRepairs, answerOfFinishedAgent } from './lib/answer.ts';
-import { loadCatalogEntry } from './lib/catalog.ts';
+import { checklistOf, type Checklist } from './lib/checklist.ts';
+import { loadEntries } from './lib/catalog.ts';
 import { shipsSandcastleFiles } from './lib/clone-guard.ts';
 import { cycleBranchName, cycleRepo, versionLine } from './lib/cycle.ts';
 import { runFake } from './lib/fake-run.ts';
 import { outputOf, watchHost, type Report } from './lib/host-watch.ts';
+import {
+  credentialFor,
+  proxyTheKey,
+  sandboxAddresses,
+  type Credential,
+  type ProxiedKey,
+} from './lib/key-proxy.ts';
 import { forJobLog, liveLine } from './lib/live-log.ts';
 import { memoryGuard } from './lib/memory-guard.ts';
 import { CHECKOUT_GUIDE, guideFor } from './lib/migration-guide.ts';
+import { plannedRun, readPlanScope, refuse, type PlannedRun } from './lib/plan-scope.ts';
 import { budgetRecord, msUntilHardStop, parseBudget, type RunBudget } from './lib/run-budget.ts';
 import {
-  agentOutput,
   Effort,
   Engine,
   SandboxKind,
@@ -52,6 +59,7 @@ import { redactTree } from './lib/redact.ts';
 import { upgraded } from './lib/results.ts';
 import { unsandboxedRefusal } from './lib/sandbox-policy.ts';
 import { stopChildren } from './lib/stop-children.ts';
+import { buildUrl, buildVersion, upgradeTarget } from './lib/target.ts';
 import { usageFromStream } from './lib/usage.ts';
 import {
   saveStoppedClaudeSession,
@@ -63,12 +71,19 @@ import {
   type Stop,
 } from './lib/wrap-up.ts';
 
-const HELP = `Usage: node ecosystem-qa/run.ts --repo <catalog id> --version <storybook version> --engine <claude|codex> --sandbox <docker|bwrap|seatbelt|none> --out <dir>
+const HELP = `Usage: node ecosystem-qa/run.ts --repo <catalog id> (--version <storybook version> | --build <commit>) --engine <claude|codex> --sandbox <docker|bwrap|seatbelt|none> --out <dir>
 
 Options:
+  --build <commit>    Upgrade to the pkg.pr.new build of this full commit SHA of storybookjs/storybook
+                      in place of a release; its version is the one in the build. The record is a
+                      proof for a pull request, and collect.ts never makes a finding of it.
   --model <id>        Model id (default: claude-haiku-5-5 for claude, gpt-6.1-sol for codex)
   --effort <level>    low, medium or high (default: low)
-  --tier <tier>       must (default) runs the checks every sweep needs; extended runs all of them
+  --tier <tier>       must (default without --plan) runs the checks every sweep needs; extended runs
+                      all of them; gate (default with --plan) runs only the upgrade and the dev server
+  --plan <file>       A QA plan: the run adds one check for each entry of its batch and part on --repo
+  --batch <n>         The batch of --plan to run
+  --part <n>          The part of the batch on --repo, when the plan splits it (default: 1)
   --clone-dir <dir>   Where to clone the catalog repo (default: <tmpdir>/ecosystem-qa/work/<id>)
   --image <name>      Docker image for --sandbox docker (default: sb-ecosystem-qa)
   --budget-minutes <n>     Minutes the agent is asked to answer within, from the start of the run (default: 90)
@@ -84,13 +99,6 @@ const DEFAULT_MODEL: Record<Engine, string> = {
   codex: 'gpt-6.1-sol',
 };
 
-// The first variable that is set wins. CLAUDE_CODE_OAUTH_TOKEN (from `claude setup-token`) bills a
-// subscription, for local runs; CI passes the API key.
-const CREDENTIAL_ENV: Record<Engine, string[]> = {
-  claude: ['ANTHROPIC_API_KEY', 'CLAUDE_CODE_OAUTH_TOKEN'],
-  codex: ['CODEX_API_KEY'],
-};
-
 const INSTALL_LIMIT_SECONDS = 25 * 60;
 
 const INSTALL_COMMAND: Record<CatalogEntry['packageManager'], string> = {
@@ -98,13 +106,6 @@ const INSTALL_COMMAND: Record<CatalogEntry['packageManager'], string> = {
   pnpm: 'pnpm install --frozen-lockfile',
   yarn: 'yarn install --immutable',
   bun: 'bun install --frozen-lockfile',
-};
-
-const STORYBOOK_CLI: Record<CatalogEntry['packageManager'], (version: string) => string> = {
-  npm: (version) => `npx storybook@${version}`,
-  pnpm: (version) => `pnpm dlx storybook@${version}`,
-  yarn: (version) => `yarn dlx storybook@${version}`,
-  bun: (version) => `bunx storybook@${version}`,
 };
 
 // The upgrade must rewrite the lockfile, but GitHub runners set CI and GITHUB_ACTIONS, which make
@@ -123,7 +124,10 @@ const UPGRADE_ENV = {
 
 // The real path, because git writes real paths into a worktree's gitdir pointer and the sandboxes
 // bind-mount whatever path they are given: on macOS tmpdir() is a symlink under /private.
-const scratchDir = () => join(realpathSync(tmpdir()), 'ecosystem-qa');
+const realPathOf = (path: string): string =>
+  existsSync(path) ? realpathSync(path) : join(realPathOf(dirname(path)), basename(path));
+
+const scratchDir = () => join(realPathOf(tmpdir()), 'ecosystem-qa');
 
 const HOST_OS: Partial<Record<NodeJS.Platform, Os>> = {
   linux: 'linux',
@@ -142,20 +146,52 @@ const fail = (message: string): never => {
   process.exit(1);
 };
 
+const parsedFlag = <T>(schema: z.ZodType<T>, flag: string, value: unknown): T => {
+  const parsed = schema.safeParse(value);
+  return parsed.success
+    ? parsed.data
+    : refuse(`--${flag} ${JSON.stringify(value)}: ${parsed.error.issues[0]!.message}.`);
+};
+
+const planOfRun = (
+  values: { plan?: string; batch?: string; part?: string; tier?: string; build?: string },
+  repo: string,
+  version: string
+): (PlannedRun & { tier: Tier }) | undefined => {
+  if (!values.plan && (values.batch || values.part)) {
+    return refuse('--batch and --part need --plan.');
+  }
+  const scope = readPlanScope(values);
+  if (!scope) {
+    return undefined;
+  }
+  const planned = plannedRun(scope, { repo, version, build: values.build, part: values.part });
+  return typeof planned === 'string' ? refuse(planned) : { ...planned, tier: scope.tier };
+};
+
+const versionOfBuild = async (commit: string): Promise<string> => {
+  const found = await buildVersion(commit);
+  return 'version' in found ? found.version : refuse(found.refusal);
+};
+
 const git = (cwd: string, ...args: string[]) =>
   execFileSync('git', args, { cwd, encoding: 'utf8' }).trim();
 
-const parseRequest = () => {
+const parseRequest = async () => {
   const { values } = parseArgs({
     options: {
       repo: { type: 'string' },
       version: { type: 'string' },
+      build: { type: 'string' },
       engine: { type: 'string' },
       sandbox: { type: 'string' },
       out: { type: 'string' },
       model: { type: 'string' },
       effort: { type: 'string', default: 'low' },
-      tier: { type: 'string', default: 'must' },
+      tier: { type: 'string' },
+      plan: { type: 'string' },
+      batch: { type: 'string' },
+      part: { type: 'string' },
       'clone-dir': { type: 'string' },
       image: { type: 'string', default: 'sb-ecosystem-qa' },
       'budget-minutes': { type: 'string' },
@@ -170,11 +206,15 @@ const parseRequest = () => {
     process.exit(0);
   }
 
-  const { repo, version, out } = values;
+  const { repo, build, out } = values;
 
-  if (!repo || !version || !out || !values.engine || !values.sandbox) {
-    return fail('Missing one of --repo, --version, --engine, --sandbox, --out.');
+  if (!repo || !(values.version || build) || !out || !values.engine || !values.sandbox) {
+    return fail('Missing one of --repo, --version or --build, --engine, --sandbox, --out.');
   }
+  if (values.version && build) {
+    return fail('Pass --version or --build, not both: a build carries its own version.');
+  }
+  const version = build ? await versionOfBuild(build) : values.version!;
 
   try {
     versionLine(version);
@@ -192,9 +232,14 @@ const parseRequest = () => {
     return fail('--fake needs ECOSYSTEM_QA_FAKE=1.');
   }
 
-  const engine = Engine.parse(values.engine);
-  const entry = loadCatalogEntry(repo);
-  const sandbox = SandboxKind.parse(values.sandbox);
+  const planned = planOfRun(values, repo, version);
+  const tier = planned?.tier ?? parsedFlag(Tier, 'tier', values.tier ?? 'must');
+  const engine = parsedFlag(Engine, 'engine', values.engine);
+  const entries = loadEntries(planned?.plan);
+  const entry =
+    entries.find((candidate) => candidate.id === repo) ??
+    refuse(`No catalog entry "${repo}". Known: ${entries.map(({ id }) => id).join(', ')}`);
+  const sandbox = parsedFlag(SandboxKind, 'sandbox', values.sandbox);
   // A fake run starts no agent and runs nothing of the repo.
   const refusal = sandbox === 'none' && !values.fake ? unsandboxedRefusal(entry, os) : undefined;
   if (refusal) {
@@ -208,11 +253,13 @@ const parseRequest = () => {
   }
   const request: RunRequest = {
     entry,
+    ...(planned ? { plan: planned.record } : {}),
     version,
+    ...(build ? { build } : {}),
     engine,
     model: values.model ?? DEFAULT_MODEL[engine],
-    effort: Effort.parse(values.effort),
-    tier: Tier.parse(values.tier),
+    effort: parsedFlag(Effort, 'effort', values.effort),
+    tier,
     sandbox,
     os,
     fake: values.fake,
@@ -221,9 +268,15 @@ const parseRequest = () => {
   };
   // Outside the monorepo: yarn and npm read every .yarnrc and .npmrc above the clone, and a native
   // sandbox denies the monorepo's own config files to the agent.
-  const cloneDir = resolve(values['clone-dir'] ?? join(scratchDir(), 'work', entry.id));
+  const cloneDir = realPathOf(resolve(values['clone-dir'] ?? join(scratchDir(), 'work', entry.id)));
 
-  return { request, cloneDir, image: values.image, budget };
+  return {
+    request,
+    cloneDir,
+    image: values.image,
+    budget,
+    checklist: checklistOf(tier, planned, repo),
+  };
 };
 
 const clone = (entry: CatalogEntry, cloneDir: string): string => {
@@ -371,14 +424,12 @@ const planSandbox = (
   }
 };
 
-const agentFor = (request: RunRequest, agentEnv: Record<string, string>) => {
-  const names = CREDENTIAL_ENV[request.engine];
-  const keyName =
-    names.find((name) => process.env[name]) ?? fail(`None of ${names.join(', ')} is set.`);
-  const options = {
-    effort: request.effort,
-    env: { ...agentEnv, [keyName]: process.env[keyName]! },
-  };
+const agentFor = (
+  request: RunRequest,
+  agentEnv: Record<string, string>,
+  credential: Record<string, string>
+) => {
+  const options = { effort: request.effort, env: { ...agentEnv, ...credential } };
   return request.engine === 'claude'
     ? claudeCode(request.model, options)
     : codex(request.model, options);
@@ -433,9 +484,10 @@ const recordOf = (
   }
 };
 
-// What the readings of the machine need to know about a run while it goes on.
+// What the readings of the machine and the close need to know about a run while it goes on.
 interface Progress {
   sandbox?: Sandbox;
+  keyProxy?: ProxiedKey;
   agentStarted: boolean;
 }
 
@@ -477,6 +529,9 @@ interface AgentRun {
   logFile: string;
   stream: WriteStream;
   progress: Progress;
+  checklist: Checklist;
+  target: ReturnType<typeof upgradeTarget>;
+  credential: Credential;
 }
 
 // Run the agent and have its answer repaired. When the run reaches its hard stop, or the agent
@@ -491,14 +546,46 @@ const runAgent = async ({
   logFile,
   stream,
   progress,
+  checklist,
+  target,
+  credential,
 }: AgentRun): Promise<{ ending: Ending; sessionSource?: string }> => {
   const { packageManager, storybookDir, repo } = request.entry;
-  // One list for the schema, the checklist and the count the prompt names.
-  const checks = checksFor(request.tier);
-  const answerSchema = agentOutput(checks.map((check) => check.id));
+  const { checks, answerSchema } = checklist;
   // The same signal goes to every repair turn, so the stop is one moment for the whole run.
   const hardStop = AbortSignal.timeout(msUntilHardStop(startedAt, budget));
-  const agent = agentFor(request, plan.agentEnv);
+  const note = (line: string) => {
+    console.log(line);
+    appendFileSync(logFile, `${line}\n`);
+  };
+  if (credential.proxied) {
+    const addresses = sandboxAddresses(
+      await outputOf('docker', ['inspect', sandbox.sandboxId ?? ''])
+    );
+    progress.keyProxy = await proxyTheKey(credential.value, {
+      host: addresses.gateway,
+      callerAddress: addresses.container,
+      upstreamOrigin: 'https://api.anthropic.com',
+      log: note,
+    });
+  }
+  const keyProxy = progress.keyProxy;
+  const agent = agentFor(
+    request,
+    plan.agentEnv,
+    keyProxy?.agentEnv ?? { [credential.name]: credential.value }
+  );
+  if (keyProxy) {
+    const { stdout } = await within(60, 'Reading the sandbox environment', sandbox.exec('env'));
+    if (keyProxy.reaches(stdout, agent)) {
+      throw new Error(
+        'The environment of the sandbox or the variables Sandcastle exports for the agent hold the provider key, so the run stops here.'
+      );
+    }
+    note(
+      'Neither the environment of the sandbox nor the variables Sandcastle exports for the agent hold the provider key.'
+    );
+  }
   const name = `${request.entry.id}-${request.os}-${request.engine}`;
   let sessionId: string | undefined;
   let sessionSource: string | undefined;
@@ -590,18 +677,21 @@ const runAgent = async ({
         promptFile: PROMPT_FILE,
         promptArgs: {
           REPO: repo,
+          TARGET: target.title,
           VERSION: request.version,
           MAJOR: versionLine(request.version).split('.')[0]!,
           STORYBOOK_DIR: storybookDir,
           PACKAGE_MANAGER: packageManager,
           INSTALL_COMMAND: INSTALL_COMMAND[packageManager],
-          UPGRADE_COMMAND: `${STORYBOOK_CLI[packageManager](request.version)} upgrade --yes`,
-          STORYBOOK_CLI: STORYBOOK_CLI[packageManager](request.version),
+          UPGRADE_COMMAND: `${target.cli} upgrade --yes`,
+          UPGRADE_NOTE: target.upgradeNote,
+          STORYBOOK_CLI: target.cli,
+          NPX_CLI: target.npxCli,
           OS: request.os,
           MIGRATION_FILE: plan.migrationFile,
           TOOLS_DIR: plan.toolsDir,
           EVIDENCE_DIR: plan.evidenceDir,
-          CHECKLIST: renderChecklist(checks),
+          CHECKLIST: checklist.text,
           CHECK_COUNT: String(checks.length),
           BUDGET_MINUTES: String(budget.minutes),
           HARD_STOP_MINUTES: String(budget.hardStopMinutes),
@@ -677,11 +767,17 @@ const runSandcastle = async (
   cloneDir: string,
   image: string,
   startedAt: Date,
-  budget: RunBudget
+  budget: RunBudget,
+  checklist: Checklist
 ): Promise<Outcome> => {
+  const credential = credentialFor(request, process.env);
+  if (typeof credential === 'string') {
+    return fail(credential);
+  }
   const evidenceDir = join(request.outDir, 'evidence');
   writeFileSync(join(evidenceDir, 'budget.json'), budgetRecord(startedAt, budget));
-  const cycleBranch = cycleBranchName(request.version, request.os, request.engine);
+  const target = upgradeTarget(request, request.entry.packageManager);
+  const cycleBranch = cycleBranchName(target.cycleName, request.os, request.engine);
   const startSha = clone(request.entry, cloneDir);
   const logFile = join(request.outDir, 'run.log');
   const stream = createWriteStream(join(request.outDir, 'agent-stream.jsonl'));
@@ -711,9 +807,9 @@ const runSandcastle = async (
   let migrationGuide: string | undefined;
   let ran: { ending: Ending; sessionSource?: string };
   try {
-    const guide = await guideFor(request.version, {
+    const guide = await guideFor(target.guideRef, {
       checkout: join(request.monorepoDir, 'MIGRATION.md'),
-      saveTo: join(scratchDir(), 'guides', `v${request.version}`, 'MIGRATION.md'),
+      saveTo: join(scratchDir(), 'guides', target.guideRef, 'MIGRATION.md'),
     });
     migrationGuide = guide.ref;
     const plan = planSandbox(request, cloneDir, evidenceDir, image, guide.file);
@@ -728,11 +824,15 @@ const runSandcastle = async (
       logFile,
       stream,
       progress,
+      checklist,
+      target,
+      credential,
     });
   } catch (error) {
     ran = { ending: { kind: 'failed', error: String(error) } };
   } finally {
     watch.stop();
+    progress.keyProxy?.close();
     await closeRun(request, progress.sandbox);
     await new Promise((done) => stream.end(done));
   }
@@ -807,13 +907,15 @@ const engineLabel = ({ request }: RunResultFile) =>
 
 const summarize = (result: RunResultFile, resultPath: string): string => {
   const failed = result.checks.filter((check) => check.state === 'fail').length;
+  const { build } = result.request;
+  const target = upgradeTarget(result.request, result.request.entry.packageManager);
   const usd =
     result.usage.usd === null
       ? 'unpriced'
       : `$${result.usage.usd.toFixed(2)}${result.usage.priceSource === 'table' ? ' (priced from the shared price table, not from the agent)' : ''}`;
   const installed = upgraded(result)
-    ? `Storybook ${result.storybookVersionInstalled} installed`
-    : `The upgrade to ${result.request.version} did not happen; Storybook is on ${result.storybookVersionInstalled ?? 'an unknown version'}`;
+    ? `Storybook ${result.storybookVersionInstalled} installed${build ? ` from ${buildUrl(build)}` : ''}`
+    : `The upgrade to ${target.title} did not happen; Storybook is on ${result.storybookVersionInstalled ?? 'an unknown version'}`;
   const installTime =
     result.timing.installSeconds === undefined
       ? ''
@@ -822,11 +924,11 @@ const summarize = (result: RunResultFile, resultPath: string): string => {
     `${result.request.entry.repo} on ${result.request.os} with ${engineLabel(result)} (${result.request.model}) finished with status ${result.status} in ${result.timing.wallSeconds}s.`,
     `${installed}${installTime}, ${result.checks.length} checks reported, ${failed} failed, ${result.findings.length} findings.`,
     `Usage was ${result.usage.inputTokens} input, ${result.usage.outputTokens} output, ${result.usage.cacheReadTokens ?? 0} cache-read and ${result.usage.cacheWriteTokens ?? 0} cache-write tokens, ${usd}.`,
-    `Cycle branch ${cycleBranchName(result.request.version, result.request.os, result.request.engine)} head ${result.headSha ?? 'has no commits'}.${result.machine.freeDiskMbAtEnd === undefined ? '' : ` ${result.machine.freeDiskMbAtEnd} MB disk free at the end.`} Result: ${resultPath}.`,
+    `Cycle branch ${cycleBranchName(target.cycleName, result.request.os, result.request.engine)} head ${result.headSha ?? 'has no commits'}.${result.machine.freeDiskMbAtEnd === undefined ? '' : ` ${result.machine.freeDiskMbAtEnd} MB disk free at the end.`} Result: ${resultPath}.`,
     ...(result.error ? [`Error: ${result.error}`] : []),
     ...(result.migrationGuide === CHECKOUT_GUIDE
       ? [
-          `The agent read the migration guide of this checkout, because v${result.request.version} is not a tag of storybookjs/storybook.`,
+          `The agent read the migration guide of this checkout, because ${target.guideRef} is not a tag of storybookjs/storybook.`,
         ]
       : []),
     ...(result.cutShort ? [result.cutShort] : []),
@@ -838,12 +940,13 @@ const summarize = (result: RunResultFile, resultPath: string): string => {
   ].join(' ');
 };
 
-const { request, cloneDir, image, budget } = parseRequest();
+const { request, cloneDir, image, budget, checklist } = await parseRequest();
 const startedAt = new Date();
 mkdirSync(join(request.outDir, 'evidence'), { recursive: true });
+writeFileSync(join(request.outDir, 'evidence/checklist.md'), `${checklist.text}\n`);
 const outcome = request.fake
-  ? runFake(request)
-  : await runSandcastle(request, cloneDir, image, startedAt, budget);
+  ? runFake(request, checklist.checks, checklist.fakeFailure)
+  : await runSandcastle(request, cloneDir, image, startedAt, budget, checklist);
 const result = writeResult(request, outcome, startedAt);
 // The whole output directory becomes a public artifact, agent stream and session included, and the
 // agent holds the provider key, so nothing with a credential shape may stay in it.

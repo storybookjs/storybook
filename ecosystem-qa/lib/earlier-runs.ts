@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { PLANS_BRANCH } from './plan-push.ts';
+
 const WORKFLOW_PATH = '.github/workflows/ecosystem-qa.yml';
 
 // What the Actions API says about where a workflow run comes from.
@@ -14,7 +16,8 @@ export type RunOrigin = z.infer<typeof RunOrigin>;
 //
 // Any run of the repository can upload an artifact named like a result, a pull request from a fork
 // included, and the filing job pushes and files what the results say. So only a run of this workflow
-// counts, started by hand, which needs write access, on one of `branches`.
+// counts that needed write access to start: one started by hand on one of `branches`, or one that a
+// push to the plans branch started.
 export const untrustedBecause = (
   { path, event, head_branch }: RunOrigin,
   branches: string[]
@@ -22,8 +25,13 @@ export const untrustedBecause = (
   if (path !== WORKFLOW_PATH) {
     return `is a run of ${path}, not of ${WORKFLOW_PATH}`;
   }
+  if (event === 'push') {
+    return head_branch === PLANS_BRANCH
+      ? undefined
+      : `was started by a push to ${head_branch ?? 'no branch'}, not to ${PLANS_BRANCH}`;
+  }
   if (event !== 'workflow_dispatch') {
-    return `was started by a ${event} event, not by hand`;
+    return `was started by a ${event} event, not by hand or by a push to ${PLANS_BRANCH}`;
   }
   return head_branch !== null && branches.includes(head_branch)
     ? undefined

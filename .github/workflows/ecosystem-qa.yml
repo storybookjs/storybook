@@ -4,13 +4,13 @@ on:
   workflow_dispatch:
     inputs:
       repo:
-        description: 'Catalog ids from ecosystem-qa/catalog.json, comma-separated; owned and tier1 stand for every repo of that class'
+        description: 'Catalog ids from ecosystem-qa/catalog.json, comma-separated; owned, tier1 and tier2 stand for every repo of that class'
         type: string
         default: 'mealdrop'
       version:
-        description: 'Storybook version to upgrade to'
+        description: 'Storybook version to upgrade to (empty with a plan: the version of the plan)'
         type: string
-        default: '11.0.0-beta.0'
+        default: ''
       engines:
         description: 'Agent engines to run'
         type: choice
@@ -22,7 +22,7 @@ on:
         options: ['linux', 'windows', 'linux,windows']
         default: 'linux'
       tier:
-        description: 'must runs the checks every sweep needs; extended runs the whole registry'
+        description: 'must runs the checks every sweep needs; extended runs the whole registry; a run with a plan runs the gate checks and its plan checks'
         type: choice
         options: ['must', 'extended']
         default: 'must'
@@ -42,6 +42,26 @@ on:
         description: 'A groups.json document to use instead of asking the model, for splitting a wrong merge by hand'
         type: string
         default: ''
+      plan:
+        description: 'A QA plan in ecosystem-qa/plans/, by file name: run one batch of it instead of the repos'
+        type: string
+        default: ''
+      batch:
+        description: 'The batch of the plan to run'
+        type: string
+        default: ''
+      plan_hash:
+        description: 'Run nothing when the plan at this commit has another hash (set by the batch before)'
+        type: string
+        default: ''
+      chain:
+        description: 'Start the next batch of the plan when this one is reported, unless the spend cap is reached'
+        type: boolean
+        default: false
+  # Pushing to it needs write access, as a dispatch does.
+  push:
+    branches: ['qa/plans']
+    paths: ['ecosystem-qa/plans/**']
   pull_request:
     paths:
       - 'ecosystem-qa/**'
@@ -57,8 +77,10 @@ env:
   CLAUDE_CODE_VERSION: '2.1.312'
   CODEX_VERSION: '0.166.0'
 
+# A group holds one running and one waiting run, so each batch of a plan has a group of its own: a
+# chained batch never waits behind the batch that started it and never cancels a waiting one.
 concurrency:
-  group: ecosystem-qa-${{ inputs.repo || 'mealdrop' }}-${{ inputs.version || github.sha }}
+  group: ${{ inputs.plan && format('ecosystem-qa-plan-{0}-{1}-{2}', inputs.plan, inputs.batch, inputs.from_runs) || github.event_name == 'push' && format('ecosystem-qa-push-{0}', github.sha) || format('ecosystem-qa-{0}-{1}', inputs.repo || 'mealdrop', inputs.version || github.sha) }}
   cancel-in-progress: false
 
 jobs:
@@ -98,8 +120,23 @@ jobs:
       - name: Test
         run: yarn workspace ecosystem-qa test
 
+      - name: Check the QA plans
+        run: |
+          shopt -s nullglob
+          status=0
+          for plan in ecosystem-qa/lib/plan.fixture.md ecosystem-qa/plans/*.md; do
+            window="${plan%.md}.window.json"
+            if [ -f "$window" ]; then
+              node ecosystem-qa/qa-plan.ts check "$plan" --window "$window" || status=1
+            else
+              echo "::error file=$plan::$plan has no window file $window next to it."
+              status=1
+            fi
+          done
+          exit "$status"
+
       - name: Plan a whole sweep from the catalog
-        run: node ecosystem-qa/plan.ts --repos owned,tier1 --os linux,windows --engines claude,codex
+        run: node ecosystem-qa/plan.ts --repos owned,tier1,tier2 --os linux,windows --engines claude,codex
 
       - name: Run a fake Claude run
         env:
@@ -122,35 +159,140 @@ jobs:
           node ecosystem-qa/file.ts --proposals ecosystem-qa/results/proposals.json
           --repo "$GITHUB_REPOSITORY" --dry
 
+      - name: Run a fake run of the first part of batch 1 of the fixture plan
+        env:
+          ECOSYSTEM_QA_FAKE: '1'
+        run: >-
+          node ecosystem-qa/run.ts --repo mealdrop --version "$QA_VERSION" --engine claude --fake
+          --sandbox none --plan ecosystem-qa/lib/plan.fixture.md --batch 1 --part 1
+          --out ecosystem-qa/plan-results/mealdrop/linux/claude/part-1
+
+      - name: Collect the proposals of the plan run
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          node ecosystem-qa/collect.ts --results ecosystem-qa/plan-results --version "$QA_VERSION"
+          --out ecosystem-qa/plan-results/proposals.json --repo "$GITHUB_REPOSITORY"
+          --plan ecosystem-qa/lib/plan.fixture.md --batch 1
+
+      - name: Write the proposals of the plan run to the Step Summary
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          node ecosystem-qa/file.ts --proposals ecosystem-qa/plan-results/proposals.json
+          --repo "$GITHUB_REPOSITORY" --dry
+
+  # Runs like the agent job, on ubuntu-latest and without the hardening step of the smoke job, so
+  # that its call over Docker's default bridge holds for the agent's sandbox.
+  key-proxy:
+    name: Reach the key proxy from the sandbox
+    if: ${{ github.event_name == 'pull_request' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions: {}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version-file: '.nvmrc'
+
+      - name: Install the ecosystem-qa workspace
+        run: |
+          corepack enable
+          yarn workspaces focus ecosystem-qa
+
+      - name: Call a stand-in provider through the key proxy from a container
+        run: |
+          node --input-type=module -e '
+            import { deepStrictEqual } from "node:assert";
+            import { execFile } from "node:child_process";
+            import { once } from "node:events";
+            import { createServer } from "node:http";
+            import { promisify } from "node:util";
+            import { PLACEHOLDER_KEY, sandboxAddresses, startKeyProxy } from "./ecosystem-qa/lib/key-proxy.ts";
+
+            // A synchronous exec would block the proxy, which answers from this same process.
+            const run = async (command, ...args) => (await promisify(execFile)(command, args)).stdout.trim();
+            const docker = (...args) => run("docker", ...args);
+            const key = "stand-in-key";
+            const provider = createServer((req, res) => {
+              req.resume();
+              res.end(req.headers["x-api-key"] === key ? "the real key" : "another key");
+            }).listen(0, "127.0.0.1");
+            await once(provider, "listening");
+            const container = await docker("run", "-d", "--entrypoint", "sleep", "curlimages/curl:8.23.0@sha256:3fb7e13e5d179a845c97d78204f3f1064d1907037f26a3ebf91710571151fd93", "600");
+            try {
+              const addresses = sandboxAddresses(await docker("inspect", container));
+              console.log(`Sandbox ${addresses.container}, gateway ${addresses.gateway}`);
+              const proxy = await startKeyProxy({
+                host: addresses.gateway,
+                callerAddress: addresses.container,
+                upstreamOrigin: `http://127.0.0.1:${provider.address().port}`,
+                apiKey: key,
+                log: console.log,
+              });
+              const curl = ["curl", "-sS", "--max-time", "10", "-X", "POST", "-H", `x-api-key: ${PLACEHOLDER_KEY}`, "-w", " %{http_code}"];
+              const answers = [
+                await docker("exec", container, ...curl, `${proxy.baseUrl}/v1/messages?beta=true`),
+                await docker("exec", container, ...curl, `${proxy.baseUrl}/v1/files`),
+                await docker("exec", container, ...curl, "--path-as-is", `${proxy.baseUrl}//example.com/v1/messages`),
+                await run(...curl, `${proxy.baseUrl}/v1/messages`),
+              ];
+              console.log(answers.join("\n"));
+              deepStrictEqual(answers, ["the real key 200", "404", "404", "403"]);
+              proxy.server.close();
+            } finally {
+              await docker("rm", "-f", container);
+              provider.close();
+            }
+          '
+
   plan:
     name: Plan the matrix
-    if: ${{ github.event_name == 'workflow_dispatch' }}
+    if: ${{ github.event_name != 'pull_request' }}
     runs-on: ubuntu-latest
     permissions: {}
     outputs:
       matrix: ${{ steps.matrix.outputs.matrix }}
       version: ${{ steps.matrix.outputs.version }}
       dry: ${{ steps.matrix.outputs.dry }}
+      tier: ${{ steps.matrix.outputs.tier }}
+      budget_minutes: ${{ steps.matrix.outputs.budget_minutes }}
       from_runs: ${{ steps.matrix.outputs.from_runs }}
       groups: ${{ steps.matrix.outputs.groups }}
       job_minutes: ${{ steps.matrix.outputs.job_minutes }}
+      plan: ${{ steps.matrix.outputs.plan }}
+      batch: ${{ steps.matrix.outputs.batch }}
+      batches: ${{ steps.matrix.outputs.batches }}
+      plan_hash: ${{ steps.matrix.outputs.plan_hash }}
+      chain: ${{ steps.matrix.outputs.chain }}
+      skip: ${{ steps.matrix.outputs.skip }}
+      ended: ${{ steps.matrix.outputs.ended }}
+      default_branch: ${{ steps.matrix.outputs.default_branch }}
     steps:
-      # A run that only collects earlier results starts no agent, so it needs no matrix.
       - name: Checkout
-        if: ${{ inputs.from_runs == '' }}
+        if: ${{ inputs.from_runs == '' || inputs.plan != '' }}
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           ref: ${{ github.sha }}
           persist-credentials: false
 
       - name: Setup Node.js
-        if: ${{ inputs.from_runs == '' }}
+        if: ${{ inputs.from_runs == '' || inputs.plan != '' }}
         uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
           node-version-file: '.nvmrc'
 
       - name: Install the ecosystem-qa workspace
-        if: ${{ inputs.from_runs == '' }}
+        if: ${{ inputs.from_runs == '' || inputs.plan != '' }}
         run: |
           corepack enable
           yarn workspaces focus ecosystem-qa
@@ -162,13 +304,71 @@ jobs:
           QA_VERSION: ${{ inputs.version }}
           QA_ENGINES: ${{ inputs.engines }}
           QA_OS: ${{ inputs.os }}
+          QA_TIER: ${{ inputs.tier }}
           QA_DRY: ${{ inputs.dry }}
           QA_FROM_RUNS: ${{ inputs.from_runs }}
           QA_GROUPS: ${{ inputs.groups }}
           QA_BUDGET_MINUTES: ${{ inputs.budget_minutes }}
+          QA_PLAN: ${{ inputs.plan }}
+          QA_BATCH: ${{ inputs.batch }}
+          QA_PLAN_HASH: ${{ inputs.plan_hash }}
+          QA_CHAIN: ${{ inputs.chain }}
+          QA_BEFORE: ${{ github.event.before }}
+          QA_DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
         run: |
-          if [[ ! "$QA_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?$ ]]; then
+          plan=''
+          skip=false
+          if [[ "$GITHUB_EVENT_NAME" == push ]]; then
+            QA_ENGINES=claude
+            QA_DRY=true
+            QA_CHAIN=true
+            QA_BATCH=1
+            # The push that creates the branch has no commit before it to compare with.
+            if [[ "$QA_BEFORE" =~ ^0+$ ]]; then
+              echo "::notice::The push creates the branch $GITHUB_REF_NAME and runs no plan, even one it carries. A later push that adds or changes a plan starts its sweep."
+              skip=true
+            else
+              if [[ ! "$QA_BEFORE" =~ ^[0-9a-f]{40}$ ]]; then
+                echo "::error::the commit before the push, '$QA_BEFORE', is not a commit SHA"
+                exit 1
+              fi
+              git fetch --no-tags --depth=1 origin "$QA_BEFORE"
+              changes="$(git -c core.quotePath=false diff --name-status "$QA_BEFORE" HEAD -- ecosystem-qa/plans/)"
+              plan="$(node ecosystem-qa/plan.ts --push <<<"$changes")"
+              [[ -n "$plan" ]] || skip=true
+            fi
+          elif [[ -n "$QA_PLAN" ]]; then
+            if [[ ! "$QA_PLAN" =~ ^[A-Za-z0-9._-]+\.md$ ]]; then
+              echo "::error::plan '$QA_PLAN' is not the file name of a plan in ecosystem-qa/plans/"
+              exit 1
+            fi
+            if [[ ! "$QA_BATCH" =~ ^[1-9][0-9]{0,2}$ ]]; then
+              echo "::error::batch '$QA_BATCH' is not the number of a batch, which a run with a plan needs"
+              exit 1
+            fi
+            if [[ -n "$QA_PLAN_HASH" && ! "$QA_PLAN_HASH" =~ ^[0-9a-f]{12}$ ]]; then
+              echo "::error::plan_hash '$QA_PLAN_HASH' is not the twelve hex digits of a plan hash"
+              exit 1
+            fi
+            plan="ecosystem-qa/plans/$QA_PLAN"
+          elif [[ -n "$QA_BATCH$QA_PLAN_HASH" ]]; then
+            echo "::error::batch and plan_hash need a plan"
+            exit 1
+          elif [[ -z "$QA_VERSION" ]]; then
+            echo "::error::a sweep without a plan needs a version"
+            exit 1
+          fi
+          if [[ -n "$QA_VERSION" && ! "$QA_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?$ ]]; then
             echo "::error::version '$QA_VERSION' is not a semver version"
+            exit 1
+          fi
+          # A push passes no tier, and a run with a plan runs the tier gate.
+          if [[ "$GITHUB_EVENT_NAME" != push && ! "$QA_TIER" =~ ^(must|extended)$ ]]; then
+            echo "::error::tier '$QA_TIER' is not must or extended"
+            exit 1
+          fi
+          if [[ ! "$QA_DRY" =~ ^(true|false)$ || ! "$QA_CHAIN" =~ ^(true|false)$ ]]; then
+            echo "::error::dry '$QA_DRY' and chain '$QA_CHAIN' are each true or false"
             exit 1
           fi
           if [[ -n "$QA_FROM_RUNS" && ! "$QA_FROM_RUNS" =~ ^[0-9]+(,[0-9]+)*$ ]]; then
@@ -186,28 +386,80 @@ jobs:
             echo "::error::groups is not one JSON document"
             exit 1
           fi
-          if [[ -n "$QA_FROM_RUNS" ]]; then
-            matrix='{"include":[]}'
-          elif ! matrix="$(node ecosystem-qa/plan.ts --repos "$QA_REPO" --os "$QA_OS" --engines "$QA_ENGINES")"; then
+          tier="$QA_TIER"
+          if [[ "$skip" == true ]]; then
+            outputs='matrix={"include":[]}'
+          elif [[ -n "$plan" ]]; then
+            tier=gate
+            outputs="$(node ecosystem-qa/plan.ts --plan "$plan" --batch "$QA_BATCH" --engines "$QA_ENGINES" --outputs ${QA_PLAN_HASH:+--hash "$QA_PLAN_HASH"} ${QA_VERSION:+--version "$QA_VERSION"})"
+            if [[ "$outputs" == *$'\n'ended=* ]]; then
+              skip=true
+            fi
+          elif [[ -n "$QA_FROM_RUNS" ]]; then
+            outputs=$'matrix={"include":[]}\nversion='"$QA_VERSION"
+          elif matrix="$(node ecosystem-qa/plan.ts --repos "$QA_REPO" --os "$QA_OS" --engines "$QA_ENGINES")"; then
+            outputs="matrix=$matrix"$'\n'"version=$QA_VERSION"
+          else
             echo "::error::no job matrix for repo '$QA_REPO', os '$QA_OS', engines '$QA_ENGINES'"
             exit 1
           fi
           {
-            echo "matrix=$matrix"
-            echo "version=$QA_VERSION"
+            echo "$outputs"
             echo "dry=$QA_DRY"
+            echo "tier=$tier"
+            echo "budget_minutes=$QA_BUDGET_MINUTES"
             echo "from_runs=$QA_FROM_RUNS"
             echo "groups=$groups"
+            echo "chain=$QA_CHAIN"
+            echo "skip=$skip"
+            echo "default_branch=$QA_DEFAULT_BRANCH"
             # A run stops its agent 15 minutes after the budget and then asks it for its answer. A
             # job that is cancelled before that writes no result at all.
             echo "job_minutes=$(( ${QA_BUDGET_MINUTES:-90} + 90 ))"
-          } >> "$GITHUB_OUTPUT"
-          echo "$matrix" | jq .
+          } | tee -a "$GITHUB_OUTPUT"
+
+  manual-discussion:
+    name: Create the manual QA discussion of the plan
+    needs: plan
+    # Only the push that merges a plan, so a chained or dispatched batch never creates one.
+    if: ${{ github.event_name == 'push' && needs.plan.outputs.skip != 'true' && needs.plan.outputs.plan != '' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # Two pushes of the same plan at once would each find no discussion and each create one.
+    concurrency:
+      group: ecosystem-qa-manual-${{ needs.plan.outputs.plan_hash }}
+      cancel-in-progress: false
+    permissions:
+      discussions: write # create the manual QA discussion
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version-file: '.nvmrc'
+
+      - name: Install the ecosystem-qa workspace
+        run: |
+          corepack enable
+          yarn workspaces focus ecosystem-qa
+
+      - name: Create the discussion unless the plan has one
+        env:
+          GH_TOKEN: ${{ github.token }}
+          QA_PLAN: ${{ needs.plan.outputs.plan }}
+        run: >-
+          node ecosystem-qa/manual-discussion.ts --plan "$QA_PLAN" --window "${QA_PLAN%.md}.window.json"
+          --repo "$GITHUB_REPOSITORY" --commit "$GITHUB_SHA"
 
   runner:
     name: QA ${{ matrix.repo }} on ${{ matrix.os }} with ${{ matrix.engine }}
     needs: plan
-    if: ${{ needs.plan.outputs.from_runs == '' }}
+    if: ${{ needs.plan.outputs.from_runs == '' && needs.plan.outputs.skip != 'true' }}
     runs-on: ${{ matrix.runner }}
     timeout-minutes: ${{ fromJSON(needs.plan.outputs.job_minutes) }}
     permissions: {}
@@ -226,8 +478,13 @@ jobs:
       QA_ENGINE: ${{ matrix.engine }}
       QA_OS: ${{ matrix.os }}
       QA_SANDBOX: ${{ matrix.sandbox }}
-      QA_TIER: ${{ inputs.tier }}
-      QA_BUDGET_MINUTES: ${{ inputs.budget_minutes }}
+      # The parts of one repo in a batch of a plan run in parallel, so each has its own directory.
+      QA_RUN_DIR: ecosystem-qa/results/${{ matrix.repo }}/${{ matrix.os }}/${{ matrix.engine }}${{ matrix.part && format('/part-{0}', matrix.part) || '' }}
+      QA_TIER: ${{ needs.plan.outputs.tier }}
+      QA_BUDGET_MINUTES: ${{ needs.plan.outputs.budget_minutes }}
+      QA_PLAN: ${{ needs.plan.outputs.plan }}
+      QA_BATCH: ${{ needs.plan.outputs.batch }}
+      QA_PART: ${{ matrix.part }}
     steps:
       # No runner hardening step in this job. Its agent grows by about a gigabyte a minute while a
       # project's tests run in a browser, outside the memory limit of the sandbox, and a runner that
@@ -283,9 +540,10 @@ jobs:
           CODEX_API_KEY: ${{ matrix.engine == 'codex' && secrets.ECOSYSTEM_QA_OPENAI_API_KEY || '' }}
         run: >-
           node ecosystem-qa/run.ts --repo "$QA_REPO" --version "$QA_VERSION" --engine "$QA_ENGINE"
-          --sandbox "$QA_SANDBOX" --out "ecosystem-qa/results/$QA_REPO/$QA_OS/$QA_ENGINE"
+          --sandbox "$QA_SANDBOX" --out "$QA_RUN_DIR"
           --clone-dir "$RUNNER_TEMP/qa-work/$QA_REPO" --tier "$QA_TIER"
           ${QA_BUDGET_MINUTES:+--budget-minutes "$QA_BUDGET_MINUTES"}
+          ${QA_PLAN:+--plan "$QA_PLAN" --batch "$QA_BATCH" --part "$QA_PART"}
 
       - name: Report free disk after the run (Linux)
         if: ${{ always() && matrix.os == 'linux' }}
@@ -313,22 +571,22 @@ jobs:
         if: ${{ always() && steps.redact.outcome == 'success' }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: qa-result-${{ matrix.repo }}-${{ matrix.os }}-${{ matrix.engine }}
+          name: qa-result-${{ matrix.repo }}-${{ matrix.os }}-${{ matrix.engine }}${{ matrix.part && format('-part-{0}', matrix.part) || '' }}
           path: ecosystem-qa/results/
-          retention-days: 14
+          retention-days: 90
           if-no-files-found: warn
 
       - name: Note a run that wrote no result in the Step Summary
         if: ${{ always() }}
         run: |
-          if [[ ! -f "ecosystem-qa/results/$QA_REPO/$QA_OS/$QA_ENGINE/result.json" ]]; then
+          if [[ ! -f "$QA_RUN_DIR/result.json" ]]; then
             echo "### $QA_REPO on $QA_OS with $QA_ENGINE: no result.json was written" >> "$GITHUB_STEP_SUMMARY"
           fi
 
   collect:
     name: Collect and dedupe findings
     needs: [plan, runner]
-    if: ${{ always() && needs.plan.result == 'success' }}
+    if: ${{ always() && needs.plan.result == 'success' && needs.plan.outputs.skip != 'true' }}
     runs-on: ubuntu-latest
     permissions:
       actions: read # download the artifacts of earlier runs
@@ -337,6 +595,8 @@ jobs:
     environment: ecosystem-qa
     env:
       QA_VERSION: ${{ needs.plan.outputs.version }}
+      QA_PLAN: ${{ needs.plan.outputs.plan }}
+      QA_BATCH: ${{ needs.plan.outputs.batch }}
       # Earlier results are uploaded again as the artifact of the same name, so the filing jobs find
       # the evidence and bundles at the paths the proposals name.
       QA_RESULTS: ${{ needs.plan.outputs.from_runs != '' && 'ecosystem-qa/results/qa-earlier-results' || 'ecosystem-qa/results' }}
@@ -372,7 +632,7 @@ jobs:
           QA_PLANNED: ${{ needs.plan.outputs.matrix }}
         run: >-
           node ecosystem-qa/missing-runs.ts --results "$QA_RESULTS" --version "$QA_VERSION"
-          --planned "$QA_PLANNED"
+          --planned "$QA_PLANNED" ${QA_PLAN:+--plan "$QA_PLAN" --batch "$QA_BATCH"}
 
       - name: Fetch the results of earlier runs
         if: ${{ needs.plan.outputs.from_runs != '' }}
@@ -381,10 +641,10 @@ jobs:
           GH_REPO: ${{ github.repository }}
           QA_FROM_RUNS: ${{ needs.plan.outputs.from_runs }}
           # Results are taken only from runs on the default branch or on the branch of this run.
-          QA_TRUSTED_BRANCHES: ${{ github.event.repository.default_branch }},${{ github.ref_name }}
+          QA_TRUSTED_BRANCHES: ${{ needs.plan.outputs.default_branch }},${{ github.ref_name }}
         run: >-
           node ecosystem-qa/fetch-runs.ts --out "$QA_RESULTS" --runs "$QA_FROM_RUNS"
-          --branches "$QA_TRUSTED_BRANCHES"
+          --branches "$QA_TRUSTED_BRANCHES" ${QA_PLAN:+--plan "$QA_PLAN" --batch "$QA_BATCH"}
 
       - name: Upload the results of earlier runs for the filing jobs
         if: ${{ needs.plan.outputs.from_runs != '' }}
@@ -392,7 +652,7 @@ jobs:
         with:
           name: qa-earlier-results
           path: ecosystem-qa/results/qa-earlier-results/
-          retention-days: 14
+          retention-days: 90
 
       - name: Use the given grouping
         if: ${{ needs.plan.outputs.groups != '' }}
@@ -408,6 +668,7 @@ jobs:
         run: >-
           node ecosystem-qa/group.ts --results "$QA_RESULTS" --version "$QA_VERSION"
           --repo "$GITHUB_REPOSITORY" --out ecosystem-qa/groups.json
+          ${QA_PLAN:+--plan "$QA_PLAN" --batch "$QA_BATCH"}
 
       - name: Collect proposals
         env:
@@ -415,6 +676,7 @@ jobs:
         run: >-
           node ecosystem-qa/collect.ts --results "$QA_RESULTS" --version "$QA_VERSION"
           --out ecosystem-qa/proposals.json --repo "$GITHUB_REPOSITORY" --groups ecosystem-qa/groups.json
+          ${QA_PLAN:+--plan "$QA_PLAN" --batch "$QA_BATCH"}
 
       - name: Upload the proposals
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
@@ -423,7 +685,7 @@ jobs:
           path: |
             ecosystem-qa/proposals.json
             ecosystem-qa/groups.json
-          retention-days: 14
+          retention-days: 90
 
   file-dry:
     name: Propose issues (dry run)
@@ -432,6 +694,7 @@ jobs:
     if: ${{ !cancelled() && needs.collect.result == 'success' && needs.plan.outputs.dry == 'true' }}
     runs-on: ubuntu-latest
     permissions:
+      actions: read # name the day the result artifacts expire
       issues: read # list the internal-qa issues
     steps:
       - name: Checkout
@@ -459,17 +722,28 @@ jobs:
       - name: Write proposals to the Step Summary
         env:
           GH_TOKEN: ${{ github.token }}
+          QA_VERSION: ${{ needs.plan.outputs.version }}
+          QA_FROM_RUNS: ${{ needs.plan.outputs.from_runs }}
+          QA_GROUPS: ${{ needs.plan.outputs.groups }}
+          QA_PLAN: ${{ needs.plan.outputs.plan }}
+          QA_BATCH: ${{ needs.plan.outputs.batch }}
+          QA_PLANNED: ${{ needs.plan.outputs.matrix }}
         run: >-
           node ecosystem-qa/file.ts --proposals ecosystem-qa/results/qa-proposals/proposals.json
-          --repo "$GITHUB_REPOSITORY" --dry
+          --repo "$GITHUB_REPOSITORY" --dry --version "$QA_VERSION" --from-runs "$QA_FROM_RUNS"
+          --run-id "$GITHUB_RUN_ID" ${QA_GROUPS:+--groups "$QA_GROUPS"}
+          ${QA_PLAN:+--plan "$QA_PLAN" --batch "$QA_BATCH" --planned "$QA_PLANNED"}
 
   file:
     name: File issues
-    needs: [plan, collect]
+    # After track, so that two jobs never both add the comment of a new batch.
+    needs: [plan, collect, track]
     if: ${{ !cancelled() && needs.collect.result == 'success' && needs.plan.outputs.dry == 'false' }}
     runs-on: ubuntu-latest
     permissions:
+      actions: read # name the day the result artifacts of the batch expire
       contents: write # push evidence to the qa-assets branch
+      discussions: write # name the filed issues in the comment of the batch
       issues: write # create the issue or the comment
     environment: ecosystem-qa-file
     # Two filing jobs that list the issues at the same moment would each file what the other is
@@ -503,10 +777,111 @@ jobs:
           path: ecosystem-qa/results
 
       - name: File issues and push evidence
+        id: file
         env:
           GH_TOKEN: ${{ github.token }}
           ECOSYSTEM_QA_PUSH_TOKEN: ${{ secrets.ECOSYSTEM_QA_PUSH_TOKEN }}
           ECOSYSTEM_QA_PUSH_TOKEN_STORYBOOK_TMP: ${{ secrets.ECOSYSTEM_QA_PUSH_TOKEN_STORYBOOK_TMP }}
         run: >-
           node ecosystem-qa/file.ts --proposals ecosystem-qa/results/qa-proposals/proposals.json
-          --repo "$GITHUB_REPOSITORY"
+          --repo "$GITHUB_REPOSITORY" --filed "$RUNNER_TEMP/filed.json"
+
+      - name: Name the filed issues in the tracking discussion
+        if: ${{ !cancelled() && needs.plan.outputs.plan != '' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          QA_RESULTS: ${{ needs.plan.outputs.from_runs != '' && 'ecosystem-qa/results/qa-earlier-results' || 'ecosystem-qa/results' }}
+          QA_PLAN: ${{ needs.plan.outputs.plan }}
+          QA_BATCH: ${{ needs.plan.outputs.batch }}
+          QA_VERSION: ${{ needs.plan.outputs.version }}
+          QA_PLANNED: ${{ needs.plan.outputs.matrix }}
+          QA_FROM_RUNS: ${{ needs.plan.outputs.from_runs }}
+          QA_CAP_USD: ${{ vars.ECOSYSTEM_QA_CYCLE_CAP_USD }}
+          QA_FILING: ${{ steps.file.outcome == 'success' && 'filed' || 'failed' }}
+        run: >-
+          node ecosystem-qa/track.ts --results "$QA_RESULTS"
+          --proposals ecosystem-qa/results/qa-proposals/proposals.json
+          --plan "$QA_PLAN" --batch "$QA_BATCH" --version "$QA_VERSION" --planned "$QA_PLANNED"
+          --runs "${QA_FROM_RUNS:-$GITHUB_RUN_ID}" --repo "$GITHUB_REPOSITORY"
+          ${QA_CAP_USD:+--cap-usd "$QA_CAP_USD"} --filing "$QA_FILING" --filed "$RUNNER_TEMP/filed.json"
+          --no-chain
+
+  track:
+    name: Report the batch in its tracking discussion
+    needs: [plan, runner, collect]
+    # A failed collect still reports the runs and dollars, except a collect of earlier runs, whose
+    # empty report would replace the comment of those runs.
+    if: >-
+      ${{ !cancelled() && needs.plan.result == 'success' && needs.plan.outputs.plan != ''
+      && (needs.plan.outputs.ended != '' || needs.plan.outputs.from_runs == ''
+      || needs.collect.result == 'success') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # Two reports of a plan at once would each create its discussion and each start its next batch.
+    concurrency:
+      group: ecosystem-qa-discussion-${{ needs.plan.outputs.plan_hash }}
+      cancel-in-progress: false
+    permissions:
+      actions: write # list the artifacts of the batch and start the next batch
+      discussions: write # write the tracking discussion and the comment of the batch
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version-file: '.nvmrc'
+
+      - name: Install the ecosystem-qa workspace
+        run: |
+          corepack enable
+          yarn workspaces focus ecosystem-qa
+
+      - name: Say in the tracking discussion that the chain of the plan ended
+        if: ${{ needs.plan.outputs.ended != '' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          QA_PLAN: ${{ needs.plan.outputs.plan }}
+          QA_BATCH: ${{ needs.plan.outputs.batch }}
+          QA_PLAN_HASH: ${{ needs.plan.outputs.plan_hash }}
+          QA_ENDED: ${{ needs.plan.outputs.ended }}
+        run: >-
+          node ecosystem-qa/track.ts --ended "$QA_ENDED" --plan "$QA_PLAN" --batch "$QA_BATCH"
+          --hash "$QA_PLAN_HASH" --runs "$GITHUB_RUN_ID" --repo "$GITHUB_REPOSITORY"
+
+      - name: Download the run results and proposals
+        if: ${{ needs.plan.outputs.ended == '' }}
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          pattern: qa-*
+          path: ecosystem-qa/results
+
+      - name: Report the batch and start the next one
+        if: ${{ needs.plan.outputs.ended == '' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          QA_RESULTS: ${{ needs.plan.outputs.from_runs != '' && 'ecosystem-qa/results/qa-earlier-results' || 'ecosystem-qa/results' }}
+          QA_PLAN: ${{ needs.plan.outputs.plan }}
+          QA_BATCH: ${{ needs.plan.outputs.batch }}
+          QA_VERSION: ${{ needs.plan.outputs.version }}
+          QA_PLANNED: ${{ needs.plan.outputs.matrix }}
+          QA_FROM_RUNS: ${{ needs.plan.outputs.from_runs }}
+          QA_DRY: ${{ needs.plan.outputs.dry }}
+          QA_CHAIN: ${{ needs.plan.outputs.chain }}
+          QA_BUDGET_MINUTES: ${{ needs.plan.outputs.budget_minutes }}
+          QA_CAP_USD: ${{ vars.ECOSYSTEM_QA_CYCLE_CAP_USD }}
+        run: |
+          args=(
+            --results "$QA_RESULTS" --proposals ecosystem-qa/results/qa-proposals/proposals.json
+            --plan "$QA_PLAN" --batch "$QA_BATCH" --version "$QA_VERSION" --planned "$QA_PLANNED"
+            --runs "${QA_FROM_RUNS:-$GITHUB_RUN_ID}" --repo "$GITHUB_REPOSITORY"
+          )
+          if [[ -n "$QA_CAP_USD" ]]; then args+=(--cap-usd "$QA_CAP_USD"); fi
+          if [[ -n "$QA_BUDGET_MINUTES" ]]; then args+=(--budget-minutes "$QA_BUDGET_MINUTES"); fi
+          if [[ "$QA_DRY" == true ]]; then args+=(--filing dry); else args+=(--filing pending); fi
+          if [[ "$QA_CHAIN" != true ]]; then args+=(--no-chain); fi
+          node ecosystem-qa/track.ts "${args[@]}"

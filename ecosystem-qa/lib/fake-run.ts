@@ -4,7 +4,6 @@ import { fileURLToPath } from 'node:url';
 
 import { join } from 'pathe';
 
-import { checksFor } from '../checks.ts';
 import type { Outcome, RunRequest } from './types.ts';
 
 const TOOLS_DIR = fileURLToPath(new URL('../tools', import.meta.url));
@@ -13,7 +12,11 @@ const NULL_SHA = '0'.repeat(40);
 const frame = (title: string, color: string) =>
   `data:text/html,<body style="font:32px sans-serif;background:${color}"><h1>${title}</h1><p>ecosystem-qa --fake</p></body>`;
 
-export const runFake = (request: RunRequest): Outcome => {
+export const runFake = (
+  request: RunRequest,
+  checks: readonly { id: string; label: string }[],
+  failing: string
+): Outcome => {
   const evidenceDir = join(request.outDir, 'evidence');
   const framesDir = join(evidenceDir, 'fake-frames');
   mkdirSync(framesDir, { recursive: true });
@@ -42,7 +45,6 @@ export const runFake = (request: RunRequest): Outcome => {
     })}\n`
   );
 
-  const failing = 'core.story-render';
   return {
     status: 'ok',
     startSha: NULL_SHA,
@@ -50,7 +52,7 @@ export const runFake = (request: RunRequest): Outcome => {
     output: {
       storybookVersionBefore: '10.6.0',
       storybookVersionInstalled: request.version,
-      checks: checksFor(request.tier).map(({ id, label }) =>
+      checks: checks.map(({ id, label }) =>
         id === failing
           ? { id, label, state: 'fail', note: 'Canned failure from --fake.' }
           : { id, label, state: 'pass' }

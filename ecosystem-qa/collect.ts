@@ -7,21 +7,30 @@ import { versionLine } from './lib/cycle.ts';
 import { listQaIssues, releasePublishedAt } from './lib/github.ts';
 import { clusterFindings, identityGrouping } from './lib/grouping.ts';
 import { CHECKOUT_GUIDE } from './lib/migration-guide.ts';
+import { readPlanScope } from './lib/plan-scope.ts';
 import { loadFindingGroups, QA_LABEL, toProposal } from './lib/proposals.ts';
 import { upgraded } from './lib/results.ts';
-import { Grouping, type Proposal } from './lib/schema.ts';
+import { CheckResult, Grouping, type Proposal } from './lib/schema.ts';
 
-const HELP = `Usage: node ecosystem-qa/collect.ts --results <dir> --version <storybook version> --out <proposals.json> --repo <owner/name> [--run-url <url>] [--groups <groups.json>]
+const HELP = `Usage: node ecosystem-qa/collect.ts --results <dir> --version <storybook version> --out <proposals.json> --repo <owner/name> [--run-url <url>] [--groups <groups.json>] [--plan <file> --batch <n> [--tier <tier>]]
 
 Reads the result.json of every catalog repo, os and engine under --results, either from a downloaded
 artifact (<results>/qa-result-<id>-<os>-<engine>/<id>/<os>/<engine>) or from a local run
-(<results>/<id>/<os>/<engine>). Merges findings by fingerprint, lists the issues of --repo that carry
-the internal-qa label with gh, and writes one proposal per group to --out.
+(<results>/<id>/<os>/<engine>), and each part-<n> of a plan run below them. Merges findings by
+fingerprint, lists the issues of --repo that carry the internal-qa label with gh, and writes one
+proposal per group to --out.
 --version is the version the cycle ran; a record that names another version is ignored.
 --run-url defaults to this GitHub Actions run, or "local" outside Actions.
 --groups merges fingerprints that share a root cause into one proposal, led by each group's first
 member and optionally matched to an existing issue by similarity; without it each fingerprint is its
-own group. Every fingerprint of this collect must be in exactly one group.`;
+own group. Every fingerprint of this collect must be in exactly one group.
+--plan and --batch collect the runs of one batch of a QA plan, which ran the tier --tier (default:
+gate): its discovered repos load with the catalog. A record is ignored with a warning when it ran
+another plan, batch or tier, when the batch has no run of its repo and part, or when it reports a
+check that is neither in that tier nor a plan check of its part. Without --plan a record of a plan
+run is ignored too.
+An issue body names the plan entry of a plan check and links its PRs, as the plan file has them.
+Each result prints its plan checks by state.`;
 
 const { values } = parseArgs({
   options: {
@@ -31,6 +40,9 @@ const { values } = parseArgs({
     repo: { type: 'string' },
     'run-url': { type: 'string' },
     groups: { type: 'string' },
+    plan: { type: 'string' },
+    batch: { type: 'string' },
+    tier: { type: 'string' },
     help: { type: 'boolean', default: false },
   },
 });
@@ -44,6 +56,7 @@ if (!results || !version || !out || !repo) {
   process.exit(1);
 }
 versionLine(version);
+const scope = readPlanScope(values);
 
 const { GITHUB_SERVER_URL, GITHUB_REPOSITORY, GITHUB_RUN_ID } = process.env;
 const runUrl =
@@ -52,7 +65,7 @@ const runUrl =
     ? `${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}`
     : 'local');
 
-const { loaded, groups } = loadFindingGroups(results, version);
+const { loaded, groups } = loadFindingGroups(results, version, scope);
 const issues = listQaIssues(repo, QA_LABEL);
 const publishedAt = releasePublishedAt(repo, version);
 console.log(
@@ -75,7 +88,7 @@ if ('problems' in clustering) {
   process.exit(1);
 }
 const proposals = clustering.clusters.map((cluster) =>
-  toProposal(cluster, issues, { runUrl, publishedAt })
+  toProposal(cluster, issues, { runUrl, publishedAt, plan: scope?.plan })
 );
 writeFileSync(out, `${JSON.stringify(proposals, null, 2)}\n`);
 
@@ -84,6 +97,14 @@ for (const { result, resultPath } of loaded) {
   console.log(
     `${resultPath}: ${result.status}, ${result.checks.length} checks, failed: ${failed.join(', ') || 'none'}${upgraded(result) ? '' : ', not upgraded'}${result.migrationGuide === CHECKOUT_GUIDE ? ', judged against the migration guide of the checkout' : ''}`
   );
+  const planChecks = result.checks.filter((check) => check.id.startsWith('plan.'));
+  const states = CheckResult.shape.state.options.flatMap((state) => {
+    const ids = planChecks.filter((check) => check.state === state).map((check) => check.id);
+    return ids.length > 0 ? [`${state} ${ids.join(', ')}`] : [];
+  });
+  if (states.length > 0) {
+    console.log(`  plan checks: ${states.join('; ')}`);
+  }
 }
 const targetOf = (proposal: Proposal): string => {
   switch (proposal.kind) {

@@ -29,8 +29,23 @@ describe('untrustedBecause', () => {
 
   it('rejects the run of a pull request, which a fork can open', () => {
     expect(untrustedBecause(run({ event: 'pull_request' }), BRANCHES)).toBe(
-      'was started by a pull_request event, not by hand'
+      'was started by a pull_request event, not by hand or by a push to qa/plans'
     );
+  });
+
+  it('trusts a run that a push to qa/plans started, whatever branches the collect allows', () => {
+    expect(untrustedBecause(run({ event: 'push', head_branch: 'qa/plans' }), BRANCHES)).toBe(
+      undefined
+    );
+  });
+
+  it('rejects a push to any other branch, and a pull request whose head is named qa/plans', () => {
+    expect(untrustedBecause(run({ event: 'push', head_branch: 'next' }), BRANCHES)).toBe(
+      'was started by a push to next, not to qa/plans'
+    );
+    expect(
+      untrustedBecause(run({ event: 'pull_request', head_branch: 'qa/plans' }), BRANCHES)
+    ).toMatch(/^was started by a pull_request event/);
   });
 
   it('rejects a run on a branch that is neither the default nor the collecting one', () => {

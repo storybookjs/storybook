@@ -9,7 +9,6 @@ import addonA11y from '@storybook/addon-a11y';
 // TODO add empty preview
 // import * as designs from '@storybook/addon-designs/preview';
 import addonDocs from '@storybook/addon-docs';
-import { DocsContext } from '@storybook/addon-docs/blocks';
 import addonThemes from '@storybook/addon-themes';
 import addonTest from '@storybook/addon-vitest';
 
@@ -27,7 +26,6 @@ import {
   useTheme,
 } from 'storybook/theming/emotion';
 
-import { DocsPageWrapper } from '../addons/docs/src/blocks/components/index.ts';
 import { toHaveLiveRegion } from '../core/src/shared/utils/toHaveLiveRegion.ts';
 import * as templatePreview from '../core/template/stories/preview.ts';
 import '../renderers/react/template/components/index.js';
@@ -162,6 +160,8 @@ const ThemedSetRoot = () => {
   return null;
 };
 
+// The two docs decorators below get the docs blocks through `loaded`. A static import would make
+// every story load the blocks, and `React.lazy` would put a Suspense fallback in the first render.
 const loaders = [
   /**
    * This loader adds a DocsContext to the story, which is required for the most Blocks to work. A
@@ -209,13 +209,21 @@ const loaders = [
     if (attached && csfFiles[0]) {
       docsContext.attachCSFFile(csfFiles[0]);
     }
-    return { docsContext };
+    const { DocsContext } = await import('@storybook/addon-docs/blocks');
+    return { docsContext, DocsContext };
+  },
+  async ({ parameters: { docsStyles } }) => {
+    if (!docsStyles) {
+      return {};
+    }
+    const { DocsPageWrapper } = await import('../addons/docs/src/blocks/components/index.ts');
+    return { DocsPageWrapper };
   },
 ] as Loader[];
 
 const decorators = [
   // This decorator adds the DocsContext created in the loader above
-  (Story, { loaded: { docsContext } }) =>
+  (Story, { loaded: { docsContext, DocsContext } }) =>
     docsContext ? (
       <DocsContext.Provider value={docsContext}>
         <Story />
@@ -226,8 +234,8 @@ const decorators = [
   /**
    * This decorator adds wrappers that contains global styles for stories to be targeted by.
    * Activated with parameters.docsStyles = true
-   */ (Story, { parameters: { docsStyles } }) =>
-    docsStyles ? (
+   */ (Story, { loaded: { DocsPageWrapper } }) =>
+    DocsPageWrapper ? (
       <DocsPageWrapper>
         <Story />
       </DocsPageWrapper>

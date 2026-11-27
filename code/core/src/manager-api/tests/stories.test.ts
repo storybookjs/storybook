@@ -21,6 +21,7 @@ import {
 } from 'storybook/internal/core-events';
 import { logger } from 'storybook/internal/client-logger';
 import {
+  type API_FilterFunction,
   type API_PreparedIndexEntry,
   type API_StoryEntry,
   type StoryIndex,
@@ -375,6 +376,124 @@ describe('stories API', () => {
         title: 'a',
         name: '2',
         tags: ['shared', 'two-specific'],
+      });
+    });
+
+    it('leaves docs entries out of the tags of component entries', () => {
+      const moduleArgs = createMockModuleArgs({});
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+      const { store } = moduleArgs;
+      api.setIndex({
+        v: 5,
+        entries: {
+          'a--docs': {
+            type: 'docs',
+            id: 'a--docs',
+            title: 'a',
+            name: 'Docs',
+            tags: ['autodocs'],
+            storiesImports: [],
+            importPath: './a.ts',
+          },
+          'a--1': {
+            type: 'story',
+            subtype: 'story',
+            id: 'a--1',
+            title: 'a',
+            name: '1',
+            tags: ['autodocs', 'draft'],
+            importPath: './a.ts',
+          },
+          'a--2': {
+            type: 'story',
+            subtype: 'story',
+            id: 'a--2',
+            title: 'a',
+            name: '2',
+            tags: ['draft'],
+            importPath: './a.ts',
+          },
+        },
+      });
+      const { index } = store.getState();
+      expect(index!.a).toMatchObject({ type: 'component', tags: ['draft'] });
+    });
+
+    it('uses the docs entries for the tags of a component entry when no story is shown', () => {
+      const onlyDocs: API_FilterFunction = (entry) => entry.type === 'docs';
+      const moduleArgs = createMockModuleArgs({ initialState: { filters: { onlyDocs } } });
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+      const { store } = moduleArgs;
+      api.setIndex({
+        v: 5,
+        entries: {
+          'a--docs': {
+            type: 'docs',
+            id: 'a--docs',
+            title: 'a',
+            name: 'Docs',
+            tags: ['autodocs', 'draft'],
+            storiesImports: [],
+            importPath: './a.ts',
+          },
+          'a--1': {
+            type: 'story',
+            subtype: 'story',
+            id: 'a--1',
+            title: 'a',
+            name: '1',
+            tags: ['autodocs'],
+            importPath: './a.ts',
+          },
+        },
+      });
+      const { filteredIndex } = store.getState();
+      expect(filteredIndex!.a).toMatchObject({
+        type: 'component',
+        children: ['a--docs'],
+        tags: ['autodocs', 'draft'],
+      });
+    });
+
+    it('leaves docs pages of nested titles out of the tags of component entries', () => {
+      const docsPage = (id: string, title: string): API_PreparedIndexEntry => ({
+        type: 'docs',
+        id,
+        title,
+        name: id,
+        tags: ['dev', 'unattached-mdx'],
+        storiesImports: [],
+        importPath: `./${id}.mdx`,
+      });
+      const indexWithGuides = (guides: API_PreparedIndexEntry[]) => {
+        const moduleArgs = createMockModuleArgs({});
+        const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+        api.setIndex({
+          v: 5,
+          entries: Object.fromEntries(
+            [
+              {
+                type: 'story',
+                subtype: 'story',
+                id: 'c-button--primary',
+                title: 'C/Button',
+                name: 'Primary',
+                tags: ['dev', 'beta'],
+                importPath: './button.ts',
+              } as API_PreparedIndexEntry,
+              ...guides,
+            ].map((entry) => [entry.id, entry])
+          ),
+        });
+        return moduleArgs.store.getState().index!['c-button'];
+      };
+
+      const oneGuide = [docsPage('c-button-guides--usage', 'C/Button/Guides')];
+      const twoGuides = [...oneGuide, docsPage('c-button-guides--theming', 'C/Button/Guides')];
+      expect(indexWithGuides(oneGuide)).toMatchObject({ type: 'component', tags: ['dev', 'beta'] });
+      expect(indexWithGuides(twoGuides)).toMatchObject({
+        type: 'component',
+        tags: ['dev', 'beta'],
       });
     });
 

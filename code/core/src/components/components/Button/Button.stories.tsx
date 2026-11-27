@@ -15,11 +15,7 @@ const meta = preview.meta({
   args: { onClick: fn() },
 });
 
-const Stack = styled.div({
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '1rem',
-});
+const Stack = styled.div({ display: 'flex', flexDirection: 'column', gap: '1rem' });
 
 const Row = styled.div({ display: 'flex', alignItems: 'center', gap: '1rem' });
 

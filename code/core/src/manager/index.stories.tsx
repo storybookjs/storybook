@@ -213,7 +213,7 @@ export const FocusRegionShortcuts = meta.story({
         const region = canvasElement.querySelector(`#${id}`) as HTMLElement;
         await waitFor(() => expect(region).toHaveFocus());
         // The landmark focus ring, in the theme's primary colour.
-        expect(getComputedStyle(region, '::after').outline).toBe('rgb(255, 71, 133) solid 2px');
+        expect(getComputedStyle(region, '::after').outline).toBe('2px solid rgb(255, 71, 133)');
       });
     }
 

@@ -1,11 +1,10 @@
 # The tag must match the `playwright` version in package.json: the evidence tools load that package
 # from the mounted node_modules and launch the browsers baked into this image.
-FROM mcr.microsoft.com/playwright:v1.58.2-noble
+FROM mcr.microsoft.com/playwright:v1.65.1-noble
 
 RUN apt-get update && apt-get install -y --no-install-recommends build-essential curl git jq \
   && rm -rf /var/lib/apt/lists/*
 
-# The base image's Node is older than what current projects' dependencies accept.
 ARG N_VERSION=11.0.0
 ARG NODE_VERSION=24.22.2
 RUN npm install -g "n@$N_VERSION" && N_PREFIX=/usr/local n "$NODE_VERSION" && node --version

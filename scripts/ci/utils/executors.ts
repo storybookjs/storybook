@@ -69,7 +69,7 @@ export const executors = {
         environment: {
           NODE_OPTIONS: '--max_old_space_size=6144',
         },
-        image: 'mcr.microsoft.com/playwright:v1.58.2-noble',
+        image: 'mcr.microsoft.com/playwright:v1.65.1-noble',
       },
     ],
     parameters: {

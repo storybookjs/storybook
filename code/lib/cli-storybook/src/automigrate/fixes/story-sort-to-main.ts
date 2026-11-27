@@ -37,7 +37,11 @@ export const storySortToMain: Fix<StorySortToMainOptions> = {
     const storySort = preview.getValue(storySortPath);
     // The main config is visited first, so its hook learns here whether the preview edit will fail.
     preview.remove(storySortPath);
-    return { storySort, previewProblem: firstProblem(preview) };
+    const problem = firstProblem(preview);
+    return {
+      storySort,
+      previewProblem: problem && `${previewConfigPath} cannot be edited: ${problem}`,
+    };
   },
 
   prompt: () =>

@@ -64,6 +64,51 @@ describe('main.ts under plain Node, as the CircleCI setup job runs it', () => {
     expect(config).toContain('project/code/core/node_modules');
   });
 
+  const generateConfig = (workflow: string) => {
+    const result = generate(`--workflow=${workflow}`, '--base-ref=HEAD', '--branch=feature');
+    expect(result.status, result.stderr).toBe(0);
+    return JSON.parse(readFileSync(join(repoRoot, '.circleci/config.generated.yml'), 'utf8'));
+  };
+
+  const requiresOf = (config: any, job: string) =>
+    Object.values(config.workflows as Record<string, { jobs: unknown[] }>)[0]
+      .jobs.flatMap((entry) => (typeof entry === 'object' && entry ? Object.entries(entry) : []))
+      .find(([id]) => id === job)?.[1].requires;
+
+  const stepNames = (config: any, job: string) =>
+    config.jobs[job].steps.map((step: any) => step.run?.name).filter(Boolean);
+
+  it('starts the Windows unit job whatever the outcome of tests--linux, but only after build--windows', () => {
+    expect(requiresOf(generateConfig('windows'), 'tests-unit--windows')).toEqual([
+      'build--windows',
+      { 'tests--linux': 'terminal' },
+    ]);
+  });
+
+  it.each([
+    { workflow: 'windows', cancels: false },
+    { workflow: 'normal,windows', cancels: false },
+    { workflow: 'daily', cancels: false },
+    { workflow: 'normal', cancels: true },
+  ])(
+    'cancels the run on a tests--linux failure in $workflow: $cancels',
+    ({ workflow, cancels }) => {
+      expect(
+        stepNames(generateConfig(workflow), 'tests--linux').includes('Cancel current workflow')
+      ).toBe(cancels);
+    }
+  );
+
+  it.each([
+    { workflow: 'windows', full: undefined },
+    { workflow: 'windows-full', full: 'true' },
+  ])('runs every unit test file on Windows in $workflow: $full', ({ workflow, full }) => {
+    const step = generateConfig(workflow).jobs['tests-unit--windows'].steps.find(
+      (candidate: any) => candidate.run?.name === 'Run OS-sensitive unit tests'
+    );
+    expect(step.run.environment.STORYBOOK_WINDOWS_UNIT_FULL).toBe(full);
+  });
+
   it.each([{ args: [] }, { args: ['--workflow=unknown'] }])('rejects $args', ({ args }) => {
     const result = generate(...args);
 

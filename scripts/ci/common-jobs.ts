@@ -22,7 +22,7 @@ import {
   workflow,
   workspace,
 } from './utils/helpers.ts';
-import { isTrustedAuthor } from './utils/runtime.ts';
+import { isTrustedAuthor, isWindowsUnitFull, isWindowsUnitInRun } from './utils/runtime.ts';
 import { type JobOrNoOpJob, defineJob, defineNoOpJob } from './utils/types.ts';
 
 const codeDir = new URL('../../code/', import.meta.url);
@@ -119,6 +119,17 @@ export const fmt = defineJob('Format check', () => ({
   ],
 }));
 
+/**
+ * What `tests-unit--windows` needs from `build--windows`. It restores these from a cache instead of
+ * attaching the workspace: it also requires `tests--linux`, and attaching would unpack every Linux
+ * layer upstream of that too, 1.3 GB that took 8 minutes to extract on Windows.
+ */
+const WINDOWS_BUILD_PATHS = packageDirs.flatMap((p) => [
+  `code/${p.replace('src', 'dist')}`,
+  `code/${p.replace('src', 'node_modules')}`,
+]);
+const WINDOWS_BUILD_CACHE_KEY = 'v1-windows-unit-build-{{ .Revision }}';
+
 export const build_windows = defineJob('Build (windows)', () => ({
   executor: {
     name: 'win/default',
@@ -133,16 +144,12 @@ export const build_windows = defineJob('Build (windows)', () => ({
     git.check(),
     verdaccio.start(),
     workspace.persist(
-      [
-        ...packageDirs.flatMap((p) => [
-          `code/${p.replace('src', 'dist')}`,
-          `code/${p.replace('src', 'node_modules')}`,
-        ]),
-        `.verdaccio-cache`,
-        `code/bench`,
-      ],
+      [...WINDOWS_BUILD_PATHS, `.verdaccio-cache`, `code/bench`],
       `${WINDOWS_ROOT_DIR}\\${WORKING_DIR}`
     ),
+    // Keyed by commit, so no other commit's run can restore it; that is why it skips the
+    // trusted-author gate of `installWithCache`.
+    cache.persist(WINDOWS_BUILD_PATHS, WINDOWS_BUILD_CACHE_KEY),
   ],
 }));
 
@@ -414,10 +421,13 @@ const UNIT_TEST_REPORTERS =
 /**
  * The Linux unit job records which test files reach an OS-dependent API (see
  * scripts/ci/os-probe/probe.ts) and hands the manifest to the Windows unit job of the same run
- * through the workspace. Both paths are gitignored, so `git.check()` stays clean.
+ * through a cache keyed by commit. Both paths are gitignored, so `git.check()` stays clean.
  */
 const OS_PROBE_RECORDS_DIR = '.cache/os-probe/records';
 const OS_PROBE_MANIFEST = '.cache/os-probe/manifest.json';
+const OS_PROBE_MANIFEST_CACHE_KEY = 'v1-os-probe-manifest-{{ .Revision }}';
+/** Written by a full Windows run: failed test files the manifest would have skipped. */
+const OS_PROBE_MISSES = '.cache/os-probe/misses.txt';
 
 export const testsUnit_linux = defineJob(
   'Tests (linux)',
@@ -439,18 +449,28 @@ export const testsUnit_linux = defineJob(
         },
       },
       testResults.persist(`test-results`),
+      // Also after failing tests: Vitest still ran every file, and a file without a record runs
+      // on Windows.
       {
         run: {
           name: 'Build OS-sensitivity manifest',
+          when: 'always',
           command: `node scripts/ci/os-probe/manifest.ts build ${OS_PROBE_RECORDS_DIR} ${OS_PROBE_MANIFEST}`,
         },
       },
-      // Rooted at the checkout, so it lands in the checkout where the Windows job attaches.
-      workspace.persist([OS_PROBE_MANIFEST], `${LINUX_ROOT_DIR}/${WORKING_DIR}`),
+      {
+        save_cache: {
+          key: OS_PROBE_MANIFEST_CACHE_KEY,
+          paths: [OS_PROBE_MANIFEST],
+          when: 'always',
+        },
+      },
       artifact.persist(OS_PROBE_MANIFEST, 'os-probe-manifest.json'),
 
       git.check(),
-      ...workflow.cancelOnFailure(),
+      // The Windows unit job selects its tests from this job's manifest; a failure here must not
+      // cancel it.
+      ...(isWindowsUnitInRun() ? [] : workflow.cancelOnFailure()),
     ],
   }),
   [commonJobsNoOpJob]
@@ -639,7 +659,16 @@ export const testUnit_windows = defineJob(
     steps: [
       git.checkout({ forceHttps: true }),
       node.installOnWindows(),
-      workspace.attach(`${WINDOWS_ROOT_DIR}\\${WORKING_DIR}`),
+      cache.attach([WINDOWS_BUILD_CACHE_KEY]),
+      {
+        run: {
+          name: 'Check the Windows build was restored',
+          command:
+            'test -d code/core/dist || { echo "build--windows saved no build cache for this commit"; exit 1; }',
+        },
+      },
+      // Missing when `tests--linux` failed before writing it; then every test file runs.
+      cache.attach([OS_PROBE_MANIFEST_CACHE_KEY]),
       {
         run: {
           name: 'Install dependencies',
@@ -650,7 +679,10 @@ export const testUnit_windows = defineJob(
       {
         run: {
           name: 'Run OS-sensitive unit tests',
-          environment: { NODE_OPTIONS: '--max_old_space_size=4096' },
+          environment: {
+            NODE_OPTIONS: '--max_old_space_size=4096',
+            ...(isWindowsUnitFull() ? { STORYBOOK_WINDOWS_UNIT_FULL: 'true' } : {}),
+          },
           command: `node scripts/ci/os-probe/manifest.ts run ${OS_PROBE_MANIFEST} '${JSON.stringify(
             {
               project: ['!agent-eval'],
@@ -661,10 +693,13 @@ export const testUnit_windows = defineJob(
         },
       },
       testResults.persist(`test-results`),
+      artifact.persist(OS_PROBE_MISSES, 'os-probe-misses.txt'),
     ],
   }),
-  // `tests--linux` writes the manifest this job selects test files from.
-  [build_windows, testsUnit_linux]
+  // `tests--linux` writes the manifest this job selects test files from. Whatever its outcome,
+  // this job runs.
+  [build_windows, testsUnit_linux],
+  { runsEvenIfRequirementsFail: [testsUnit_linux] }
 );
 
 export const defineCircleciCompletion = (requires: JobOrNoOpJob[]) =>

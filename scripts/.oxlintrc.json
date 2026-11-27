@@ -6,5 +6,20 @@
       "version": "18.2.0"
     }
   },
-  "ignorePatterns": ["**/*.vue", "**/*.svelte", "storage", "repros-generator", "sandbox/fixtures"]
+  "jsPlugins": [{ "name": "local-rules", "specifier": "./eslint-plugin-local-rules/index.js" }],
+  "ignorePatterns": ["**/*.vue", "**/*.svelte", "storage", "repros-generator", "sandbox/fixtures"],
+  "overrides": [
+    {
+      "files": ["**/*.ts", "**/*.tsx", "**/*.js", "**/*.mjs"],
+      "rules": {
+        "local-rules/no-module-scope-platform-check": "error"
+      }
+    },
+    {
+      "files": ["**/*.test.*", "**/*.spec.*", "**/__tests__/**", "eslint-plugin-local-rules/**"],
+      "rules": {
+        "local-rules/no-module-scope-platform-check": "off"
+      }
+    }
+  ]
 }

@@ -7,15 +7,15 @@ import { executors } from './utils/executors.ts';
 import { cancelWorkflowStep, ensureRequiredJobs } from './utils/helpers.ts';
 import { orbs } from './utils/orbs.ts';
 import { parameters } from './utils/parameters.ts';
-import { setTrustedAuthor } from './utils/runtime.ts';
+import { setTrustedAuthor, setWindowsUnitFull, setWindowsUnitInRun } from './utils/runtime.ts';
 import type { JobImplementationObj, NoOpJobImplementationObj } from './utils/types.ts';
-import { type Workflow, workflows } from './utils/types.ts';
+import { type Workflow, isWindowsWorkflow, workflows } from './utils/types.ts';
 import { getJobs } from './workflow-jobs.ts';
 
 const dirname = import.meta.dirname;
 
 /** Workflows that a PR can merge on, so they end in the `circleci-completion` status check. */
-const isMergeGating = (workflow: Workflow) => workflow !== 'windows';
+const isMergeGating = (workflow: Workflow) => !isWindowsWorkflow(workflow);
 
 /**
  * Generate the CircleCI config for the union of the given workflows.
@@ -111,7 +111,11 @@ function generateConfig(selected: Workflow[], baseRef: string, nightly: boolean)
             ? {
                 [t.id]: {
                   requires: t.requires.map((r) =>
-                    t.runsEvenIfRequirementsFail ? { [r.id]: 'terminal' } : r.id
+                    t.runsEvenIfRequirementsFail === true ||
+                    (Array.isArray(t.runsEvenIfRequirementsFail) &&
+                      t.runsEvenIfRequirementsFail.includes(r))
+                      ? { [r.id]: 'terminal' }
+                      : r.id
                   ),
                 },
               }
@@ -144,6 +148,12 @@ if (unknown.length > 0 || requested.length === 0) {
 }
 const selected = workflows.filter((w) => requested.includes(w));
 const nightly = selected.includes('daily') && opts.branch === 'next';
+setWindowsUnitInRun(selected.some((w) => w === 'daily' || isWindowsWorkflow(w)));
+// Once a week, on the Sunday nightly, Windows runs every unit test file. Its failures that the
+// selection would have skipped are what the probe misses. The nightly starts at 23:42 UTC; going
+// back two hours keeps a run that queues past midnight on Sunday.
+const nightlyDay = new Date(Date.now() - 2 * 60 * 60 * 1000).getUTCDay();
+setWindowsUnitFull(selected.includes('windows-full') || (nightly && nightlyDay === 0));
 
 await fs.writeFile(
   join(dirname, '../../.circleci/config.generated.yml'),

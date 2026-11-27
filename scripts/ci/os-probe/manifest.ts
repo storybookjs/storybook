@@ -6,13 +6,16 @@
  *
  * - `node scripts/ci/os-probe/manifest.ts build <probe-dir> <manifest>`
  * - `node scripts/ci/os-probe/manifest.ts run <manifest> [vitest options as JSON]`
+ *
+ * With `STORYBOOK_WINDOWS_UNIT_FULL=true`, `run` runs every test file and writes the failed ones
+ * the manifest would have skipped, the probe's misses, to `misses.txt` beside the manifest.
  */
 import { execFile } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { readFile, readdir, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
 import { promisify } from 'node:util';
 
-import { join } from 'pathe';
+import { dirname, join, relative } from 'pathe';
 
 type Hit = { api: string; frame: string };
 type ManifestEntry = { hash: string; hits: Hit[] };
@@ -90,36 +93,76 @@ export async function selectTests(manifest: Manifest, testFiles: string[]): Prom
 }
 
 const readManifest = async (file: string): Promise<Manifest | undefined> => {
+  let manifest: Manifest;
   try {
-    const manifest = JSON.parse(await readFile(file, 'utf8')) as Manifest;
-    return manifest.version === MANIFEST_VERSION ? manifest : undefined;
+    manifest = JSON.parse(await readFile(file, 'utf8')) as Manifest;
   } catch {
     return undefined;
   }
+  const revision = process.env.CIRCLE_SHA1;
+  if (manifest.version !== MANIFEST_VERSION) {
+    return undefined;
+  }
+  if (revision && manifest.revision !== revision) {
+    console.log(`The manifest is from ${manifest.revision}, not ${revision}.`);
+    return undefined;
+  }
+  return manifest;
 };
 
 async function run(manifestFile: string, vitestOptions: Record<string, unknown>) {
   const { startVitest } = await import('vitest/node');
+  const full = process.env.STORYBOOK_WINDOWS_UNIT_FULL === 'true';
   const manifest = await readManifest(manifestFile);
-  let filters: string[] = [];
+  const testFiles = await listTestFiles();
+  const selection = manifest && (await selectTests(manifest, testFiles));
 
-  if (!manifest) {
+  if (!selection) {
     console.log(`No usable manifest at ${manifestFile}; running every test file.`);
   } else {
-    const { selected, reasons } = await selectTests(manifest, await listTestFiles());
+    const { selected, reasons } = selection;
     console.log(
-      `Manifest from ${manifest.revision ?? 'unknown revision'}: running ${selected.length} test files ` +
-        `(${reasons.sensitive} OS-sensitive, ${reasons.changed} changed, ${reasons.unknown} new), ` +
-        `skipping ${reasons.skipped}.`
+      `Manifest from ${manifest.revision ?? 'unknown revision'}: ${selected.length} test files ` +
+        `selected (${reasons.sensitive} OS-sensitive, ${reasons.changed} changed, ${reasons.unknown} new), ` +
+        `${reasons.skipped} skipped.`
     );
-    if (selected.length === 0) {
-      return;
-    }
-    filters = selected;
+  }
+  if (full) {
+    console.log('Full run requested; running every test file.');
+  } else if (selection?.selected.length === 0) {
+    return;
   }
 
+  const filters = full || !selection ? [] : selection.selected;
   const vitest = await startVitest('test', filters, { run: true, ...vitestOptions });
+  if (vitest && full && selection) {
+    const selected = new Set(selection.selected);
+    // Only files the selection decides on; type tests, for one, never run in a selected run.
+    const selectable = new Set(testFiles);
+    const failed = vitest.state
+      .getTestModules()
+      .filter((testModule) => testModule.state() === 'failed')
+      .map((testModule) => relative(process.cwd(), testModule.moduleId));
+    // A file in two projects fails in each.
+    const misses = [...new Set(failed)]
+      .filter((file) => selectable.has(file) && !selected.has(file))
+      .sort();
+    const missesFile = join(dirname(manifestFile), 'misses.txt');
+    await mkdir(dirname(missesFile), { recursive: true });
+    await writeFile(missesFile, misses.map((file) => `${file}\n`).join(''));
+    console.log(
+      misses.length === 0
+        ? 'Every failed test file was selected; the probe missed none.'
+        : `The probe missed ${misses.length} failed test files, listed in ${missesFile}:\n${misses.join('\n')}`
+    );
+  }
   await vitest?.close();
+  // `tests--linux` writes the manifest even when its tests fail, so on CI a missing one means the
+  // handoff broke. The tests ran in full; the job still fails so the break does not go unseen.
+  if (!selection && process.env.CIRCLECI) {
+    console.error(`No usable manifest at ${manifestFile} from tests--linux.`);
+    process.exitCode = 1;
+  }
 }
 
 const [command, ...args] = process.argv.slice(2);

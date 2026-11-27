@@ -204,6 +204,10 @@ function installTraps(state: ProbeState) {
   syncBuiltinESMExports();
 }
 
+const hasFailed = (task: { result?: { state?: string }; tasks?: unknown[] }): boolean =>
+  task.result?.state === 'fail' ||
+  (task.tasks ?? []).some((child) => hasFailed(child as Parameters<typeof hasFailed>[0]));
+
 if (outDir) {
   const state = getState();
   const file = expect.getState().testPath;
@@ -213,7 +217,8 @@ if (outDir) {
     state.phase = 'run';
   });
 
-  afterAll(async () => {
+  // Vitest passes the file's suite as the second argument.
+  afterAll(async ({}, suite) => {
     if (!file) {
       return;
     }
@@ -221,6 +226,10 @@ if (outDir) {
     const relative = file.slice(repoRoot.length + 1);
     const hits = state.hits.get(file) ?? [];
     state.hits.delete(file);
+    // A test that failed may have stopped before it reached an OS-dependent call.
+    if (hasFailed(suite)) {
+      hits.unshift({ api: 'failed on Linux', frame: relative });
+    }
     const name = createHash('sha1').update(relative).digest('hex');
     await mkdir(outDir, { recursive: true });
     await writeFile(`${outDir}/${name}.json`, JSON.stringify({ file: relative, hits }));

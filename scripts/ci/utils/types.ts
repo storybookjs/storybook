@@ -6,8 +6,11 @@ export type Job<K extends string> = {
   name: K;
   implementation: (workflow: Workflow) => JobImplementationObj | NoOpJobImplementationObj;
   requires: JobOrNoOpJob[];
-  /** Start once the required jobs have finished in any state, instead of only after they succeed. */
-  runsEvenIfRequirementsFail?: boolean;
+  /**
+   * Start once the required jobs have finished in any state, instead of only after they succeed:
+   * all of them, or only the listed ones.
+   */
+  runsEvenIfRequirementsFail?: boolean | JobOrNoOpJob[];
 };
 
 export type JobOrNoOpJob = Job<string>;
@@ -112,9 +115,13 @@ export function defineNoOpJob<K extends string>(name: K, requires = [] as JobOrN
 }
 
 /** Ordered from most to least thorough; a union config reports failures as its first workflow. */
-export const workflows = ['daily', 'normal', 'focus', 'docs', 'windows'] as const;
+export const workflows = ['daily', 'normal', 'focus', 'docs', 'windows', 'windows-full'] as const;
 
 export type Workflow = (typeof workflows)[number];
+
+/** `windows-full` is `windows` with every unit test file on Windows, not only the OS-sensitive ones. */
+export const isWindowsWorkflow = (workflow: Workflow) =>
+  workflow === 'windows' || workflow === 'windows-full';
 
 /**
  * Checks if the current workflow is at least the minimum workflow.

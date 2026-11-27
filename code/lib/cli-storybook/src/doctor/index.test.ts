@@ -6,7 +6,12 @@ import { MainFileMissingError } from 'storybook/internal/server-errors';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import * as mainConfigFile from '../automigrate/helpers/mainConfigFile.ts';
-import { doctor, getDoctorDiagnostics } from './index.ts';
+import {
+  collectDeduplicatedDiagnostics,
+  collectDoctorResultsByProject,
+  doctor,
+  getDoctorDiagnostics,
+} from './index.ts';
 import type { DoctorCheckResult } from './types.ts';
 import { DiagnosticType } from './types.ts';
 
@@ -224,6 +229,54 @@ describe('getDoctorDiagnostics deprecated packages check', () => {
 
     expect(deprecationDiagnostics(results)).toHaveLength(1);
     expect(deprecationDiagnostics(results)[0].message).toContain('- @storybook/nextjs');
+  });
+});
+
+describe('collectDeduplicatedDiagnostics', () => {
+  const packageManagerWith = (dependencies: Record<string, string>) =>
+    ({
+      packageJsonPaths: ['package.json'],
+      getAllDependencies: () => dependencies,
+      findInstallations: async () => undefined,
+      getOverrideSources: () => [],
+    }) as unknown as JsPackageManager;
+
+  it('merges deprecation messages across projects with different deprecated packages', async () => {
+    const projectResults = await collectDoctorResultsByProject([
+      {
+        configDir: 'apps/web',
+        packageManager: packageManagerWith({
+          storybook: '^11.0.0',
+          '@storybook/addon-notes': '^5.0.0',
+        }),
+        storybookVersion: '11.0.0',
+        mainConfig: {} as StorybookConfigRaw,
+      },
+      {
+        configDir: 'apps/docs',
+        packageManager: packageManagerWith({
+          storybook: '^11.0.0',
+          '@storybook/nextjs': '^11.0.0',
+        }),
+        storybookVersion: '11.0.0',
+        mainConfig: {} as StorybookConfigRaw,
+      },
+    ]);
+
+    const deprecations = collectDeduplicatedDiagnostics(projectResults).filter(
+      ({ type }) => type === DiagnosticType.DEPRECATED_PACKAGES
+    );
+
+    // Each project's message is built from its own dependencies, so both texts must survive.
+    expect(deprecations).toHaveLength(1);
+    expect(deprecations[0].message).toContain('- @storybook/addon-notes is deprecated.');
+    expect(deprecations[0].message).toContain(
+      '- @storybook/nextjs is deprecated and will be removed in Storybook 12.'
+    );
+    expect(deprecations[0].projects.map(({ configDir }) => configDir)).toEqual([
+      'apps/web',
+      'apps/docs',
+    ]);
   });
 });
 

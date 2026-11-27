@@ -4,27 +4,20 @@ import { logger, prompt } from 'storybook/internal/node-logger';
 
 import { confirmWebpackFinalCarryover } from './webpack-final-preflight.ts';
 
-vi.mock('storybook/internal/node-logger', () => ({
-  logger: {
-    logBox: vi.fn(),
-    log: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn(),
-    info: vi.fn(),
-    debug: vi.fn(),
-    step: vi.fn(),
-    SYMBOLS: { success: '✔', error: '✕' },
-  },
-  prompt: {
-    confirm: vi.fn(),
-  },
-}));
+vi.mock('storybook/internal/node-logger', { spy: true });
 
 // One test of the helper's return value covers both Webpack-to-Vite fixes: the runner reports a
 // migration as skipped exactly when this resolves false, interactively declined or not.
 describe('confirmWebpackFinalCarryover', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(logger.logBox).mockImplementation(() => {});
+    vi.mocked(logger.log).mockImplementation(() => {});
+    vi.mocked(logger.warn).mockImplementation(() => {});
+    vi.mocked(logger.error).mockImplementation(() => {});
+    vi.mocked(logger.info).mockImplementation(() => {});
+    vi.mocked(logger.debug).mockImplementation(() => {});
+    vi.mocked(logger.step).mockImplementation(() => {});
   });
 
   it('resolves true without a prompt or box when there is no webpackFinal hook', async () => {

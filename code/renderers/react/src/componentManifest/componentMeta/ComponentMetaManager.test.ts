@@ -1020,6 +1020,27 @@ describe('multi-project management', () => {
     );
 
     it.skipIf(DOCGEN_TS_API === 'native')(
+      'keeps the parsed files across two recycles in a row',
+      { timeout: 30_000 },
+      () => {
+        const { button } = setup();
+        manager.batchExtract([button]);
+        const parsed = manager
+          .getProjectForFile(button.storyPath)
+          .getSourceFile(button.component.path);
+
+        extractUnderHeapPressure([button]);
+        const afterFirst = manager.getProjectForFile(button.storyPath);
+        extractUnderHeapPressure([button]);
+
+        const afterSecond = manager.getProjectForFile(button.storyPath);
+        expect(afterSecond).not.toBe(afterFirst);
+        expect(parsed).toBeDefined();
+        expect(afterSecond.getSourceFile(button.component.path)).toBe(parsed);
+      }
+    );
+
+    it.skipIf(DOCGEN_TS_API === 'native')(
       'parses the files of a project the batch did not use again',
       { timeout: 30_000 },
       () => {

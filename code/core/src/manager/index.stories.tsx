@@ -15,7 +15,7 @@ import { getChannel, setChannel } from 'storybook/internal/channels';
 
 import type { API, AddonStore } from 'storybook/manager-api';
 import { addons } from 'storybook/manager-api';
-import { expect, screen, waitFor, within } from 'storybook/test';
+import { expect, screen, spyOn, waitFor, within } from 'storybook/test';
 import { color } from 'storybook/theming/emotion';
 
 import preview from '../../../.storybook/preview.tsx';
@@ -256,6 +256,37 @@ export const LandmarkNavigationFromPreview = meta.story({
       const toolbar = canvasElement.querySelector('[aria-labelledby="sb-preview-toolbar-title"]');
       await waitFor(() => expect(toolbar).toHaveFocus());
     });
+  },
+});
+
+export const LandmarkNavigationWithReducedMotion = meta.story({
+  beforeEach: () => {
+    const matchMedia = window.matchMedia.bind(window);
+    const spy = spyOn(window, 'matchMedia').mockImplementation((query) => {
+      const list = matchMedia(query);
+      return query === '(prefers-reduced-motion: reduce)'
+        ? Object.defineProperty(list, 'matches', { value: true })
+        : list;
+    });
+    return () => spy.mockRestore();
+  },
+  play: async ({ canvasElement }) => {
+    const iframe = canvasElement.querySelector('#storybook-preview-iframe') as HTMLElement;
+    iframe.focus();
+    channel.emit(PREVIEW_KEYDOWN, {
+      event: {
+        key: 'F6',
+        code: 'F6',
+        shiftKey: false,
+        altKey: false,
+        ctrlKey: false,
+        metaKey: false,
+      },
+    });
+
+    const panel = canvasElement.querySelector(`#${focusableUIElements.addonPanel}`)!;
+    await waitFor(() => expect(panel).toHaveFocus());
+    expect(panel.getAnimations({ subtree: true })).toHaveLength(0);
   },
 });
 

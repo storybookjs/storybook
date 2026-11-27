@@ -1,7 +1,13 @@
 import { UnknownArgTypesError } from 'storybook/internal/preview-errors';
 import type { SBType } from 'storybook/internal/types';
 
-import { countOpenStringIdioms, isStringLiteralValue, parseLiteral } from '../utils.ts';
+import {
+  isOpenStringMember,
+  isParenthesizedOpenStringMember,
+  isStringLiteralValue,
+  parseLiteral,
+  splitTopLevelUnionMembers,
+} from '../utils.ts';
 import type { TSIntersectionType, TSSigType, TSType } from './types.ts';
 
 // Type guards for narrowing TSType discriminant unions
@@ -99,13 +105,18 @@ export const convert = (type: TSType): SBType | void => {
       // shapes: parenthesized members become `{ name: 'unknown' }` (which carries no
       // raw text, so one `unknown` cannot be told from another), and bare
       // `string & {}` becomes an intersection of `string` and an empty object
-      // signature. Because an `unknown` member is indistinguishable from other
-      // unresolved types, the union collapses only when the idiom appears at least
-      // as many times in the raw text as there are `unknown` members; otherwise the
-      // union would silently treat types like `(Foo)` as strings. Mixed unions like
-      // `'sm' | 42 | (string & {})` keep their type.
+      // signature. The idiom is counted per top-level union member: a count over
+      // the whole raw text would also fire on nested uses like `Array<string & {}>`
+      // or partial text like `mystring & {}`, and a parenthesized idiom must
+      // "pay for" every `unknown` member or types like `(Foo)` would silently be
+      // treated as strings. Mixed unions like `'sm' | 42 | (string & {})` keep
+      // their type.
       if (typeof raw === 'string') {
-        const idiomCount = countOpenStringIdioms(raw);
+        const members = splitTopLevelUnionMembers(raw);
+        const parenthesizedIdioms = members.filter(isParenthesizedOpenStringMember).length;
+        const bareIdioms = members.filter(
+          (member) => isOpenStringMember(member) && !isParenthesizedOpenStringMember(member)
+        ).length;
         const unknownCount = nonUndefinedElements.filter(
           (element) => element.name === 'unknown'
         ).length;
@@ -117,8 +128,8 @@ export const convert = (type: TSType): SBType | void => {
             collapsesToString(element)
         );
         if (
-          idiomCount >= Math.max(unknownCount, 1) &&
-          unknownCount + nonUndefinedElements.filter(collapsesToString).length > 0 &&
+          parenthesizedIdioms >= unknownCount &&
+          parenthesizedIdioms + bareIdioms > 0 &&
           allStringCompatible
         ) {
           return { ...base, name: 'string' };

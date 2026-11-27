@@ -14,6 +14,8 @@ interface Props {
   withNull?: 'a' | 'b' | null;
   mixedUnion?: 'a' | Custom;
   mixedOpen?: 'sm' | 42 | (string & {});
+  nestedIdiom?: 'a' | Array<string & {}>;
+  unresolvedBare?: 'a' | (string & {}) | Custom;
 }
 
 export const Component: FC<Props> = (props: Props) => <>JSON.stringify(props)</>;

@@ -410,6 +410,48 @@ describe('storybook type system', () => {
                 "value": "unknown"
               }
             ]
+          },
+          "nestedIdiom": {
+            "raw": "'a' | Array<string & {}>",
+            "name": "union",
+            "value": [
+              {
+                "name": "other",
+                "value": "literal"
+              },
+              {
+                "raw": "Array<string & {}>",
+                "name": "array",
+                "value": [
+                  {
+                    "name": "string",
+                    "raw": "string & {}"
+                  }
+                ]
+              }
+            ]
+          },
+          "unresolvedBare": {
+            "raw": "'a' | (string & {}) | Custom",
+            "name": "union",
+            "value": [
+              {
+                "name": "other",
+                "value": "literal"
+              },
+              {
+                "name": "other",
+                "value": "unknown"
+              },
+              {
+                "raw": "'x' | 'y'",
+                "name": "enum",
+                "value": [
+                  "x",
+                  "y"
+                ]
+              }
+            ]
           }
         }
       `);
@@ -422,6 +464,9 @@ describe('storybook type system', () => {
           name: 'enum',
           value: [{ value: '"sm"' }, { value: '"md"' }, { value: 'string & {}' }],
         },
+        required: false,
+        description: '',
+        defaultValue: null,
       } satisfies DocgenInfo;
       expect(convert(openEnum)).toMatchInlineSnapshot(`
         {
@@ -435,6 +480,9 @@ describe('storybook type system', () => {
           name: 'enum',
           value: [{ value: '"sm"' }, { value: '42' }, { value: 'string & {}' }],
         },
+        required: false,
+        description: '',
+        defaultValue: null,
       } satisfies DocgenInfo;
       expect(convert(mixedEnum)).toMatchInlineSnapshot(`
         {
@@ -446,6 +494,18 @@ describe('storybook type system', () => {
           ]
         }
       `);
+
+      // A member that only contains the idiom is not an open string.
+      const nestedEnum = {
+        type: {
+          name: 'enum',
+          value: [{ value: '"a"' }, { value: 'Array<string & {}>' }],
+        },
+        required: false,
+        description: '',
+        defaultValue: null,
+      } satisfies DocgenInfo;
+      expect(convert(nestedEnum)?.name).toBe('enum');
     });
     it('arrays', () => {
       const input = readFixture('typescript/arrays.tsx');

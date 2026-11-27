@@ -2,7 +2,7 @@ import type { SBType } from 'storybook/internal/types';
 
 import { mapValues } from 'es-toolkit/object';
 
-import { isOpenStringIdiom, isStringLiteralValue, parseLiteral } from '../utils.ts';
+import { isOpenStringMember, isStringLiteralValue, parseLiteral } from '../utils.ts';
 import type { PTType } from './types.ts';
 
 const SIGNATURE_REGEXP = /^\(.*\) => /;
@@ -23,10 +23,10 @@ export const convert = (type: PTType): SBType | any => {
       if (
         !computed &&
         Array.isArray(value) &&
-        value.some((v: PTType) => typeof v.value === 'string' && isOpenStringIdiom(v.value)) &&
+        value.some((v: PTType) => typeof v.value === 'string' && isOpenStringMember(v.value)) &&
         value.every(
           (v: PTType) =>
-            (typeof v.value === 'string' && isOpenStringIdiom(v.value)) ||
+            (typeof v.value === 'string' && isOpenStringMember(v.value)) ||
             (typeof v.value === 'string' && isStringLiteralValue(v.value))
         )
       ) {

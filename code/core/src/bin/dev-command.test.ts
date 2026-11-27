@@ -1,4 +1,4 @@
-import { once } from 'storybook/internal/node-logger';
+import { deprecate, logger, once } from 'storybook/internal/node-logger';
 
 import { Command } from 'commander';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -6,41 +6,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { dev } from '../cli/dev.ts';
 import { registerDevCommand } from './dev-command.ts';
 
-const { warnCalls } = vi.hoisted(() => ({ warnCalls: [] as string[] }));
-
-// A self-contained node-logger stand-in (a real `logger` + warn-once `deprecate`), so the test and
-// the command under test share one consistent module instance.
-vi.mock('storybook/internal/node-logger', () => {
-  const logged = new Set<string>();
-  const warn = (message: string) => {
-    warnCalls.push(message);
-  };
-  const once = (log: (message: string) => void) => (message: string) => {
-    if (logged.has(message)) {
-      return undefined;
-    }
-    logged.add(message);
-    return log(message);
-  };
-  return {
-    logger: {
-      warn,
-      error: vi.fn(),
-      log: vi.fn(),
-      intro: vi.fn(),
-      outro: vi.fn(),
-      setLogLevel: vi.fn(),
-      setLevel: vi.fn(),
-    },
-    once: Object.assign(
-      once(() => {}),
-      { clear: () => logged.clear() }
-    ),
-    deprecate: once(warn),
-  };
-});
-
-vi.mock('../cli/dev.ts', () => ({ dev: vi.fn(async () => {}) }));
+vi.mock('storybook/internal/node-logger', { spy: true });
+vi.mock('../cli/dev.ts', { spy: true });
 
 /**
  * Builds the real `dev` command on a fresh in-process Commander program (core.ts parses
@@ -77,13 +44,17 @@ const parseDev = async (argv: string[]) => {
 
 const getResolvedOptions = () => vi.mocked(dev).mock.calls.at(-1)?.[0];
 
+const warnedMessages = () => vi.mocked(logger.warn).mock.calls.map(([message]) => message);
+
 describe('dev command', () => {
   const realArgv = process.argv;
 
   beforeEach(() => {
     once.clear();
-    warnCalls.length = 0;
     vi.mocked(dev).mockClear();
+    vi.mocked(dev).mockImplementation(async () => {});
+    vi.mocked(logger.warn).mockClear();
+    vi.mocked(deprecate).mockClear();
   });
 
   afterEach(() => {
@@ -101,13 +72,14 @@ describe('dev command', () => {
   it('warns exactly once about the removal', async () => {
     await parseDev(['--no-open']);
 
-    expect(warnCalls).toHaveLength(1);
-    expect(warnCalls[0]).toMatch(/--no-open/);
-    expect(warnCalls[0]).toMatch(/--open/);
+    expect(vi.mocked(deprecate).mock.calls).toHaveLength(1);
+    expect(warnedMessages()).toHaveLength(1);
+    expect(warnedMessages()[0]).toMatch(/--no-open/);
+    expect(warnedMessages()[0]).toMatch(/--open/);
 
     // A second invocation in the same process does not repeat the warning.
     await parseDev(['--no-open']);
-    expect(warnCalls).toHaveLength(1);
+    expect(warnedMessages()).toHaveLength(1);
   });
 
   it('resolves open: false when --open and --no-open are both passed (last wins)', async () => {
@@ -115,7 +87,7 @@ describe('dev command', () => {
 
     expect(err).toEqual([]);
     expect(getResolvedOptions()?.open).toBe(false);
-    expect(warnCalls).toHaveLength(1);
+    expect(warnedMessages()).toHaveLength(1);
   });
 
   it('still parses when --no-open comes after other arguments', async () => {
@@ -128,11 +100,11 @@ describe('dev command', () => {
 
   it('does not warn and keeps opt-in --open behavior when the flag is not passed', async () => {
     await parseDev([]);
-    expect(warnCalls).toEqual([]);
+    expect(warnedMessages()).toEqual([]);
     expect(getResolvedOptions()?.open).toBe(false);
 
     await parseDev(['--open']);
-    expect(warnCalls).toEqual([]);
+    expect(warnedMessages()).toEqual([]);
     expect(getResolvedOptions()?.open).toBe(true);
   });
 });

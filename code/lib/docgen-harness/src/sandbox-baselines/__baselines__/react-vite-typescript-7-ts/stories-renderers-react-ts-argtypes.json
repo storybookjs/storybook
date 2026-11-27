@@ -1874,6 +1874,17 @@
           "description": "This is case 1.",
           "name": "case1",
           "table": {
+            "jsDocTags": {
+              "params": [
+                {
+                  "description": "React's original event.",
+                  "name": "event"
+                }
+              ],
+              "returns": {
+                "description": null
+              }
+            },
             "type": {
               "summary": "(event: SyntheticEvent<Element, Event>) => void"
             }

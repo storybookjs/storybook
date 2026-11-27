@@ -10,6 +10,7 @@ vi.mock('@clack/prompts', () => ({
   spinner: vi.fn(),
   taskLog: vi.fn(),
   log: { message: vi.fn(), success: vi.fn(), error: vi.fn() },
+  S_BAR: '│',
 }));
 
 vi.mock('../logger/log-tracker.ts', () => ({

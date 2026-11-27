@@ -1,5 +1,5 @@
 import type { Writable } from 'node:stream';
-import { stripVTControlCharacters } from 'node:util';
+import { stripVTControlCharacters, styleText } from 'node:util';
 
 import * as clack from '@clack/prompts';
 
@@ -50,10 +50,10 @@ const formatTaskLogMessage = (message: string) => {
     .join('\n');
 };
 
-// Clack wraps option lines this many columns short of the terminal, as it counts the color codes of
-// its guide bar. Fitting a hint link to that width, minus the hint's closing parenthesis, keeps a
-// link that starts its own hint line on that line.
-const CLACK_OPTION_LINE_INSET = 13;
+// Clack wraps option lines short of the terminal by the length of its guide bar prefix, color codes
+// included. Fitting a hint link to that width, minus the hint's closing parenthesis, keeps a link
+// that starts its own hint line on that line.
+const getClackOptionLineInset = (): number => `${styleText('cyan', clack.S_BAR)}  `.length;
 
 // One reason→message mapping, shared by the terminal cancel message and PromptAbortedError, so
 // the two cannot drift apart.
@@ -173,7 +173,7 @@ export class ClackPromptProvider extends PromptProvider {
     options: MultiSelectPromptOptions<T>,
     promptOptions?: PromptOptions
   ): Promise<T[]> {
-    const maxLineWidth = getTerminalWidth() - CLACK_OPTION_LINE_INSET - 1;
+    const maxLineWidth = getTerminalWidth() - getClackOptionLineInset() - 1;
     const { signal, isStdinEnded, dispose } = stdinEndAbort();
     try {
       const result = await clack.multiselect<T>({

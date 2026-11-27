@@ -79,12 +79,13 @@ const MIGRATION_URL =
   'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#parameterscomponentsubtitle-removed';
 
 // With colors, Clack wraps option lines 10 columns early, as it counts its guide bar's color codes.
+// Without colors at 100 columns, protectUrls' own URL length cap is what shortens the link.
 it.each([
   { columns: 50, FORCE_COLOR: '1', NO_COLOR: undefined, colored: true, rowWidth: 40 },
-  { columns: 50, FORCE_COLOR: '0', NO_COLOR: undefined, colored: false, rowWidth: 40 },
-  { columns: 50, FORCE_COLOR: undefined, NO_COLOR: '1', colored: false, rowWidth: 40 },
+  { columns: 50, FORCE_COLOR: '0', NO_COLOR: undefined, colored: false, rowWidth: 50 },
+  { columns: 50, FORCE_COLOR: undefined, NO_COLOR: '1', colored: false, rowWidth: 50 },
   { columns: 100, FORCE_COLOR: '1', NO_COLOR: undefined, colored: true, rowWidth: 90 },
-  { columns: 100, FORCE_COLOR: '0', NO_COLOR: undefined, colored: false, rowWidth: 90 },
+  { columns: 100, FORCE_COLOR: '0', NO_COLOR: undefined, colored: false, rowWidth: 95 },
 ])(
   'a multiselect hint link keeps its own row at $columns columns (FORCE_COLOR=$FORCE_COLOR, NO_COLOR=$NO_COLOR)',
   async ({ columns, FORCE_COLOR, NO_COLOR, colored, rowWidth }): Promise<void> => {

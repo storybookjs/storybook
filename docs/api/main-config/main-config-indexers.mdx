@@ -93,6 +93,7 @@ Type:
   subtype?: 'story' | 'test';
   rawComponentPath?: string;
   metaId?: string;
+  metaTags?: string[];
   name?: string;
   tags?: string[];
   title?: string;
@@ -155,6 +156,18 @@ Default: Auto-generated from [`title`](#title)
 Define the custom id for meta of the entry.
 
 If specified, the meta (or default export) in the CSF file _must_ have a corresponding `id` property, to be correctly matched.
+
+##### `metaTags`
+
+Type: `string[]`
+
+Default: The [`tags`](#tags) of the first entry of the file
+
+The tags of the meta (or default export) alone, before any story adds or removes tags.
+
+The docs entries of the file (the [autodocs](../../writing-docs/autodocs.mdx) page and [MDX](../../writing-docs/mdx.mdx) pages attached to it) take their tags from here. Set it to the same value on every entry of a file, so that these pages don't depend on the tags or the order of the stories.
+
+If your indexer changes the `tags` of the inputs it gets from `loadCsf`, change `metaTags` the same way when the change applies to the whole file. Otherwise the docs entries don't get the change.
 
 ##### `name`
 

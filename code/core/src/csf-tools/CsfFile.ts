@@ -1367,15 +1367,18 @@ export class CsfFile {
 
     const index: IndexInput[] = [];
 
+    // don't remove any duplicates or negations -- tags will be combined in the index
+    const metaTags = this._meta?.tags ?? [];
+
     Object.entries(this._stories).map(([exportName, story]) => {
-      // don't remove any duplicates or negations -- tags will be combined in the index
-      const tags = [...(this._meta?.tags ?? []), ...(story.tags ?? [])];
+      const tags = [...metaTags, ...(story.tags ?? [])];
       const storyInput = {
         rawComponentPath: this._rawComponentPath,
         exportName,
         title: this.meta?.title,
         metaId: this.meta?.id,
         tags,
+        metaTags: [...metaTags],
         __id: story.id,
         __stats: story.__stats,
       };

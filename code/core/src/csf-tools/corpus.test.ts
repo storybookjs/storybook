@@ -32,7 +32,7 @@ const summarize = (file: string, code: string) => {
     bindings[name] = { constant: binding.constant, uses: binding.references.length };
   }
   return {
-    indexInputs: csf.indexInputs,
+    indexInputs: csf.indexInputs.map(({ metaTags: _metaTags, ...input }) => input),
     meta: {
       title: csf._meta?.title ?? null,
       id: csf._meta?.id ?? null,

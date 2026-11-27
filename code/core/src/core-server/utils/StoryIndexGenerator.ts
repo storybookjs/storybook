@@ -91,6 +91,10 @@ const makeAbsolute = (otherImport: Path, normalizedPath: Path, workingDir: Path)
     ? slash(resolve(workingDir, normalizeStoryPath(join(dirname(normalizedPath), otherImport))))
     : otherImport;
 
+// An autodocs entry carries the tags all of its stories share, as a component does in the sidebar.
+const tagsSharedByAll = (tagsByStory: Tag[][]): Tag[] =>
+  tagsByStory.reduce((shared, tags) => shared.filter((tag) => tags.includes(tag)));
+
 type StoriesFilesByImport = Map<Path, { order: number; storiesFile: StoriesFile }[]>;
 
 // An import names a stories file by its path, with or without the last extension
@@ -435,7 +439,11 @@ export class StoryIndexGenerator {
       const { metaId } = indexInputs[0];
       const entry = storyEntries[0];
       const id = toId(metaId ?? entry.title, name);
-      const tags = combineTags(...projectTags, ...(indexInputs[0].tags ?? []));
+      const tags = tagsSharedByAll(
+        storyEntries
+          .filter((storyEntry) => storyEntry.type === 'story' && storyEntry.subtype === 'story')
+          .map((storyEntry) => storyEntry.tags)
+      );
 
       const docsEntry: DocsIndexEntry & { tags: Tag[] } = {
         id,

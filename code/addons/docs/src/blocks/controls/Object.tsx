@@ -178,7 +178,7 @@ const parseJson = (raw: string): { value: unknown } | { error: string } => {
   try {
     return { value: JSON.parse(raw) };
   } catch (e) {
-    return { error: (e as Error).message };
+    return { error: e instanceof Error ? e.message : String(e) };
   }
 };
 

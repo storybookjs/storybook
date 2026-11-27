@@ -10,6 +10,7 @@ vi.mock('@clack/prompts', () => ({
   spinner: vi.fn(),
   taskLog: vi.fn(),
   log: { message: vi.fn(), success: vi.fn(), error: vi.fn() },
+  S_BAR: '│',
 }));
 
 vi.mock('../logger/log-tracker.ts', () => ({
@@ -105,6 +106,7 @@ describe('ClackPromptProvider', () => {
   afterEach(() => {
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
   });
 
   // Vitest workers do not write to a terminal, so the provider assumes 80 columns.
@@ -121,6 +123,17 @@ describe('ClackPromptProvider', () => {
     log.success('done');
 
     expect(task.message).toHaveBeenCalledWith(`${short}\n${'x'.repeat(51)} .storybook/preview`);
+  });
+
+  // Clack wraps prompt messages with its own guide bar; a pre-wrapped message renders the bar twice.
+  it('leaves wrapping prompt messages to clack', async () => {
+    const message = `Do you want to run the 'component-subtitle' migration on your project? ${'word '.repeat(20)}`;
+
+    await provider.confirm({ message });
+    await provider.select({ message, options: [{ label: 'A', value: 'a' }] });
+
+    expect(vi.mocked(clack.confirm)).toHaveBeenCalledWith(expect.objectContaining({ message }));
+    expect(vi.mocked(clack.select)).toHaveBeenCalledWith(expect.objectContaining({ message }));
   });
 
   it('a nested task log reuses the root task and only the root closes it', (): void => {

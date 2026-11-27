@@ -227,6 +227,63 @@ To mock other modules, such as your `#lib/*` imports, use [automocking](../../wr
 
 The Svelte frameworks ship with built-in support for writing stories for your Svelte components using the template syntax, via Svelte CSF.
 
+### TypeScript
+
+Story template snippets can be type-safe when necessary. The types of the args are inferred from the `component` or `render` property passed to `defineMeta`.
+
+```svelte
+<script module lang="ts">
+  import { defineMeta, type StoryContext } from '@storybook/sveltekit';
+  import { type ComponentProps } from 'svelte';
+
+  import MyComponent from './MyComponent.svelte';
+
+  const { Story } = defineMeta({
+    component: MyComponent,
+  });
+
+  type Args = ComponentProps<MyComponent>;
+</script>
+
+{#snippet template(args: Args, context: StoryContext<typeof MyComponent>)}
+  <MyComponent {...args} />
+{/snippet}
+```
+
+Story template snippets can also be customized with the `render` property, inferring args from the snippet type:
+
+```svelte
+<script module lang="ts">
+  import { defineMeta, type StoryContext } from '@storybook/sveltekit';
+  import { type ComponentProps } from 'svelte';
+
+  import MyComponent from './MyComponent.svelte';
+
+  const { Story } = defineMeta({
+    component: MyComponent,
+    render: template,
+    argTypes: {
+      children: { control: 'text' },
+      footer: { control: 'text' },
+    },
+  });
+
+  type Args = Omit<ComponentProps<MyComponent>, 'children' | 'footer'> & {
+    children: string;
+    footer?: string;
+  };
+</script>
+
+{#snippet template({ children, ...args }: Args, context: StoryContext<typeof MyComponent>)}
+  <MyComponent {...args}>
+    {children}
+    {#snippet footer()}
+      {args.footer}
+    {/snippet}
+  </MyComponent>
+{/snippet}
+```
+
 ## Component documentation
 
 Storybook 11 reads Svelte component props on the server by default, with [`svelte2tsx`](https://github.com/sveltejs/language-tools/tree/master/packages/svelte2tsx) and [`typescript`](../../configure/integration/typescript.mdx) 5.9 or 6 (including in JavaScript projects, where it reads JSDoc comments). New projects need no docgen configuration.

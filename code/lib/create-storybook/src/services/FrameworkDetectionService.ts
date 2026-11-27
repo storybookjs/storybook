@@ -1,4 +1,8 @@
-import { type JsPackageManager, getProjectRoot } from 'storybook/internal/common';
+import {
+  type JsPackageManager,
+  frameworkRegistry,
+  getProjectRoot,
+} from 'storybook/internal/common';
 import { prompt } from 'storybook/internal/node-logger';
 import type { SupportedRenderer } from 'storybook/internal/types';
 import { SupportedBuilder, SupportedFramework } from 'storybook/internal/types';
@@ -6,6 +10,7 @@ import { SupportedBuilder, SupportedFramework } from 'storybook/internal/types';
 import * as find from 'empathic/find';
 import { dedent } from 'ts-dedent';
 
+import { isCommunityFrameworkPackage } from '../community-frameworks.ts';
 import { createPromptCancelOptions } from '../prompt-cancel.ts';
 import { TelemetryService } from './TelemetryService.ts';
 
@@ -40,6 +45,11 @@ export class FrameworkDetectionService {
     } catch {
       return false;
     }
+  }
+
+  private isCommunityFramework(renderer: SupportedRenderer, builder: SupportedBuilder) {
+    const { packageName } = frameworkRegistry[this.detectFramework(renderer, builder)];
+    return isCommunityFrameworkPackage(packageName);
   }
 
   /**
@@ -87,6 +97,15 @@ export class FrameworkDetectionService {
     // If the renderer only works with one builder, there is nothing to choose
     if (supportedBuilders.length === 1) {
       return supportedBuilders[0];
+    }
+
+    if (renderer && usableBuilders.length === 0) {
+      const ownBuilders = supportedBuilders.filter(
+        (builder) => !this.isCommunityFramework(renderer, builder)
+      );
+      if (ownBuilders.length === 1) {
+        return ownBuilders[0];
+      }
     }
 
     // If multiple builders are detected or none are detected, prompt the user

@@ -254,16 +254,82 @@ describe('FrameworkDetectionService', () => {
           vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({
             webpack: '^5.0.0',
           });
+        });
+
+        it('uses the Storybook framework of the renderer without prompting', async () => {
+          const result = await service.detectBuilder(SupportedRenderer.HTML);
+
+          expect(result).toBe(SupportedBuilder.VITE);
+          expect(prompt.select).not.toHaveBeenCalled();
+        });
+      });
+
+      describe('when no builder is detected', () => {
+        beforeEach(() => {
+          vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({});
           vi.mocked(prompt.select).mockResolvedValue(SupportedBuilder.VITE);
         });
 
-        it('offers only the builders the renderer supports', async () => {
-          const result = await service.detectBuilder(SupportedRenderer.HTML);
+        it.each([SupportedRenderer.HTML, SupportedRenderer.VUE3, SupportedRenderer.WEB_COMPONENTS])(
+          'uses Vite for %s, whose other framework is a community one, without prompting',
+          async (renderer) => {
+            const result = await service.detectBuilder(renderer);
+
+            expect(result).toBe(SupportedBuilder.VITE);
+            expect(prompt.select).not.toHaveBeenCalled();
+          }
+        );
+
+        it('prompts for React, which has a Storybook framework for Vite and for Webpack', async () => {
+          const result = await service.detectBuilder(SupportedRenderer.REACT);
 
           expect(result).toBe(SupportedBuilder.VITE);
           expect(prompt.select).toHaveBeenCalledWith(
             {
               message: expect.stringContaining('We were not able to detect the right builder'),
+              options: [
+                { label: 'Vite', value: SupportedBuilder.VITE },
+                { label: 'Webpack 5', value: SupportedBuilder.WEBPACK5 },
+                { label: 'Rsbuild', value: SupportedBuilder.RSBUILD },
+              ],
+            },
+            expect.objectContaining({ onCancel: expect.any(Function) })
+          );
+        });
+      });
+
+      describe('when only Rsbuild is detected', () => {
+        beforeEach(() => {
+          vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({
+            '@rsbuild/core': '^1.0.0',
+          });
+        });
+
+        it('uses the community Rsbuild framework without prompting', async () => {
+          const result = await service.detectBuilder(SupportedRenderer.HTML);
+
+          expect(result).toBe(SupportedBuilder.RSBUILD);
+          expect(prompt.select).not.toHaveBeenCalled();
+        });
+      });
+
+      describe('when Vite, Webpack and Rsbuild are detected and the renderer has no Webpack framework', () => {
+        beforeEach(() => {
+          vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({
+            vite: '^7.0.0',
+            webpack: '^5.0.0',
+            '@rsbuild/core': '^1.0.0',
+          });
+          vi.mocked(prompt.select).mockResolvedValue(SupportedBuilder.RSBUILD);
+        });
+
+        it('offers only the builders the renderer supports', async () => {
+          const result = await service.detectBuilder(SupportedRenderer.HTML);
+
+          expect(result).toBe(SupportedBuilder.RSBUILD);
+          expect(prompt.select).toHaveBeenCalledWith(
+            {
+              message: expect.stringContaining('Multiple builders were detected'),
               options: [
                 { label: 'Vite', value: SupportedBuilder.VITE },
                 { label: 'Rsbuild', value: SupportedBuilder.RSBUILD },

@@ -8,6 +8,7 @@ import react from '@vitejs/plugin-react';
 import type { InlineConfig } from 'vite';
 
 import { BROWSER_TARGETS } from '../core/src/shared/constants/environments-support.ts';
+import { skipDistFallbackSourcemaps } from './skip-dist-fallback-sourcemaps.ts';
 
 const currentFilePath = fileURLToPath(import.meta.url);
 const currentDirPath = dirname(currentFilePath);
@@ -190,7 +191,7 @@ const config = defineMain({
                 'storybook/preview-api': previewApiPath,
               },
       },
-      plugins: [react()],
+      plugins: [react(), skipDistFallbackSourcemaps()],
       build: {
         // disable sourcemaps in CI to not run out of memory
         sourcemap: process.env.CI !== 'true',

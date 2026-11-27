@@ -24,7 +24,7 @@ import {
   parseWithReactDocgenTypescript,
 } from './reactDocgenTypescript.ts';
 import type { ReactDocgenConfig } from './reactDocgen/utils.ts';
-import { getImportTag, matchPath } from './resolveComponentPath.ts';
+import { getImportTag, matchPath, matchesTsconfigPathKey } from './resolveComponentPath.ts';
 import type { ComponentRef } from './types.ts';
 import { cachedResolveImport } from './utils.ts';
 
@@ -40,11 +40,12 @@ const isReactDocgenTypescriptResolvable = () => {
 
 export type { ReactDocgenConfig };
 
-// `~` and `#` are bundler and Node aliases. A tsconfig `paths` match is local when the original specifier does not resolve.
+// `~` and `#` are bundler and Node aliases. A paths key, or a file `matchPath` found, is local when the original specifier does not resolve.
 function isLocalImport(
   importId: string,
   matched: string | undefined,
-  originalSpecifierResolves: boolean
+  originalSpecifierResolves: boolean,
+  matchesConfiguredPath: boolean
 ): boolean {
   if (
     importId.startsWith('.') ||
@@ -55,7 +56,8 @@ function isLocalImport(
     return true;
   }
 
-  return matched !== undefined && matched !== importId && !originalSpecifierResolves;
+  const pathsMatch = (matched !== undefined && matched !== importId) || matchesConfiguredPath;
+  return pathsMatch && !originalSpecifierResolves;
 }
 export type DocgenEngine = 'react-docgen' | 'react-docgen-typescript' | 'react-component-meta';
 
@@ -190,6 +192,8 @@ export const getComponents = async ({
         const { importId } = component;
         const basedir = storyFilePath ? dirname(storyFilePath) : undefined;
         const matched = importId && basedir ? matchPath(importId, basedir) : importId;
+        const matchesConfiguredPath =
+          !!importId && !!basedir && matchesTsconfigPathKey(importId, basedir);
         let path;
         try {
           if (matched && basedir) {
@@ -199,7 +203,7 @@ export const getComponents = async ({
           logger.debug(e);
         }
 
-        let originalSpecifierResolves = false;
+        let originalSpecifierResolves = matched === importId && path !== undefined;
         if (importId && basedir && matched !== importId) {
           try {
             cachedResolveImport(importId, { basedir });
@@ -210,7 +214,8 @@ export const getComponents = async ({
         }
 
         const isPackage =
-          !!importId && !isLocalImport(importId, matched, originalSpecifierResolves);
+          !!importId &&
+          !isLocalImport(importId, matched, originalSpecifierResolves, matchesConfiguredPath);
 
         const componentWithPackage = { ...component, isPackage };
 

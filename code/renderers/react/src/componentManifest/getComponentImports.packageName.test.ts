@@ -361,6 +361,80 @@ describe('tsconfig path alias', () => {
   });
 });
 
+describe('tsconfig path key when the file lookup misses', () => {
+  beforeEach(() => {
+    vi.mocked(findTsconfigPathForPath).mockReturnValue('/app/tsconfig.json');
+    vi.mocked(loadConfig).mockReturnValue({
+      resultType: 'success',
+      configFileAbsolutePath: '/app/tsconfig.json',
+      baseUrl: '.',
+      absoluteBaseUrl: '/app',
+      paths: { '@/*': ['${configDir}/src/*'], '@acme/icons': ['packages/icons/src'] },
+    });
+    vi.mocked(createMatchPath).mockReturnValue(() => undefined);
+    const resolveImport = vi.mocked(cachedResolveImport).getMockImplementation();
+    vi.mocked(cachedResolveImport).mockImplementation((id, options) => {
+      if (id === '@acme/icons') {
+        return './packages/icons/src/index.ts';
+      }
+      if (!resolveImport) {
+        throw new Error(`Unable to resolve ${String(id)}`);
+      }
+      return resolveImport(id, options);
+    });
+  });
+
+  afterEach(() => {
+    vi.mocked(findTsconfigPathForPath).mockRestore();
+    vi.mocked(loadConfig).mockRestore();
+    vi.mocked(createMatchPath).mockRestore();
+    vi.mocked(cachedResolveImport).mockRestore();
+  });
+
+  test('Rewrites a paths alias when the file lookup misses', async () => {
+    const code = dedent`
+      import { Button } from '@/ui';
+
+      const meta = {};
+      export default meta;
+      export const S = <Button/>;
+    `;
+    expect(await getImports(code, 'pkg')).toMatchInlineSnapshot(`
+      {
+        "components": [
+          {
+            "componentName": "Button",
+            "importId": "@/ui",
+            "importName": "Button",
+            "isPackage": false,
+            "jsxDepth": 0,
+            "localImportName": "Button",
+          },
+        ],
+        "imports": [
+          "import { Button } from 'pkg';",
+        ],
+      }
+    `);
+  });
+
+  test('Keeps a paths key Node resolves when the file lookup misses', async () => {
+    const code = dedent`
+      import { Icon } from '@acme/icons';
+
+      const meta = {};
+      export default meta;
+      export const S = <Icon/>;
+    `;
+    const { components, imports } = await getImports(code, 'pkg');
+    expect(imports).toEqual(["import { Icon } from '@acme/icons';"]);
+    expect(components[0]).toMatchObject({
+      importId: '@acme/icons',
+      isPackage: true,
+    });
+  });
+});
+
 test('Rewrites a Windows network path to packageName', async () => {
   const code = dedent`
     import Button from '\\\\\\\\server\\\\share\\\\Button';

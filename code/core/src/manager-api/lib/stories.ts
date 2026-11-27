@@ -1,10 +1,11 @@
-import { sanitize } from 'storybook/internal/csf';
+import { titleToPath } from 'storybook/internal/csf';
 import type {
   API_ComponentEntry,
   API_DocsEntry,
   API_GroupEntry,
   API_HashEntry,
   API_IndexHash,
+  API_LeafEntry,
   API_PreparedIndexEntry,
   API_PreparedStoryIndex,
   API_Provider,
@@ -12,103 +13,30 @@ import type {
   API_StoryEntry,
   DocsOptions,
   IndexEntry,
-  Parameters,
-  SetStoriesPayload,
-  SetStoriesStoryData,
   StatusesByStoryIdAndTypeId,
   StoryId,
-  StoryIndexV2,
   StoryIndexV3,
 } from 'storybook/internal/types';
 
 import { countBy } from 'es-toolkit/array';
-import { mapValues } from 'es-toolkit/object';
 import memoize from 'memoizerific';
-import { dedent } from 'ts-dedent';
 
 import { Tag } from '../../shared/constants/tags.ts';
-import { type API, type State, combineParameters } from '../root.tsx';
+import { type API, type State } from '../root.tsx';
 import intersect from './intersect.ts';
-import merge from './merge.ts';
 
-const TITLE_PATH_SEPARATOR = /\s*\/\s*/;
-
-export const denormalizeStoryParameters = ({
-  globalParameters,
-  kindParameters,
-  stories,
-}: SetStoriesPayload): SetStoriesStoryData => {
-  return mapValues(stories, (storyData) => ({
-    ...storyData,
-    parameters: combineParameters(
-      globalParameters,
-      kindParameters[storyData.kind],
-      storyData.parameters as unknown as Parameters
-    ),
-  })) as SetStoriesStoryData;
-};
-
-export const transformSetStoriesStoryDataToPreparedStoryIndex = (
-  stories: SetStoriesStoryData
-): API_PreparedStoryIndex => {
-  const entries: API_PreparedStoryIndex['entries'] = Object.entries(stories).reduce(
-    (acc, [id, story]) => {
-      if (!story) {
-        return acc;
-      }
-
-      const { docsOnly, fileName, ...parameters } = story.parameters;
-      const base = {
-        title: story.kind,
-        id,
-        name: story.name,
-        importPath: fileName,
-      };
-      if (docsOnly) {
-        acc[id] = {
-          type: 'docs',
-          tags: ['stories-mdx'],
-          storiesImports: [],
-          ...base,
-        };
-      } else {
-        const { argTypes, args, initialArgs } = story;
-        acc[id] = {
-          type: 'story',
-          subtype: 'story',
-          ...base,
-          parameters,
-          argTypes,
-          args,
-          initialArgs,
-        };
-      }
-      return acc;
-    },
-    {} as API_PreparedStoryIndex['entries']
-  );
-
-  return { v: 5, entries };
-};
-
-export const transformStoryIndexV2toV3 = (index: StoryIndexV2): StoryIndexV3 => {
-  return {
-    v: 3,
-    stories: Object.values(index.stories).reduce(
-      (acc, entry) => {
-        acc[entry.id] = {
-          ...entry,
-          title: entry.kind,
-          name: entry.name || entry.story,
-          importPath: entry.parameters.fileName || '',
-        };
-
-        return acc;
-      },
-      {} as StoryIndexV3['stories']
-    ),
-  };
-};
+/**
+ * Whether an entry is one of a component's own docs or stories. A component's children can also
+ * hold a subcomponent (`Components/Button/Icon` under `Components/Button`) or a docs entry hoisted
+ * from a nested title because it is the only entry there (`Components/Button/Guide`, whose parent
+ * is `components-button`). Only titles tell these apart: `type` and `parent` match in both cases.
+ */
+export const isOwnEntry = (
+  component: Pick<API_ComponentEntry, 'id'>,
+  entry: API_HashEntry | undefined
+): entry is API_LeafEntry =>
+  (entry?.type === 'docs' || entry?.type === 'story') &&
+  titleToPath(entry.title).at(-1)?.id === component.id;
 
 export const transformStoryIndexV3toV4 = (index: StoryIndexV3): API_PreparedStoryIndex => {
   const countByTitle = countBy(Object.values(index.stories), (item) => item.title);
@@ -165,6 +93,17 @@ export const transformStoryIndexV4toV5 = (
   };
 };
 
+type TitleNodeType = 'root' | 'group' | 'component' | 'docs';
+
+type TitleNode = {
+  id: StoryId;
+  name: string;
+  parent: StoryId | undefined;
+  depth: number;
+  isRoot: boolean;
+  children: StoryId[];
+};
+
 type ToStoriesHashOptions = {
   provider: API_Provider<API>;
   docsOptions: DocsOptions;
@@ -175,15 +114,19 @@ type ToStoriesHashOptions = {
 };
 
 export const transformStoryIndexToStoriesHash = (
-  input: API_PreparedStoryIndex | StoryIndexV2 | StoryIndexV3,
+  input: API_PreparedStoryIndex | StoryIndexV3,
   { provider, docsOptions, filters, allStatuses, statusFilterKey }: ToStoriesHashOptions
 ): API_IndexHash => {
   if (!input.v) {
     throw new Error('Composition: Missing stories.json version');
   }
+  if (input.v < 3) {
+    throw new Error(
+      `Unsupported story index version: v${input.v}. Storybook 11 requires index version 3 or later.`
+    );
+  }
 
   let index = input;
-  index = index.v === 2 ? transformStoryIndexV2toV3(index as any) : index;
   index = index.v === 3 ? transformStoryIndexV3toV4(index as any) : index;
   index = index.v === 4 ? transformStoryIndexV4toV5(index as any) : index;
   index = index as API_PreparedStoryIndex;
@@ -222,174 +165,148 @@ export const transformStoryIndexToStoriesHash = (
   });
 
   const { sidebar = {} } = provider.getConfig();
-  const { showRoots, collapsedRoots = [], renderLabel } = sidebar;
+  const { showRoots, collapsedRoots = [], renderAriaLabel, renderLabel } = sidebar;
 
-  const setShowRoots = typeof showRoots !== 'undefined';
+  const includedIds = new Set(entryValues.map((entry) => entry.id));
+  const entriesById = new Map<StoryId, API_PreparedIndexEntry>();
+  const titleNodes = new Map<StoryId, TitleNode>();
+  const testIdsByStoryId = new Map<StoryId, StoryId[]>();
 
-  const storiesHashOutOfOrder = entryValues.reduce((acc, item) => {
+  indexEntries.forEach((item) => {
     if (docsOptions.docsMode && item.type !== 'docs') {
-      return acc;
+      return;
+    }
+    entriesById.set(item.id, item);
+
+    if ('parent' in item && item.parent) {
+      testIdsByStoryId.set(item.parent, [...(testIdsByStoryId.get(item.parent) ?? []), item.id]);
+      return;
     }
 
-    // First, split the title into a set of names, separated by '/' and trimmed.
-    const { title } = item;
-    const groups = title.trim().split(TITLE_PATH_SEPARATOR);
-    const root = (!setShowRoots || showRoots) && groups.length > 1 ? [groups.shift()] : [];
-    const names = [...root, ...groups];
+    const paths = titleToPath(item.title);
+    const hasRoot = showRoots !== false && paths.length > 1;
 
-    // Now create a "path" or sub id for each name
-    const paths = names.reduce((list, name, idx) => {
-      const parent = idx > 0 && list[idx - 1];
-      const id = sanitize(parent ? `${parent}-${name}` : name!);
+    paths.forEach(({ id, name }, idx) => {
+      const node = titleNodes.get(id) ?? {
+        id,
+        name: '',
+        parent: paths[idx - 1]?.id,
+        depth: idx,
+        isRoot: false,
+        children: [],
+      };
+      titleNodes.set(id, node);
+      node.name = name;
+      node.isRoot ||= hasRoot && idx === 0;
 
-      if (name!.trim() === '') {
-        throw new Error(dedent`Invalid title ${title} ending in slash.`);
-      }
-
-      if (parent === id) {
-        throw new Error(
-          dedent`
-          Invalid part '${name}', leading to id === parentId ('${id}'), inside title '${title}'
-
-          Did you create a path that uses the separator char accidentally, such as 'Vue <docs/>' where '/' is a separator char? See https://github.com/storybookjs/storybook/issues/6128
-          `
-        );
-      }
-      list.push(id);
-      return list;
-    }, [] as string[]);
-
-    // Now, let's add an entry to the hash for each path/name pair
-    paths.forEach((id, idx) => {
-      // The child is the next path, OR the story/docs entry itself
-      const childId = paths[idx + 1] || item.id;
-
-      if (root.length && idx === 0) {
-        acc[id] = merge<API_RootEntry>((acc[id] || {}) as API_RootEntry, {
-          type: 'root',
-          id,
-          name: names[idx],
-          tags: [],
-          depth: idx,
-          renderLabel,
-          startCollapsed: collapsedRoots.includes(id),
-          // Note that this will later get appended to the previous list of children (see below)
-          children: [childId],
-        });
-        // Usually the last path/name pair will be displayed as a component,
-        // *unless* there are other stories that are more deeply nested under it
-        //
-        // For example, if we had stories for both
-        //   - Atoms / Button
-        //   - Atoms / Button / LabelledButton
-        //
-        // In this example the entry for 'atoms-button' would *not* be a component.
-      } else if ((!acc[id] || acc[id].type === 'component') && idx === paths.length - 1) {
-        acc[id] = merge<API_ComponentEntry>((acc[id] || {}) as API_ComponentEntry, {
-          type: 'component',
-          id,
-          name: names[idx],
-          tags: [],
-          parent: paths[idx - 1],
-          depth: idx,
-          renderLabel,
-          ...(childId && {
-            children: [childId],
-          }),
-        });
-      } else {
-        acc[id] = merge<API_GroupEntry>((acc[id] || {}) as API_GroupEntry, {
-          type: 'group',
-          id,
-          name: names[idx],
-          tags: [],
-          parent: paths[idx - 1],
-          depth: idx,
-          renderLabel,
-          ...(childId && {
-            children: [childId],
-          }),
-        });
+      const childId = paths[idx + 1]?.id ?? item.id;
+      if (!node.children.includes(childId)) {
+        node.children.push(childId);
       }
     });
+  });
 
-    // Finally add an entry for the docs/story/test itself
-    acc[item.id] = {
+  // A title's type follows from everything indexed under it, never from the active filters
+  const typeOf = (node: TitleNode): TitleNodeType => {
+    if (node.isRoot) {
+      return 'root';
+    }
+    if (node.children.some((id) => entriesById.get(id)?.type === 'story')) {
+      return 'component';
+    }
+    if (node.children.some((id) => titleNodes.has(id))) {
+      return 'group';
+    }
+    return node.children.length === 1 ? 'docs' : 'group';
+  };
+
+  const isIncluded = (id: StoryId): boolean => {
+    const node = titleNodes.get(id);
+    return node ? node.children.some(isIncluded) : includedIds.has(id);
+  };
+
+  const hashIdOf = (id: StoryId) => {
+    const node = titleNodes.get(id);
+    return node && typeOf(node) === 'docs' ? node.children[0] : id;
+  };
+
+  const storiesHash: API_IndexHash = {};
+
+  const addLeaf = (id: StoryId, parent: StoryId | undefined, depth: number) => {
+    const item = entriesById.get(id)!;
+    storiesHash[id] = {
       tags: [],
       ...item,
-      depth: paths.length,
-      parent: 'parent' in item ? item.parent : paths[paths.length - 1],
+      depth,
+      parent,
+      renderAriaLabel,
       renderLabel,
       prepared: !!item.parameters,
     } as API_DocsEntry | API_StoryEntry;
 
-    return acc;
-  }, {} as API_IndexHash);
+    const testIds = (testIdsByStoryId.get(id) ?? []).filter((testId) => includedIds.has(testId));
+    if (testIds.length) {
+      (storiesHash[id] as API_StoryEntry).children = testIds;
+      testIds.forEach((testId) => addLeaf(testId, id, depth + 1));
+    }
+  };
 
-  // This function adds a "root" or "orphan" and all of its descendents to the hash.
-  function addItem(acc: API_IndexHash, item: API_HashEntry) {
-    // If we were already inserted as part of a group, that's great.
-    if (!acc[item.id]) {
-      acc[item.id] = item;
+  const addNode = (node: TitleNode) => {
+    const type = typeOf(node);
+    if (type === 'docs') {
+      addLeaf(node.children[0], node.parent, node.depth);
+      storiesHash[node.children[0]].name = node.name;
+      return;
+    }
 
-      // Ensure we add the children depth-first *before* inserting any other entries.
-      if ('children' in item && item.children) {
-        item.children.forEach((childId) => addItem(acc, storiesHashOutOfOrder[childId]));
+    const includedChildren = node.children.filter(isIncluded);
+    const children = includedChildren.map(hashIdOf);
+    const entry = {
+      type,
+      id: node.id,
+      name: node.name,
+      depth: node.depth,
+      tags: [] as string[],
+      renderAriaLabel,
+      renderLabel,
+      children,
+      ...(type === 'root'
+        ? { startCollapsed: collapsedRoots.includes(node.id) }
+        : { parent: node.parent }),
+    } as API_RootEntry | API_GroupEntry | API_ComponentEntry;
+    storiesHash[node.id] = entry;
 
-        item.tags =
-          item.children.reduce((currentTags: Tag[] | null, childId): Tag[] => {
-            // On the first child, we have nothing to intersect against so we use it as a source of data.
-            return currentTags === null
-              ? acc[childId].tags
-              : intersect(currentTags, acc[childId].tags);
-          }, null) || [];
+    includedChildren.forEach((childId) => {
+      const child = titleNodes.get(childId);
+      if (child) {
+        addNode(child);
+      } else {
+        addLeaf(childId, node.id, node.depth + 1);
       }
+    });
+
+    entry.tags = children
+      .flatMap((id) => {
+        const child = storiesHash[id];
+        return child.type === 'story' && 'children' in child && child.children
+          ? [id, ...child.children]
+          : [id];
+      })
+      .map((id) => storiesHash[id].tags)
+      .reduce(intersect);
+    if (entry.type === 'component') {
+      // Prefer the first visible own entry; fall back to a hidden one when only subcomponents pass the filters
+      const isOwnEntry = (id: StoryId) => entriesById.has(id);
+      const childId = includedChildren.find(isOwnEntry) ?? node.children.find(isOwnEntry)!;
+      entry.importPath = entriesById.get(childId)!.importPath;
     }
+  };
 
-    if (item.type === 'component') {
-      const firstChild = acc[item.children[0]];
-      if (firstChild && 'importPath' in firstChild) {
-        // attach importPath to the component node which should be the same for all children
-        // this way we can add "open in editor" to the component node
-        item.importPath = firstChild.importPath;
-      }
-    }
-    return acc;
-  }
-
-  // We'll do two passes over the data, adding all the orphans, then all the roots
-  let storiesHash = Object.values(storiesHashOutOfOrder)
-    .filter((i) => i.type !== 'root' && !i.parent)
-    .reduce((acc, item) => addItem(acc, item), {} as API_IndexHash);
-
-  storiesHash = Object.values(storiesHashOutOfOrder)
-    .filter((i) => i.type === 'root')
-    .reduce(addItem, storiesHash);
-
-  // Update stories to include tests as children, and increase depth for those tests
-  storiesHash = Object.values(storiesHash).reduce((acc, item) => {
-    if (item.type === 'story' && item.subtype === 'test') {
-      const story = acc[item.parent] as API_StoryEntry;
-      const component = acc[story.parent] as API_ComponentEntry;
-      acc[component.id] = {
-        ...component,
-        // Remove test from the component node as it will be attached to the story node instead
-        children: component.children && component.children.filter((id) => id !== item.id),
-      };
-      acc[story.id] = {
-        ...story,
-        // Add test to the story node
-        children: (story.children || []).concat(item.id),
-      };
-      acc[item.id] = {
-        ...item,
-        depth: item.depth + 1,
-      };
-    } else {
-      acc[item.id] = item;
-    }
-    return acc;
-  }, {} as API_IndexHash);
+  const topLevelNodes = [...titleNodes.values()].filter(
+    (node) => node.depth === 0 && isIncluded(node.id)
+  );
+  topLevelNodes.filter((node) => !node.isRoot).forEach(addNode);
+  topLevelNodes.filter((node) => node.isRoot).forEach(addNode);
 
   return storiesHash;
 };
@@ -416,14 +333,40 @@ export const addPreparedStories = (newHash: API_IndexHash, oldHash?: API_IndexHa
   );
 };
 
+/**
+ * Lists the groups that component jumps (Alt+arrow) move between, in sidebar order. A component's
+ * own entries form one group, a subcomponent or hoisted nested docs page forms its own.
+ */
 export const getComponentLookupList = memoize(1)((hash: API_IndexHash) => {
-  return Object.entries(hash).reduce((acc, i) => {
-    const value = i[1];
-    if (value.type === 'component') {
-      acc.push([...value.children]);
+  const lists: StoryId[][] = [];
+  const visit = (id: StoryId) => {
+    const entry = hash[id];
+    if (entry.type === 'component') {
+      let ownEntries: StoryId[] = [];
+      entry.children.forEach((childId) => {
+        if (isOwnEntry(entry, hash[childId])) {
+          ownEntries.push(childId);
+          return;
+        }
+        if (ownEntries.length) {
+          lists.push(ownEntries);
+          ownEntries = [];
+        }
+        visit(childId);
+      });
+      if (ownEntries.length) {
+        lists.push(ownEntries);
+      }
+    } else if (entry.type === 'docs') {
+      lists.push([entry.id]);
+    } else if (entry.type === 'root' || entry.type === 'group') {
+      entry.children.forEach(visit);
     }
-    return acc;
-  }, [] as StoryId[][]);
+  };
+  Object.values(hash)
+    .filter((entry) => !('parent' in entry && entry.parent))
+    .forEach((entry) => visit(entry.id));
+  return lists;
 });
 
 export const getStoriesLookupList = memoize(1)((hash: API_IndexHash) => {

@@ -3,6 +3,7 @@ import { readConfig } from 'storybook/internal/csf-tools';
 import { logger as nodeLogger, prompt } from 'storybook/internal/node-logger';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
+import { relative } from 'pathe';
 import SemVer from 'semver';
 import { dedent } from 'ts-dedent';
 
@@ -171,7 +172,9 @@ export async function add(
   );
 
   if (shouldAddToMain) {
-    logger.log(`Adding '${addon}' to the "addons" field in ${mainConfigPath}`);
+    logger.log(
+      `Adding '${addon}' to the "addons" field in ${relative(process.cwd(), mainConfigPath)}`
+    );
 
     await setupAddonInConfig({
       addonName,

@@ -1,0 +1,6 @@
+html`<stencil-props
+  value=${3}
+  max=${5}
+  variant=${'compact'}
+  aria-label-text=${'Rating'}
+></stencil-props>`

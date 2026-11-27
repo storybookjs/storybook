@@ -1,8 +1,14 @@
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 
-import type { StoryDoc, StoryDocsPayload } from 'storybook/internal/types';
+import type { PreparedStory, StoryDoc, StoryDocsPayload } from 'storybook/internal/types';
 
-import { type QueryState, selectSnippetForStory, selectStoryDoc } from 'storybook/open-service';
+import {
+  type QueryState,
+  type StoryArgs,
+  getPrintHole,
+  selectLiveSnippetForStory,
+  selectStoryDoc,
+} from 'storybook/open-service';
 import { getService } from 'storybook/preview-api';
 
 import { useQuerySubscription } from './use-query-subscription.ts';
@@ -24,7 +30,7 @@ export function useServiceStory<TSelected>(
   selector: (payload: StoryDocsPayload | undefined, storyId: string) => TSelected
 ): QueryState<TSelected> {
   const componentId = storyId.split('--')[0]!;
-  const service = getService('core/story-docs');
+  const service = getService('core/story-docs', { internal: true });
 
   // Kept stable (selectors are compared by reference on the subscription) so we don't re-subscribe
   // every render.
@@ -38,7 +44,7 @@ export function useServiceStory<TSelected>(
   return useQuerySubscription(
     storyId,
     service.queries.storyDocs,
-    { id: componentId },
+    { id: componentId, scope: 'all' },
     boundSelector
   );
 }
@@ -48,7 +54,26 @@ export function useServiceStoryDoc(storyId: string): QueryState<StoryDoc | undef
   return useServiceStory(storyId, selectStoryDoc);
 }
 
-/** Convenience hook returning one story's display snippet (with its CSF import block prepended). */
-export function useServiceStorySnippet(storyId: string): QueryState<string | undefined> {
-  return useServiceStory(storyId, selectSnippetForStory);
+// One story's display snippet with its `args` filled into its template by the story's renderer, or
+// its static snippet and warning while it has the args it is written with or no template.
+export function useServiceStoryLiveSnippet(
+  story: PreparedStory,
+  args: StoryArgs
+): QueryState<{ snippet?: string; warning?: string }> {
+  // The selector is stable, so an args change fills the template again without a new subscription,
+  // which would load the story docs again.
+  const state = useServiceStory(story.id, selectStoryPayload);
+  const printHole = getPrintHole(story.parameters);
+  const data = useMemo(
+    () => selectLiveSnippetForStory(state.data, story.id, args, printHole),
+    [state.data, story.id, args, printHole]
+  );
+  return useMemo(() => ({ ...state, data }), [state, data]);
+}
+
+// The payload with only this story. A subscription re-runs only for the state its selector reads,
+// and an update can change a story's fields in place, so the story is copied field by field.
+function selectStoryPayload(payload: StoryDocsPayload | undefined, storyId: string) {
+  const story = payload?.stories[storyId];
+  return payload && { ...payload, stories: story ? { [storyId]: { ...story } } : {} };
 }

@@ -11,6 +11,7 @@ import { fileURLToPath } from 'node:url';
 // eslint-disable-next-line depend/ban-dependencies
 import { execaCommand } from 'execa';
 
+import { disableNpmMinimalAgeGate } from './disable-npm-minimal-age-gate.ts';
 import { EXISTING_RESOLUTIONS } from './existing-resolutions.js';
 
 const filename = fileURLToPath(import.meta.url);
@@ -44,5 +45,6 @@ sandboxPkgJson.resolutions = {
 await writeFile(sandboxPackageJsonPath, JSON.stringify(sandboxPkgJson, null, 2));
 
 const sandboxDir = dirname(sandboxPackageJsonPath);
+await disableNpmMinimalAgeGate(sandboxDir);
 await execaCommand('yarn add playwright', { cwd: sandboxDir, shell: true });
 await execaCommand('yarn playwright install', { cwd: sandboxDir, shell: true });

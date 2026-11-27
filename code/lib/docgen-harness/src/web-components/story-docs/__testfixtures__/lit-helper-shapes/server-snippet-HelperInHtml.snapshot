@@ -1,0 +1,1 @@
+html`<section>${List({ label: 'Alpha', count: 2 })}</section>`

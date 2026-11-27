@@ -48,6 +48,10 @@ const config: BuildEntries = {
         entryPoint: './src/mdx-loader.ts',
         dts: false,
       },
+      {
+        entryPoint: './src/csf-plugin/webpack-loader.ts',
+        dts: false,
+      },
     ],
   },
 };

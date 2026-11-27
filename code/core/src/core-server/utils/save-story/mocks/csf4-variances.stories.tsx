@@ -13,3 +13,8 @@ export const WithArgs = meta.story({
     foo: 'bar',
   },
 });
+export const Typed = meta.type<{ args: { icon: string } }>().story({
+  args: {
+    icon: 'star',
+  },
+});

@@ -30,7 +30,6 @@ import * as pkg from 'empathic/package';
 import { errorSummary, printErrorDetails } from '../utils/error-handler.ts';
 import { runCompodoc } from '../utils/run-compodoc.ts';
 import type { StandaloneOptions } from '../utils/standalone-options.ts';
-import { VERSION } from '@angular/core';
 import { Channel } from 'storybook/internal/channels';
 
 addToGlobalContext('cliVersion', versions.storybook);
@@ -38,6 +37,8 @@ addToGlobalContext('cliVersion', versions.storybook);
 export type StorybookBuilderOptions = JsonObject & {
   browserTarget?: string | null;
   tsConfig?: string;
+  configDir: string;
+  outputDir: string;
   test: boolean;
   docs: boolean;
   compodoc: boolean;
@@ -62,7 +63,6 @@ export type StorybookBuilderOptions = JsonObject & {
     | 'disableTelemetry'
     | 'debugWebpack'
     | 'logfile'
-    | 'previewUrl'
   >;
 
 export type StorybookBuilderOutput = JsonObject & BuilderOutput & { [key: string]: any };
@@ -119,10 +119,10 @@ const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = async (
     debugWebpack,
     disableTelemetry,
     assets,
-    previewUrl,
     sourceMap = false,
     preserveSymlinks = false,
-    experimentalZoneless = !!(VERSION.major && Number(VERSION.major) >= 21),
+    // Angular 21+ always supports zoneless; users still opt out via `experimentalZoneless: false`
+    experimentalZoneless = true,
   } = options;
 
   const packageJsonPath = pkg.up({ cwd: __dirname });
@@ -153,7 +153,6 @@ const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = async (
     webpackStatsJson,
     statsJson,
     debugWebpack,
-    previewUrl,
   };
 
   await runInstance({ ...standaloneOptions, mode: 'static' });
@@ -179,12 +178,17 @@ async function setup(options: StorybookBuilderOptions, context: BuilderContext) 
     );
   }
 
-  return {
-    tsConfig:
-      options.tsConfig ??
-      find.up('tsconfig.json', { cwd: options.configDir, last: getProjectRoot() }) ??
-      browserOptions.tsConfig,
-  };
+  const tsConfig =
+    options.tsConfig ??
+    find.up('tsconfig.json', { cwd: options.configDir, last: getProjectRoot() }) ??
+    browserOptions?.tsConfig;
+  if (tsConfig === undefined) {
+    throw new Error(
+      'Storybook could not find a tsconfig.json. Set the "tsConfig" or "browserTarget" option of the Storybook builder.'
+    );
+  }
+
+  return { tsConfig };
 }
 
 async function runInstance(options: StandaloneBuildOptions) {

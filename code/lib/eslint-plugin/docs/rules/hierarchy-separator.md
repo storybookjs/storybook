@@ -3,7 +3,6 @@
 <!-- RULE-CATEGORIES:START -->
 
 **Included in these configurations**: <ul><li>csf</li><li>flat/csf</li><li>recommended</li><li>flat/recommended</li><li>csf-strict</li><li>flat/csf-strict</li></ul>
-
 <!-- RULE-CATEGORIES:END -->
 
 ## Rule Details
@@ -32,8 +31,8 @@ export default {
 
 For more details about this change: https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#removed-hierarchy-separators
 
-To automatically migrate all of your codebase and fix this issue, run this codemod in the root folder of your project:
+This rule can replace a `|` for you. Run ESLint with `--fix`:
 
 ```sh
-npx storybook@latest migrate upgrade-hierarchy-separators --glob="*/**/*.stories.@(tsx|jsx|ts|js)"
+npx eslint --fix "**/*.stories.@(tsx|jsx|ts|js)"
 ```

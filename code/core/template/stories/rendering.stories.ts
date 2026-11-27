@@ -4,9 +4,7 @@ import {
   STORY_ARGS_UPDATED,
   UPDATE_STORY_ARGS,
 } from 'storybook/internal/core-events';
-import type { PlayFunctionContext } from 'storybook/internal/types';
-
-import { global as globalThis } from '@storybook/global';
+import type { StoryContext } from 'storybook/internal/types';
 
 import { expect, waitFor, within } from 'storybook/test';
 
@@ -21,13 +19,13 @@ export default {
 export const ForceRemount = {
   /**
    * This play function runs in an infinite loop, because the final FORCE_REMOUNT event retriggers
-   * the function Because of this, it is disabled in both Chromatic and the test runner. To test it
+   * the function Because of this, it is disabled in both Chromatic and Vitest. To test it
    * manually, inspect that the button alternates being focused and blurred every 3 seconds. If the
    * button ALWAYS has focus it means the renderer didn't correctly remount the tree at the
    * FORCE_REMOUNT event
    */
   parameters: { chromatic: { disableSnapshot: true } },
-  play: async ({ canvasElement, id }: PlayFunctionContext<any>) => {
+  play: async ({ canvasElement, id }: StoryContext<any>) => {
     const channel = globalThis.__STORYBOOK_ADDONS_CHANNEL__;
     const button = await within(canvasElement).findByRole('button');
 
@@ -76,7 +74,7 @@ export const SlowLoader = {
 };
 
 export const ChangeArgs = {
-  play: async ({ canvasElement, id }: PlayFunctionContext<any>) => {
+  play: async ({ canvasElement, id }: StoryContext<any>) => {
     const channel = globalThis.__STORYBOOK_ADDONS_CHANNEL__;
 
     await channel.emit(RESET_STORY_ARGS, { storyId: id });

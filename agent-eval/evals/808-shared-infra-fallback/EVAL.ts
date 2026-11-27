@@ -1,0 +1,46 @@
+import {
+  expectAnyWorkflowSkillInvoked,
+  expectNoDisplayReview,
+  expectWorkflowCalls,
+  expectReviewHint,
+  expectStoryTestsRanAndPassed,
+  getEvalContext,
+} from '#test-utils';
+import { readFileSync } from 'node:fs';
+import { describe, expect, test } from 'vitest';
+
+describe('changing a shared accent token and testing its consumer stories', () => {
+  // The edited token file has no stories of its own, so the test run must cover
+  // the stories of its *consumers* (Badge and StatusPill).
+
+  // The other assertions only count if the token change was actually done.
+  test('changes the accent color token', () => {
+    const colors = readFileSync('src/theme/colors.ts', 'utf8');
+    expect(colors, 'Expected the accent token to change to #7c3aed').toMatch(/#7c3aed/i);
+    expect(colors, 'Expected the old accent value #2563eb to be gone').not.toMatch(/#2563eb/i);
+  });
+
+  test('runs story tests after the change and finishes with them passing', async () => {
+    await expectStoryTestsRanAndPassed({
+      covering: ['badge', 'statuspill'],
+    });
+  });
+
+  test('runs the skills of the workflow, and creates no review unasked', () => {
+    // A token change is a change to how the UI looks, so the section's skills apply.
+    expectWorkflowCalls(['component-docs', 'write-stories']);
+    expectNoDisplayReview();
+  });
+
+  test('tells the user about the /ui-review skill', () => {
+    expectReviewHint();
+  });
+
+  describe('depending on the current agent and integration', () => {
+    const { integration } = getEvalContext();
+
+    test.skipIf(integration === 'mcp')('finds the workflow through the plugin skills', () => {
+      expectAnyWorkflowSkillInvoked();
+    });
+  });
+});

@@ -1,0 +1,28 @@
+{
+  "id": "props-ts-enum",
+  "name": "TsEnumProps",
+  "path": "__PATH__",
+  "stories": {
+    "forms-props-ts-enum--props-as-written": {
+      "description": undefined,
+      "id": "forms-props-ts-enum--props-as-written",
+      "name": "Props As Written",
+      "snippet": "<script lang="ts" setup>
+import TsEnumProps from './TsEnumProps.vue';
+</script>
+
+<template>
+  <TsEnumProps :level="1" />
+</template>",
+      "summary": undefined,
+      "template": "<script lang="ts" setup>
+import TsEnumProps from './TsEnumProps.vue';
+</script>
+
+<template>
+  <TsEnumProps⟦attr level ~" "⟫ :level="1"⟧⟦props * except=["level","default"] ~" "⟫⟧⟦slots * slots=["default"] indent="    " tag="TsEnumProps"⟫ />⟧
+</template>",
+      "warning": "Incomplete snippet: `severity: Severity.Warning` could not be resolved statically.",
+    },
+  },
+}

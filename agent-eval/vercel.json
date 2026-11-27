@@ -1,0 +1,6 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "yarn run playground:build",
+  "installCommand": "yarn install --no-immutable",
+  "framework": "nextjs"
+}

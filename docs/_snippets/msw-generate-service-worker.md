@@ -1,11 +1,11 @@
 ```shell renderer="common" packageManager="npm"
-npx msw init public/
+npx msw init ./public --save
 ```
 
 ```shell renderer="common" packageManager="yarn"
-yarn dlx msw init public/
+yarn dlx msw init ./public --save
 ```
 
 ```shell renderer="common" packageManager="pnpm"
-pnpm dlx msw init public/
+pnpm dlx msw init ./public --save
 ```

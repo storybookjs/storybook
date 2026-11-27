@@ -51,9 +51,9 @@ describe('computeStaticFilterFn', () => {
     ).toBe(true);
   });
 
-  it('hides entries that carry a tag marked excludeFromSidebar', () => {
+  it('hides entries that carry a tag marked hideFromSidebar', () => {
     const filterWithExclude = computeStaticFilterFn({
-      dev: { excludeFromSidebar: true },
+      dev: { hideFromSidebar: true },
     });
     expect(filterWithExclude({ id: 's1', type: 'story', tags: ['dev'] })).toBe(false);
   });

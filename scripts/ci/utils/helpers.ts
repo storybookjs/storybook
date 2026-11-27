@@ -1,5 +1,23 @@
+import { BEFORE_SANDBOX_NPM_MIN_VERSION } from '../../utils/npm-constants.ts';
 import { LINUX_ROOT_DIR, SANDBOX_DIR, WINDOWS_ROOT_DIR, WORKING_DIR } from './constants.ts';
-import { type JobOrNoOpJob, type Workflow } from './types.ts';
+import { type JobOrNoOpJob } from './types.ts';
+
+export const cancelWorkflowStep = {
+  run: {
+    name: 'Cancel current workflow',
+    when: 'on_fail',
+    command:
+      'curl -X POST --header "Content-Type: application/json" "https://circleci.com/api/v2/workflow/${CIRCLE_WORKFLOW_ID}/cancel?circle-token=${WORKFLOW_CANCELER}"',
+  },
+};
+
+export const compileStep = () => ({
+  run: {
+    name: 'Compile',
+    working_directory: 'code',
+    command: 'yarn task --task compile --start-from=auto --no-link --debug',
+  },
+});
 
 /**
  * The `Persisting to workspace` step is bytes-bound: CircleCI gzips the
@@ -43,19 +61,63 @@ export const workspace = {
   pack: (requiredPaths: string[], optionalPaths: string[], root = LINUX_ROOT_DIR) => {
     return {
       run: {
-        name: 'Pack node_modules for workspace',
+        name: 'Pack node_modules for workspace (background)',
         working_directory: root,
+        // Runs in the background so the ~50s tar/zstd overlaps with Compile:
+        // node_modules is final once install and the dedupe check pass, compile
+        // only writes per-package dist/, and tar archives the workspace symlinks
+        // under node_modules as symlink entries without reading through them.
+        // The exit code lands in a status file (a plain failure would be
+        // swallowed by the background shell); awaitPack() consumes it.
+        background: true,
         // Per-package node_modules only exist for packages with unhoistable
         // dependencies, so they are filtered at runtime; the root trees are
         // passed straight to tar so a missing one fails the job loudly.
         command: [
+          `rm -f ${PACKED_NODE_MODULES_ARCHIVE}.status`,
           'node --version',
           'optional=""',
           `for p in ${optionalPaths.join(' ')}; do`,
           '  if [ -e "$p" ]; then optional="$optional $p"; fi',
           'done',
-          `tar --create ${requiredPaths.join(' ')} $optional | node ${ZSTD_STREAM} compress 3 > ${PACKED_NODE_MODULES_ARCHIVE}`,
+          'status=1',
+          `if tar --create ${requiredPaths.join(' ')} $optional | node ${ZSTD_STREAM} compress 3 > ${PACKED_NODE_MODULES_ARCHIVE}; then`,
+          '  status=0',
+          'fi',
+          `echo "$status" > ${PACKED_NODE_MODULES_ARCHIVE}.status`,
           `ls -la ${PACKED_NODE_MODULES_ARCHIVE}`,
+        ].join('\n'),
+      },
+    };
+  },
+  awaitPack: (root = LINUX_ROOT_DIR) => {
+    return {
+      run: {
+        name: 'Wait for node_modules pack',
+        working_directory: root,
+        // Join point for the backgrounded pack step: CircleCI kills background
+        // processes when the job's last step ends and offers no built-in wait,
+        // so this polls for the status file and propagates a pack failure. A
+        // killed compressor surfaces as a nonzero pipeline status and a killed
+        // shell as the poll timeout, so the archive check only needs to be the
+        // free non-empty test, not a full decompression pass (measured at
+        // ~22s of critical path on an xlarge executor with `gzip -t`).
+        command: [
+          'waited=0',
+          `until [ -f ${PACKED_NODE_MODULES_ARCHIVE}.status ]; do`,
+          '  if [ "$waited" -ge 300 ]; then',
+          '    echo "Timed out waiting for the background node_modules pack" >&2',
+          '    exit 1',
+          '  fi',
+          '  sleep 2',
+          '  waited=$((waited + 2))',
+          'done',
+          `status=$(cat ${PACKED_NODE_MODULES_ARCHIVE}.status)`,
+          'if [ "$status" != "0" ]; then',
+          '  echo "Background node_modules pack failed with status $status" >&2',
+          '  exit 1',
+          'fi',
+          `test -s ${PACKED_NODE_MODULES_ARCHIVE}`,
         ].join('\n'),
       },
     };
@@ -137,13 +199,17 @@ export const artifact = {
   },
 };
 
+const DEEP_CHECKOUT = '--depth 100 --filter=blob:none';
+
 export const git = {
   checkout: ({ forceHttps = false, shallow = true } = {}) => {
     const flags = [];
     if (shallow) {
       flags.push('--depth 1');
     } else {
-      flags.push('--depth 500');
+      // Chromatic walks the commit graph for baselines and diffs trees for TurboSnap; the blobs of
+      // 100 commits are most of the download and nothing in the job reads them.
+      flags.push(DEEP_CHECKOUT);
     }
 
     if (forceHttps) {
@@ -153,6 +219,11 @@ export const git = {
     return {
       'git-shallow-clone/checkout_advanced': {
         clone_options: flags.join(' '),
+        // The orb's fetch defaults to `--depth 10`, which would cut the deep clone's history again.
+        ...(shallow ? {} : { fetch_options: DEEP_CHECKOUT }),
+        // On `pull/N/head` branches the orb's fetch defaults to `--tags`, which pulls every
+        // release tag and its history and costs more than the clone itself.
+        tag_fetch_options: '--no-tags',
       },
     };
   },
@@ -166,7 +237,7 @@ export const git = {
           '  echo "Uncommitted changes detected in the working tree. If the build generated files, run \`yarn task --task compile\` locally and commit them."',
           '  echo ""',
           '  git status --porcelain',
-          '  git diff',
+          '  git --no-pager diff',
           '  exit 1',
           'fi',
         ].join('\n'),
@@ -194,6 +265,19 @@ export const node = {
 };
 
 export const npm = {
+  installPinnedVersion: () => {
+    return {
+      run: {
+        name: `Install npm ${BEFORE_SANDBOX_NPM_MIN_VERSION}`,
+        // `sudo` resets PATH, so after a `node/install` step it would upgrade the system npm instead
+        // of the one on PATH.
+        command: [
+          `if [ -w "$(npm root -g)" ]; then npm install -g npm@${BEFORE_SANDBOX_NPM_MIN_VERSION}; else sudo npm install -g npm@${BEFORE_SANDBOX_NPM_MIN_VERSION}; fi`,
+          'npm --version',
+        ].join('\n'),
+      },
+    };
+  },
   installScripts: () => {
     return {
       run: {
@@ -202,16 +286,19 @@ export const npm = {
       },
     };
   },
+  /**
+   * Runs `yarn install --immutable` and nothing else.
+   *
+   * The orb's own cache is off: its last restore key is the bare prefix `node-deps-{{ arch }}-<v>-`,
+   * which matches whatever `node_modules` any job on any branch saved last, whatever lockfile built
+   * it. Callers restore {@link NODE_MODULES_CACHE_KEY} instead, which cannot degrade that way.
+   */
   install: (appDir: string, pkgManager: string = 'yarn') => {
     return {
       'node/install-packages': {
         'app-dir': appDir,
         'pkg-manager': pkgManager,
-        'cache-only-lockfile': true,
-        // v2: the orb's v1 node_modules cache carries the same poisoned tree
-        // as the v6 CACHE_KEYS entries (see above); its restore overlays
-        // node_modules on top of the primary cache without overwriting.
-        'cache-version': 'v2',
+        'with-cache': false,
       },
     };
   },
@@ -299,59 +386,31 @@ export const workflow = {
       },
     },
   ],
-  cancelOnFailure: () => {
-    return [
-      {
-        run: {
-          name: 'Cancel current workflow',
-          when: 'on_fail',
-          command:
-            'curl -X POST --header "Content-Type: application/json" "https://circleci.com/api/v2/workflow/${CIRCLE_WORKFLOW_ID}/cancel?circle-token=${WORKFLOW_CANCELER}"',
-        },
-      },
-    ];
-  },
-  reportOnFailure: (workflow: Workflow, template: string = 'none') => {
-    return [
-      {
-        run: {
-          name: 'Un-shallow git',
-          when: 'on_fail',
-          command: 'git fetch --unshallow',
-        },
-      },
-      {
-        run: {
-          name: 'Report failure',
-          when: 'on_fail',
-          command: 'echo "Workflow failed"',
-        },
-      },
-      {
-        'discord/status': {
-          only_for_branches: ['main', 'next', 'next-release', 'latest-release'].join(','),
-          fail_only: true,
-          failure_message: `$(yarn get-report-message ${workflow} ${template})`,
-        },
-      },
-    ];
-  },
+  cancelOnFailure: () => [cancelWorkflowStep],
 };
 
-export const CACHE_KEYS = (platform = 'linux') =>
+/** Namespaces the cache per executor, so a Linux tree can never be restored on Windows. */
+export type CachePlatform = 'linux' | 'windows';
+
+/**
+ * The one key `node_modules` may be restored from.
+ *
+ * A `node_modules` tree is a layout, not a set of downloads: which copy of a duplicated package
+ * gets hoisted to the root falls out of the whole graph. `yarn install` prunes what its state file
+ * lists, and a path the current graph never assigns is not in it, so restoring a tree built from
+ * another lockfile leaves a stale copy shadowing the right one. Hence no fallback keys: either the
+ * tree came from this exact lockfile or it is linked again.
+ */
+export const NODE_MODULES_CACHE_KEY = (platform: CachePlatform = 'linux') =>
   [
-    `v7-${platform}-node_modules`,
+    `v11-${platform}-node_modules`,
     '{{ checksum ".nvmrc" }}',
     '{{ checksum ".yarnrc.yml" }}',
     '{{ checksum "yarn.lock" }}',
-  ].map((_, index, list) => {
-    return list.slice(0, list.length - index).join('/');
-  });
+  ].join('/');
 
-export const CACHE_PATHS = [
-  '.yarn/cache',
-  '.yarn/unplugged',
-  '.yarn/build-state.yml',
+export const NODE_MODULES_CACHE_PATHS = [
+  // Yarn's record of what it linked, so only meaningful beside the tree it describes.
   '.yarn/root-install-state.gz',
   'node_modules',
   'code/node_modules',

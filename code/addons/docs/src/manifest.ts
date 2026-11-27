@@ -32,7 +32,7 @@ interface DocsManifest {
 
 /**
  * A component row carrying docs. In legacy mode this is a full {@link ComponentManifest}; in
- * `experimentalDocgenServer` mode core builds the real component rows from docgen, so attached docs
+ * `docgenServer` mode core builds the real component rows from docgen, so attached docs
  * may be synthesized onto a minimal `{ id, name }` shell — hence the `Partial`.
  */
 type ComponentManifestWithDocs = Partial<ComponentManifest> & {
@@ -120,6 +120,11 @@ function createDocsManifestRefEntry(
   };
 }
 
+/** A standalone docs page is listed by its title, so its shallow row carries it. */
+function createStandaloneDocsManifestRefEntry(entry: DocsIndexEntry): DocsManifestRefEntry {
+  return { ...createDocsManifestRefEntry(entry, entry.id), title: entry.title };
+}
+
 /** Builds the unattached `docs` map (standalone docs keyed by their own id). */
 async function buildUnattachedDocs(
   entries: DocsIndexEntry[],
@@ -173,7 +178,7 @@ async function applyAttachedDocs(
  *   manifests under a `docs` property.
  * - Docs entries without either tag are ignored.
  *
- * In `experimentalDocgenServer` mode docs become shallow `$ref` rows (resolved from the MDX service
+ * In `docgenServer` mode docs become shallow `$ref` rows (resolved from the MDX service
  * snapshots); otherwise the full content is inlined.
  */
 export const manifests: PresetPropertyFn<
@@ -183,8 +188,7 @@ export const manifests: PresetPropertyFn<
 > = async (existingManifests = {}, { manifestEntries, presets }) => {
   const startPerformance = performance.now();
   const features = await presets?.apply?.('features');
-  const useMdxService =
-    features?.experimentalDocgenServer === true && features?.componentsManifest === true;
+  const useMdxService = features?.docgenServer === true && features?.componentsManifest === true;
 
   const docsEntries = manifestEntries.filter(
     (entry): entry is DocsIndexEntry => entry.type === 'docs'
@@ -211,9 +215,12 @@ export const manifests: PresetPropertyFn<
 
   const existingManifestsWithDocs = existingManifests as ManifestsWithDocs;
   const build: DocBuilder = useMdxService ? createDocsManifestRefEntry : createDocsManifestEntry;
+  const buildStandalone: DocBuilder = useMdxService
+    ? createStandaloneDocsManifestRefEntry
+    : createDocsManifestEntry;
 
   const [unattachedDocs, updatedComponents] = await Promise.all([
-    buildUnattachedDocs(unattachedEntries, build),
+    buildUnattachedDocs(unattachedEntries, buildStandalone),
     applyAttachedDocs(attachedEntries, existingManifestsWithDocs.components, build),
   ]);
 

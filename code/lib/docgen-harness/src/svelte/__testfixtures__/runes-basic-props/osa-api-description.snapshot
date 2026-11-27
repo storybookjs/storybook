@@ -1,0 +1,14 @@
+## Props
+
+```
+export type PanelProps = {
+  /** Visible label text. */
+  label: string;
+  /** Numeric count. */
+  count?: number = 0;
+  /** Primary visual state. */
+  primary?: boolean = false;
+  /** Optional title text. */
+  title?: string;
+}
+```

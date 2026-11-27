@@ -1,0 +1,7 @@
+<script>
+  import Modal from './Modal.svelte';
+</script>
+
+<Modal id="modal-content-only" open>
+  <p>Only content</p>
+</Modal>

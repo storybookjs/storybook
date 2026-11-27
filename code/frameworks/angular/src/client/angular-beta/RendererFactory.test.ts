@@ -1,7 +1,13 @@
 // @vitest-environment happy-dom
 
-import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { Component, ɵresetJitOptions } from '@angular/core';
+import { vi, assert, describe, it, expect, beforeEach, afterEach } from 'vitest';
+import {
+  ApplicationRef,
+  Component,
+  EnvironmentInjector,
+  inject,
+  ɵresetJitOptions,
+} from '@angular/core';
 import { platformBrowserDynamicTesting } from '@angular/platform-browser-dynamic/testing';
 import { platformBrowserDynamic } from '@angular/platform-browser-dynamic';
 
@@ -22,8 +28,12 @@ describe('RendererFactory', () => {
     document.body.innerHTML =
       '<div id="storybook-root"></div><div id="root-docs"><div id="story-in-docs"></div></div>' +
       '<div id="storybook-docs"></div>';
-    rootTargetDOMNode = global.document.getElementById('storybook-root');
-    rootDocstargetDOMNode = global.document.getElementById('root-docs');
+    const root = global.document.getElementById('storybook-root');
+    assert(root);
+    rootTargetDOMNode = root;
+    const docsRoot = global.document.getElementById('root-docs');
+    assert(docsRoot);
+    rootDocstargetDOMNode = docsRoot;
     (platformBrowserDynamic as any).mockImplementation(platformBrowserDynamicTesting);
     vi.spyOn(console, 'log').mockImplementation(() => {});
     // @ts-expect-error Ignore
@@ -46,7 +56,7 @@ describe('RendererFactory', () => {
 
     it('should render my-story for story template', async () => {
       const render = await rendererFactory.getRendererInstance(rootTargetDOMNode);
-      await render?.render({
+      await render.render({
         storyFnAngular: {
           template: '🦊',
           props: {},
@@ -55,7 +65,7 @@ describe('RendererFactory', () => {
         targetDOMNode: rootTargetDOMNode,
         storyId: 'my-story',
       });
-      expect(document.body.querySelector('#storybook-root').children[0].innerHTML).toBe('🦊');
+      expect(document.body.querySelector('#storybook-root')?.children[0].innerHTML).toBe('🦊');
     });
 
     it('should render my-story for story component', async () => {
@@ -63,7 +73,7 @@ describe('RendererFactory', () => {
       class FooComponent {}
 
       const render = await rendererFactory.getRendererInstance(rootTargetDOMNode);
-      await render?.render({
+      await render.render({
         storyFnAngular: {
           props: {},
         },
@@ -73,7 +83,7 @@ describe('RendererFactory', () => {
         storyId: 'my-story',
       });
 
-      expect(document.body.querySelector('#storybook-root').children[0].innerHTML).toBe(
+      expect(document.body.querySelector('#storybook-root')?.children[0].innerHTML).toBe(
         '<foo>🦊</foo><!--container-->'
       );
     });
@@ -90,7 +100,7 @@ describe('RendererFactory', () => {
 
       const render = await rendererFactory.getRendererInstance(rootTargetDOMNode);
 
-      await render?.render({
+      await render.render({
         storyFnAngular: {
           template: '🦊',
           props: {},
@@ -101,14 +111,48 @@ describe('RendererFactory', () => {
         storyId: 'my-story',
       });
 
-      expect(document.body.querySelector('#storybook-root').children[0].innerHTML).toBe('🦊');
+      expect(document.body.querySelector('#storybook-root')?.children[0].innerHTML).toBe('🦊');
+    });
+
+    it('should destroy the root components before the application injector', async () => {
+      const injectorReadsOnDestroy: unknown[] = [];
+
+      @Component({ selector: 'foo', template: '🦊' })
+      class FooComponent {
+        private injector = inject(EnvironmentInjector);
+
+        ngOnDestroy() {
+          // Teardown paths like CDK overlay removal read from the injector.
+          injectorReadsOnDestroy.push(this.injector.get(ApplicationRef));
+        }
+      }
+
+      const render = await rendererFactory.getRendererInstance(rootTargetDOMNode);
+      await render.render({
+        storyFnAngular: { props: {} },
+        forced: false,
+        component: FooComponent,
+        targetDOMNode: rootTargetDOMNode,
+        storyId: 'first-story',
+      });
+
+      await render.render({
+        storyFnAngular: { template: '🐼', props: {} },
+        forced: false,
+        targetDOMNode: rootTargetDOMNode,
+        storyId: 'second-story',
+      });
+
+      expect(injectorReadsOnDestroy).toEqual([expect.any(ApplicationRef)]);
+      expect(document.body.querySelector('first-story')).toBeNull();
+      expect(document.body.getElementsByTagName('second-story')[0].innerHTML).toBe('🐼');
     });
 
     describe('when forced=true', () => {
       beforeEach(async () => {
         // Init first render
         const render = await rendererFactory.getRendererInstance(rootTargetDOMNode);
-        await render?.render({
+        await render.render({
           storyFnAngular: {
             template: '{{ logo }}: {{ name }}',
             props: {
@@ -123,7 +167,7 @@ describe('RendererFactory', () => {
       });
 
       it('should be rendered a first time', async () => {
-        expect(document.body.querySelector('#storybook-root').children[0].innerHTML).toBe(
+        expect(document.body.querySelector('#storybook-root')?.children[0].innerHTML).toBe(
           '🦊: Fox'
         );
       });
@@ -131,7 +175,7 @@ describe('RendererFactory', () => {
       it('should not be re-rendered when only props change', async () => {
         // only props change
         const render = await rendererFactory.getRendererInstance(rootTargetDOMNode);
-        await render?.render({
+        await render.render({
           storyFnAngular: {
             props: {
               logo: '👾',
@@ -142,14 +186,14 @@ describe('RendererFactory', () => {
           storyId: 'my-story',
         });
 
-        expect(document.body.querySelector('#storybook-root').children[0].innerHTML).toBe(
+        expect(document.body.querySelector('#storybook-root')?.children[0].innerHTML).toBe(
           '👾: Fox'
         );
       });
 
       it('should be re-rendered when template change', async () => {
         const render = await rendererFactory.getRendererInstance(rootTargetDOMNode);
-        await render?.render({
+        await render.render({
           storyFnAngular: {
             template: '{{ beer }}',
             props: {
@@ -161,7 +205,7 @@ describe('RendererFactory', () => {
           storyId: 'my-story',
         });
 
-        expect(document.body.querySelector('#storybook-root').children[0].innerHTML).toBe('🍺');
+        expect(document.body.querySelector('#storybook-root')?.children[0].innerHTML).toBe('🍺');
       });
     });
   });
@@ -171,7 +215,7 @@ describe('RendererFactory', () => {
       beforeEach(async () => {
         // Init first Canvas render
         const render = await rendererFactory.getRendererInstance(rootTargetDOMNode);
-        await render?.render({
+        await render.render({
           storyFnAngular: {
             template: 'Canvas 🖼',
           },
@@ -182,13 +226,11 @@ describe('RendererFactory', () => {
       });
 
       it('should reset root HTML', async () => {
-        global.document
-          .getElementById('storybook-root')
-          .appendChild(global.document.createElement('👾'));
+        rootTargetDOMNode.appendChild(global.document.createElement('👾'));
 
-        expect(global.document.getElementById('storybook-root').innerHTML).toContain('Canvas 🖼');
+        expect(rootTargetDOMNode.innerHTML).toContain('Canvas 🖼');
         await rendererFactory.getRendererInstance(rootDocstargetDOMNode);
-        expect(global.document.getElementById('storybook-root').innerHTML).toBe('');
+        expect(rootTargetDOMNode.innerHTML).toBe('');
       });
     });
 
@@ -202,14 +244,14 @@ describe('RendererFactory', () => {
         @Component({ selector: 'foo', template: '🦊' })
         class FooComponent {}
 
-        const render = await rendererFactory.getRendererInstance(
-          global.document.getElementById('storybook-docs')
-        );
+        const docsRoot = global.document.getElementById('storybook-docs');
+        assert(docsRoot);
+        const render = await rendererFactory.getRendererInstance(docsRoot);
 
         const targetDOMNode1 = global.document.createElement('div');
         targetDOMNode1.id = 'story-1';
-        global.document.getElementById('storybook-docs').appendChild(targetDOMNode1);
-        await render?.render({
+        docsRoot.appendChild(targetDOMNode1);
+        await render.render({
           storyFnAngular: {
             props: {},
           },
@@ -221,8 +263,8 @@ describe('RendererFactory', () => {
 
         const targetDOMNode2 = global.document.createElement('div');
         targetDOMNode2.id = 'story-1';
-        global.document.getElementById('storybook-docs').appendChild(targetDOMNode2);
-        await render?.render({
+        docsRoot.appendChild(targetDOMNode2);
+        await render.render({
           storyFnAngular: {
             props: {},
           },
@@ -246,17 +288,17 @@ describe('RendererFactory', () => {
         @Component({ selector: 'foo', template: '🦊' })
         class FooComponent {}
 
-        const render = await rendererFactory.getRendererInstance(
-          global.document.getElementById('storybook-docs')
-        );
+        const docsRoot = global.document.getElementById('storybook-docs');
+        assert(docsRoot);
+        const render = await rendererFactory.getRendererInstance(docsRoot);
 
         const targetDOMNode1 = global.document.createElement('div');
         targetDOMNode1.id = 'story-1';
-        global.document.getElementById('storybook-docs').appendChild(targetDOMNode1);
+        docsRoot.appendChild(targetDOMNode1);
 
         const targetDOMNode2 = global.document.createElement('div');
         targetDOMNode2.id = 'story-2';
-        global.document.getElementById('storybook-docs').appendChild(targetDOMNode2);
+        docsRoot.appendChild(targetDOMNode2);
 
         await Promise.all([
           render.render({
@@ -275,10 +317,10 @@ describe('RendererFactory', () => {
           }),
         ]);
 
-        expect(global.document.querySelector('#story-1 > story-1').innerHTML).toBe(
+        expect(global.document.querySelector('#story-1 > story-1')?.innerHTML).toBe(
           '<foo>🦊</foo><!--container-->'
         );
-        expect(global.document.querySelector('#story-2 > story-2').innerHTML).toBe(
+        expect(global.document.querySelector('#story-2 > story-2')?.innerHTML).toBe(
           '<foo>🦊</foo><!--container-->'
         );
       });

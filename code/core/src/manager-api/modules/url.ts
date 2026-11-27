@@ -9,8 +9,6 @@ import { buildArgsParam, queryFromLocation } from 'storybook/internal/router';
 import type { NavigateOptions } from 'storybook/internal/router';
 import type { API_Layout, API_UI, API_ViewMode, Args } from 'storybook/internal/types';
 
-import { global } from '@storybook/global';
-
 import { dequal as deepEqual } from 'dequal';
 import { omit } from 'es-toolkit/object';
 import { stringify } from 'picoquery';
@@ -44,9 +42,11 @@ const parseSerializedParam = (param: string) =>
     param
       .split(';')
       .map((pair) => pair.split(':'))
+      // Drop pairs without a key or without a `:` separator. An empty value (`key:`) is valid: it is
+      // how an empty string arg or global is serialized, so it must be kept.
+      .filter(([key, value]) => key && value !== undefined)
       // Encoding values ensures we don't break already encoded args/globals but also don't encode our own special characters like ; and :.
       .map(([key, value]) => [key, encodeURIComponent(value)])
-      .filter(([key, value]) => key && value)
   );
 
 const mergeSerializedParams = (params: string, extraParams: string) => {
@@ -55,6 +55,11 @@ const mergeSerializedParams = (params: string, extraParams: string) => {
   return Object.entries({ ...pairs, ...extra })
     .map(([key, value]) => `${key}:${value}`)
     .join(';');
+};
+
+const resolveIframeUrl = (baseUrl: string, { absolute }: { absolute: boolean }): string => {
+  const resolved = new URL('iframe.html', baseUrl);
+  return absolute ? resolved.href : `${resolved.pathname}${resolved.search}${resolved.hash}`;
 };
 
 // URL query params the manager consumes for layout/navigation. Everything else is a custom param
@@ -81,7 +86,7 @@ const initialUrlSupport = ({
   state: { location, path, viewMode, storyId: storyIdFromUrl },
   singleStory,
 }: ModuleArgs) => {
-  const { full, panel, nav, shortcuts, addonPanel, tabs } = queryFromLocation(location);
+  const { full, panel, nav, shortcuts, addonPanel } = queryFromLocation(location);
 
   let navSize;
   let bottomPanelHeight;
@@ -117,7 +122,6 @@ const initialUrlSupport = ({
     bottomPanelHeight,
     rightPanelWidth,
     panelPosition: ['right', 'bottom'].includes(panel) ? panel : undefined,
-    showTabs: parseBoolean(tabs),
   };
   const ui: Partial<API_UI> = {
     enableShortcuts: parseBoolean(shortcuts),
@@ -263,14 +267,14 @@ export const init: ModuleFn<SubAPI, SubState> = (moduleArgs) => {
       }
 
       const pathname = location.pathname || '/';
-      const originAddress = global.window.location.origin + pathname;
-      const networkAddress = global.STORYBOOK_NETWORK_ADDRESS ?? originAddress;
+      const originAddress = globalThis.window.location.origin + pathname;
+      const networkAddress = globalThis.STORYBOOK_NETWORK_ADDRESS ?? originAddress;
       const managerBase =
         base === 'origin' ? originAddress : base === 'network' ? networkAddress : pathname;
+      const previewBaseUrl = base ? managerBase : globalThis.document?.baseURI || originAddress;
       const previewBase = refId
         ? refs[refId].url + '/iframe.html'
-        : global.PREVIEW_URL ||
-          `${managerBase.replace(/\/[^/]*\.html$/, '').replace(/\/?$/, '/')}iframe.html`;
+        : resolveIframeUrl(previewBaseUrl, { absolute: Boolean(base) });
 
       const refParam = refId ? `&refId=${encodeURIComponent(refId)}` : '';
       const { args = '', globals = '', ...otherParams } = queryParams;
@@ -373,11 +377,11 @@ export const init: ModuleFn<SubAPI, SubState> = (moduleArgs) => {
 
   let handleOrId: any;
   provider.channel?.on(STORY_ARGS_UPDATED, () => {
-    if ('requestIdleCallback' in global.window) {
+    if ('requestIdleCallback' in globalThis.window) {
       if (handleOrId) {
-        global.window.cancelIdleCallback(handleOrId);
+        globalThis.window.cancelIdleCallback(handleOrId);
       }
-      handleOrId = global.window.requestIdleCallback(updateArgsParam, { timeout: 1000 });
+      handleOrId = globalThis.window.requestIdleCallback(updateArgsParam, { timeout: 1000 });
     } else {
       if (handleOrId) {
         clearTimeout(handleOrId);

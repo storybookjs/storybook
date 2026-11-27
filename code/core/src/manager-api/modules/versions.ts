@@ -1,14 +1,16 @@
 import type { API_UnknownEntries, API_Version, API_Versions } from 'storybook/internal/types';
 
-import { global } from '@storybook/global';
-
 import memoize from 'memoizerific';
-import semver from 'semver';
+// Per-function imports keep the rest of semver out of the browser bundle.
+import diff from 'semver/functions/diff.js';
+import gt from 'semver/functions/gt.js';
+import major from 'semver/functions/major.js';
+import minor from 'semver/functions/minor.js';
+import patch from 'semver/functions/patch.js';
+import prerelease from 'semver/functions/prerelease.js';
 
 import type { ModuleFn } from '../lib/types.tsx';
 import { version as currentVersion } from '../version.ts';
-
-const { VERSIONCHECK } = global;
 
 export interface SubState {
   versions: API_Versions & API_UnknownEntries;
@@ -18,7 +20,7 @@ export interface SubState {
 
 const getVersionCheckData = memoize(1)((): API_Versions => {
   try {
-    return { ...(JSON.parse(VERSIONCHECK).data || {}) };
+    return { ...(JSON.parse(globalThis.VERSIONCHECK).data || {}) };
   } catch (e) {
     return {};
   }
@@ -95,8 +97,8 @@ export const init: ModuleFn = ({ store }) => {
       const {
         versions: { latest, next, current },
       } = store.getState();
-      if (current && semver.prerelease(current.version) && next) {
-        return (latest && semver.gt(latest.version, next.version) ? latest : next) as API_Version;
+      if (current && prerelease(current.version) && next) {
+        return (latest && gt(latest.version, next.version) ? latest : next) as API_Version;
       }
       return latest as API_Version;
     },
@@ -111,13 +113,13 @@ export const init: ModuleFn = ({ store }) => {
       let url = `https://storybook.js.org/${asset ? 'docs-assets' : 'docs'}/`;
 
       if (asset && activeVersion) {
-        url += `${semver.major(activeVersion)}.${semver.minor(activeVersion)}/`;
+        url += `${major(activeVersion)}.${minor(activeVersion)}/`;
       } else if (versioned && activeVersion && latestVersion) {
-        const versionDiff = semver.diff(latestVersion, activeVersion);
+        const versionDiff = diff(latestVersion, activeVersion);
         const isLatestDocs = versionDiff === 'patch' || versionDiff === null;
 
         if (!isLatestDocs) {
-          url += `${semver.major(activeVersion)}.${semver.minor(activeVersion)}/`;
+          url += `${major(activeVersion)}.${minor(activeVersion)}/`;
         }
       }
 
@@ -127,8 +129,8 @@ export const init: ModuleFn = ({ store }) => {
         url += asset ? cleanedSubpath : `${cleanedSubpath}/`;
       }
 
-      if (renderer && typeof global.STORYBOOK_RENDERER !== 'undefined') {
-        const rendererName = global.STORYBOOK_RENDERER as string;
+      if (renderer && typeof globalThis.STORYBOOK_RENDERER !== 'undefined') {
+        const rendererName = globalThis.STORYBOOK_RENDERER as string;
 
         if (rendererName) {
           url += `?renderer=${normalizeRendererName(rendererName)}`;
@@ -157,18 +159,18 @@ export const init: ModuleFn = ({ store }) => {
           return true;
         }
 
-        const onPrerelease = !!semver.prerelease(current.version);
+        const onPrerelease = !!prerelease(current.version);
 
         const actualCurrent = onPrerelease
-          ? `${semver.major(current.version)}.${semver.minor(current.version)}.${semver.patch(
-              current.version
-            )}`
+          ? `${major(current.version)}.${minor(current.version)}.${patch(current.version)}`
           : current.version;
 
-        const diff = semver.diff(actualCurrent, latest.version);
+        const releaseDiff = diff(actualCurrent, latest.version);
 
         return (
-          semver.gt(latest.version, actualCurrent) && diff !== 'patch' && !diff!.includes('pre')
+          gt(latest.version, actualCurrent) &&
+          releaseDiff !== 'patch' &&
+          !releaseDiff!.includes('pre')
         );
       }
       return false;

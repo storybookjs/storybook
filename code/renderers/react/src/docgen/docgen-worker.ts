@@ -8,16 +8,26 @@
  * threading itself — it only describes this module to core through the `experimental_docgenProvider`
  * preset.
  *
- * This provider needs no configuration: `react-component-meta` extraction reads nothing from the
- * user's `typescript` options. `ComponentMetaManager` builds its own program, and the only
- * docgen-relevant TS option (`reactDocgenTypescriptOptions`, including `propFilter`) applies solely
- * to the `react-docgen-typescript` engine used by the legacy manifest path — not here.
+ * The only `typescript` option this provider reads is `docgenSpecifier`, the package it loads
+ * TypeScript from. `ComponentMetaManager` builds its own program, and the other docgen-relevant TS
+ * option (`reactDocgenTypescriptOptions`, including `propFilter`) applies solely to the
+ * `react-docgen-typescript` engine used by the legacy manifest path — not here.
  */
-import { STORY_FILE_TEST_REGEXP, getStoryImportPathFromEntry } from 'storybook/internal/common';
-import type { DocgenMiddleware, DocgenProvider } from 'storybook/internal/types';
+import {
+  type TypeScriptSpecifierForDocgen,
+  createLazyDocgenMiddleware,
+} from 'storybook/internal/common';
+import { logger } from 'storybook/internal/node-logger';
+import type { DocgenMiddleware } from 'storybook/internal/types';
+
+import { loadDocgenTypeScript } from '@storybook/component-meta-typescript';
 
 import { ComponentMetaManager } from '../componentManifest/componentMeta/ComponentMetaManager.ts';
-import { buildDocgenPayload } from './buildDocgen.ts';
+import { buildDocgenPayloads } from './buildDocgen.ts';
+
+export interface ReactDocgenOptions {
+  typeScriptSpecifier?: TypeScriptSpecifierForDocgen;
+}
 
 /**
  * Builds the React docgen middleware. Owns one {@link ComponentMetaManager} for the worker's
@@ -25,41 +35,22 @@ import { buildDocgenPayload } from './buildDocgen.ts';
  * created lazily on the first eligible request and memoized; when TypeScript is unavailable the
  * middleware passes through to the rest of the chain.
  */
-export const createDocgenProvider = (): DocgenMiddleware => {
-  let managerPromise: Promise<ComponentMetaManager | undefined> | undefined;
-
-  const getManager = (): Promise<ComponentMetaManager | undefined> => {
-    if (!managerPromise) {
-      managerPromise = (async () => {
-        try {
-          const ts = await import('typescript');
-          return new ComponentMetaManager(ts);
-        } catch {
-          return undefined;
-        }
-      })();
-    }
-    return managerPromise;
-  };
-
-  return (nextDocgen: DocgenProvider): DocgenProvider =>
-    async (input) => {
-      const storyImportPath = getStoryImportPathFromEntry(input.entry);
-      if (!storyImportPath || !STORY_FILE_TEST_REGEXP.test(storyImportPath)) {
-        return nextDocgen(input);
+export const createDocgenProvider = ({
+  typeScriptSpecifier,
+}: ReactDocgenOptions = {}): DocgenMiddleware =>
+  createLazyDocgenMiddleware({
+    createManager: async () => {
+      try {
+        return new ComponentMetaManager(
+          await loadDocgenTypeScript(typeScriptSpecifier),
+          undefined,
+          { keepParsedFilesOnRecycle: true }
+        );
+      } catch (err) {
+        logger.warn(`React docgen is unavailable. ${err instanceof Error ? err.message : err}`);
+        return undefined;
       }
-
-      const componentMetaManager = await getManager();
-      if (!componentMetaManager) {
-        return nextDocgen(input);
-      }
-
-      const ours = await buildDocgenPayload(input, { componentMetaManager });
-      if (!ours) {
-        return nextDocgen(input);
-      }
-
-      const downstream = await nextDocgen(input);
-      return { ...downstream, ...ours };
-    };
-};
+    },
+    extractBatch: (componentMetaManager, inputs) =>
+      buildDocgenPayloads(inputs, { componentMetaManager }),
+  });

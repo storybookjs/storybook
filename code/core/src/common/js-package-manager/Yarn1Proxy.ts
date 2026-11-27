@@ -1,17 +1,13 @@
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
 import process from 'node:process';
 
 import { logger, prompt } from 'storybook/internal/node-logger';
 import { FindPackageVersionsError } from 'storybook/internal/server-errors';
 
-import * as find from 'empathic/find';
 // eslint-disable-next-line depend/ban-dependencies
 import type { ResultPromise } from 'execa';
 
 import type { ExecuteCommandOptions } from '../utils/command.ts';
 import { executeCommand } from '../utils/command.ts';
-import { getProjectRoot } from '../utils/paths.ts';
 import { JsPackageManager, PackageManagerName } from './JsPackageManager.ts';
 import type { PackageJson } from './PackageJson.ts';
 import type { InstallationMetadata, PackageMetadata } from './types.ts';
@@ -63,6 +59,10 @@ export class Yarn1Proxy extends JsPackageManager {
     return `yarn exec ${command} -- ${rest.join(' ')}`;
   }
 
+  getRemoteRunCommand(args: string[]): string {
+    return `npx ${args.join(' ')}`;
+  }
+
   public runPackageCommand({
     args,
     useRemotePkg = false,
@@ -72,16 +72,11 @@ export class Yarn1Proxy extends JsPackageManager {
     useRemotePkg?: boolean;
   }): ResultPromise {
     const [command, ...rest] = args;
-    if (useRemotePkg) {
-      return executeCommand({
-        command: 'npx',
-        args,
-      });
-    }
     return executeCommand({
-      command: `yarn`,
-      args: ['exec', command, '--', ...rest],
       ...options,
+      ...(useRemotePkg
+        ? { command: 'npx', args, env: { npm_config_yes: 'true', ...options.env } }
+        : { command: 'yarn', args: ['exec', command, '--', ...rest] }),
     });
   }
 
@@ -97,20 +92,6 @@ export class Yarn1Proxy extends JsPackageManager {
       cwd: cwd ?? this.cwd,
       stdio,
     });
-  }
-
-  public async getModulePackageJSON(packageName: string): Promise<PackageJson | null> {
-    const wantedPath = join('node_modules', packageName, 'package.json');
-    const packageJsonPath = find.up(wantedPath, {
-      cwd: this.primaryPackageJson.operationDir,
-      last: getProjectRoot(),
-    });
-
-    if (!packageJsonPath) {
-      return null;
-    }
-
-    return JSON.parse(readFileSync(packageJsonPath, 'utf-8')) as Record<string, any>;
   }
 
   public async getRegistryURL() {
@@ -187,17 +168,28 @@ export class Yarn1Proxy extends JsPackageManager {
     packageName: string,
     fetchAllVersions: T
   ): Promise<T extends true ? string[] : string> {
-    const args = [fetchAllVersions ? 'versions' : 'version', '--json'];
+    const taggedPackage = packageName.match(/^(.*)@(next)$/);
+    const args = [
+      taggedPackage ? 'dist-tags' : fetchAllVersions ? 'versions' : 'version',
+      '--json',
+    ];
     try {
       const process = executeCommand({
         command: 'yarn',
-        args: ['info', packageName, ...args],
+        args: ['info', taggedPackage?.[1] ?? packageName, ...args],
       });
       const result = await process;
       const commandResult = typeof result.stdout === 'string' ? result.stdout : '';
 
       const parsedOutput = JSON.parse(commandResult);
       if (parsedOutput.type === 'inspect') {
+        if (taggedPackage && typeof parsedOutput.data === 'object') {
+          const version = parsedOutput.data[taggedPackage[2]];
+          if (typeof version === 'string') {
+            return version as T extends true ? string[] : string;
+          }
+          throw new Error(`Yarn did not provide the ${taggedPackage[2]} dist-tag.`);
+        }
         return parsedOutput.data;
       }
       // eslint-disable-next-line local-rules/no-uncategorized-errors
@@ -209,6 +201,25 @@ export class Yarn1Proxy extends JsPackageManager {
         packageName,
       });
     }
+  }
+
+  protected async runGetPeerDependencies(
+    packageSpec: string
+  ): Promise<Record<string, string> | undefined> {
+    const result = await executeCommand({
+      command: 'yarn',
+      args: ['info', packageSpec, 'peerDependencies', '--json'],
+      cwd: this.cwd,
+      stdio: 'pipe',
+    });
+    const output = typeof result.stdout === 'string' ? result.stdout : '';
+    const parsedOutput = JSON.parse(output);
+    if (parsedOutput.type !== 'inspect') {
+      // eslint-disable-next-line local-rules/no-uncategorized-errors
+      throw new Error(`Yarn did not provide an output with type 'inspect'.`);
+    }
+    // `data` is missing when the version has no peer dependencies.
+    return parsedOutput.data;
   }
 
   protected mapDependencies(input: Yarn1ListOutput, pattern: string[]): InstallationMetadata {

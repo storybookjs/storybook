@@ -31,12 +31,14 @@ const config: BuildEntries = {
         entryPoint: './src/entry-preview-rsc.tsx',
         dts: false,
       },
-      {
-        exportEntries: ['./experimental-playwright'],
-        entryPoint: './src/playwright.ts',
-      },
     ],
     node: [
+      {
+        // Builder docgen package checks, shared with `@storybook/react-vite` and
+        // `@storybook/preset-react-webpack`.
+        exportEntries: ['./internal/builder-docgen'],
+        entryPoint: './src/builder-docgen.ts',
+      },
       {
         exportEntries: ['./preset'],
         entryPoint: './src/preset.ts',

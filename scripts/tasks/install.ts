@@ -2,7 +2,7 @@ import { access } from 'node:fs/promises';
 
 import { join } from 'path';
 
-import type { Task } from '../task.ts';
+import type { MonorepoDetails, Task } from '../task.ts';
 import { checkDependencies } from '../utils/cli-utils.ts';
 import { ROOT_DIRECTORY } from '../utils/constants.ts';
 
@@ -15,7 +15,7 @@ const pathExists = async (path: string) => {
   }
 };
 
-export const install: Task = {
+export const install: Task<MonorepoDetails> = {
   description: 'Install the dependencies of the monorepo',
   async ready() {
     return pathExists(join(ROOT_DIRECTORY, 'node_modules'));

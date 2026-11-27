@@ -1,0 +1,3 @@
+html`<lit-template-shapes
+  class=${classMap({ active: Boolean(true) })}
+></lit-template-shapes>`

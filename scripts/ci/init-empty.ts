@@ -35,6 +35,7 @@ export const defineEmptyInitFlow = (template: string) =>
               IN_STORYBOOK_SANDBOX: true,
               STORYBOOK_DISABLE_TELEMETRY: true,
               STORYBOOK_INIT_EMPTY_TYPE: template,
+              STORYBOOK_CLI_SKIP_PLAYWRIGHT_INSTALLATION: true,
             },
           },
         },
@@ -120,6 +121,7 @@ export function defineEmptyInitWindows() {
               IN_STORYBOOK_SANDBOX: true,
               STORYBOOK_DISABLE_TELEMETRY: true,
               STORYBOOK_INIT_EMPTY_TYPE: 'react-vite-ts',
+              STORYBOOK_CLI_SKIP_PLAYWRIGHT_INSTALLATION: true,
             },
           },
         },
@@ -141,10 +143,8 @@ export const initEmptyNoOpJob = defineNoOpJob('init-empty', [build_linux]);
 export function getInitEmpty(workflow: Workflow) {
   const initEmpty: JobOrNoOpJob[] = ['react-vite-ts'].map(defineEmptyInitFlow);
 
-  if (isWorkflowOrAbove(workflow, 'merged')) {
-    initEmpty.push(...['nextjs-ts', 'vue-vite-ts', 'lit-vite-ts'].map(defineEmptyInitFlow));
-  }
   if (isWorkflowOrAbove(workflow, 'daily')) {
+    initEmpty.push(...['nextjs-ts', 'vue-vite-ts', 'lit-vite-ts'].map(defineEmptyInitFlow));
     initEmpty.push(defineEmptyInitWindows());
   }
   if (isWorkflowOrAbove(workflow, 'normal')) {

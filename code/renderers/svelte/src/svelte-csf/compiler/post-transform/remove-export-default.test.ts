@@ -1,0 +1,42 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import url from 'node:url';
+
+import MagicString from 'magic-string';
+import { parseAst } from 'rollup/parseAst';
+import { compile } from 'svelte/compiler';
+import { describe, expect, it } from 'vitest';
+
+import { removeExportDefault } from './remove-export-default.ts';
+
+import { extractCompiledASTNodes } from '../../parser/extract/compiled/nodes.ts';
+
+const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
+
+describe(removeExportDefault.name, () => {
+  it('removes the export default of the compiled stories file', async () => {
+    const filename = path.resolve(__dirname, '../../../__test__/svelte-csf/example.stories.svelte');
+    const originalCode = fs.readFileSync(filename).toString();
+    const compiledCode = compile(originalCode, { filename, dev: true }).js.code;
+    const compiledASTNodes = await extractCompiledASTNodes({
+      ast: parseAst(compiledCode),
+    });
+    const code = new MagicString(compiledCode);
+    removeExportDefault({
+      code,
+      nodes: compiledASTNodes,
+    });
+
+    await expect(
+      extractCompiledASTNodes({
+        ast: parseAst(code.toString()),
+      })
+    ).rejects.toThrowErrorMatchingInlineSnapshot(
+      `
+      [SB_SVELTE_CSF_PARSER_EXTRACT_COMPILED_0003 (NoExportDefaultError): Could not find 'export default' in the compiled output of the stories file: <path not specified>
+
+      This is a bug in Storybook. Please report it at https://github.com/storybookjs/storybook/issues/new?template=bug_report.yml, and include the stories file.]
+    `
+    );
+  });
+});

@@ -1,0 +1,95 @@
+{
+  "clicked": {
+    "action": "clicked",
+    "description": undefined,
+    "name": "clicked",
+    "table": {
+      "category": "outputs",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "required": true,
+        "summary": "EventEmitter",
+      },
+    },
+    "type": {
+      "name": "other",
+      "value": "void",
+    },
+  },
+  "count": {
+    "description": "
+",
+    "name": "count",
+    "table": {
+      "category": "inputs",
+      "defaultValue": {
+        "summary": NaN,
+      },
+      "type": {
+        "required": true,
+        "summary": "number",
+      },
+    },
+    "type": {
+      "name": "number",
+    },
+  },
+  "data": {
+    "description": "
+",
+    "name": "data",
+    "table": {
+      "category": "inputs",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "required": true,
+        "summary": "any",
+      },
+    },
+    "type": {
+      "name": "other",
+      "value": "empty-enum",
+    },
+  },
+  "formatter": {
+    "description": "
+",
+    "name": "formatter",
+    "table": {
+      "category": "inputs",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "required": true,
+        "summary": "function",
+      },
+    },
+    "type": {
+      "name": "other",
+      "value": "empty-enum",
+    },
+  },
+  "label": {
+    "description": "
+The text shown on the badge.",
+    "name": "label",
+    "table": {
+      "category": "inputs",
+      "defaultValue": {
+        "summary": "Badge",
+      },
+      "type": {
+        "required": true,
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+    },
+  },
+}

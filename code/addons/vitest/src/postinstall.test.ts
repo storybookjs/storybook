@@ -1,12 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import type { types as t } from 'storybook/internal/babel';
-import { babelParse, generate, traverse } from 'storybook/internal/babel';
+import { SourceEditor, parseModule, walk } from 'storybook/internal/csf-tools';
 
 import {
   ANGULAR_VITEST_PLUGIN_CALL,
-  injectAngularVitestIntoAst,
   injectAngularVitestIntoConfig,
+  injectAngularVitestIntoEditor,
 } from './angular-vitest-postinstall.ts';
 import { getTemplateConfigDir, isConfigAlreadySetup } from './postinstall.ts';
 import { loadTemplate, updateConfigFile } from './updateVitestFile.ts';
@@ -20,28 +19,21 @@ vi.mock('storybook/internal/node-logger', () => ({
  * call, in source order. Asserts co-location: the Angular bridge must sit in the SAME array.
  */
 function pluginCalleesInSameArray(code: string, locatorName = 'storybookTest'): string[] | null {
-  const ast = babelParse(code);
   let elements: string[] | null = null;
-  traverse(ast, {
-    CallExpression(path) {
-      if (elements) {
-        path.stop();
-        return;
-      }
-      const { callee } = path.node;
-      if (
-        callee.type === 'Identifier' &&
-        callee.name === locatorName &&
-        path.parentPath.isArrayExpression()
-      ) {
-        elements = (path.parentPath.node as t.ArrayExpression).elements.map((el) =>
-          el?.type === 'CallExpression' && el.callee.type === 'Identifier'
-            ? el.callee.name
-            : 'other'
-        );
-        path.stop();
-      }
-    },
+  walk(parseModule(code).program, (node, parent) => {
+    if (elements) {
+      return false;
+    }
+    if (
+      node.type === 'CallExpression' &&
+      node.callee.type === 'Identifier' &&
+      node.callee.name === locatorName &&
+      parent?.type === 'ArrayExpression'
+    ) {
+      elements = parent.elements.map((el) =>
+        el?.type === 'CallExpression' && el.callee.type === 'Identifier' ? el.callee.name : 'other'
+      );
+    }
   });
   return elements;
 }
@@ -110,34 +102,18 @@ describe('postinstall helpers', () => {
 describe('Angular bridge wiring (postinstall integration)', () => {
   it('fresh-create v4: co-locates the bridge in the template plugins array (case 5)', async () => {
     const template = await loadTemplate('vitest.config.4.template', { CONFIG_DIR: '.storybook' });
-    const out = injectAngularVitestIntoConfig(template);
+    const out = injectAngularVitestIntoConfig(template, 'vitest.config.ts');
     expect(out).not.toBeNull();
     expect(pluginCalleesInSameArray(out!)).toEqual([ANGULAR_VITEST_PLUGIN_CALL, 'storybookTest']);
     // Template comment survives the reprint (probe-locked path).
     expect(out).toContain('The plugin will run tests for the stories');
   });
 
-  it('fresh-create v3.2: co-locates the bridge in the template plugins array (case 5)', async () => {
-    const template = await loadTemplate('vitest.config.3.2.template', { CONFIG_DIR: '.storybook' });
-    const out = injectAngularVitestIntoConfig(template);
-    expect(out).not.toBeNull();
-    expect(pluginCalleesInSameArray(out!)).toEqual([ANGULAR_VITEST_PLUGIN_CALL, 'storybookTest']);
-  });
-
-  it('fresh-create base: co-locates the bridge in the template plugins array (case 5)', async () => {
-    const template = await loadTemplate('vitest.config.template', { CONFIG_DIR: '.storybook' });
-    const out = injectAngularVitestIntoConfig(template);
-    expect(out).not.toBeNull();
-    expect(pluginCalleesInSameArray(out!)).toEqual([ANGULAR_VITEST_PLUGIN_CALL, 'storybookTest']);
-  });
-
   it('existing-config sequencing: merge storybookTest, then co-locate the bridge (case 4)', async () => {
     // Mirrors postinstall's existing-config branch: updateConfigFile merges the template into the
-    // user's vite config, then injectAngularVitestIntoAst runs on the SAME (merged) target.
-    const source = babelParse(
-      await loadTemplate('vitest.config.4.template', { CONFIG_DIR: '.storybook' })
-    );
-    const target = babelParse(`
+    // user's vite config, then injectAngularVitestIntoEditor runs on the SAME (merged) target.
+    const source = await loadTemplate('vitest.config.4.template', { CONFIG_DIR: '.storybook' });
+    const target = new SourceEditor(`
       import { defineConfig } from 'vite'
       import react from '@vitejs/plugin-react'
       export default defineConfig({
@@ -147,9 +123,9 @@ describe('Angular bridge wiring (postinstall integration)', () => {
     `);
 
     expect(updateConfigFile(source, target)).toBe(true);
-    expect(injectAngularVitestIntoAst(target)).toBe(true);
+    expect(injectAngularVitestIntoEditor(target)).toBe(true);
 
-    const after = generate(target).code;
+    const after = target.toString();
     expect(pluginCalleesInSameArray(after)).toEqual([ANGULAR_VITEST_PLUGIN_CALL, 'storybookTest']);
     // The bridge must NOT be deposited as a top-level plugins sibling (react stays alone).
     expect(pluginCalleesInSameArray(after, 'react')).toEqual(['react']);
@@ -159,16 +135,14 @@ describe('Angular bridge wiring (postinstall integration)', () => {
     // Function-notation configs (e.g. `defineConfig(() => ({ ... }))`) are now
     // supported by updateConfigFile, so the merge succeeds and the Angular bridge
     // co-locates with storybookTest in the same plugins array.
-    const source = babelParse(
-      await loadTemplate('vitest.config.4.template', { CONFIG_DIR: '.storybook' })
-    );
-    const target = babelParse(`
+    const source = await loadTemplate('vitest.config.4.template', { CONFIG_DIR: '.storybook' });
+    const target = new SourceEditor(`
       import { defineConfig } from 'vite'
       export default defineConfig(() => ({ test: { globals: true } }))
     `);
     expect(updateConfigFile(source, target)).toBe(true);
-    expect(injectAngularVitestIntoAst(target)).toBe(true);
-    expect(pluginCalleesInSameArray(generate(target).code)).toEqual([
+    expect(injectAngularVitestIntoEditor(target)).toBe(true);
+    expect(pluginCalleesInSameArray(target.toString())).toEqual([
       ANGULAR_VITEST_PLUGIN_CALL,
       'storybookTest',
     ]);
@@ -182,7 +156,7 @@ describe('Angular bridge wiring (postinstall integration)', () => {
         test: { projects: [{ extends: true, plugins: [storybookTest({ configDir: '.storybook' })] }] },
       };
     `;
-    const out = injectAngularVitestIntoConfig(existing);
+    const out = injectAngularVitestIntoConfig(existing, 'vitest.config.ts');
     expect(out).not.toBeNull();
     expect(pluginCalleesInSameArray(out!)).toEqual([ANGULAR_VITEST_PLUGIN_CALL, 'storybookTest']);
   });

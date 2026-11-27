@@ -4,7 +4,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { action } from 'storybook/actions';
 import { expect, within } from 'storybook/test';
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/emotion';
 
 import * as ArgRow from './ArgRow.stories';
 import { ArgsTable, ArgsTableError } from './ArgsTable';
@@ -120,6 +120,47 @@ export const AllControls = {
       multiSelect: { ...ArgRow.MultiSelect.args.row, key: 'multiSelect' },
       object: ArgRow.ObjectOf.args.row,
       func: ArgRow.Func.args.row,
+    },
+  },
+};
+
+/** Setting an empty Object control opens its raw editor with the caret inside the brackets. */
+export const AllControlsObjectSet: Story = {
+  args: AllControls.args,
+  play: async ({ canvas, canvasElement, userEvent }) => {
+    // Several rows have a "Set object" button, so the one of interest is looked up by its id.
+    await userEvent.click(canvasElement.querySelector('#set-someObject')!);
+
+    const rawInput = canvas.getByRole<HTMLTextAreaElement>('textbox', {
+      name: 'Edit someObject as JSON',
+    });
+    await expect(rawInput).toHaveValue('{}');
+    await expect(rawInput).toHaveFocus();
+    await expect([rawInput.selectionStart, rawInput.selectionEnd]).toEqual([1, 1]);
+  },
+};
+
+export const AllControlsFilled: Story = {
+  args: {
+    ...AllControls.args,
+    args: {
+      someArray: [1, 2, 3],
+      someBoolean: true,
+      someColor: '#ff4785',
+      someDate: new Date('2020-10-20T09:30:02'),
+      someObject: {
+        name: 'Storybook',
+        nested: { enabled: true, count: 2 },
+      },
+      someString: 'Filled string control',
+      number: 42,
+      range: 24,
+      radio: 'b',
+      inlineRadio: 'c',
+      check: ['a'],
+      inlineCheck: ['b', 'c'],
+      select: 'b',
+      multiSelect: ['a', 'c'],
     },
   },
 };

@@ -1,14 +1,11 @@
 /**
- * The review payload an agent pushes via the `display-review` MCP tool.
+ * The review payload an agent publishes via the `review.create` toolset method.
  *
- * Flow:
- *   MCP `display-review` tool → emit PUSH_REVIEW on the Storybook channel
- *   → core-server stamps `createdAt` and caches it
- *   → emits DISPLAY_REVIEW to all open tabs (or replays on REQUEST_REVIEW).
+ * Flow: `review.create` calls the `core/review` service's `setReview` command; manager tabs
+ * subscribe to the service's current-review query.
  *
- * This mirrors the canonical valibot schema in `@storybook/addon-mcp` →
- * `tools/display-review.ts`. The manager only renders the data — it does
- * not validate — so it needs the type, not the validator. Keep `title` /
+ * This mirrors the canonical valibot schema in the review toolset definition. The manager only
+ * renders the data — it does not validate — so it needs the type, not the validator. Keep `title` /
  * `description` / `collections` in sync with that schema.
  */
 
@@ -24,14 +21,13 @@ export interface ReviewState {
   collections: ReviewCollection[];
   changedFiles?: string[];
   /**
-   * Server-side creation timestamp (unix ms) assigned when PUSH_REVIEW is
+   * Server-side creation timestamp (unix ms) assigned when the review is
    * received; used for live "Created x minutes ago" UI in the summary.
    */
   createdAt?: number;
   /**
    * Set server-side once a watched source file changes after `createdAt`.
-   * Drives the "this review may be stale" banner. Persisted on the cached
-   * review so REQUEST_REVIEW replays it to late/refreshed tabs.
+   * Drives the "this review may be stale" banner and synchronizes through the review service.
    */
   stale?: boolean;
 }

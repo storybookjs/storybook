@@ -1,6 +1,4 @@
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
-import { global as globalThis } from '@storybook/global';
-
 import { clearAllMocks, expect, waitFor } from 'storybook/test';
 
 import { fetchData } from './ClearModuleMocksMocking.api';

@@ -1,13 +1,9 @@
 import type { ArgsStoryFn, RenderContext } from 'storybook/internal/types';
 
-import { global } from '@storybook/global';
-
 import { simulateDOMContentLoaded, simulatePageLoad } from 'storybook/preview-api';
 import { dedent } from 'ts-dedent';
 
 import type { HtmlRenderer } from './types.ts';
-
-const { Node } = global;
 
 export const render: ArgsStoryFn<HtmlRenderer> = (args, context) => {
   const { id, component: Component } = context;
@@ -42,7 +38,7 @@ export const render: ArgsStoryFn<HtmlRenderer> = (args, context) => {
 };
 
 export function renderToCanvas(
-  { storyFn, kind, name, showMain, showError, forceRemount }: RenderContext<HtmlRenderer>,
+  { storyFn, title, name, showMain, showError, forceRemount }: RenderContext<HtmlRenderer>,
   canvasElement: HtmlRenderer['canvasElement']
 ) {
   const element = storyFn();
@@ -50,7 +46,7 @@ export function renderToCanvas(
   if (typeof element === 'string') {
     canvasElement.innerHTML = element;
     simulatePageLoad(canvasElement);
-  } else if (element instanceof Node) {
+  } else if (element instanceof globalThis.Node) {
     if (canvasElement.firstChild === element && forceRemount === false) {
       return;
     }
@@ -60,7 +56,7 @@ export function renderToCanvas(
     simulateDOMContentLoaded();
   } else {
     showError({
-      title: `Expecting an HTML snippet or DOM node from the story: "${name}" of "${kind}".`,
+      title: `Expecting an HTML snippet or DOM node from the story: "${name}" of "${title}".`,
       description: dedent`
         Did you forget to return the HTML snippet from the story?
         Use "() => <your snippet or node>" or when defining the story.

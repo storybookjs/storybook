@@ -1,5 +1,6 @@
-import { expect, test } from '@playwright/test';
+import { type Page, expect, test } from '@playwright/test';
 import * as fs from 'node:fs';
+import { rm } from 'node:fs/promises';
 import * as path from 'node:path';
 
 import { SbPage } from './util.ts';
@@ -11,9 +12,8 @@ import { SbPage } from './util.ts';
  *   1. STORYBOOK_URL — URL of a running Storybook dev server
  *   2. STORYBOOK_SANDBOX_DIR — path to the sandbox root
  *      (e.g. ../storybook-sandboxes/react-vite-default-ts)
- *   3. The sandbox's .storybook/main.ts must have: features: { changeDetection: true }
- *   4. STORYBOOK_TEMPLATE_NAME must be one of the supported templates (or be unset for local runs)
- *   5. The sandbox must already have a git repo with an initial commit — this is handled
+ *   3. STORYBOOK_TEMPLATE_NAME must be one of the supported templates (or be unset for local runs)
+ *   4. The sandbox must already have a git repo with an initial commit — this is handled
  *      automatically by the sandbox generation task (scripts/tasks/sandbox.ts).
  *
  * Supported templates: react-vite/default-ts, nextjs-vite/default-ts,
@@ -26,6 +26,26 @@ const type = process.env.STORYBOOK_TYPE || 'dev';
 const templateName = process.env.STORYBOOK_TEMPLATE_NAME || '';
 
 const CHANGE_DETECTION_TIMEOUT = 15_000;
+
+const expectRemovedFromIndex = async (page: Page, title: string) => {
+  await expect
+    .poll(
+      async () => {
+        const response = await page.request.get(`${storybookUrl}/index.json`);
+        if (!response.ok()) {
+          return `index.json responded ${response.status()}: ${await response.text()}`;
+        }
+        const { entries } = (await response.json()) as {
+          entries: Record<string, { title: string }>;
+        };
+        return Object.values(entries).some((entry) => entry.title === title)
+          ? `${title} is still indexed`
+          : 'removed';
+      },
+      { timeout: CHANGE_DETECTION_TIMEOUT }
+    )
+    .toBe('removed');
+};
 
 // Resolve paths eagerly so test.skip() calls need no if-conditionals inside tests.
 const headerStoriesPath =
@@ -72,7 +92,7 @@ test.describe('Change Detection', () => {
         newStoryPath,
         [
           '<script module>',
-          "  import { defineMeta } from '@storybook/addon-svelte-csf';",
+          "  import { defineMeta } from '@storybook/svelte-vite';",
           "  import Button from './Button.svelte';",
           "  import { fn } from 'storybook/test';",
           '',
@@ -100,9 +120,14 @@ test.describe('Change Detection', () => {
       );
 
       // New stories roll up to "Change status: New" on the parent component node
-      await expect(page.locator('[aria-label="Change status: New"]').first()).toBeVisible({
-        timeout: CHANGE_DETECTION_TIMEOUT,
-      });
+      await expect(
+        page.locator(
+          '[data-item-id="example-changedetectionnew"] [aria-label="Change status: New"]'
+        )
+      ).toBeVisible({ timeout: CHANGE_DETECTION_TIMEOUT });
+
+      await rm(newStoryPath);
+      await expectRemovedFromIndex(page, 'Example/ChangeDetectionNew');
     } finally {
       fs.rmSync(newStoryPath, { force: true });
     }
@@ -127,9 +152,14 @@ test.describe('Change Detection', () => {
       );
 
       // New stories roll up to "Change status: New" on the parent component node
-      await expect(page.locator('[aria-label="Change status: New"]').first()).toBeVisible({
-        timeout: CHANGE_DETECTION_TIMEOUT,
-      });
+      await expect(
+        page.locator(
+          '[data-item-id="example-changedetectionnew"] [aria-label="Change status: New"]'
+        )
+      ).toBeVisible({ timeout: CHANGE_DETECTION_TIMEOUT });
+
+      await rm(newStoryPath);
+      await expectRemovedFromIndex(page, 'Example/ChangeDetectionNew');
     } finally {
       fs.rmSync(newStoryPath, { force: true });
     }
@@ -143,6 +173,12 @@ test.describe('Change Detection', () => {
 
     try {
       fs.writeFileSync(storyPath, `${original}\n// change-detection-e2e-modified`);
+
+      await expect(
+        page.getByRole('switch', {
+          name: /^Show (new|modified|new and modified) stories since last commit$/,
+        })
+      ).toBeVisible({ timeout: CHANGE_DETECTION_TIMEOUT });
 
       // Branch-level "Modified" change-detection icon is gated on the modified
       // status filter being active. Activate it via the FilterPanel.

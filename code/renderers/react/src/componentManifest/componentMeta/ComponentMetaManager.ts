@@ -1,35 +1,38 @@
 /**
- * ComponentMetaManager — multi-project manager for component metadata extraction.
+ * React specialization of core's generic {@link BaseComponentMetaManager}.
  *
- * Mirrors Volar-style project management patterns:
- *
- * - https://github.com/volarjs/volar.js/blob/882cd56d46a13d272f34e451f495d3d62251969a/packages/language-server/lib/project/typescriptProject.ts#L18-L390
- * - https://github.com/volarjs/volar.js/blob/882cd56d46a13d272f34e451f495d3d62251969a/packages/language-server/lib/project/typescriptProjectLs.ts#L262-L353
- * - ConfigProjects / inferredProject / rootTsConfigs / searchedDirs
- * - FindMatchTSConfig → prepareClosestRootCommandLine / findDirectIncludeTsconfig /
- *   findIndirectReferenceTsconfig / findTSConfig / getReferencesChains / getCommandLine
- * - GetOrCreateConfiguredProject / getOrCreateInferredProject
- * - SortTSConfigs / isFileInDir
- * - Config change handler (Created / Changed+Deleted dispose pattern)
- *
- * Plus our own file watching layer (fs.watch + debounce) since we're a standalone Node.js process,
- * not running inside an IDE.
+ * The tsconfig discovery/matching, project-reference chains, file watching, and heap-pressure
+ * recycling all live in `storybook/internal/component-meta`; this file contributes what is
+ * React-specific: a {@link ComponentMetaProjectFactory} for each TypeScript API, React-flavored
+ * inferred-project compiler options, and the {@link ComponentMetaManager.batchExtract} surface the
+ * manifest generator and docgen provider drive.
  */
-import { logger, once } from 'storybook/internal/node-logger';
+import {
+  ComponentMetaManager as BaseComponentMetaManager,
+  type FileSnapshotCache,
+  type ProjectCommandLine,
+  parseTsconfigCommandLine,
+} from 'storybook/internal/component-meta';
+import { logger } from 'storybook/internal/node-logger';
 
-import { type FSWatcher, existsSync, watch } from 'fs';
-import * as path from 'path';
-import { dedent } from 'ts-dedent';
 import type ts from 'typescript';
-import * as v8 from 'v8';
 
 import type { StoryRef } from '../getComponentImports.ts';
 import { groupByToMap } from '../utils.ts';
-import { ComponentMetaProject } from './ComponentMetaProject.ts';
+import type { RawCompilerOptions } from 'typescript-native/sync';
 
-// Adapted from:
-// https://github.com/volarjs/volar.js/blob/882cd56d46a13d272f34e451f495d3d62251969a/packages/language-server/lib/project/typescriptProject.ts#L18
-const rootTsConfigNames = ['tsconfig.json', 'jsconfig.json'];
+import {
+  type ComponentMetaBackend,
+  type LoadedDocgenTypeScript,
+  createComponentMetaBackend,
+  createNativeBackend,
+} from '@storybook/component-meta-typescript';
+
+import { ComponentMetaProject } from './ComponentMetaProject.ts';
+import { NativeComponentMetaProject } from './native/native-component-meta-project.ts';
+
+// The manager's tsconfig-matching helpers are re-exported for existing consumers and tests.
+export { isFileInDir, sortTSConfigs } from 'storybook/internal/component-meta';
 
 const DEFAULT_INFERRED_OPTIONS: ts.CompilerOptions = {
   strict: true,
@@ -38,81 +41,126 @@ const DEFAULT_INFERRED_OPTIONS: ts.CompilerOptions = {
   skipLibCheck: true,
 };
 
+type FsFileSnapshots = FileSnapshotCache<ts.IScriptSnapshot>;
+
+type ManagedProject = ComponentMetaProject | NativeComponentMetaProject;
+
 /**
- * Recycle (dispose + lazily rebuild) the shared TS program(s) once heap usage crosses this fraction
- * of the V8 heap limit.
+ * Builds the compiler-API project factory over a snapshot cache. The cache is shared across every
+ * project the factory creates (Volar Kit checker pattern) and owned by the manager, which exposes it
+ * to tests; it is cleared through the factory's `dispose`.
  */
-const RECYCLE_HEAP_PRESSURE_RATIO = 0.7;
+function createCompilerApiBackend(
+  typescript: typeof ts,
+  fsFileSnapshots: FsFileSnapshots
+): ComponentMetaBackend<ComponentMetaProject, ts.ParsedCommandLine> {
+  /**
+   * Shared across every project so they reuse parsed+bound SourceFiles instead of each holding a
+   * private copy of lib.d.ts, React's types and node_modules.
+   *
+   * Needs no cleanup of its own: disposing a LanguageService releases every SourceFile it holds, and
+   * the registry drops an entry once its last reference goes. A heap-pressure recycle therefore
+   * keeps only the files of the projects it rebuilds (`sharesParsedFiles`).
+   *
+   * `useCaseSensitiveFileNames` defaults to `false`, which would lowercase the registry's path keys
+   * on case-sensitive filesystems, so pass the host's value explicitly.
+   */
+  const documentRegistry = typescript.createDocumentRegistry(
+    typescript.sys.useCaseSensitiveFileNames
+  );
 
-export class ComponentMetaManager {
-  // Adapted from:
-  // https://github.com/volarjs/volar.js/blob/882cd56d46a13d272f34e451f495d3d62251969a/packages/language-server/lib/project/typescriptProject.ts#L34-L37
-  private configProjects = new Map<string, ComponentMetaProject>();
-  private inferredProject: ComponentMetaProject | undefined;
-  private rootTsConfigs = new Set<string>();
-  private searchedDirs = new Set<string>();
+  const factory: ComponentMetaBackend<ComponentMetaProject, ts.ParsedCommandLine>['factory'] = {
+    parseCommandLine: (tsconfig) =>
+      parseTsconfigCommandLine<ts.ParsedCommandLine>(typescript, tsconfig),
+    createConfiguredProject: (commandLine, tsconfig, getCommandLine) =>
+      new ComponentMetaProject(
+        typescript,
+        commandLine,
+        tsconfig,
+        fsFileSnapshots,
+        getCommandLine,
+        documentRegistry
+      ),
+    createInferredProject: () =>
+      new ComponentMetaProject(
+        typescript,
+        {
+          options: {
+            ...DEFAULT_INFERRED_OPTIONS,
+            target: typescript.ScriptTarget.Latest,
+            module: typescript.ModuleKind.ESNext,
+            moduleResolution: typescript.ModuleResolutionKind.Bundler,
+            jsx: typescript.JsxEmit.ReactJSX,
+          },
+          fileNames: [],
+          errors: [],
+        },
+        undefined,
+        fsFileSnapshots,
+        undefined,
+        documentRegistry
+      ),
+    sharesParsedFiles: true,
+    dispose: () => fsFileSnapshots.clear(),
+  };
 
-  // Our own file watching layer
-  private watching = false;
-  private watchersByDir = new Map<string, FSWatcher>();
-  private pendingEvents = new Map<string, ReturnType<typeof setTimeout>>();
+  return { fileSystem: typescript, factory };
+}
 
-  // Adapted from:
-  // https://github.com/volarjs/volar.js/blob/882cd56d46a13d272f34e451f495d3d62251969a/packages/kit/lib/createChecker.ts#L83
-  readonly fsFileSnapshots = new Map<
-    string,
-    [number | undefined, ts.IScriptSnapshot | undefined]
-  >();
+export class ComponentMetaManager extends BaseComponentMetaManager<
+  ManagedProject,
+  ProjectCommandLine
+> {
+  // Shared mtime-cached file snapshots of the compiler API, exposed for tests; the factory clears them.
+  readonly fsFileSnapshots: FsFileSnapshots;
 
-  // Heap-pressure recycle: bytes of `heapUsed` past which the TS program(s) are disposed and rebuilt.
-  private readonly heapRecycleThresholdBytes: number;
+  private readonly keepParsedFilesOnRecycle: boolean;
 
   /**
-   * @param recycleHeapPressureRatio Fraction of the V8 heap limit at which the shared program(s) are
-   *   recycled (see {@link RECYCLE_HEAP_PRESSURE_RATIO}). Exposed for tuning and for the memory
-   *   regression gate, which passes `Infinity` to disable recycling and assert the OOM still happens
-   *   without the fix. Defaults to {@link RECYCLE_HEAP_PRESSURE_RATIO}.
+   * `recycleHeapPressureRatio` is the fraction of the V8 heap limit at which the shared program(s)
+   * are recycled; the memory regression gate passes `Infinity` to disable recycling and assert the
+   * OOM still happens without the fix.
+   *
+   * `keepParsedFilesOnRecycle` is for a manager that serves one request after another, like the
+   * docgen worker. A recycle then keeps the parsed files of the projects the batch used, so the next
+   * request does not parse them again. Without it a recycle frees them, which suits a caller that
+   * extracts everything in one batch and needs the heap for other work afterwards.
    */
   constructor(
-    private typescript: typeof ts,
-    recycleHeapPressureRatio: number = RECYCLE_HEAP_PRESSURE_RATIO
+    typescript: LoadedDocgenTypeScript,
+    recycleHeapPressureRatio?: number,
+    { keepParsedFilesOnRecycle = false }: { keepParsedFilesOnRecycle?: boolean } = {}
   ) {
-    this.heapRecycleThresholdBytes = Math.floor(
-      v8.getHeapStatistics().heap_size_limit * recycleHeapPressureRatio
-    );
-  }
-
-  // ---------------------------------------------------------------------------
-  // Adapted from:
-  // https://github.com/volarjs/volar.js/blob/882cd56d46a13d272f34e451f495d3d62251969a/packages/language-server/lib/project/typescriptProject.ts#L70-L79
-  // ---------------------------------------------------------------------------
-
-  getProjectForFile(fileName: string): ComponentMetaProject {
-    const tsconfig = this.findMatchTSConfig(fileName);
-    if (tsconfig) {
-      // Adapted from:
-      // https://github.com/volarjs/volar.js/blob/882cd56d46a13d272f34e451f495d3d62251969a/packages/language-server/lib/project/typescriptProject.ts#L71-L77
-      // Always go through getOrCreateConfiguredProject — never raw map lookup.
-      return (
-        this.getOrCreateConfiguredProject(tsconfig) ?? this.getOrCreateInferredProject(fileName)
-      );
-    }
-    return this.getOrCreateInferredProject(fileName);
+    // Adapted from:
+    // https://github.com/volarjs/volar.js/blob/882cd56d46a13d272f34e451f495d3d62251969a/packages/kit/lib/createChecker.ts#L83
+    const fsFileSnapshots: FsFileSnapshots = new Map();
+    const { fileSystem, factory } = createComponentMetaBackend(typescript, {
+      compiler: (compilerApi) => createCompilerApiBackend(compilerApi, fsFileSnapshots),
+      native: (modules) =>
+        createNativeBackend(modules, NativeComponentMetaProject, {
+          ...(DEFAULT_INFERRED_OPTIONS as RawCompilerOptions),
+          target: modules.ast.ScriptTarget.Latest,
+          module: modules.sync.ModuleKind.ESNext,
+          moduleResolution: modules.sync.ModuleResolutionKind.Bundler,
+          jsx: modules.sync.JsxEmit.ReactJSX,
+        }),
+    });
+    super(fileSystem, factory, recycleHeapPressureRatio);
+    this.fsFileSnapshots = fsFileSnapshots;
+    this.keepParsedFilesOnRecycle = keepParsedFilesOnRecycle;
   }
 
   /**
    * Batch-extract component props across all entries, grouping by tsconfig project so each project
    * builds its TS program only once.
    */
-  batchExtract(entries: StoryRef[]): void {
-    const extractableEntries = entries.filter(
-      (storyRef) => storyRef.component?.path && storyRef.component.importName
-    );
-    const byProject = groupByToMap(extractableEntries, (storyRef) =>
+  batchExtract(entries: StoryRef[], batchFiles?: Map<ManagedProject, string[]>): void {
+    const byProject = groupByToMap(entries.filter(isExtractable), (storyRef) =>
       this.getProjectForFile(storyRef.storyPath)
     );
 
     for (const [project, projectEntries] of byProject) {
+      this.addBatchFiles(project, batchFiles);
       try {
         project.extractPropsFromStories(projectEntries);
       } catch (err) {
@@ -120,558 +168,29 @@ export class ComponentMetaManager {
       }
     }
 
-    this.recycleProjectsIfHeapPressured();
-  }
-
-  /**
-   * Reclaim the shared program(s)' resident type-resolution cache when heap usage approaches the V8
-   * limit, preventing the next extraction's spike from OOMing the dev server.
-   */
-  private recycleProjectsIfHeapPressured(): void {
-    if (this.configProjects.size === 0 && !this.inferredProject) {
-      return;
-    }
-    if (process.memoryUsage().heapUsed < this.heapRecycleThresholdBytes) {
-      return;
-    }
-
-    // We crossed the heap-pressure threshold. Recycling reclaims the type cache and usually prevents
-    // the crash, but a single extraction can still exceed the cap — warn once so the user can raise
-    // their memory limit rather than silently paying repeated rebuilds (or eventually crashing).
-    const heapLimitMb = Math.round(v8.getHeapStatistics().heap_size_limit / (1024 * 1024));
-    once.warn(dedent`
-      Storybook's experimental docgen server is nearing the Node.js memory limit (~${heapLimitMb} MB) while extracting component types, and recycled its TypeScript program to avoid an out-of-memory crash. This can briefly slow down the docs and Controls panels.
-
-      If this happens often, raise Node's memory limit before starting Storybook, for example:
-        NODE_OPTIONS="--max-old-space-size=${heapLimitMb * 2}"
-    `);
-
-    for (const project of this.configProjects.values()) {
-      project.dispose();
-    }
-    this.inferredProject?.dispose();
-    this.configProjects.clear();
-    this.inferredProject = undefined;
-  }
-
-  // ---------------------------------------------------------------------------
-  // Adapted from:
-  // https://github.com/volarjs/volar.js/blob/882cd56d46a13d272f34e451f495d3d62251969a/packages/language-server/lib/project/typescriptProject.ts#L101-L234
-  // ---------------------------------------------------------------------------
-
-  private findMatchTSConfig(filePath: string): string | null {
-    const fileName = filePath.replace(/\\/g, '/');
-
-    // Adapted from:
-    // https://github.com/volarjs/volar.js/blob/882cd56d46a13d272f34e451f495d3d62251969a/packages/language-server/lib/project/typescriptProject.ts#L104-L118
-    let dir = path.dirname(fileName);
-    while (true) {
-      if (this.searchedDirs.has(dir)) {
-        break;
-      }
-      this.searchedDirs.add(dir);
-      for (const tsConfigName of rootTsConfigNames) {
-        const tsconfigPath = path.join(dir, tsConfigName).replace(/\\/g, '/');
-        if (this.typescript.sys.fileExists(tsconfigPath)) {
-          this.rootTsConfigs.add(tsconfigPath);
-        }
-      }
-      const parent = path.dirname(dir);
-      if (parent === dir) {
-        break;
-      }
-      dir = parent;
-    }
-
-    if (this.rootTsConfigs.size === 0) {
-      return null;
-    }
-
-    // Adapted from:
-    // https://github.com/volarjs/volar.js/blob/882cd56d46a13d272f34e451f495d3d62251969a/packages/language-server/lib/project/typescriptProject.ts#L124-L138
-    // Side-effect only: pre-creates the closest project via getCommandLine() so that
-    // findIndirectReferenceTsconfig below can inspect its project references.
-    const prepareClosestRootCommandLine = () => {
-      let matches: string[] = [];
-      for (const rootTsConfig of this.rootTsConfigs) {
-        if (isFileInDir(fileName, path.dirname(rootTsConfig))) {
-          matches.push(rootTsConfig);
-        }
-      }
-      matches = matches.sort((a, b) => sortTSConfigs(fileName, a, b));
-      if (matches.length) {
-        getCommandLine(matches[0]);
-      }
-    };
-
-    // Adapted from:
-    // https://github.com/volarjs/volar.js/blob/882cd56d46a13d272f34e451f495d3d62251969a/packages/language-server/lib/project/typescriptProject.ts#L139-L147
-    const findIndirectReferenceTsconfig = () => {
-      return findTSConfig((tsconfig) => {
-        const project = this.configProjects.get(tsconfig);
-        return !!project?.hasSourceFile(fileName);
-      });
-    };
-
-    // Adapted from:
-    // https://github.com/volarjs/volar.js/blob/882cd56d46a13d272f34e451f495d3d62251969a/packages/language-server/lib/project/typescriptProject.ts#L149-L158
-    const findDirectIncludeTsconfig = () => {
-      return findTSConfig((tsconfig) => {
-        const commandLine = getCommandLine(tsconfig);
-        const fileNames = new Set(commandLine?.fileNames ?? []);
-        return fileNames.has(fileName);
-      });
-    };
-
-    // Adapted from:
-    // https://github.com/volarjs/volar.js/blob/882cd56d46a13d272f34e451f495d3d62251969a/packages/language-server/lib/project/typescriptProject.ts#L160-L188
-    const findTSConfig = (match: (tsconfig: string) => boolean): string | null => {
-      const checked = new Set<string>();
-
-      for (const rootTsConfig of [...this.rootTsConfigs].sort((a, b) =>
-        sortTSConfigs(fileName, a, b)
-      )) {
-        const project = this.configProjects.get(rootTsConfig);
-        if (project) {
-          let chains = getReferencesChains(project.getCommandLine(), rootTsConfig, []);
-
-          // This is to be consistent with tsserver behavior
-          chains = chains.reverse();
-
-          for (const chain of chains) {
-            for (let i = chain.length - 1; i >= 0; i--) {
-              const tsconfig = chain[i];
-
-              if (checked.has(tsconfig)) {
-                continue;
-              }
-              checked.add(tsconfig);
-
-              if (match(tsconfig)) {
-                return tsconfig;
-              }
-            }
-          }
-        }
-      }
-
-      return null;
-    };
-
-    // Adapted from:
-    // https://github.com/volarjs/volar.js/blob/882cd56d46a13d272f34e451f495d3d62251969a/packages/language-server/lib/project/typescriptProject.ts#L189-L229
-    const getReferencesChains = (
-      commandLine: ts.ParsedCommandLine,
-      tsConfig: string,
-      before: string[]
-    ): string[][] => {
-      if (commandLine.projectReferences?.length) {
-        const newChains: string[][] = [];
-
-        for (const projectReference of commandLine.projectReferences) {
-          let tsConfigPath = projectReference.path.replace(/\\/g, '/');
-
-          // fix https://github.com/johnsoncodehk/volar/issues/712
-          if (this.typescript.sys.directoryExists(tsConfigPath)) {
-            const newTsConfigPath = path.join(tsConfigPath, 'tsconfig.json');
-            const newJsConfigPath = path.join(tsConfigPath, 'jsconfig.json');
-            if (this.typescript.sys.fileExists(newTsConfigPath)) {
-              tsConfigPath = newTsConfigPath;
-            } else if (this.typescript.sys.fileExists(newJsConfigPath)) {
-              tsConfigPath = newJsConfigPath;
-            }
-          }
-
-          const beforeIndex = before.indexOf(tsConfigPath); // cycle
-          if (beforeIndex >= 0) {
-            newChains.push(before.slice(0, Math.max(beforeIndex, 1)));
-          } else {
-            const referenceCommandLine = getCommandLine(tsConfigPath);
-            if (referenceCommandLine) {
-              for (const chain of getReferencesChains(referenceCommandLine, tsConfigPath, [
-                ...before,
-                tsConfig,
-              ])) {
-                newChains.push(chain);
-              }
-            }
-          }
-        }
-
-        return newChains;
-      } else {
-        return [[...before, tsConfig]];
-      }
-    };
-
-    // Adapted from:
-    // https://github.com/volarjs/volar.js/blob/882cd56d46a13d272f34e451f495d3d62251969a/packages/language-server/lib/project/typescriptProject.ts#L230-L233
-    const getCommandLine = (tsConfig: string) => {
-      const project = this.getOrCreateConfiguredProject(tsConfig);
-      return project?.getCommandLine();
-    };
-
-    prepareClosestRootCommandLine();
-
-    return findDirectIncludeTsconfig() ?? findIndirectReferenceTsconfig();
-  }
-
-  // ---------------------------------------------------------------------------
-  // Adapted from:
-  // https://github.com/volarjs/volar.js/blob/882cd56d46a13d272f34e451f495d3d62251969a/packages/language-server/lib/project/typescriptProject.ts#L236-L256
-  // ---------------------------------------------------------------------------
-
-  private getOrCreateConfiguredProject(tsconfig: string): ComponentMetaProject | null {
-    tsconfig = tsconfig.replace(/\\/g, '/');
-    let project = this.configProjects.get(tsconfig);
-    if (!project) {
-      try {
-        const getCommandLine = () => this.parseConfigWorker(tsconfig);
-        project = new ComponentMetaProject(
-          this.typescript,
-          getCommandLine(),
-          tsconfig,
-          this.fsFileSnapshots,
-          getCommandLine
-        );
-        this.configProjects.set(tsconfig, project);
-
-        // Auto-watch the project's directories if watching is active.
-        // This covers projects discovered after initial startWatching().
-        if (this.watching) {
-          this.watchDirectory(path.dirname(tsconfig));
-          this.watchProgramSourceDirs(project);
-        }
-      } catch (err) {
-        logger.debug(`[reactComponentMeta] Failed to parse tsconfig ${tsconfig}: ${err}`);
-        return null;
-      }
-    }
-    return project;
-  }
-
-  // ---------------------------------------------------------------------------
-  // Adapted from:
-  // https://github.com/volarjs/volar.js/blob/882cd56d46a13d272f34e451f495d3d62251969a/packages/language-server/lib/project/typescriptProject.ts#L258-L284
-  // ---------------------------------------------------------------------------
-
-  private getOrCreateInferredProject(fileName: string): ComponentMetaProject {
-    if (!this.inferredProject) {
-      this.inferredProject = new ComponentMetaProject(
-        this.typescript,
-        {
-          options: {
-            ...DEFAULT_INFERRED_OPTIONS,
-            target: this.typescript.ScriptTarget.Latest,
-            module: this.typescript.ModuleKind.ESNext,
-            moduleResolution: this.typescript.ModuleResolutionKind.Bundler,
-            jsx: this.typescript.JsxEmit.ReactJSX,
-          },
-          fileNames: [],
-          errors: [],
-        },
-        undefined,
-        this.fsFileSnapshots
-      );
-    }
-
-    this.inferredProject.ensureFiles([fileName]);
-
-    return this.inferredProject;
-  }
-
-  // ---------------------------------------------------------------------------
-  // Adapted from:
-  // https://github.com/volarjs/volar.js/blob/882cd56d46a13d272f34e451f495d3d62251969a/packages/language-server/lib/project/typescriptProjectLs.ts#L262-L353
-  // ---------------------------------------------------------------------------
-
-  private parseConfigWorker(tsconfig: string): ts.ParsedCommandLine {
-    const config = this.typescript.readJsonConfigFile(tsconfig, this.typescript.sys.readFile);
-    const content = this.typescript.parseJsonSourceFileConfigFileContent(
-      config,
-      this.typescript.sys,
-      path.dirname(tsconfig),
-      {},
-      tsconfig
-    );
-    // fix https://github.com/johnsoncodehk/volar/issues/1786
-    // https://github.com/microsoft/TypeScript/issues/30457
-    content.options.outDir = undefined;
-    content.fileNames = content.fileNames.map((fileName) => fileName.replace(/\\/g, '/'));
-    return content;
-  }
-
-  // ---------------------------------------------------------------------------
-  // File events
-  // ---------------------------------------------------------------------------
-
-  /**
-   * Broadcast file changes to all projects. Each project selectively bumps projectVersion.
-   *
-   * Adapted from:
-   * https://github.com/volarjs/volar.js/blob/882cd56d46a13d272f34e451f495d3d62251969a/packages/kit/lib/createChecker.ts#L409-L432
-   */
-  onFilesChanged(changes: Array<{ filePath: string; type: 'changed' | 'created' | 'deleted' }>) {
-    for (const project of this.configProjects.values()) {
-      project.onFilesChanged(changes);
-    }
-    this.inferredProject?.onFilesChanged(changes);
-  }
-
-  /**
-   * Adapted from:
-   * https://github.com/volarjs/volar.js/blob/882cd56d46a13d272f34e451f495d3d62251969a/packages/language-server/lib/project/typescriptProject.ts#L43-L68
-   */
-  onConfigChanged(configPath: string, type: 'created' | 'changed' | 'deleted') {
-    configPath = configPath.replace(/\\/g, '/');
-    if (type === 'created') {
-      this.rootTsConfigs.add(configPath);
-    } else if ((type === 'changed' || type === 'deleted') && this.configProjects.has(configPath)) {
-      if (type === 'deleted') {
-        this.rootTsConfigs.delete(configPath);
-      }
-      const project = this.configProjects.get(configPath);
-      this.configProjects.delete(configPath);
-      project?.dispose();
-    }
-    // Clear searchedDirs so findMatchTSConfig re-scans directories.
-    // Without this, new tsconfigs in previously-scanned dirs would be invisible.
-    this.searchedDirs.clear();
-  }
-
-  // ---------------------------------------------------------------------------
-  // Our own file watching layer (no Volar equivalent — we're standalone)
-  // ---------------------------------------------------------------------------
-
-  startWatching(): void {
-    if (this.watching) {
-      return;
-    }
-    this.watching = true;
-
-    // Retroactively create watchers for projects that were created before
-    // watching was enabled (the first manifest request creates projects
-    // eagerly, but startWatching() is only called once the manager is ready).
-    for (const tsconfig of this.configProjects.keys()) {
-      this.watchDirectory(path.dirname(tsconfig));
-    }
-
-    // Also watch directories containing source files resolved by the TS program.
-    // This covers files reached via path aliases (e.g. monorepos where stories
-    // live in apps/storybook/ but components live in packages/ui/).
-    this.watchProgramSourceDirs();
-  }
-
-  /**
-   * Watch directories that contain source files from all TS programs. This covers monorepo setups
-   * where stories import components via path aliases (e.g. apps/storybook/ imports from
-   * packages/ui/ via tsconfig paths).
-   */
-  private watchProgramSourceDirs(singleProject?: ComponentMetaProject): void {
-    const dirs = new Set<string>();
-
-    if (singleProject) {
-      for (const filePath of singleProject.getSourceFilePaths()) {
-        dirs.add(path.dirname(filePath));
-      }
-    } else {
-      for (const project of this.configProjects.values()) {
-        for (const filePath of project.getSourceFilePaths()) {
-          dirs.add(path.dirname(filePath));
-        }
-      }
-      if (this.inferredProject) {
-        for (const filePath of this.inferredProject.getSourceFilePaths()) {
-          dirs.add(path.dirname(filePath));
-        }
-      }
-    }
-
-    // Walk up from each source file dir to find package roots (package.json or tsconfig.json).
-    // This avoids creating hundreds of individual watchers for each subdirectory.
-    const roots = new Set<string>();
-    for (const dir of dirs) {
-      let candidate = dir;
-      while (candidate !== path.dirname(candidate)) {
-        // If already covered by an existing watcher, skip
-        const normalized = candidate.replace(/\\/g, '/');
-        let alreadyWatched = false;
-        for (const watched of this.watchersByDir.keys()) {
-          if (normalized === watched || normalized.startsWith(watched + '/')) {
-            alreadyWatched = true;
-            break;
-          }
-        }
-        if (alreadyWatched) {
-          break;
-        }
-
-        // Use package root as watch boundary
-        if (
-          this.typescript.sys.fileExists(path.join(candidate, 'package.json')) ||
-          this.typescript.sys.fileExists(path.join(candidate, 'tsconfig.json'))
-        ) {
-          roots.add(candidate);
-          break;
-        }
-        candidate = path.dirname(candidate);
-      }
-    }
-
-    for (const root of roots) {
-      this.watchDirectory(root);
+    if (
+      this.recycleProjectsIfHeapPressured(this.keepParsedFilesOnRecycle ? byProject.keys() : [])
+    ) {
+      batchFiles?.clear();
     }
   }
 
-  private watchDirectory(dir: string): void {
-    if (!this.watching) {
-      return;
-    }
-
-    const normalized = dir.replace(/\\/g, '/');
-
-    for (const watched of this.watchersByDir.keys()) {
-      // Already covered by an existing broader watcher
-      if (normalized === watched || normalized.startsWith(watched + '/')) {
-        return;
-      }
-    }
-
-    // Close and remove narrower watchers that this broader directory subsumes.
-    // The new recursive watcher covers them, so keeping both wastes file descriptors
-    // and produces duplicate events.
-    for (const [watched, watcher] of this.watchersByDir) {
-      if (watched.startsWith(normalized + '/')) {
-        watcher.close();
-        this.watchersByDir.delete(watched);
-      }
-    }
-
+  private addBatchFiles(
+    project: ManagedProject,
+    batchFiles: Map<ManagedProject, string[]> | undefined
+  ): void {
+    const files = batchFiles?.get(project) ?? [];
+    batchFiles?.delete(project);
     try {
-      const watcher = watch(dir, { recursive: true }, (eventType, filename) => {
-        if (!filename) {
-          return;
-        }
-        const filePath = path.resolve(dir, filename).replace(/\\/g, '/');
-
-        if (filePath.includes('/node_modules/') || filePath.includes('/.git/')) {
-          return;
-        }
-
-        const existing = this.pendingEvents.get(filePath);
-        if (existing) {
-          clearTimeout(existing);
-        }
-
-        this.pendingEvents.set(
-          filePath,
-          setTimeout(() => {
-            this.pendingEvents.delete(filePath);
-
-            if (eventType === 'rename') {
-              if (existsSync(filePath)) {
-                this.handleFileEvent(filePath, 'created');
-              } else {
-                this.handleFileEvent(filePath, 'deleted');
-              }
-            } else {
-              this.handleFileEvent(filePath, 'changed');
-            }
-          }, 50)
-        );
-      });
-      watcher.unref();
-      this.watchersByDir.set(normalized, watcher);
+      project.ensureFiles(files);
     } catch (err) {
-      logger.debug(`[reactComponentMeta] Failed to watch directory ${normalized}: ${err}`);
+      // The native TypeScript backend can throw here. The extraction then adds its own files.
+      logger.debug(`[reactComponentMeta] Adding the batch files failed: ${err}`);
     }
-  }
-
-  stopWatching(): void {
-    for (const timeout of this.pendingEvents.values()) {
-      clearTimeout(timeout);
-    }
-    this.pendingEvents.clear();
-    for (const watcher of this.watchersByDir.values()) {
-      watcher.close();
-    }
-    this.watchersByDir.clear();
-    this.watching = false;
-  }
-
-  /**
-   * Map raw fs.watch events to LSP-style FileChangeType before broadcasting.
-   *
-   * Fs.watch reports atomic saves (sed -i, editors) as `rename` → we classify as `created` (file
-   * exists after rename). But an IDE/LSP would report an atomic save of an _existing_ file as
-   * `Changed`, not `Created`.
-   *
-   * We reclassify here so that onFilesChanged stays 1:1 with Volar Kit.
-   */
-  private handleFileEvent(filePath: string, type: 'created' | 'changed' | 'deleted') {
-    // Reclassify: atomic save of tracked file → 'changed' (LSP Changed)
-    if (type === 'created') {
-      for (const project of this.configProjects.values()) {
-        if (project.hasSourceFile(filePath)) {
-          type = 'changed';
-          break;
-        }
-      }
-      if (type === 'created' && this.inferredProject?.hasSourceFile(filePath)) {
-        type = 'changed';
-      }
-    }
-
-    const basename = path.basename(filePath);
-    if (rootTsConfigNames.includes(basename)) {
-      this.onConfigChanged(filePath, type);
-      return;
-    }
-
-    this.onFilesChanged([{ filePath, type }]);
-  }
-
-  dispose() {
-    this.stopWatching();
-    for (const project of this.configProjects.values()) {
-      project.dispose();
-    }
-    this.inferredProject?.dispose();
-    this.configProjects.clear();
-    this.inferredProject = undefined;
-    this.fsFileSnapshots.clear();
-    this.searchedDirs.clear();
-    this.rootTsConfigs.clear();
   }
 }
 
-// Adapted from:
-// https://github.com/volarjs/volar.js/blob/882cd56d46a13d272f34e451f495d3d62251969a/packages/language-server/lib/project/typescriptProject.ts#L365-L385
-export function sortTSConfigs(file: string, a: string, b: string) {
-  const inA = isFileInDir(file, path.dirname(a));
-  const inB = isFileInDir(file, path.dirname(b));
-
-  if (inA !== inB) {
-    const aWeight = inA ? 1 : 0;
-    const bWeight = inB ? 1 : 0;
-    return bWeight - aWeight;
-  }
-
-  const aLength = a.split('/').length;
-  const bLength = b.split('/').length;
-
-  if (aLength === bLength) {
-    const aWeight = path.basename(a) === 'tsconfig.json' ? 1 : 0;
-    const bWeight = path.basename(b) === 'tsconfig.json' ? 1 : 0;
-    return bWeight - aWeight;
-  }
-
-  return bLength - aLength;
-}
-
-// Adapted from:
-// https://github.com/volarjs/volar.js/blob/882cd56d46a13d272f34e451f495d3d62251969a/packages/language-server/lib/project/typescriptProject.ts#L387-L390
-export function isFileInDir(fileName: string, dir: string) {
-  const relative = path.relative(dir, fileName);
-  return !!relative && !relative.startsWith('..') && !path.isAbsolute(relative);
-}
+export const isExtractable = (
+  storyRef: StoryRef
+): storyRef is StoryRef & { component: { path: string; importName: string } } =>
+  !!storyRef.component?.path && !!storyRef.component.importName;

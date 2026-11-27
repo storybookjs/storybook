@@ -4,7 +4,7 @@ import ora from 'ora';
 import { v4 as uuidv4 } from 'uuid';
 
 import { esMain } from '../utils/esmain.ts';
-import { getPullInfoFromCommits, getRepo } from './utils/get-changes.ts';
+import { getRepo } from './utils/get-changes.ts';
 import { getLatestTag, git } from './utils/git-client.ts';
 import { getLabelIds, getUnpickedPRs, githubGraphQlClient } from './utils/github-client.ts';
 
@@ -30,7 +30,7 @@ async function labelPR(id: string, labelId: string) {
   );
 }
 
-async function getPullRequestsFromLog({ repo }: { repo: string }) {
+async function getPullRequestsFromLog() {
   const spinner = ora('Looking for latest tag').start();
   const latestTag = await getLatestTag();
   spinner.succeed(`Found latest tag: ${latestTag}`);
@@ -47,12 +47,10 @@ async function getPullRequestsFromLog({ repo }: { repo: string }) {
     spinner2.fail('No cherry pick commits found to label.');
     return [];
   }
-  const pullRequests = (
-    await getPullInfoFromCommits({
-      repo,
-      commits: cherryPicked.map((hash) => ({ hash })),
-    })
-  ).filter((it) => it.id != null);
+  // Match on the merge commits of patch PRs: a merge commit can belong to several PRs
+  const pullRequests = (await getUnpickedPRs('next')).filter((pr) =>
+    cherryPicked.includes(pr.mergeCommit)
+  );
 
   if (pullRequests.length === 0) {
     spinner2.fail(
@@ -61,7 +59,7 @@ async function getPullRequestsFromLog({ repo }: { repo: string }) {
     return pullRequests;
   }
 
-  const commitWithPr = pullRequests.map((pr) => `Commit: ${pr.commit}\n PR: ${pr.links.pull}`);
+  const commitWithPr = pullRequests.map((pr) => `Commit: ${pr.mergeCommit}\n PR: #${pr.number}`);
 
   spinner2.succeed(`Found the following picks 🍒:\n ${commitWithPr.join('\n')}`);
 
@@ -74,11 +72,12 @@ export const run = async (options: unknown) => {
   }
 
   const repo = await getRepo();
-  const labelAll = typeof options === 'object' && 'all' in options && Boolean(options.all);
+  const labelAll =
+    typeof options === 'object' && options !== null && 'all' in options && Boolean(options.all);
 
   const pullRequestsToLabel = labelAll
     ? await getUnpickedPRs('next')
-    : await getPullRequestsFromLog({ repo });
+    : await getPullRequestsFromLog();
   if (pullRequestsToLabel.length === 0) {
     return;
   }

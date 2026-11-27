@@ -2,7 +2,7 @@ import picocolors from 'picocolors';
 import semver from 'semver';
 
 import type { PullRequestInfo } from './get-github-info.ts';
-import { getPullInfoFromCommit } from './get-github-info.ts';
+import { getPullInfoFromCommit, getPullInfoFromPullRequest } from './get-github-info.ts';
 import { getLatestTag, git } from './git-client.ts';
 import { getUnpickedPRs } from './github-client.ts';
 
@@ -141,17 +141,15 @@ export const getPullInfoFromCommits = async ({
   return pullRequests;
 };
 
-export type Change = PullRequestInfo;
+export type Change = Omit<PullRequestInfo, 'title'> & { title: string | undefined };
 
 export const mapToChanges = ({
   commits,
   pullRequests,
-  unpickedPatches,
   verbose,
 }: {
   commits: readonly { hash: string; message?: string }[];
   pullRequests: PullRequestInfo[];
-  unpickedPatches?: boolean;
   verbose?: boolean;
 }): Change[] => {
   if (pullRequests.length !== commits.length) {
@@ -176,10 +174,6 @@ export const mapToChanges = ({
     if (entry.pull && changes.findIndex((existing) => entry.pull === existing.pull) !== -1) {
       return;
     }
-    // filter out any entries that are not patches if unpickedPatches is set. this will also filter out direct commits
-    if (unpickedPatches && !entry.labels?.includes('patch:yes')) {
-      return;
-    }
     changes.push(entry);
   });
 
@@ -195,7 +189,7 @@ export const getChangelogText = ({
   version,
 }: {
   changes: Change[];
-  version: string;
+  version: string | undefined;
 }): string => {
   const heading = `## ${version}`;
   const formattedEntries = changes
@@ -230,7 +224,7 @@ export const getChanges = async ({
   unpickedPatches,
   verbose,
 }: {
-  version: string;
+  version: string | undefined;
   from?: string;
   to?: string;
   unpickedPatches?: boolean;
@@ -238,26 +232,32 @@ export const getChanges = async ({
 }) => {
   console.log(`💬 Getting changes for ${picocolors.blue(version)}`);
 
-  let commits;
+  const repo = await getRepo(verbose);
+
+  let changes: Change[];
   if (unpickedPatches) {
-    commits = (await getUnpickedPRs('next', verbose)).map((it) => ({ hash: it.mergeCommit }));
+    // By number, not merge commit: a merge commit can belong to several PRs
+    const pullRequests = await Promise.all(
+      (await getUnpickedPRs('next', verbose)).map((pr) =>
+        getPullInfoFromPullRequest({ repo, pull: pr.number })
+      )
+    );
+    changes = pullRequests.map((pr) => ({ ...pr, title: pr.title ?? undefined }));
   } else {
-    commits = await getAllCommitsBetween({
+    const commits = await getAllCommitsBetween({
       from: await getFromCommit(from, verbose),
       to: await getToCommit(to, verbose),
       verbose,
     });
+    const pullRequests = await getPullInfoFromCommits({ repo, commits, verbose }).catch((err) => {
+      console.error(
+        `🚨 Could not get pull requests from commits, this is usually because you have unpushed commits, or you haven't set the GH_TOKEN environment variable`
+      );
+      console.error(err);
+      throw err;
+    });
+    changes = mapToChanges({ commits, pullRequests, verbose });
   }
-
-  const repo = await getRepo(verbose);
-  const pullRequests = await getPullInfoFromCommits({ repo, commits, verbose }).catch((err) => {
-    console.error(
-      `🚨 Could not get pull requests from commits, this is usually because you have unpushed commits, or you haven't set the GH_TOKEN environment variable`
-    );
-    console.error(err);
-    throw err;
-  });
-  const changes = mapToChanges({ commits, pullRequests, unpickedPatches, verbose });
   const changelogText = getChangelogText({
     changes,
     version,

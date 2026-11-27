@@ -8,8 +8,8 @@ import {
 } from 'storybook/internal/types';
 
 import type { PreviewWeb } from 'storybook/preview-api';
-import type { App } from 'vue';
-import { createApp, h, isReactive, isVNode, reactive } from 'vue';
+import type { App, ComponentPropsOptions } from 'vue';
+import { camelize, createApp, h, isReactive, isVNode, reactive } from 'vue';
 
 import type { StoryFnVueReturnType, StoryID, VueRenderer } from './types.ts';
 
@@ -21,7 +21,7 @@ export const render: ArgsStoryFn<VueRenderer> = (props, context) => {
     );
   }
 
-  return () => h(Component, props, getSlots(props, context));
+  return () => h(Component, props, getSlots(props, Component));
 };
 
 export const setup = <AppHostElement = any>(
@@ -53,6 +53,9 @@ export async function renderToCanvas(
   { storyFn, forceRemount, showMain, showException, storyContext, id }: RenderContext<VueRenderer>,
   canvasElement: VueRenderer['canvasElement']
 ) {
+  // The errorHandler reports errors from the mount or update below, which a later showMain would hide.
+  showMain();
+
   const existingApp = map.get(canvasElement);
 
   // if the story is already rendered and we are not forcing a remount, we just update the reactive args
@@ -114,17 +117,24 @@ export async function renderToCanvas(
   await runSetupFunctions(vueApp, storyContext);
   vueApp.mount(canvasElement);
 
-  showMain();
   return () => {
     teardown(vueApp, canvasElement);
   };
 }
 
-/** Generate slots for default story without render function template */
-function getSlots(props: Args, context: StoryContext<VueRenderer, Args>) {
-  const { argTypes } = context;
+/**
+ * Passes every arg that is neither a runtime-declared prop nor an event listener as a slot. An arg
+ * named like a declared prop always goes to the prop.
+ */
+function getSlots(props: Args, component: VueRenderer['component']) {
+  const runtimeProps = (component as { props?: ComponentPropsOptions }).props;
+  const declaredProps = new Set(
+    (Array.isArray(runtimeProps) ? runtimeProps : Object.keys(runtimeProps ?? {})).map(camelize)
+  );
+  const isSlot = (key: string) => !declaredProps.has(key) && !/^on[A-Z]/.test(key);
+
   const slots = Object.entries(props)
-    .filter(([key]) => argTypes[key]?.table?.category === 'slots')
+    .filter(([key]) => isSlot(key))
     .map(([key, value]) => [key, typeof value === 'function' ? value : () => value]);
 
   return Object.fromEntries(slots);

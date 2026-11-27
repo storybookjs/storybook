@@ -1,0 +1,33 @@
+{
+  "default": {
+    "description": undefined,
+    "name": "default",
+    "table": {
+      "category": "slots",
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": undefined,
+    },
+    "type": {
+      "name": "other",
+      "required": false,
+      "value": "",
+    },
+  },
+  "icon": {
+    "description": "Icon class rendered when the icon slot is empty.",
+    "name": "icon",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+      "required": false,
+    },
+  },
+}

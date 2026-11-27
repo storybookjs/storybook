@@ -234,19 +234,6 @@ export const parameters = {
 };
 ```
 
-## Reordering Docs tab first
-
-You can configure Storybook's preview tabs with the `previewTabs` story parameter.
-
-Here's how to show the `Docs` tab first for a story (or globally in `.storybook/preview.js`):
-
-```js
-export const Foo = () => <Component />;
-Foo.parameters = {
-  previewTabs: { 'storybook/docs/panel': { index: -1 } },
-};
-```
-
 ## Customizing source snippets
 
 As of SB 6.0, there are two ways to customize how Docs renders source code, via story parameter or via a formatting function.

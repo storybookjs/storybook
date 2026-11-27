@@ -9,14 +9,26 @@ export { REVIEW_NAMESPACE as ADDON_ID, REVIEW_EVENTS as EVENTS };
 export const PAGE_ID = `${REVIEW_NAMESPACE}/page`;
 export const REVIEW_CHANGES_URL = '/review/';
 
+// Persisted flag marking this tab as being in review mode. Review mode is
+// interaction-driven (never inferred from the URL) and survives reloads via
+// this key. ReviewProvider owns the only write path.
+export const REVIEW_MODE_SESSION_KEY = `${REVIEW_NAMESPACE}/review-mode`;
+
 // sessionStorage key for the canvas search to return to when leaving review
 // mode (both summary back-to-Storybook and dismiss). Captured while browsing
 // stories/docs outside review mode, so it points at the pre-review canvas.
 export const PRE_REVIEW_RETURN_KEY = `${REVIEW_NAMESPACE}/pre-review-return`;
 
 // sessionStorage marker deduplicating the one-time auto-enter on first landing
-// on the review summary. Reset on dismiss and when a new review payload arrives.
+// on the review summary. Cleared on dismiss. It holds the `createdAt` of the
+// review it was armed for rather than a bare flag: the manager re-projects the
+// active review on every mount, so a flag compared against in-memory state
+// would be re-armed by an ordinary page reload and drag a reviewer who already
+// left back into review mode.
 export const AUTO_ENTERED_SESSION_KEY = `${REVIEW_NAMESPACE}/auto-entered`;
+
+export const autoEnteredLatchValue = (createdAt: number | undefined): string =>
+  String(createdAt ?? 'unknown');
 
 // sessionStorage marker for the server `createdAt` of the review the user has
 // opened. Non-review routes only surface a new-review notification while this

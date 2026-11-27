@@ -1,0 +1,5 @@
+{
+  "//": "Stock create-vue shape: a root tsconfig that is nothing but references. Read only by the project-manager tests; excluded from the package program.",
+  "files": [],
+  "references": [{ "path": "./tsconfig.app.json" }]
+}

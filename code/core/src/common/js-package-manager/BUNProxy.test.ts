@@ -10,6 +10,7 @@ import { MinimumReleaseAgeHandledError } from 'storybook/internal/server-errors'
 import { executeCommand } from '../utils/command.ts';
 import { JsPackageManager } from './JsPackageManager.ts';
 import { BUNProxy } from './BUNProxy.ts';
+import { STORYBOOK_PACKAGE_PATTERNS, STORYBOOK_PACKAGE_NAMES } from './util.ts';
 
 vi.mock('storybook/internal/node-logger', () => ({
   prompt: {
@@ -41,6 +42,23 @@ describe('BUN Proxy', () => {
 
   it('type should be bun', () => {
     expect(bunProxy.type).toEqual('bun');
+  });
+
+  describe('getRegistryURL', () => {
+    it('uses npm 12-compatible workspace flags', async () => {
+      const executeCommandSpy = mockedExecuteCommand.mockResolvedValueOnce({
+        stdout: 'https://registry.npmjs.org/',
+      } as Awaited<ReturnType<typeof executeCommand>>);
+
+      await expect(bunProxy.getRegistryURL()).resolves.toBe('https://registry.npmjs.org/');
+
+      expect(executeCommandSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          command: 'npm',
+          args: ['config', 'get', 'registry', '--workspaces=false', '--include-workspace-root'],
+        })
+      );
+    });
   });
 
   describe('installDependencies', () => {
@@ -161,7 +179,7 @@ describe('BUN Proxy', () => {
         [
           '[install]',
           'minimumReleaseAge = 3600',
-          'minimumReleaseAgeExcludes = ["storybook", "@storybook/*", "eslint-plugin-storybook", "@chromatic-com/storybook"]',
+          `minimumReleaseAgeExcludes = ${JSON.stringify(STORYBOOK_PACKAGE_NAMES)}`,
           '',
         ].join('\n')
       );
@@ -179,6 +197,28 @@ describe('BUN Proxy', () => {
       expect(vi.mocked(prompt.select)).not.toHaveBeenCalled();
       expect(vi.mocked(logger.warn)).not.toHaveBeenCalled();
       expect(updateSpy).not.toHaveBeenCalled();
+    });
+
+    it('does not count a glob pattern as an exclusion, because Bun matches exact names', async () => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date('2025-01-10T00:00:00.000Z'));
+      vi.spyOn(bunProxy as any, 'readBunfig').mockReturnValue(
+        `minimumReleaseAge = 3600\nminimumReleaseAgeExcludes = ${JSON.stringify(STORYBOOK_PACKAGE_PATTERNS)}\n`
+      );
+      const updateSpy = vi
+        .spyOn(bunProxy as any, 'updateMinimumReleaseAgeExcludes')
+        .mockImplementation(() => undefined);
+      mockedExecuteCommand.mockResolvedValueOnce({
+        stdout: JSON.stringify({ '10.4.0-alpha.17': '2025-01-09T23:30:00.000Z' }),
+      } as any);
+
+      await bunProxy.precheckStorybookPackageInstall({
+        storybookVersion: '10.4.0-alpha.17',
+        nonInteractive: true,
+        installContext: 'upgrade',
+      });
+
+      expect(updateSpy).toHaveBeenCalled();
     });
   });
 
@@ -204,10 +244,7 @@ describe('BUN Proxy', () => {
             '[install]',
             'minimumReleaseAge = 900000',
             'minimumReleaseAgeExcludes = [',
-            '  "storybook",',
-            '  "@storybook/*",',
-            '  "eslint-plugin-storybook",',
-            '  "@chromatic-com/storybook",',
+            ...STORYBOOK_PACKAGE_NAMES.map((name) => `  "${name}",`),
             ']',
             '[test]',
             'coverageThreshold = 0.9',
@@ -217,6 +254,127 @@ describe('BUN Proxy', () => {
       } finally {
         rmSync(tempDir, { recursive: true, force: true });
       }
+    });
+
+    it('keeps the entries that are already listed, in either quote style', () => {
+      const tempDir = mkdtempSync(join(tmpdir(), 'storybook-bun-proxy-'));
+      const bunfigPath = join(tempDir, 'bunfig.toml');
+
+      writeFileSync(join(tempDir, 'package.json'), '{}\n');
+      const tempBunProxy = new BUNProxy({ cwd: tempDir });
+      writeFileSync(
+        bunfigPath,
+        [
+          '[install]',
+          'minimumReleaseAge = 900000',
+          `minimumReleaseAgeExcludes = ['internal-package', "@storybook/*"]`,
+          '',
+        ].join('\n')
+      );
+
+      try {
+        (tempBunProxy as any).updateMinimumReleaseAgeExcludes();
+
+        expect(readFileSync(bunfigPath, 'utf-8')).toBe(
+          [
+            '[install]',
+            'minimumReleaseAge = 900000',
+            'minimumReleaseAgeExcludes = [',
+            '  "internal-package",',
+            '  "@storybook/*",',
+            ...STORYBOOK_PACKAGE_NAMES.map((name) => `  "${name}",`),
+            ']',
+            '',
+          ].join('\n')
+        );
+      } finally {
+        rmSync(tempDir, { recursive: true, force: true });
+      }
+    });
+  });
+
+  describe('findInstallations', () => {
+    it('finds a package that only another package depends on', async () => {
+      mockedExecuteCommand.mockResolvedValue({
+        stdout: JSON.stringify({
+          dependencies: {
+            'qa-wrapper': {
+              version: '1.0.0',
+              dependencies: { '@storybook/test-runner': { version: '0.24.0' } },
+            },
+          },
+        }),
+      } as any);
+
+      const installations = await bunProxy.findInstallations(['@storybook/test-runner']);
+
+      expect(installations?.dependencies).toEqual({
+        '@storybook/test-runner': [{ version: '0.24.0', location: '' }],
+      });
+    });
+
+    it('lists the version the project depends on before the versions its dependencies bring in', async () => {
+      mockedExecuteCommand.mockResolvedValue({
+        stdout: JSON.stringify({
+          dependencies: {
+            chalk: {
+              version: '4.1.2',
+              dependencies: { 'supports-color': { version: '7.2.0' } },
+            },
+            'supports-color': { version: '9.4.0' },
+          },
+        }),
+      } as any);
+
+      const installations = await bunProxy.findInstallations(['supports-color']);
+
+      expect(installations?.dependencies).toEqual({
+        'supports-color': [
+          { version: '9.4.0', location: '' },
+          { version: '7.2.0', location: '' },
+        ],
+      });
+    });
+  });
+
+  describe('getPublishedPeerDependencies', () => {
+    const readPeers = () =>
+      bunProxy.getPublishedPeerDependencies('@storybook/react-native', '11.0.0-next.0');
+
+    describe('when the version has peer dependencies', () => {
+      beforeEach(() => {
+        mockedExecuteCommand.mockResolvedValue({ stdout: '{"storybook":"^10.5.4"}' } as any);
+      });
+
+      it('reads them through the package manager', async () => {
+        await expect(readPeers()).resolves.toEqual({ storybook: '^10.5.4' });
+        expect(mockedExecuteCommand).toHaveBeenCalledWith(
+          expect.objectContaining({
+            command: 'npm',
+            args: ['info', '@storybook/react-native@11.0.0-next.0', 'peerDependencies', '--json'],
+          })
+        );
+      });
+    });
+
+    describe('when the version has no peer dependencies', () => {
+      beforeEach(() => {
+        mockedExecuteCommand.mockResolvedValue({ stdout: '' } as any);
+      });
+
+      it('returns an empty object', async () => {
+        await expect(readPeers()).resolves.toEqual({});
+      });
+    });
+
+    describe('when the lookup fails', () => {
+      beforeEach(() => {
+        mockedExecuteCommand.mockRejectedValue(new Error('401 Unauthorized'));
+      });
+
+      it('returns null', async () => {
+        await expect(readPeers()).resolves.toBeNull();
+      });
     });
   });
 });

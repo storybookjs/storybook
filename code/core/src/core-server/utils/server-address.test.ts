@@ -1,13 +1,31 @@
+import net from 'node:net';
+import os from 'node:os';
+
 import { describe, expect, it, vi } from 'vitest';
 
 import { logger } from 'storybook/internal/node-logger';
 
 import detectPort from 'detect-port';
 
-import { getServerAddresses, getServerChannelUrl, getServerPort } from './server-address.ts';
+import {
+  getReachableNetworkAddresses,
+  getServerAddresses,
+  getServerChannelUrl,
+  getServerPort,
+} from './server-address.ts';
 
 vi.mock('node:os', () => ({
-  default: { release: () => '' },
+  default: {
+    release: () => '',
+    networkInterfaces: vi.fn(() => ({
+      lo: [{ address: '127.0.0.1', family: 'IPv4', internal: true }],
+      eth0: [
+        { address: '192.168.1.100', family: 'IPv4', internal: false },
+        { address: 'fe80::1', family: 'IPv6', internal: false },
+      ],
+      wlan0: [{ address: '192.130.20.4', family: 'IPv4', internal: false }],
+    })),
+  },
   platform: 'darwin',
   constants: {
     signals: {},
@@ -22,7 +40,7 @@ describe('getServerAddresses', () => {
   const proto = 'http';
 
   it('should return server addresses without initial path by default', () => {
-    const expectedAddress = `${proto}://localhost:${port}/`;
+    const expectedAddress = `${proto}://127.0.0.1:${port}/`;
     const expectedNetworkAddress = `${proto}://${host}:${port}/`;
 
     const result = getServerAddresses(port, host, proto);
@@ -34,7 +52,7 @@ describe('getServerAddresses', () => {
   it('should return server addresses with initial path', () => {
     const initialPath = '/foo/bar';
 
-    const expectedAddress = `${proto}://localhost:${port}/?path=/foo/bar`;
+    const expectedAddress = `${proto}://127.0.0.1:${port}/?path=/foo/bar`;
     const expectedNetworkAddress = `${proto}://${host}:${port}/?path=/foo/bar`;
 
     const result = getServerAddresses(port, host, proto, initialPath);
@@ -46,7 +64,7 @@ describe('getServerAddresses', () => {
   it('should return server addresses with initial path and add slash if missing', () => {
     const initialPath = 'foo/bar';
 
-    const expectedAddress = `${proto}://localhost:${port}/?path=/foo/bar`;
+    const expectedAddress = `${proto}://127.0.0.1:${port}/?path=/foo/bar`;
     const expectedNetworkAddress = `${proto}://${host}:${port}/?path=/foo/bar`;
 
     const result = getServerAddresses(port, host, proto, initialPath);
@@ -54,6 +72,22 @@ describe('getServerAddresses', () => {
     expect(result.address).toBe(expectedAddress);
     expect(result.networkAddress).toBe(expectedNetworkAddress);
   });
+});
+
+describe('getReachableNetworkAddresses', () => {
+  it('lists every external IPv4 address of the machine when the host is 0.0.0.0', () => {
+    expect(getReachableNetworkAddresses('http://0.0.0.0:6006/?path=/foo/bar')).toEqual([
+      'http://192.168.1.100:6006/?path=/foo/bar',
+      'http://192.130.20.4:6006/?path=/foo/bar',
+    ]);
+  });
+
+  it.each(['http://192.168.1.100:6006/', 'https://my-host.com:6006/'])(
+    'keeps %s as it is',
+    (networkAddress) => {
+      expect(getReachableNetworkAddresses(networkAddress)).toEqual([networkAddress]);
+    }
+  );
 });
 
 describe('getServerPort', () => {
@@ -67,6 +101,93 @@ describe('getServerPort', () => {
     const result = await getServerPort(port);
 
     expect(result).toBe(expectedFreePort);
+    expect(detectPort).toHaveBeenLastCalledWith(port);
+  });
+
+  it('should probe the listen host when the network interfaces cannot be read', async () => {
+    const taken = net.createServer();
+    await new Promise<void>((resolve) => taken.listen(0, '127.0.0.1', resolve));
+    const takenPort = (taken.address() as net.AddressInfo).port;
+    vi.mocked(os.networkInterfaces).mockImplementationOnce(() => {
+      throw new Error('uv_interface_addresses returned Unknown system error 1');
+    });
+
+    try {
+      const result = await getServerPort(takenPort);
+
+      expect(result).toBeGreaterThan(0);
+      expect(result).not.toBe(takenPort);
+      expect(detectPort).not.toHaveBeenCalled();
+    } finally {
+      taken.close();
+    }
+  });
+
+  it('should probe 127.0.0.1 too when the network interfaces cannot be read and a custom host is set', async () => {
+    const taken = net.createServer();
+    await new Promise<void>((resolve) => taken.listen(0, '127.0.0.1', resolve));
+    const takenPort = (taken.address() as net.AddressInfo).port;
+    vi.mocked(os.networkInterfaces).mockImplementationOnce(() => {
+      throw new Error('uv_interface_addresses returned Unknown system error 1');
+    });
+
+    try {
+      const result = await getServerPort(takenPort, { host: 'localhost' });
+
+      expect(result).not.toBe(takenPort);
+    } finally {
+      taken.close();
+    }
+  });
+
+  it('should try port 65535 when the network interfaces cannot be read', async () => {
+    vi.mocked(os.networkInterfaces).mockImplementationOnce(() => {
+      throw new Error('uv_interface_addresses returned Unknown system error 1');
+    });
+    const listen = vi.spyOn(net.Server.prototype, 'listen').mockImplementation(function (
+      this: net.Server,
+      ...args: unknown[]
+    ) {
+      const callback = args.find((arg) => typeof arg === 'function') as () => void;
+      vi.spyOn(this, 'address').mockReturnValue({
+        address: '127.0.0.1',
+        family: 'IPv4',
+        port: 65535,
+      });
+      process.nextTick(callback);
+      return this;
+    });
+
+    try {
+      await expect(getServerPort(65535, { exactPort: true })).resolves.toBe(65535);
+      expect(listen).toHaveBeenCalledWith(65535, '127.0.0.1', expect.any(Function));
+    } finally {
+      listen.mockRestore();
+    }
+  });
+
+  it('should reject when the network interfaces cannot be read and no port can be bound', async () => {
+    vi.mocked(os.networkInterfaces).mockImplementationOnce(() => {
+      throw new Error('uv_interface_addresses returned Unknown system error 1');
+    });
+    const listen = vi.spyOn(net.Server.prototype, 'listen').mockImplementation(function (
+      this: net.Server
+    ) {
+      const error = Object.assign(new Error('listen EPERM'), {
+        code: 'EPERM',
+      });
+      process.nextTick(() => this.emit('error', error));
+      return this;
+    });
+
+    try {
+      await expect(getServerPort(port, { host: '0.0.0.0' })).rejects.toThrow(
+        "Unable to find a free port for Storybook's dev server"
+      );
+      expect(listen).toHaveBeenCalledTimes(11);
+    } finally {
+      listen.mockRestore();
+    }
   });
 
   it('should reject with an actionable error when no port can be bound', async () => {
@@ -114,7 +235,7 @@ describe('getServerChannelUrl', () => {
   const port = 3000;
   it('should return WebSocket URL with HTTP', () => {
     const options = { https: false };
-    const expectedUrl = `ws://localhost:${port}/storybook-server-channel`;
+    const expectedUrl = `ws://127.0.0.1:${port}/storybook-server-channel`;
 
     const result = getServerChannelUrl(port, options);
 
@@ -123,7 +244,7 @@ describe('getServerChannelUrl', () => {
 
   it('should return WebSocket URL with HTTPS', () => {
     const options = { https: true };
-    const expectedUrl = `wss://localhost:${port}/storybook-server-channel`;
+    const expectedUrl = `wss://127.0.0.1:${port}/storybook-server-channel`;
 
     const result = getServerChannelUrl(port, options);
 

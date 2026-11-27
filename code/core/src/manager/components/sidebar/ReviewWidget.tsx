@@ -1,18 +1,15 @@
-import React, { useMemo, useRef, type SyntheticEvent } from 'react';
+import React, { type ReactNode, type SyntheticEvent, useMemo, useRef } from 'react';
 
 import { ActionList, Card } from 'storybook/internal/components';
 
 import { CloseAltIcon, WandIcon } from '@storybook/icons';
 
-import { useNavigate } from 'storybook/internal/router';
-import { useChannel, useStorybookApi, useStorybookState } from 'storybook/manager-api';
-import { styled } from 'storybook/theming';
+import { useStorybookApi } from 'storybook/manager-api';
+import { styled } from 'storybook/theming/emotion';
 
 import { useLandmark } from '../../hooks/useLandmark.ts';
-import { EVENTS } from '../review/constants.ts';
-import { navigateToReviewSummary } from '../review/review-actions.ts';
+import { useReviewContext } from '../review/review-context.ts';
 import { collectReviewStoryIds } from '../review/review-status.ts';
-import { useReview } from '../review/review-store.ts';
 
 const HEADING_ID = 'storybook-review-widget-heading';
 
@@ -59,35 +56,21 @@ const DismissIcon = styled(CloseAltIcon)({
 
 /** Story count for the displayed review payload, not the sidebar status store. */
 export const useActiveReviewStoryCount = () => {
-  const { state } = useReview();
+  const { review } = useReviewContext();
 
-  return useMemo(() => (state ? collectReviewStoryIds(state).size : 0), [state]);
+  return useMemo(() => (review ? collectReviewStoryIds(review).size : 0), [review]);
 };
 
 const useActiveReviewTitle = () => {
-  const { state } = useReview();
-  return state?.title ?? null;
+  const { review } = useReviewContext();
+  return review?.title ?? null;
 };
 
 export const ReviewWidget = () => {
   const api = useStorybookApi();
-  const navigate = useNavigate();
+  const { openSummary, dismiss } = useReviewContext();
   const storyCount = useActiveReviewStoryCount();
   const reviewTitle = useActiveReviewTitle();
-  const {
-    includedStatusFilters = [],
-    excludedStatusFilters = [],
-    includedTagFilters = [],
-    excludedTagFilters = [],
-  } = useStorybookState();
-
-  const emit = useChannel({});
-
-  const regionRef = useRef<HTMLElement>(null);
-  const { landmarkProps } = useLandmark(
-    { role: 'region', 'aria-labelledby': HEADING_ID },
-    regionRef
-  );
 
   if (!api.getIsNavShown()) {
     return null;
@@ -98,17 +81,12 @@ export const ReviewWidget = () => {
   }
 
   const onOpen = () => {
-    navigateToReviewSummary(api, navigate, {
-      includedStatusFilters,
-      excludedStatusFilters,
-      includedTagFilters,
-      excludedTagFilters,
-    });
+    openSummary();
   };
 
   const onDismiss = (event: SyntheticEvent) => {
     event.stopPropagation();
-    emit(EVENTS.DISMISS_REVIEW);
+    dismiss();
   };
 
   const storyLabel = storyCount === 1 ? 'story' : 'stories';
@@ -116,7 +94,7 @@ export const ReviewWidget = () => {
   // The dismiss button is rendered last (and pinned to the top-right corner) so
   // the review action comes before it in the tab order.
   return (
-    <Region ref={regionRef} {...landmarkProps}>
+    <LandmarkRegion>
       <Card color="agentic" outlineAnimation="spin" id="storybook-review-widget">
         <ActionList as="div">
           <ActionList.Item as="div">
@@ -151,8 +129,23 @@ export const ReviewWidget = () => {
           <DismissIcon />
         </DismissButton>
       </Card>
-    </Region>
+    </LandmarkRegion>
   );
 };
+
+/** Mounted only while the widget renders, so its landmark never outlives the region element. */
+function LandmarkRegion({ children }: { children: ReactNode }): React.ReactElement {
+  const regionRef = useRef<HTMLElement>(null);
+  const { landmarkProps } = useLandmark(
+    { role: 'region', 'aria-labelledby': HEADING_ID },
+    regionRef
+  );
+
+  return (
+    <Region ref={regionRef} {...landmarkProps}>
+      {children}
+    </Region>
+  );
+}
 
 export default ReviewWidget;

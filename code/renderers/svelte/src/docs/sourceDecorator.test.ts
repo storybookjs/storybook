@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 
 import type { Args } from 'storybook/internal/types';
 
+import { action } from 'storybook/actions';
+
 import { generateSvelteSource } from './sourceDecorator';
 
 expect.addSnapshotSerializer({
@@ -13,7 +15,7 @@ const loremIpsum = 'Lorem ipsum dolor sit amet';
 const lotOfProperties = { property1: loremIpsum, property2: loremIpsum, property3: loremIpsum };
 
 function generateForArgs(args: Args, slotProperty: string | null = null) {
-  return generateSvelteSource({ name: 'Component' }, args, {}, slotProperty);
+  return generateSvelteSource({ name: 'Component' }, args, slotProperty);
 }
 
 describe('generateSvelteSource', () => {
@@ -67,20 +69,16 @@ describe('generateSvelteSource', () => {
     `);
   });
   it('component is not set', () => {
-    expect(generateSvelteSource(null, {}, {}, null)).toBeNull();
+    expect(generateSvelteSource(null, {}, null)).toBeNull();
   });
-  it('Skip event property', () => {
+  it('Skip action property', () => {
     expect(
-      generateSvelteSource(
-        { name: 'Component' },
-        { event_click: () => {} },
-        { event_click: { action: 'click' } }
-      )
+      generateSvelteSource({ name: 'Component' }, { event_click: action('click') })
     ).toMatchInlineSnapshot(`<Component />`);
   });
   it('Property value is a function', () => {
     expect(
-      generateSvelteSource({ name: 'Component' }, { myHandler: () => {} }, {})
+      generateSvelteSource({ name: 'Component' }, { myHandler: () => {} })
     ).toMatchInlineSnapshot(`<Component myHandler={<handler>}/>`);
   });
 });

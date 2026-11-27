@@ -7,6 +7,7 @@ import {
   UPDATE_GLOBALS,
   UPDATE_STORY_ARGS,
 } from 'storybook/internal/core-events';
+import { ArgTypesRemovedFromStoryContextError } from 'storybook/internal/preview-errors';
 import type { DecoratorFunction, StoryContext } from 'storybook/internal/types';
 
 import {
@@ -255,11 +256,22 @@ describe('Preview hooks', () => {
       const context = {};
       run(
         () => {
-          expect(useStoryContext()).toEqual({ ...context, hooks });
+          expect(useStoryContext()).toMatchObject({ ...context, hooks });
         },
         [],
         context
       );
+    });
+    it('hides argTypes from the returned context', () => {
+      let context: any;
+      run(
+        () => {
+          context = useStoryContext();
+        },
+        [],
+        { argTypes: { label: { name: 'label' } } }
+      );
+      expect(() => context.argTypes).toThrow(ArgTypesRemovedFromStoryContextError);
     });
   });
   describe('useParameter', () => {
@@ -361,6 +373,7 @@ describe('Preview hooks', () => {
       let counter = 0;
       const storyFn = () => {
         counter += 1;
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- autofix drops this unused dep
         const callback = useCallback(() => {}, [counter]);
         callbacks.push(callback);
       };

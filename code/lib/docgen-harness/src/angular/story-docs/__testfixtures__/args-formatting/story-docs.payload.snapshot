@@ -1,0 +1,51 @@
+{
+  "id": "args-formatting",
+  "name": "ArgsFormattingComponent",
+  "path": "__PATH__",
+  "stories": {
+    "storydocs-args-formatting--every-value-shape": {
+      "id": "storydocs-args-formatting--every-value-shape",
+      "name": "Every Value Shape",
+      "snippet": "import { Component } from '@angular/core';
+import { ArgsFormattingComponent } from './args-formatting.component.ts';
+
+@Component({
+  selector: 'app-demo',
+  imports: [ArgsFormattingComponent],
+  template: `
+    <sb-args-formatting
+        [label]="undefined"
+        [kind]="'secondary'"
+        [offset]="-4"
+        [data]="{id: 7, nested: {deep: true}}"
+        [tags]="['a', 'b']"
+        [greeting]="'hello'"
+        [formatter]="formatter"
+    />`,
+})
+export class DemoComponent {
+  formatter = (value) => value.replace('"', "'");
+}",
+      "template": "import { Component } from '@angular/core';
+import { ArgsFormattingComponent } from './args-formatting.component.ts';
+
+@Component({
+  selector: 'app-demo',
+  imports: [ArgsFormattingComponent],
+  template: `
+    <sb-args-formatting
+        [label]="⟦bind label⟫undefined⟧"
+        [kind]="⟦bind kind⟫'secondary'⟧"
+        [offset]="⟦bind offset⟫-4⟧"
+        [data]="⟦bind data⟫{id: 7, nested: {deep: true}}⟧"
+        [tags]="⟦bind tags⟫['a', 'b']⟧"
+        [greeting]="⟦bind greeting⟫'hello'⟧"
+        [formatter]="formatter"
+    />`,
+})
+export class DemoComponent {
+  formatter = ⟦field formatter⟫(value) => value.replace('"', "'")⟧;
+}",
+    },
+  },
+}

@@ -1,7 +1,7 @@
 import React, { type FC, type ReactNode } from 'react';
 
 import { Badge, Button } from 'storybook/internal/components';
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/emotion';
 
 import { ChevronSmallLeftIcon, ChevronSmallRightIcon, WandIcon } from '@storybook/icons';
 
@@ -10,7 +10,7 @@ import {
   buildReviewStoryHref,
   type ReviewNavEntry,
 } from '../review-navigation.ts';
-import { useReview } from '../review-store.ts';
+import { useReviewContext } from '../review-context.ts';
 import { AttentionBanner } from './AttentionBanner.tsx';
 import { ReviewCollectionPicker } from './ReviewCollectionPicker.tsx';
 import { ReviewHeader } from './ReviewHeader.tsx';
@@ -93,20 +93,20 @@ const componentName = (componentTitle: string): string =>
 
 export const ReviewToolbarHeader: FC = () => {
   const {
-    state,
+    review,
     banner,
     storyInfo,
     flattenedEntries,
     newlyAddedStoryIds,
     activeEntry,
     activeIndex,
-  } = useReview();
+  } = useReviewContext();
 
-  if (!state || !activeEntry || activeIndex < 0) {
+  if (!review || !activeEntry || activeIndex < 0) {
     return null;
   }
 
-  const collection = state.collections[activeEntry.collectionIndex];
+  const collection = review.collections[activeEntry.collectionIndex];
   const collectionTitle = collection?.title ?? 'Review';
   const totalStories = flattenedEntries.length;
   // Prev/next are disabled (not wrapping) at the ends of the flattened sequence.

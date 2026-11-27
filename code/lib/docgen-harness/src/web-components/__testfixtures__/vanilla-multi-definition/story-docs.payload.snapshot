@@ -1,0 +1,34 @@
+{
+  "id": "webcomponentsfixtures-vanilla-multi-definition",
+  "name": "multi-beta",
+  "path": "__PATH__",
+  "stories": {
+    "webcomponentsfixtures-vanilla-multi-definition--args-default-render": {
+      "id": "webcomponentsfixtures-vanilla-multi-definition--args-default-render",
+      "name": "Args Default Render",
+      "snippet": "<multi-beta></multi-beta>",
+      "template": "<multi-beta⟦attr beta-label mode="render" ~" "⟫⟧></multi-beta>⟦props * properties=[{"arg":"betaLabel","name":"betaLabel","tag":"multi-beta"}] ~"\n"⟫⟧",
+      "warning": "Incomplete snippet: properties without an attribute: `betaLabel`.",
+    },
+    "webcomponentsfixtures-vanilla-multi-definition--dom-node": {
+      "id": "webcomponentsfixtures-vanilla-multi-definition--dom-node",
+      "name": "Dom Node",
+      "snippet": "const DomNode = () => {
+  const el = document.createElement('multi-beta');
+  el.setAttribute('beta-label', String('Beta'));
+  return el;
+};",
+      "template": "const DomNode = () => {
+  const el = document.createElement('multi-beta');
+  el.setAttribute('beta-label', String(⟦code betaLabel⟫'Beta'⟧));
+  return el;
+};",
+    },
+    "webcomponentsfixtures-vanilla-multi-definition--lit-template": {
+      "id": "webcomponentsfixtures-vanilla-multi-definition--lit-template",
+      "name": "Lit Template",
+      "snippet": "html`<multi-beta beta-label=${'Beta'}></multi-beta>`",
+      "template": "html`<multi-beta beta-label=${⟦code betaLabel⟫'Beta'⟧}></multi-beta>`",
+    },
+  },
+}

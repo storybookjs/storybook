@@ -6,12 +6,10 @@ import { ProviderDoesNotExtendBaseProviderError } from 'storybook/internal/manag
 import { Location, LocationProvider, useNavigate } from 'storybook/internal/router';
 import type { Addon_PageType } from 'storybook/internal/types';
 
-import { global } from '@storybook/global';
-
 import { HelmetProvider } from 'react-helmet-async';
 import { Provider as ManagerProvider, types } from 'storybook/manager-api';
 import type { Combo } from 'storybook/manager-api';
-import { ThemeProvider, ensure as ensureTheme } from 'storybook/theming';
+import { ThemeProvider, ensure as ensureTheme } from 'storybook/theming/emotion';
 
 import { App } from './App.tsx';
 import type { Layout } from './components/layout/Layout.tsx';
@@ -48,7 +46,7 @@ export const Main: FC<{ provider: Provider }> = ({ provider }) => {
           provider={provider}
           {...locationData}
           navigate={navigate}
-          docsOptions={global?.DOCS_OPTIONS || {}}
+          docsOptions={globalThis.DOCS_OPTIONS || {}}
         >
           {(combo: Combo) => {
             const { state, api } = combo;
@@ -66,8 +64,13 @@ export const Main: FC<{ provider: Provider }> = ({ provider }) => {
               [Object.keys(api.getElements(types.experimental_PAGE)).join()]
             );
 
+            // A new theme object would change the emotion theme context on every store commit,
+            // which re-renders every styled component in the manager and strongly
+            // degrades frontend performance.
+            const theme = useMemo(() => ensureTheme(state.theme), [state.theme]);
+
             return (
-              <ThemeProvider key="theme.provider" theme={ensureTheme(state.theme)}>
+              <ThemeProvider key="theme.provider" theme={theme}>
                 <LayoutProvider>
                   <App
                     key="app"
@@ -76,7 +79,6 @@ export const Main: FC<{ provider: Provider }> = ({ provider }) => {
                       ...state.layout,
                       viewMode: state.viewMode,
                     }}
-                    hasTab={!!api.getQueryParam('tab')}
                     setManagerLayoutState={setManagerLayoutState}
                   />
                 </LayoutProvider>

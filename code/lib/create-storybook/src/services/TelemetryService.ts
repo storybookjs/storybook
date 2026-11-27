@@ -1,18 +1,14 @@
-import type { ProjectType } from 'storybook/internal/cli';
+import type { ProjectType, SkillsInstallResult } from 'storybook/internal/cli';
+import { getProcessAncestry, resolveStorybookVersionSpecifier } from 'storybook/internal/common';
 import { telemetry } from 'storybook/internal/telemetry';
 import { Feature } from 'storybook/internal/types';
 
-import { getProcessAncestry } from 'process-ancestry';
-
+import type { TypeScriptDependencyResult } from '../commands/TypeScriptDependencyCommand.ts';
 import { VersionService } from './VersionService.ts';
 
 /** Service for tracking telemetry events during Storybook initialization */
 export class TelemetryService {
-  private versionService: VersionService;
-
-  constructor() {
-    this.versionService = new VersionService();
-  }
+  private versionService = new VersionService();
 
   /** Track a new user check step */
   async trackNewUserCheck(newUser: boolean): Promise<void> {
@@ -49,21 +45,42 @@ export class TelemetryService {
     });
   }
 
+  async trackTypeScriptDependency(
+    result: Exclude<TypeScriptDependencyResult, 'not-needed'>
+  ): Promise<void> {
+    await telemetry('init-step', {
+      step: 'typescript-dependency',
+      result,
+    });
+  }
+
+  /** Track the outcome of the official Storybook skills install step */
+  async trackSkills(result: SkillsInstallResult): Promise<void> {
+    await telemetry('init-step', {
+      step: 'skills',
+      ...result,
+    });
+  }
+
   /** Track the main init event with all metadata */
-  async trackInit(data: {
-    projectType: ProjectType;
-    features: {
-      dev: boolean;
-      docs: boolean;
-      test: boolean;
-      onboarding: boolean;
-      ai: boolean;
-    };
-    newUser: boolean;
-    versionSpecifier?: string;
-    cliIntegration?: string;
-  }): Promise<void> {
-    await telemetry('init', data);
+  async trackInit(
+    data: {
+      projectType: ProjectType;
+      features: {
+        dev: boolean;
+        docs: boolean;
+        test: boolean;
+        onboarding: boolean;
+        ai: boolean;
+      };
+      newUser: boolean;
+      versionSpecifier?: string;
+      cliIntegration?: string;
+    },
+    options: { configDir?: string } = {}
+  ): Promise<void> {
+    // Pass configDir so metadata resolves `.rnstorybook` (RN) instead of defaulting to `.storybook`.
+    await telemetry('init', data, { configDir: options.configDir });
   }
 
   /** Track empty directory scaffolding event */
@@ -78,19 +95,11 @@ export class TelemetryService {
   async trackInitWithContext(
     projectType: ProjectType,
     selectedFeatures: Set<Feature>,
-    newUser: boolean
+    newUser: boolean,
+    configDir?: string
   ): Promise<void> {
-    // Get telemetry info from process ancestry
-    let versionSpecifier: string | undefined;
-    let cliIntegration: string | undefined;
-
-    try {
-      const ancestry = getProcessAncestry();
-      versionSpecifier = this.versionService.getStorybookVersionFromAncestry(ancestry);
-      cliIntegration = this.versionService.getCliIntegrationFromAncestry(ancestry);
-    } catch {
-      // Ignore errors getting ancestry
-    }
+    const versionSpecifier = resolveStorybookVersionSpecifier();
+    const cliIntegration = this.versionService.getCliIntegrationFromAncestry(getProcessAncestry());
 
     // Create features object and track
     const telemetryFeatures = {
@@ -101,13 +110,16 @@ export class TelemetryService {
       ai: selectedFeatures.has(Feature.AI),
     };
 
-    await this.trackInit({
-      projectType,
-      features: telemetryFeatures,
-      newUser,
-      versionSpecifier,
-      cliIntegration,
-    });
+    await this.trackInit(
+      {
+        projectType,
+        features: telemetryFeatures,
+        newUser,
+        versionSpecifier,
+        cliIntegration,
+      },
+      { configDir }
+    );
   }
 
   async trackPromptCancel(prompt: string): Promise<void> {

@@ -62,6 +62,28 @@ function withGlobalActEnvironment(actImplementation: (callback: () => void) => P
   };
 }
 
+export function createEventWrapper(act: (cb: () => unknown) => unknown) {
+  let isInsideAct = false;
+
+  return <T>(cb: () => T): T => {
+    // Nested user-event dispatches (e.g. blur on focused-element removal) must reuse the outer act scope.
+    if (isInsideAct) {
+      return cb();
+    }
+
+    isInsideAct = true;
+    try {
+      let result!: T;
+      act(() => {
+        result = cb();
+      });
+      return result;
+    } finally {
+      isInsideAct = false;
+    }
+  };
+}
+
 export const getAct = async ({ disableAct = false }: { disableAct?: boolean } = {}) => {
   if (process.env.NODE_ENV === 'production' || disableAct) {
     return (cb: (...args: any[]) => any) => cb();

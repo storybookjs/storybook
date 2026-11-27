@@ -5,6 +5,9 @@ export function globToRegexp(glob: string) {
     fastpaths: false,
     noglobstar: false,
     bash: false,
+    // picomatch applies the platform default only in its default export, not in makeRe, and
+    // webpack tests the include pattern against a native path.
+    windows: process.platform === 'win32',
   });
 
   if (!regex.source.startsWith('^')) {

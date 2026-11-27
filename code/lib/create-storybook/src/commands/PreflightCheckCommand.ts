@@ -1,14 +1,13 @@
-import { detectPnp } from 'storybook/internal/cli';
 import {
   type JsPackageManager,
   JsPackageManagerFactory,
   PackageManagerName,
   getPrettyPackageManagerName,
-  isCI,
   invalidateProjectRootCache,
+  runStorybookInstallPrecheck,
+  warnOnYarn1,
 } from 'storybook/internal/common';
-import { CLI_COLORS, deprecate, logger } from 'storybook/internal/node-logger';
-import { MinimumReleaseAgeHandledError } from 'storybook/internal/server-errors';
+import { CLI_COLORS, logger } from 'storybook/internal/node-logger';
 
 import { dedent } from 'ts-dedent';
 
@@ -70,36 +69,21 @@ export class PreflightCheckCommand {
     });
 
     logger.info(`Package manager: ${getPrettyPackageManagerName(packageManager.type)}`);
+    warnOnYarn1(packageManager.type);
 
     // Install base project dependencies if we scaffolded a new project
     if (isEmptyDirProject && !options.skipInstall) {
       await packageManager.installDependencies();
     }
 
-    const pnp = await detectPnp();
-    if (pnp) {
-      deprecate(dedent`
-        As of Storybook 10.0, PnP is deprecated. 
-        If you are using PnP, you can continue to use Storybook 10.0, but we recommend migrating to a different package manager or linker-mode. In future versions, PnP compatibility will be removed.
-    `);
-    }
-
     this.checkPackageNameConflict(packageManager);
 
     await this.displayVersionInfo(packageManager);
-    try {
-      await packageManager.precheckStorybookPackageInstall({
-        storybookVersion: this.versionService.getCurrentVersion(),
-        nonInteractive: !!options.yes || !process.stdout.isTTY || !!isCI(),
-        installContext: 'create',
-      });
-    } catch (error) {
-      if (error instanceof MinimumReleaseAgeHandledError) {
-        throw error;
-      }
-
-      logger.debug(`Skipping minimum-release-age precheck after an unexpected failure: ${error}`);
-    }
+    await runStorybookInstallPrecheck(packageManager, {
+      storybookVersion: this.versionService.getCurrentVersion(),
+      installContext: 'create',
+      yes: !!options.yes,
+    });
 
     return { packageManager, isEmptyProject: isEmptyDirProject };
   }
@@ -136,8 +120,8 @@ export class PreflightCheckCommand {
       logger.warn(dedent`
           This version is behind the latest release, which is: ${latestVersion}!
           You likely ran the init command through npx, which can use a locally cached version.
-          
-          To get the latest, please run: ${CLI_COLORS.cta('npx storybook@latest init')}
+
+          To get the latest, please run: ${CLI_COLORS.cta(packageManager.getRemoteRunCommand(['storybook@latest', 'init']))}
           You may want to ${CLI_COLORS.cta('CTRL+C')} to stop, and run with the latest version instead.
         `);
     } else if (isPrerelease) {

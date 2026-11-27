@@ -1,31 +1,14 @@
-import { deprecate } from 'storybook/internal/client-logger';
 import { SourceType } from 'storybook/internal/docs-tools';
-import type {
-  ArgTypes,
-  Args,
-  ArgsStoryFn,
-  DecoratorFunction,
-  StoryContext,
-} from 'storybook/internal/types';
+import type { Args, ArgsStoryFn, DecoratorFunction, StoryContext } from 'storybook/internal/types';
 
 import { emitTransformCode, useEffect, useRef } from 'storybook/preview-api';
 import type { SvelteComponentDoc } from 'sveltedoc-parser';
 
 import type { SvelteRenderer, SvelteStoryResult } from '../types';
 
-/**
- * Check if the source-code should be generated.
- *
- * @param context StoryContext
- */
-const skipSourceRender = (context: StoryContext<SvelteRenderer>) => {
-  const sourceParams = context?.parameters.docs?.source;
-  const isArgsStory = context?.parameters.__isArgsStory;
-
-  if ((context?.tags ?? []).some((tag) => tag.startsWith('svelte-csf'))) {
-    // skip if Svelte CSF, as the addon does its own source code generation
-    return true;
-  }
+export const skipSourceRender = (context: Pick<StoryContext, 'parameters'>) => {
+  const sourceParams = context.parameters.docs?.source;
+  const isArgsStory = context.parameters.__isArgsStory;
 
   // always render if the user forces it
   if (sourceParams?.type === SourceType.DYNAMIC) {
@@ -37,29 +20,8 @@ const skipSourceRender = (context: StoryContext<SvelteRenderer>) => {
   return !isArgsStory || sourceParams?.code || sourceParams?.type === SourceType.CODE;
 };
 
-/**
- * Transform a key/value to a svelte declaration as string.
- *
- * Default values are ommited
- *
- * @param key Key
- * @param value Value
- * @param argTypes Component ArgTypes
- */
-function toSvelteProperty(key: string, value: any, argTypes: ArgTypes): string | null {
-  if (value === undefined || value === null) {
-    return null;
-  }
-
-  const argType = argTypes[key];
-
-  // default value ?
-  if (argType && argType.defaultValue === value) {
-    return null;
-  }
-
-  // event should be skipped
-  if (argType && argType.action) {
+function toSvelteProperty(key: string, value: any): string | null {
+  if (value === undefined || value === null || value.isAction) {
     return null;
   }
 
@@ -107,13 +69,11 @@ function getComponentName(component: any): string | null {
  *
  * @param component Component
  * @param args Args
- * @param argTypes ArgTypes
  * @param slotProperty Property used to simulate a slot
  */
 export function generateSvelteSource(
   component: any,
   args: Args,
-  argTypes: ArgTypes,
   slotProperty?: string | null
 ): string | null {
   const name = getComponentName(component);
@@ -124,7 +84,7 @@ export function generateSvelteSource(
 
   const propsArray = Object.entries(args)
     .filter(([k]) => k !== slotProperty)
-    .map(([k, v]) => toSvelteProperty(k, v, argTypes))
+    .map(([k, v]) => toSvelteProperty(k, v))
     .filter((p) => p);
 
   const props = propsArray.join(' ');
@@ -179,7 +139,9 @@ function getWrapperProperties(
  * @param context StoryContext
  */
 export const sourceDecorator: DecoratorFunction<SvelteRenderer> = (storyFn, context) => {
-  const skip = skipSourceRender(context);
+  // Svelte CSF stories emit their own snippet
+  const skip =
+    context.tags.some((tag) => tag.startsWith('svelte-csf')) || skipSourceRender(context);
   const story = storyFn();
   const source = useRef<undefined | string>(undefined);
 
@@ -188,7 +150,7 @@ export const sourceDecorator: DecoratorFunction<SvelteRenderer> = (storyFn, cont
       return;
     }
 
-    const { parameters = {}, args = {}, component: ctxComponent } = context || {};
+    const { args = {}, component: ctxComponent } = context || {};
 
     // excludeDecorators from source generation as they'll generate the wrong code
     // instead get the component directly from the original story function instead
@@ -198,14 +160,10 @@ export const sourceDecorator: DecoratorFunction<SvelteRenderer> = (storyFn, cont
     );
     const { wrapper, slotProperty } = getWrapperProperties(component);
     if (wrapper) {
-      if (parameters.component) {
-        deprecate('parameters.component is deprecated. Using context.component instead.');
-      }
-
       component = ctxComponent;
     }
 
-    const generated = generateSvelteSource(component, args, context?.argTypes, slotProperty);
+    const generated = generateSvelteSource(component, args, slotProperty);
 
     if (generated && source.current !== generated) {
       emitTransformCode(generated, context);

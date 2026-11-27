@@ -5,22 +5,13 @@ import type {
   API_RefStoryRuntimeData,
   API_Refs,
   API_SetRefData,
-  API_StoryMapper,
-  SetStoriesStoryData,
   StoryIndex,
 } from 'storybook/internal/types';
 
-import { global } from '@storybook/global';
-
 import { dedent } from 'ts-dedent';
 
-import {
-  transformSetStoriesStoryDataToPreparedStoryIndex,
-  transformStoryIndexToStoriesHash,
-} from '../lib/stories.ts';
+import { transformStoryIndexToStoriesHash } from '../lib/stories.ts';
 import type { ModuleFn } from '../lib/types.tsx';
-
-const { location, fetch } = global;
 
 export interface SubState {
   refs: API_Refs;
@@ -92,10 +83,6 @@ export const getSourceType = (source: string, refId?: string) => {
     return ['external', sourceFull];
   }
   return [null, null];
-};
-
-export const defaultStoryMapper: API_StoryMapper = (b: any, a: any) => {
-  return { ...a, kind: a.kind.replace('|', '/') };
 };
 
 const addRefIds = (input: API_IndexHash, ref: API_ComposedRef): API_IndexHash => {
@@ -185,18 +172,20 @@ const parseUrl = (url: string): UrlParseResult => {
   };
 };
 
-const map = (
-  input: SetStoriesStoryData,
-  ref: API_ComposedRef,
-  options: { storyMapper?: API_StoryMapper }
-): SetStoriesStoryData => {
-  const { storyMapper } = options;
-  if (storyMapper) {
-    return Object.entries(input).reduce((acc, [id, item]) => {
-      return { ...acc, [id]: storyMapper(ref, item) };
-    }, {} as SetStoriesStoryData);
+// In dev mode, the manager addresses messages to a ref's iframe by the origin of the ref's URL, so a
+// ref whose index is served from another origin after a redirect is composed from that origin.
+const getRedirectedRefUrl = (refUrl: string, indexResponseUrl: string | undefined): string => {
+  if (!indexResponseUrl) {
+    return refUrl;
   }
-  return input;
+  const served = new URL(indexResponseUrl);
+  if (
+    served.origin === new URL(refUrl, location.href).origin ||
+    !served.pathname.endsWith('/index.json')
+  ) {
+    return refUrl;
+  }
+  return served.origin + served.pathname.slice(0, -'/index.json'.length);
 };
 
 export const init: ModuleFn<SubAPI, SubState> = (
@@ -264,16 +253,20 @@ export const init: ModuleFn<SubAPI, SubState> = (
         });
       }
 
-      const [indexResult, storiesResult] = await Promise.all(
-        ['index.json', 'stories.json'].map(async (file) =>
-          handleRequest(
-            fetch(`${urlParseResult.url}/${file}${query}`, {
-              headers,
-              credentials,
-            })
-          )
-        )
+      const [indexRequest, storiesRequest] = ['index.json', 'stories.json'].map((file) =>
+        fetch(`${urlParseResult.url}/${file}${query}`, {
+          headers,
+          credentials,
+        })
       );
+      const [indexResult, storiesResult] = await Promise.all([
+        handleRequest(indexRequest),
+        handleRequest(storiesRequest),
+      ]);
+      const refUrl =
+        globalThis.CONFIG_TYPE === 'DEVELOPMENT' && indexResult.storyIndex
+          ? getRedirectedRefUrl(urlParseResult.url, (await indexRequest).url)
+          : urlParseResult.url;
 
       if (!indexResult.indexError || !storiesResult.indexError) {
         const metadata = await handleRequest(
@@ -312,7 +305,7 @@ export const init: ModuleFn<SubAPI, SubState> = (
 
       await api.setRef(id!, {
         id,
-        url: urlParseResult.url,
+        url: refUrl,
         ...loadedData,
         ...(versions ? { versions } : {}),
         type: !loadedData.storyIndex ? 'auto-inject' : 'lazy',
@@ -325,7 +318,7 @@ export const init: ModuleFn<SubAPI, SubState> = (
       return refs;
     },
 
-    setRef: async (id, { storyIndex, setStoriesData, ...rest }, ready = false) => {
+    setRef: async (id, { storyIndex, ...rest }, ready = false) => {
       if (singleStory) {
         return;
       }
@@ -333,24 +326,17 @@ export const init: ModuleFn<SubAPI, SubState> = (
       let index: API_IndexHash | undefined;
       let filteredIndex: API_IndexHash | undefined;
       const { filters } = store.getState();
-      const { storyMapper = defaultStoryMapper } = provider.getConfig();
       const ref = api.getRefs()[id];
 
-      if (storyIndex || setStoriesData) {
-        internal_index = setStoriesData
-          ? transformSetStoriesStoryDataToPreparedStoryIndex(
-              map(setStoriesData, ref, { storyMapper })
-            )
-          : storyIndex;
+      if (storyIndex) {
+        internal_index = storyIndex;
 
-        // @ts-expect-error (could be undefined)
         filteredIndex = transformStoryIndexToStoriesHash(storyIndex, {
           provider,
           docsOptions,
           filters,
           allStatuses: {},
         });
-        // @ts-expect-error (could be undefined)
         index = transformStoryIndexToStoriesHash(storyIndex, {
           provider,
           docsOptions,
@@ -386,7 +372,7 @@ export const init: ModuleFn<SubAPI, SubState> = (
     },
   };
 
-  const refs: API_Refs = (!singleStory && global.REFS) || {};
+  const refs: API_Refs = (!singleStory && globalThis.REFS) || {};
 
   const initialState: SubState['refs'] = refs;
 

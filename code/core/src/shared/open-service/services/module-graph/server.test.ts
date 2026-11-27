@@ -2,15 +2,23 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { STORY_INDEX_INVALIDATED } from 'storybook/internal/core-events';
 
+import { createTestChannel, installTestChannel } from '../../../../channels/test-channel.ts';
+import { entryEmits } from '../../fixtures.ts';
 import { clearRegistry } from '../../server.ts';
+import type { ReverseIndexImpl } from './engine/dependency-graph/reverse-index.ts';
 import {
   buildReverseIndex,
+  createDeferred,
   createMockAdapter,
   createStoryIndex,
   installDependencyGraphMocks,
   registerTestModuleGraphService,
 } from './module-graph.test-helpers.ts';
-import { registerModuleGraphService, resolveChangeDetectionAdapter } from './server.ts';
+import {
+  registerModuleGraphService,
+  resetChangeDetectionAdapterForTests,
+  resolveChangeDetectionAdapter,
+} from './server.ts';
 
 vi.mock('./engine/dependency-graph/resolver-factory.ts', { spy: true });
 vi.mock('./engine/dependency-graph/dependency-graph-builder.ts', { spy: true });
@@ -18,12 +26,25 @@ vi.mock('./engine/dependency-graph/incremental-patcher.ts', { spy: true });
 
 afterEach(() => {
   clearRegistry();
+  resetChangeDetectionAdapterForTests();
   vi.restoreAllMocks();
 });
 
 /** Bare service registration (no engine), for exercising the query/command contract directly. */
 function registerBareModuleGraph(workingDir = '/repo') {
   return registerTestModuleGraphService(workingDir);
+}
+
+function registerEngineBackedModuleGraph(reverseIndex: ReverseIndexImpl, workingDir = '/repo') {
+  const { patchSpy } = installDependencyGraphMocks(reverseIndex);
+  const { adapter, emitFileChange } = createMockAdapter();
+  const runtime = registerModuleGraphService({
+    channel: { on: vi.fn(() => () => undefined), emit: vi.fn() } as never,
+    getIndex: vi.fn().mockResolvedValue(createStoryIndex([])),
+    workingDir,
+    getAdapter: async () => adapter,
+  });
+  return { runtime, patchSpy, emitFileChange };
 }
 
 describe('module-graph open service', () => {
@@ -37,21 +58,14 @@ describe('module-graph open service', () => {
         revision: 0,
         storyFiles: [],
       });
-      expect(runtime.queries.storiesForFiles.get({ files: ['/repo/src/Button.tsx'] })).toEqual([
-        [],
-      ]);
     });
   });
 
   describe('_applyGraphSnapshot command', () => {
-    it('marks the service ready and stores the reverse index without advancing the revision', async () => {
+    it('marks the service ready without advancing the revision', async () => {
       const runtime = registerBareModuleGraph();
 
-      await runtime.commands._applyGraphSnapshot({
-        storiesByFile: {
-          './src/Button.tsx': { './src/Button.stories.tsx': 1 },
-        },
-      });
+      await runtime.commands._applyGraphSnapshot({ storyFiles: ['./src/Button.stories.tsx'] });
 
       expect(runtime.queries.status.get(undefined)).toEqual({ value: 'ready' });
       // The snapshot is the baseline, not a change, so the revision stays at 0.
@@ -60,42 +74,19 @@ describe('module-graph open service', () => {
         revision: 0,
         storyFiles: [],
       });
-      expect(runtime.queries.storiesForFiles.get({ files: ['/repo/src/Button.tsx'] })).toEqual([
-        [{ storyFile: './src/Button.stories.tsx', depth: 1 }],
-      ]);
     });
 
     it('seeds every known story to revision 0 for scoped reads', async () => {
       const runtime = registerBareModuleGraph();
 
       await runtime.commands._applyGraphSnapshot({
-        storiesByFile: {
-          './src/Button.tsx': { './src/Button.stories.tsx': 1 },
-          './src/Card.tsx': { './src/Card.stories.tsx': 1 },
-        },
+        storyFiles: ['./src/Button.stories.tsx', './src/Card.stories.tsx'],
       });
 
       expect(runtime.queries.graphRevision.get({ storyFiles: ['./src/Button.stories.tsx'] })).toBe(
         0
       );
       expect(runtime.queries.graphRevision.get({ storyFiles: ['./src/Card.stories.tsx'] })).toBe(0);
-    });
-
-    it('replaces (not merges) the reverse index on a subsequent snapshot', async () => {
-      const runtime = registerBareModuleGraph();
-
-      await runtime.commands._applyGraphSnapshot({
-        storiesByFile: { './src/A.tsx': { './src/A.stories.tsx': 0 } },
-      });
-      await runtime.commands._applyGraphSnapshot({
-        storiesByFile: { './src/B.tsx': { './src/B.stories.tsx': 0 } },
-      });
-
-      expect(runtime.queries.storiesForFiles.get({ files: ['/repo/src/A.tsx'] })).toEqual([[]]);
-      expect(runtime.queries.storiesForFiles.get({ files: ['/repo/src/B.tsx'] })).toEqual([
-        [{ storyFile: './src/B.stories.tsx', depth: 0 }],
-      ]);
-      expect(runtime.queries.graphRevision.get(undefined)).toBe(0);
     });
   });
 
@@ -131,20 +122,17 @@ describe('module-graph open service', () => {
     });
   });
 
-  describe('storiesForFiles query', () => {
+  describe('storiesForFiles command', () => {
     it('returns one result array per input file, positionally', async () => {
-      const runtime = registerBareModuleGraph();
-      await runtime.commands._applyGraphSnapshot({
-        storiesByFile: {
-          './src/Button.tsx': { './src/Button.stories.tsx': 1 },
-          './src/Card.tsx': {
-            './src/Card.stories.tsx': 1,
-            './src/Page.stories.tsx': 2,
-          },
-        },
-      });
+      const { runtime } = registerEngineBackedModuleGraph(
+        buildReverseIndex([
+          ['/repo/src/Button.tsx', '/repo/src/Button.stories.tsx', 1],
+          ['/repo/src/Card.tsx', '/repo/src/Card.stories.tsx', 1],
+          ['/repo/src/Card.tsx', '/repo/src/Page.stories.tsx', 2],
+        ])
+      );
 
-      const result = runtime.queries.storiesForFiles.get({
+      const result = await runtime.commands.storiesForFiles({
         files: ['/repo/src/Button.tsx', '/repo/src/Unknown.tsx', '/repo/src/Card.tsx'],
       });
 
@@ -159,16 +147,15 @@ describe('module-graph open service', () => {
     });
 
     it('accepts absolute, relative-with-dot, and relative-without-dot input paths', async () => {
-      const runtime = registerBareModuleGraph();
-      await runtime.commands._applyGraphSnapshot({
-        storiesByFile: { './src/Button.tsx': { './src/Button.stories.tsx': 1 } },
-      });
+      const { runtime } = registerEngineBackedModuleGraph(
+        buildReverseIndex([['/repo/src/Button.tsx', '/repo/src/Button.stories.tsx', 1]])
+      );
 
-      expect(
-        runtime.queries.storiesForFiles.get({
+      await expect(
+        runtime.commands.storiesForFiles({
           files: ['/repo/src/../src/Button.tsx', './src/Button.tsx', 'src/Button.tsx'],
         })
-      ).toEqual([
+      ).resolves.toEqual([
         [{ storyFile: './src/Button.stories.tsx', depth: 1 }],
         [{ storyFile: './src/Button.stories.tsx', depth: 1 }],
         [{ storyFile: './src/Button.stories.tsx', depth: 1 }],
@@ -176,40 +163,54 @@ describe('module-graph open service', () => {
     });
 
     it('accepts Windows-style absolute and relative input paths', async () => {
-      const runtime = registerBareModuleGraph('C:\\repo');
-      await runtime.commands._applyGraphSnapshot({
-        storiesByFile: { './src/Button.tsx': { './src/Button.stories.tsx': 1 } },
-      });
+      const { runtime } = registerEngineBackedModuleGraph(
+        buildReverseIndex([['C:/repo/src/Button.tsx', 'C:/repo/src/Button.stories.tsx', 1]]),
+        'C:\\repo'
+      );
 
-      expect(
-        runtime.queries.storiesForFiles.get({
+      await expect(
+        runtime.commands.storiesForFiles({
           files: ['C:\\repo\\src\\Button.tsx', '.\\src\\Button.tsx', 'src\\Button.tsx'],
         })
-      ).toEqual([
+      ).resolves.toEqual([
         [{ storyFile: './src/Button.stories.tsx', depth: 1 }],
         [{ storyFile: './src/Button.stories.tsx', depth: 1 }],
         [{ storyFile: './src/Button.stories.tsx', depth: 1 }],
       ]);
     });
 
-    it('returns an empty array for an empty input list', () => {
-      const runtime = registerBareModuleGraph();
-      expect(runtime.queries.storiesForFiles.get({ files: [] })).toEqual([]);
+    it('returns an empty array for an empty input list', async () => {
+      const { runtime } = registerEngineBackedModuleGraph(buildReverseIndex([]));
+
+      await expect(runtime.commands.storiesForFiles({ files: [] })).resolves.toEqual([]);
+    });
+
+    it('answers after an in-flight patch settles', async () => {
+      const reverseIndex = buildReverseIndex([]);
+      const { runtime, patchSpy, emitFileChange } = registerEngineBackedModuleGraph(reverseIndex);
+      const patchGate = createDeferred<void>();
+      patchSpy.mockImplementationOnce(async () => {
+        await patchGate.promise;
+        reverseIndex.record('/repo/src/Icon.tsx', '/repo/src/Button.stories.tsx', 2);
+      });
+      await runtime.queries.status.loaded(undefined);
+
+      emitFileChange({ kind: 'change', path: '/repo/src/Button.stories.tsx' });
+      const lookup = runtime.commands.storiesForFiles({ files: ['/repo/src/Icon.tsx'] });
+      patchGate.resolve();
+
+      await expect(lookup).resolves.toEqual([
+        [{ storyFile: './src/Button.stories.tsx', depth: 2 }],
+      ]);
     });
   });
 
   describe('_applyGraphUpdate command', () => {
-    it('replaces the reverse index, bumps the revision, and records latest changed stories', async () => {
+    it('bumps the revision and records latest changed stories', async () => {
       const runtime = registerBareModuleGraph();
-      await runtime.commands._applyGraphSnapshot({
-        storiesByFile: { './src/Button.tsx': { './src/Button.stories.tsx': 1 } },
-      });
+      await runtime.commands._applyGraphSnapshot({ storyFiles: ['./src/Button.stories.tsx'] });
 
       await runtime.commands._applyGraphUpdate({
-        storiesByFile: {
-          './src/Button.tsx': { './src/Button.stories.tsx': 1 },
-          './src/Icon.tsx': { './src/Button.stories.tsx': 2 },
-        },
         bumpedStoryFiles: ['./src/Button.stories.tsx'],
       });
 
@@ -219,25 +220,15 @@ describe('module-graph open service', () => {
         revision: 1,
         storyFiles: ['./src/Button.stories.tsx'],
       });
-      expect(runtime.queries.storiesForFiles.get({ files: ['/repo/src/Icon.tsx'] })).toEqual([
-        [{ storyFile: './src/Button.stories.tsx', depth: 2 }],
-      ]);
     });
 
     it('stamps each bumped story with the new revision and leaves untouched stories at 0', async () => {
       const runtime = registerBareModuleGraph();
       await runtime.commands._applyGraphSnapshot({
-        storiesByFile: {
-          './src/Button.tsx': { './src/Button.stories.tsx': 1 },
-          './src/Card.tsx': { './src/Card.stories.tsx': 1 },
-        },
+        storyFiles: ['./src/Button.stories.tsx', './src/Card.stories.tsx'],
       });
 
       await runtime.commands._applyGraphUpdate({
-        storiesByFile: {
-          './src/Button.tsx': { './src/Button.stories.tsx': 1 },
-          './src/Card.tsx': { './src/Card.stories.tsx': 1 },
-        },
         bumpedStoryFiles: ['./src/Button.stories.tsx'],
       });
 
@@ -252,11 +243,9 @@ describe('module-graph open service', () => {
       const runtime = registerBareModuleGraph();
 
       await runtime.commands._applyGraphUpdate({
-        storiesByFile: {},
         bumpedStoryFiles: ['./a.stories.tsx', './b.stories.tsx'],
       });
       await runtime.commands._applyGraphUpdate({
-        storiesByFile: {},
         bumpedStoryFiles: ['./a.stories.tsx'],
       });
 
@@ -267,18 +256,32 @@ describe('module-graph open service', () => {
       expect(runtime.queries.graphRevision.get(undefined)).toBe(2);
     });
 
-    it('does not advance the revision for an out-of-graph change (no bumped stories)', async () => {
+    it('keeps the newest in-graph change time, even when an older edit is reported later', async () => {
       const runtime = registerBareModuleGraph();
-      await runtime.commands._applyGraphSnapshot({
-        storiesByFile: { './src/Button.tsx': { './src/Button.stories.tsx': 1 } },
-      });
 
       await runtime.commands._applyGraphUpdate({
-        storiesByFile: { './src/Button.tsx': { './src/Button.stories.tsx': 1 } },
+        bumpedStoryFiles: ['./a.stories.tsx'],
+        changedAt: 2_000,
+      });
+      await runtime.commands._applyGraphUpdate({
+        bumpedStoryFiles: ['./b.stories.tsx'],
+        changedAt: 1_000,
+      });
+      await runtime.commands._applyGraphUpdate({ bumpedStoryFiles: [], changedAt: 3_000 });
+
+      expect(runtime.queries.graphChangedAt.get(undefined)).toBe(2_000);
+    });
+
+    it('advances file activity but not graph revision for an out-of-graph change', async () => {
+      const runtime = registerBareModuleGraph();
+      await runtime.commands._applyGraphSnapshot({ storyFiles: ['./src/Button.stories.tsx'] });
+
+      await runtime.commands._applyGraphUpdate({
         bumpedStoryFiles: [],
       });
 
       expect(runtime.queries.graphRevision.get(undefined)).toBe(0);
+      expect(runtime.queries.fileActivityRevision.get(undefined)).toBe(1);
       expect(runtime.queries.latestStoryChanges.get(undefined)).toEqual({
         revision: 0,
         storyFiles: [],
@@ -296,7 +299,6 @@ describe('module-graph open service', () => {
       });
 
       await runtime.commands._applyGraphUpdate({
-        storiesByFile: {},
         bumpedStoryFiles: ['./src/Button.stories.tsx', './src/Card.stories.tsx'],
       });
 
@@ -310,11 +312,9 @@ describe('module-graph open service', () => {
       const runtime = registerBareModuleGraph();
 
       await runtime.commands._applyGraphUpdate({
-        storiesByFile: {},
         bumpedStoryFiles: ['./a.stories.tsx', './b.stories.tsx'],
       });
       await runtime.commands._applyGraphUpdate({
-        storiesByFile: {},
         bumpedStoryFiles: ['./c.stories.tsx'],
       });
 
@@ -328,11 +328,9 @@ describe('module-graph open service', () => {
       const runtime = registerBareModuleGraph();
 
       await runtime.commands._applyGraphUpdate({
-        storiesByFile: {},
         bumpedStoryFiles: ['./src/Button.stories.tsx'],
       });
       await runtime.commands._applyGraphUpdate({
-        storiesByFile: { './src/Button.tsx': { './src/Button.stories.tsx': 1 } },
         bumpedStoryFiles: [],
       });
 
@@ -346,12 +344,9 @@ describe('module-graph open service', () => {
       const runtime = registerBareModuleGraph();
 
       await runtime.commands._applyGraphUpdate({
-        storiesByFile: {},
         bumpedStoryFiles: ['./src/Button.stories.tsx'],
       });
-      await runtime.commands._applyGraphSnapshot({
-        storiesByFile: { './src/Button.tsx': { './src/Button.stories.tsx': 1 } },
-      });
+      await runtime.commands._applyGraphSnapshot({ storyFiles: ['./src/Button.stories.tsx'] });
 
       expect(runtime.queries.latestStoryChanges.get(undefined)).toEqual({
         revision: 1,
@@ -369,11 +364,9 @@ describe('module-graph open service', () => {
       });
 
       await runtime.commands._applyGraphUpdate({
-        storiesByFile: {},
         bumpedStoryFiles: ['./a.stories.tsx'],
       });
       await runtime.commands._applyGraphUpdate({
-        storiesByFile: {},
         bumpedStoryFiles: ['./b.stories.tsx'],
       });
 
@@ -387,11 +380,8 @@ describe('module-graph open service', () => {
   describe('graphRevision query scopes', () => {
     it('returns 0 for an empty watch list and ignores unknown stories', async () => {
       const runtime = registerBareModuleGraph();
-      await runtime.commands._applyGraphSnapshot({
-        storiesByFile: { './src/Button.tsx': { './src/Button.stories.tsx': 1 } },
-      });
+      await runtime.commands._applyGraphSnapshot({ storyFiles: ['./src/Button.stories.tsx'] });
       await runtime.commands._applyGraphUpdate({
-        storiesByFile: { './src/Button.tsx': { './src/Button.stories.tsx': 1 } },
         bumpedStoryFiles: ['./src/Button.stories.tsx'],
       });
 
@@ -407,11 +397,8 @@ describe('module-graph open service', () => {
 
     it('accepts absolute and relative scope paths', async () => {
       const runtime = registerBareModuleGraph();
-      await runtime.commands._applyGraphSnapshot({
-        storiesByFile: { './src/Button.tsx': { './src/Button.stories.tsx': 1 } },
-      });
+      await runtime.commands._applyGraphSnapshot({ storyFiles: ['./src/Button.stories.tsx'] });
       await runtime.commands._applyGraphUpdate({
-        storiesByFile: { './src/Button.tsx': { './src/Button.stories.tsx': 1 } },
         bumpedStoryFiles: ['./src/Button.stories.tsx'],
       });
 
@@ -435,9 +422,8 @@ describe('module-graph open service', () => {
         }
       });
 
-      await runtime.commands._applyGraphSnapshot({ storiesByFile: {} });
+      await runtime.commands._applyGraphSnapshot({ storyFiles: [] });
       await runtime.commands._applyGraphUpdate({
-        storiesByFile: {},
         bumpedStoryFiles: ['./a.stories.tsx'],
       });
 
@@ -448,10 +434,7 @@ describe('module-graph open service', () => {
     it('notifies a scoped subscriber only when its story is bumped', async () => {
       const runtime = registerBareModuleGraph();
       await runtime.commands._applyGraphSnapshot({
-        storiesByFile: {
-          './src/Button.tsx': { './src/Button.stories.tsx': 1 },
-          './src/Card.tsx': { './src/Card.stories.tsx': 1 },
-        },
+        storyFiles: ['./src/Button.stories.tsx', './src/Card.stories.tsx'],
       });
 
       const seen: number[] = [];
@@ -466,18 +449,10 @@ describe('module-graph open service', () => {
 
       // Bump an unrelated story: the Button-scoped subscriber must not advance.
       await runtime.commands._applyGraphUpdate({
-        storiesByFile: {
-          './src/Button.tsx': { './src/Button.stories.tsx': 1 },
-          './src/Card.tsx': { './src/Card.stories.tsx': 1 },
-        },
         bumpedStoryFiles: ['./src/Card.stories.tsx'],
       });
       // Now bump Button itself.
       await runtime.commands._applyGraphUpdate({
-        storiesByFile: {
-          './src/Button.tsx': { './src/Button.stories.tsx': 1 },
-          './src/Card.tsx': { './src/Card.stories.tsx': 1 },
-        },
         bumpedStoryFiles: ['./src/Button.stories.tsx'],
       });
 
@@ -499,7 +474,207 @@ describe('module-graph open service', () => {
       expect(runtime.queries.status.get(undefined)).toEqual({ value: 'booting' });
     });
 
-    // Must run last: it resolves the process-global adapter promise, which cannot be un-resolved.
+    it('starts the engine from getAdapter on the first status.loaded', async () => {
+      const reverseIndex = buildReverseIndex([
+        ['/repo/src/Button.tsx', '/repo/src/Button.stories.tsx', 1],
+      ]);
+      installDependencyGraphMocks(reverseIndex);
+      const { adapter } = createMockAdapter({ resolveConfig: { projectRoot: '/repo' } });
+      const getAdapter = vi.fn(async () => adapter);
+
+      const runtime = registerModuleGraphService({
+        channel: { on: vi.fn(() => () => undefined), emit: vi.fn() } as never,
+        getIndex: vi.fn().mockResolvedValue(
+          createStoryIndex([
+            {
+              storyId: 'button--primary',
+              importPath: './src/Button.stories.tsx',
+              title: 'Button',
+            },
+          ])
+        ),
+        workingDir: '/repo',
+        getAdapter,
+      });
+
+      expect(getAdapter).not.toHaveBeenCalled();
+      expect(await runtime.queries.status.loaded(undefined)).toEqual({ value: 'ready' });
+      expect(getAdapter).toHaveBeenCalledTimes(1);
+      await expect(
+        runtime.commands.storiesForFiles({ files: ['/repo/src/Button.tsx'] })
+      ).resolves.toEqual([[{ storyFile: './src/Button.stories.tsx', depth: 1 }]]);
+    });
+
+    it('does not call getAdapter when the host already resolved the adapter', async () => {
+      const reverseIndex = buildReverseIndex([
+        ['/repo/src/Button.tsx', '/repo/src/Button.stories.tsx', 1],
+      ]);
+      installDependencyGraphMocks(reverseIndex);
+      const { adapter } = createMockAdapter({ resolveConfig: { projectRoot: '/repo' } });
+      const getAdapter = vi.fn(async () => adapter);
+
+      const runtime = registerModuleGraphService({
+        channel: { on: vi.fn(() => () => undefined), emit: vi.fn() } as never,
+        getIndex: vi.fn().mockResolvedValue(
+          createStoryIndex([
+            {
+              storyId: 'button--primary',
+              importPath: './src/Button.stories.tsx',
+              title: 'Button',
+            },
+          ])
+        ),
+        workingDir: '/repo',
+        getAdapter,
+      });
+
+      resolveChangeDetectionAdapter(adapter);
+      await vi.waitFor(() => {
+        expect(runtime.queries.status.get(undefined)).toEqual({ value: 'ready' });
+      });
+      expect(getAdapter).not.toHaveBeenCalled();
+
+      await runtime.queries.status.loaded(undefined);
+      expect(getAdapter).not.toHaveBeenCalled();
+    });
+
+    it('calls getAdapter once when two settle waits overlap', async () => {
+      const reverseIndex = buildReverseIndex([
+        ['/repo/src/Button.tsx', '/repo/src/Button.stories.tsx', 1],
+      ]);
+      installDependencyGraphMocks(reverseIndex);
+      const { adapter } = createMockAdapter({ resolveConfig: { projectRoot: '/repo' } });
+      const adapterHandle = createDeferred<typeof adapter>();
+      const getAdapter = vi.fn(() => adapterHandle.promise);
+
+      const runtime = registerModuleGraphService({
+        channel: { on: vi.fn(() => () => undefined), emit: vi.fn() } as never,
+        getIndex: vi.fn().mockResolvedValue(
+          createStoryIndex([
+            {
+              storyId: 'button--primary',
+              importPath: './src/Button.stories.tsx',
+              title: 'Button',
+            },
+          ])
+        ),
+        workingDir: '/repo',
+        getAdapter,
+      });
+
+      const first = runtime.commands._waitForSettledEngine(undefined);
+      const second = runtime.commands._waitForSettledEngine(undefined);
+      adapterHandle.resolve(adapter);
+      await Promise.all([first, second]);
+
+      expect(getAdapter).toHaveBeenCalledTimes(1);
+      expect(runtime.queries.status.get(undefined)).toEqual({ value: 'ready' });
+    });
+
+    it('returns serialized change-detection readiness from the injected getter', async () => {
+      const getChangeDetectionReadiness = vi.fn(async () => ({
+        status: 'unavailable' as const,
+        reason: 'not a git repository',
+      }));
+
+      const runtime = registerModuleGraphService({
+        channel: { on: vi.fn(() => () => undefined), emit: vi.fn() } as never,
+        getIndex: vi.fn().mockResolvedValue({ v: 5, entries: {} }),
+        workingDir: '/repo',
+        getChangeDetectionReadiness,
+      });
+
+      await expect(runtime.commands._waitForChangeDetectionReadiness(undefined)).resolves.toEqual({
+        status: 'unavailable',
+        reason: 'not a git repository',
+      });
+      expect(runtime.queries.changeDetectionReadiness.get(undefined)).toEqual({
+        status: 'unavailable',
+        reason: 'not a git repository',
+      });
+      expect(getChangeDetectionReadiness).toHaveBeenCalledOnce();
+    });
+
+    it('forwards an optional error on unavailable change-detection readiness', async () => {
+      const runtime = registerModuleGraphService({
+        channel: { on: vi.fn(() => () => undefined), emit: vi.fn() } as never,
+        getIndex: vi.fn().mockResolvedValue({ v: 5, entries: {} }),
+        workingDir: '/repo',
+        getChangeDetectionReadiness: async () => ({
+          status: 'unavailable' as const,
+          reason: 'vite warmup failed',
+          error: new Error('warmup failed'),
+        }),
+      });
+
+      await expect(runtime.commands._waitForChangeDetectionReadiness(undefined)).resolves.toEqual({
+        status: 'unavailable',
+        reason: 'vite warmup failed',
+        error: { message: 'warmup failed' },
+      });
+      expect(runtime.queries.changeDetectionReadiness.get(undefined)).toEqual({
+        status: 'unavailable',
+        reason: 'vite warmup failed',
+        error: { message: 'warmup failed' },
+      });
+    });
+
+    it('loads change-detection readiness through the query load hook', async () => {
+      const runtime = registerModuleGraphService({
+        channel: { on: vi.fn(() => () => undefined), emit: vi.fn() } as never,
+        getIndex: vi.fn().mockResolvedValue({ v: 5, entries: {} }),
+        workingDir: '/repo',
+        getChangeDetectionReadiness: async () => ({ status: 'ready' as const }),
+      });
+
+      expect(runtime.queries.changeDetectionReadiness.get(undefined)).toEqual({
+        status: 'pending',
+      });
+      await expect(runtime.queries.changeDetectionReadiness.loaded(undefined)).resolves.toEqual({
+        status: 'ready',
+      });
+    });
+
+    it('serializes a change-detection error readiness result', async () => {
+      const runtime = registerModuleGraphService({
+        channel: { on: vi.fn(() => () => undefined), emit: vi.fn() } as never,
+        getIndex: vi.fn().mockResolvedValue({ v: 5, entries: {} }),
+        workingDir: '/repo',
+        getChangeDetectionReadiness: async () => ({
+          status: 'error',
+          error: { message: 'scan blew up' },
+        }),
+      });
+
+      await expect(runtime.commands._waitForChangeDetectionReadiness(undefined)).resolves.toEqual({
+        status: 'error',
+        error: { message: 'scan blew up' },
+      });
+    });
+
+    it('settles the graph as unavailable when getAdapter rejects', async () => {
+      const getAdapter = vi.fn(async () => {
+        throw new Error('preview builder missing');
+      });
+
+      const runtime = registerModuleGraphService({
+        channel: { on: vi.fn(() => () => undefined), emit: vi.fn() } as never,
+        getIndex: vi.fn().mockResolvedValue({ v: 5, entries: {} }),
+        workingDir: '/repo',
+        getAdapter,
+      });
+
+      await expect(runtime.queries.status.loaded(undefined)).resolves.toEqual({
+        value: 'unavailable',
+        reason: 'builder does not support change detection',
+      });
+      await expect(runtime.queries.status.loaded(undefined)).resolves.toEqual({
+        value: 'unavailable',
+        reason: 'builder does not support change detection',
+      });
+      expect(getAdapter).toHaveBeenCalledTimes(1);
+    });
+
     it('builds the graph from the adapter and turns index invalidations into targeted updates', async () => {
       const reverseIndex = buildReverseIndex([
         ['/repo/src/Button.tsx', '/repo/src/Button.stories.tsx', 1],
@@ -538,9 +713,9 @@ describe('module-graph open service', () => {
         expect(runtime.queries.status.get(undefined)).toEqual({ value: 'ready' });
       });
 
-      expect(runtime.queries.storiesForFiles.get({ files: ['/repo/src/Button.tsx'] })).toEqual([
-        [{ storyFile: './src/Button.stories.tsx', depth: 1 }],
-      ]);
+      await expect(
+        runtime.commands.storiesForFiles({ files: ['/repo/src/Button.tsx'] })
+      ).resolves.toEqual([[{ storyFile: './src/Button.stories.tsx', depth: 1 }]]);
 
       const invalidate = channel.on.mock.calls.find(
         ([event]) => event === STORY_INDEX_INVALIDATED
@@ -565,6 +740,42 @@ describe('module-graph open service', () => {
           storyFiles: ['./src/Card.stories.tsx'],
         });
       });
+    });
+  });
+
+  describe('channel payloads', () => {
+    afterEach(() => {
+      installTestChannel(null);
+    });
+
+    it('keeps the reverse index off the channel through boot and a dependency-adding patch', async () => {
+      const channel = createTestChannel();
+      installTestChannel(channel);
+      const storyFiles = Array.from({ length: 20 }, (_, j) => `/repo/src/story-${j}.stories.ts`);
+      const sourceFiles = Array.from({ length: 400 }, (_, i) => `/repo/src/file-${i}.ts`);
+      const reverseIndex = buildReverseIndex(
+        sourceFiles.flatMap((file) => storyFiles.map((story) => [file, story, 1] as const))
+      );
+      const { runtime, patchSpy, emitFileChange } = registerEngineBackedModuleGraph(reverseIndex);
+      patchSpy.mockImplementationOnce(async () => {
+        for (const story of storyFiles) {
+          reverseIndex.record('/repo/src/file-added.ts', story, 2);
+        }
+      });
+
+      await runtime.queries.status.loaded(undefined);
+      emitFileChange({ kind: 'change', path: sourceFiles[0] });
+      await runtime.commands._waitForSettledEngine(undefined);
+
+      const entries = entryEmits(channel);
+      expect(entries.length).toBeGreaterThan(0);
+      expect(JSON.stringify(entries)).not.toContain('/src/file-');
+      await expect(
+        runtime.commands.storiesForFiles({ files: ['./src/file-399.ts', './src/file-added.ts'] })
+      ).resolves.toEqual([
+        storyFiles.map((story) => ({ storyFile: story.replace('/repo/', './'), depth: 1 })),
+        storyFiles.map((story) => ({ storyFile: story.replace('/repo/', './'), depth: 2 })),
+      ]);
     });
   });
 });

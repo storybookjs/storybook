@@ -1,13 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, Directive, Injectable, InjectionToken, NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
-import {
-  BrowserAnimationsModule,
-  NoopAnimationsModule,
-  provideAnimations,
-  provideNoopAnimations,
-} from '@angular/platform-browser/animations';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { NgModuleMetadata } from '../../types.ts';
 import { WithOfficialModule } from '../__testfixtures__/test.module.ts';
@@ -28,6 +22,8 @@ const TestModuleWithImportsAndProviders = NgModule({
   imports: [TestModuleWithDeclarations],
   providers: [TestTokenProvider],
 })(class {});
+class BrowserAnimationsModule {}
+class NoopAnimationsModule {}
 
 const analyzeMetadata = async (metadata: NgModuleMetadata, component?: any) => {
   const propertyExtractor = new PropertyExtractor(metadata, component);
@@ -56,7 +52,12 @@ const extractApplicationProviders = async (metadata: NgModuleMetadata, component
 };
 
 describe('PropertyExtractor', () => {
-  vi.spyOn(console, 'warn').mockImplementation(() => {});
+  const consoleWarnSpy = vi.spyOn(console, 'warn');
+
+  beforeEach(() => {
+    consoleWarnSpy.mockImplementation(() => {});
+    consoleWarnSpy.mockClear();
+  });
 
   describe('analyzeMetadata', () => {
     it('should remove BrowserModule', async () => {
@@ -69,24 +70,28 @@ describe('PropertyExtractor', () => {
       expect(applicationProviders.flat(Number.MAX_VALUE)).toEqual([]);
     });
 
-    it('should remove BrowserAnimationsModule and use its providers instead', async () => {
+    it('should warn and remove BrowserAnimationsModule without adding providers', async () => {
       const metadata = {
         imports: [BrowserAnimationsModule],
       };
       const { imports, providers, applicationProviders } = await analyzeMetadata(metadata);
       expect(imports.flat(Number.MAX_VALUE)).toEqual([CommonModule]);
       expect(providers.flat(Number.MAX_VALUE)).toEqual([]);
-      expect(applicationProviders.flat(Number.MAX_VALUE)).toEqual(provideAnimations());
+      expect(applicationProviders.flat(Number.MAX_VALUE)).toEqual([]);
+      expect(consoleWarnSpy).toHaveBeenCalledWith(
+        expect.stringContaining('BrowserAnimationsModule')
+      );
     });
 
-    it('should remove NoopAnimationsModule and use its providers instead', async () => {
+    it('should warn and remove NoopAnimationsModule without adding providers', async () => {
       const metadata = {
         imports: [NoopAnimationsModule],
       };
       const { imports, providers, applicationProviders } = await analyzeMetadata(metadata);
       expect(imports.flat(Number.MAX_VALUE)).toEqual([CommonModule]);
       expect(providers.flat(Number.MAX_VALUE)).toEqual([]);
-      expect(applicationProviders.flat(Number.MAX_VALUE)).toEqual(provideNoopAnimations());
+      expect(applicationProviders.flat(Number.MAX_VALUE)).toEqual([]);
+      expect(consoleWarnSpy).toHaveBeenCalledWith(expect.stringContaining('NoopAnimationsModule'));
     });
 
     it('should remove Browser/Animations modules recursively', async () => {
@@ -96,7 +101,49 @@ describe('PropertyExtractor', () => {
       const { imports, providers, applicationProviders } = await analyzeMetadata(metadata);
       expect(imports.flat(Number.MAX_VALUE)).toEqual([CommonModule]);
       expect(providers.flat(Number.MAX_VALUE)).toEqual([]);
-      expect(applicationProviders.flat(Number.MAX_VALUE)).toEqual(provideAnimations());
+      expect(applicationProviders.flat(Number.MAX_VALUE)).toEqual([]);
+    });
+
+    it.each([
+      ['_BrowserAnimationsModule', 'BrowserAnimationsModule'],
+      ['_NoopAnimationsModule', 'NoopAnimationsModule'],
+      ['BrowserAnimationsModule$1', 'BrowserAnimationsModule'],
+      ['NoopAnimationsModule$1', 'NoopAnimationsModule'],
+    ])(
+      'should warn, remove a renamed %s from imports and add no providers',
+      async (mangledName, expectedModuleName) => {
+        const MangledModule = class {};
+        Object.defineProperty(MangledModule, 'name', { value: mangledName });
+
+        const metadata = {
+          imports: [MangledModule],
+        };
+        const { imports, providers, applicationProviders } = await analyzeMetadata(metadata);
+        expect(imports.flat(Number.MAX_VALUE)).toEqual([CommonModule]);
+        expect(providers.flat(Number.MAX_VALUE)).toEqual([]);
+        expect(applicationProviders.flat(Number.MAX_VALUE)).toEqual([]);
+        expect(consoleWarnSpy).toHaveBeenCalledWith(
+          expect.stringContaining(`"${expectedModuleName}"`)
+        );
+      }
+    );
+
+    it('should not remove a module that is not a legacy animations module even if its name starts with an underscore', async () => {
+      class _BrowserAnimationsModuleWrapper {}
+
+      const metadata = {
+        imports: [_BrowserAnimationsModuleWrapper],
+      };
+      const { imports, providers, applicationProviders } = await analyzeMetadata(metadata);
+      expect(imports.flat(Number.MAX_VALUE)).toEqual([
+        CommonModule,
+        _BrowserAnimationsModuleWrapper,
+      ]);
+      expect(providers.flat(Number.MAX_VALUE)).toEqual([]);
+      expect(applicationProviders.flat(Number.MAX_VALUE)).toEqual([]);
+      expect(consoleWarnSpy).not.toHaveBeenCalledWith(
+        expect.stringContaining('BrowserAnimationsModule')
+      );
     });
 
     it('should not destructure Angular official module', async () => {
@@ -189,13 +236,18 @@ describe('PropertyExtractor', () => {
       });
       expect(providers).toEqual([TestService]);
     });
+  });
 
-    it('should return an array of singletons extracted', async () => {
-      const singeltons = await extractApplicationProviders({
+  describe('extractApplicationProviders', () => {
+    it('should not extract providers from legacy animation modules', async () => {
+      const applicationProviders = await extractApplicationProviders({
         imports: [BrowserAnimationsModule],
       });
 
-      expect(singeltons).toEqual(provideAnimations());
+      expect(applicationProviders.flat(Number.MAX_VALUE)).toEqual([]);
+      expect(consoleWarnSpy).toHaveBeenCalledWith(
+        expect.stringContaining('BrowserAnimationsModule')
+      );
     });
   });
 });

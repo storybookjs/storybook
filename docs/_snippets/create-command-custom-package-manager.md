@@ -3,7 +3,7 @@ npm create storybook@latest --package-manager=npm
 ```
 
 ```shell renderer="common" packageManager="pnpm"
-pnpm create storybook@latest --package-manager=npm
+pnpm --allow-build=esbuild create storybook@latest --package-manager=npm
 ```
 
 ```shell renderer="common" packageManager="yarn"

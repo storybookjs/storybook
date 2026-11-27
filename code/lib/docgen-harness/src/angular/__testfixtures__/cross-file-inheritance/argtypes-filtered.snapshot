@@ -1,0 +1,38 @@
+{
+  "dismissible": {
+    "description": "
+Whether the alert shows a close button.",
+    "name": "dismissible",
+    "table": {
+      "category": "inputs",
+      "defaultValue": {
+        "summary": false,
+      },
+      "type": {
+        "required": true,
+        "summary": "boolean",
+      },
+    },
+    "type": {
+      "name": "boolean",
+    },
+  },
+  "heading": {
+    "description": "
+",
+    "name": "heading",
+    "table": {
+      "category": "inputs",
+      "defaultValue": {
+        "summary": "",
+      },
+      "type": {
+        "required": true,
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+    },
+  },
+}

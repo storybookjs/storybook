@@ -4,6 +4,8 @@ import lightThemeVars from './themes/light.ts';
 import type { ThemeVars, ThemeVarsPartial } from './types.ts';
 import { getPreferredColorScheme } from './utils.ts';
 
+export type { ThemeVars, ThemeVarsPartial };
+
 interface Themes {
   light: ThemeVars;
   dark: ThemeVars;

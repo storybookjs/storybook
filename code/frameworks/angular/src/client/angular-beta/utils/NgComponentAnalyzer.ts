@@ -37,7 +37,7 @@ export const getComponentInputsOutputs = (component: any): ComponentInputsOutput
     initialValue.inputs.push(
       ...componentMetadata.inputs.map((i) => ({
         propName: typeof i === 'string' ? i : i.name,
-        templateName: typeof i === 'string' ? i : i.alias,
+        templateName: typeof i === 'string' ? i : (i.alias ?? i.name),
       }))
     );
   }
@@ -84,8 +84,7 @@ export const getComponentInputsOutputs = (component: any): ComponentInputsOutput
         return previousValue;
       }, initialValue);
 
-  // Add signal-based I/O, which the decorator path above cannot see.
-  return addSignalInputsOutputs(component, decoratorDerived);
+  return addCompiledInputsOutputs(component, decoratorDerived);
 };
 
 const hasEntry = (
@@ -94,16 +93,20 @@ const hasEntry = (
   templateName: string
 ) => list.some((e) => e.propName === propName || e.templateName === templateName);
 
-/**
- * `model()`/`input()`/`output()` are decorator-less, so they never appear in
- * `ɵReflectionCapabilities.propMetadata`. They are read instead from the compiled
- * component definition (`ɵcmp`), which Storybook always receives from the Angular
- * builder and which already encodes resolved binding names (aliased
- * `model(x, { alias })` and `model.required()` included). Purely static — never
- * instantiates the component. Results are additive and de-duplicated against
- * `base`, so decorator-based I/O is unchanged.
- */
-const addSignalInputsOutputs = (
+// A deferred `hostDirectives` list is a function, and its configs keep the compiled
+// `['inner', 'outer', ...]` pairs that a resolved definition has already turned into
+// `{ inner: 'outer' }`.
+const hostDirectiveConfigs = (def: any): any[] =>
+  (def.hostDirectives ?? []).flatMap((entry: any) =>
+    typeof entry === 'function' ? entry() : [entry]
+  );
+
+const hostBindingNames = (bindings: string[] | Record<string, string> | undefined): string[] =>
+  Array.isArray(bindings)
+    ? bindings.filter((_, index) => index % 2 === 1)
+    : Object.values(bindings ?? {});
+
+const addCompiledInputsOutputs = (
   component: any,
   base: ComponentInputsOutputs
 ): ComponentInputsOutputs => {
@@ -139,6 +142,16 @@ const addSignalInputsOutputs = (
     const propName = def.outputs[templateName] ?? templateName;
     if (!hasEntry(result.outputs, propName, templateName)) {
       result.outputs.push({ propName, templateName });
+    }
+  }
+
+  for (const config of hostDirectiveConfigs(def)) {
+    for (const bucket of ['inputs', 'outputs'] as const) {
+      for (const templateName of hostBindingNames(config[bucket])) {
+        if (!result[bucket].some((entry) => entry.templateName === templateName)) {
+          result[bucket].push({ propName: templateName, templateName });
+        }
+      }
     }
   }
 

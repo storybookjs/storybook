@@ -45,8 +45,13 @@ export function collectDeduplicatedDiagnostics(
         if (message) {
           const existing = diagnosticMap.get(diagnosticType);
           if (existing) {
-            // Add project to existing diagnostic
+            // Add project to existing diagnostic. Messages can differ between projects (each
+            // project's deprecation message is built from its own dependencies), so keep the
+            // later project's text instead of dropping it.
             existing.projects.push({ configDir });
+            if (diagnosticType === DiagType.DEPRECATED_PACKAGES && existing.message !== message) {
+              existing.message = [existing.message, message].join('\n\n');
+            }
           } else {
             // Create new diagnostic entry
             diagnosticMap.set(diagnosticType, {

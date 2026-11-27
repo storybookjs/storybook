@@ -10,7 +10,7 @@ Storybook is a TypeScript monorepo: code lives in `code/`, build tooling in `scr
 - Test React components with stories and `play` functions, never `*.test.tsx`.
 - Log through `storybook/internal/node-logger` or `storybook/internal/client-logger`, not `console.*`.
 - Use explicit extensions on relative TS imports (`./foo.ts`), except framework component files such as `.vue` and `.svelte`.
-- Prefer `pathe` over `node:path`. It normalizes separators to `/`, so path code should not rewrite slashes itself.
+- Write new path code with `pathe`, not `node:path`. Most existing path code predates this rule; do not copy it. The few exceptions are in [Path handling](.agents/guidelines/path-handling.md).
 - Do not commit incidental changes to generated files such as `code/core/src/manager/globals/exports.ts`.
 
 ## Never Run
@@ -28,6 +28,7 @@ Both start long-running dev servers.
 | install, compile, lint, run commands, or debug a build                | [Development workflow](.agents/guidelines/development.md)                                                                 |
 | write or edit code                                                    | [Code authoring](.agents/guidelines/code-authoring.md) and [Comments and JSDoc](.agents/guidelines/comments-and-jsdoc.md) |
 | write or run tests                                                    | [Testing](.agents/guidelines/testing.md)                                                                                  |
+| build, compare, or pass file paths                                    | [Path handling](.agents/guidelines/path-handling.md)                                                                      |
 | open or update a PR                                                   | [Pull requests](.agents/guidelines/pull-requests.md)                                                                      |
 | touch `code/core` internals, presets, open services, or the tools CLI | [Architecture](.agents/guidelines/architecture.md)                                                                        |
 | do sandbox, E2E, or CI-parity work                                    | [NX and `yarn task`](.agents/guidelines/nx-and-yarn-task.md) and [Sandboxes](.agents/guidelines/sandboxes.md)             |

@@ -1,13 +1,16 @@
 import { cp, rm, writeFile } from 'node:fs/promises';
+import type { ServerResponse } from 'node:http';
 
 import { stringifyProcessEnvs } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
+import type { Ref } from 'storybook/internal/types';
 
 import { globalExternals } from '@fal-works/esbuild-plugin-global-externals';
 import { resolveModulePath } from 'exsolve';
 import { join, parse } from 'pathe';
 import sirv from 'sirv';
 
+import { checkRefs, getRefs, readRefs } from '../common/utils/get-storybook-refs.ts';
 import { globalsModuleInfoMap } from '../manager/globals/globals-module-info.ts';
 import { BROWSER_TARGETS, SUPPORTED_FEATURES } from '../shared/constants/environments-support.ts';
 import { resolvePackageDir } from '../shared/utils/module.ts';
@@ -142,13 +145,17 @@ const starter: StarterFunction = async function* starterGeneratorFn({
     logger.info('Starting...');
   }
 
+  // The page awaits the checked refs only once the manager is compiled, and never when reading
+  // them fails the start. Without this handler Node reports that rejection as unhandled.
+  const uncheckedRefs = readRefs(options);
+  const checkedRefs = uncheckedRefs.then(checkRefs);
+  checkedRefs.catch(() => {});
   const {
     config,
     favicon,
     customHead,
     features,
     instance,
-    refs,
     template,
     title,
     logLevel,
@@ -202,40 +209,49 @@ const starter: StarterFunction = async function* starterGeneratorFn({
 
   yield;
 
-  const html = await renderHTML(
-    template,
-    title,
-    favicon,
-    customHead,
-    cssFiles,
-    jsFiles,
-    features,
-    refs,
-    logLevel,
-    docsOptions,
-    tagsOptions,
-    options,
-    globals
-  );
+  const renderManagerHtml = (managerRefs: Promise<Record<string, Ref>>) =>
+    renderHTML(
+      template,
+      title,
+      favicon,
+      customHead,
+      cssFiles,
+      jsFiles,
+      features,
+      managerRefs,
+      logLevel,
+      docsOptions,
+      tagsOptions,
+      options,
+      globals
+    );
+
+  // Fails the start on whatever breaks the page, reading the refs included: the check only adds
+  // each ref's `type` to it.
+  await renderManagerHtml(uncheckedRefs);
 
   yield;
 
-  router.use('/', ({ url }, res, next) => {
-    if (url && isRootPath.test(url)) {
-      res.statusCode = 200;
-      res.setHeader('Content-Type', 'text/html');
-      res.write(html);
-      res.end();
-    } else {
-      next();
-    }
+  // The check waits on the network, so the routes wait for the page instead of the start. Should
+  // rendering fail after all, the router answers the requests that await it with a 500.
+  const html = renderManagerHtml(checkedRefs);
+  html.catch((error: unknown) => {
+    logger.error(
+      `The Storybook UI cannot be served: rendering its page failed.\n${error instanceof Error ? (error.stack ?? error.message) : String(error)}`
+    );
   });
-  router.use(`/index.html`, (req, res) => {
+  const serveManager = async (res: ServerResponse) => {
+    const body = await html;
     res.statusCode = 200;
     res.setHeader('Content-Type', 'text/html');
-    res.write(html);
+    res.write(body);
     res.end();
-  });
+  };
+
+  router.use('/', ({ url }, res, next) =>
+    url && isRootPath.test(url) ? serveManager(res) : next()
+  );
+  router.use(`/index.html`, (_req, res) => serveManager(res));
 
   return {
     bail,
@@ -257,13 +273,13 @@ const builder: BuilderFunction = async function* builderGeneratorFn({ startTime,
     throw new Error('outputDir is required');
   }
   logger.step('Building manager..');
+  const refs = getRefs(options);
   const {
     config,
     customHead,
     favicon,
     features,
     instance,
-    refs,
     template,
     title,
     logLevel,

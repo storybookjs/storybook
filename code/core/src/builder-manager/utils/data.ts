@@ -1,13 +1,11 @@
 import { basename } from 'node:path';
 
-import { getRefs } from 'storybook/internal/common';
 import type { Options } from 'storybook/internal/types';
 
 import { executor, getConfig } from '../index.ts';
 import { readTemplate } from './template.ts';
 
 export const getData = async (options: Options) => {
-  const refs = getRefs(options);
   const favicon = options.presets.apply<string>('favicon').then((p) => basename(p));
 
   const features = options.presets.apply<Record<string, string | boolean>>('features');
@@ -26,7 +24,6 @@ export const getData = async (options: Options) => {
   ]);
 
   return {
-    refs,
     features,
     title,
     docsOptions,

@@ -44,11 +44,11 @@ export const getAutoRefs = async (options: Options): Promise<Record<string, Ref>
   );
 };
 
-// The manager build waits for this check, so a ref that does not answer in time is left `unknown`
-// rather than `server-checked`: the manager then loads it at runtime with credentials, as it does a
-// private ref, which a public host without `Access-Control-Allow-Credentials` refuses, and a failed
-// `index.json` shows "Loading of ref failed" instead of falling back to auto-inject. Before the
-// budget, such a ref held the whole dev server.
+// The static manager build and, in dev, every request for the manager page wait for this check, so
+// a ref that does not answer in time is left `unknown` rather than `server-checked`: the manager
+// then loads it at runtime with credentials, as it does a private ref, which a public host without
+// `Access-Control-Allow-Credentials` refuses, and a failed `index.json` shows "Loading of ref
+// failed" instead of falling back to auto-inject.
 const REF_CHECK_TIMEOUT_MS = 3_000;
 
 export const checkRef = async (url: string) => {
@@ -90,7 +90,7 @@ export const toTitle = (input: string) => {
   return `${result.substring(0, 1).toUpperCase()}${result.substring(1)}`.trim();
 };
 
-export async function getRefs(options: Options) {
+export async function readRefs(options: Options): Promise<Record<string, Ref>> {
   if (options.test) {
     return {};
   }
@@ -101,7 +101,7 @@ export async function getRefs(options: Options) {
   );
 
   // Ref ids must be lowercase: the router lowercases the URL before extracting refId (router/utils.ts).
-  const refs: Record<string, Ref> = Object.fromEntries(
+  return Object.fromEntries(
     Object.entries(configured)
       .filter(([, value]) => !value.disable)
       .map(([key, value]): [string, Ref] => {
@@ -117,15 +117,21 @@ export async function getRefs(options: Options) {
         ];
       })
   );
+}
 
+export async function checkRefs(refs: Record<string, Ref>): Promise<Record<string, Ref>> {
   // verify the refs are publicly reachable, if they are not we'll fetch stories.json at runtime, otherwise the ref won't work
-  await Promise.all(
-    Object.entries(refs).map(async ([k, value]) => {
+  const checked = await Promise.all(
+    Object.entries(refs).map(async ([k, value]): Promise<[string, Ref]> => {
       const ok = await checkRef(value.url);
 
-      refs[k] = { ...value, type: ok ? 'server-checked' : 'unknown' };
+      return [k, { ...value, type: ok ? 'server-checked' : 'unknown' }];
     })
   );
 
-  return refs;
+  return Object.fromEntries(checked);
+}
+
+export async function getRefs(options: Options) {
+  return checkRefs(await readRefs(options));
 }

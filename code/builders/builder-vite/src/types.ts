@@ -33,4 +33,13 @@ export type BuilderOptions = {
    * Requires Vite 6.1.0 or higher. On older Vite versions this option is silently ignored.
    */
   configLoader?: 'bundle' | 'runner' | 'native';
+  /**
+   * Module that replaces the generated stories module, which maps each story file's `importPath`
+   * to its module. The module must export `importFn(path: string): Promise<ModuleExports>`.
+   *
+   * Must be an absolute path.
+   *
+   * @experimental This option may change or be removed in a minor release.
+   */
+  experimental_importFn?: string;
 };

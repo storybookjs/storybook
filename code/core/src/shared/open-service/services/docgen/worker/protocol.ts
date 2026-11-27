@@ -11,7 +11,7 @@ import type { LogLevel } from 'storybook/internal/node-logger';
 
 import type { IndexEntry } from '../../../../../types/modules/indexer.ts';
 import type { ErrorLike } from '../../module-graph/types.ts';
-import type { DocgenPayload, DocgenProviderDescriptor } from '../types.ts';
+import type { ComponentSummary, DocgenPayload, DocgenProviderDescriptor } from '../types.ts';
 
 /** Sent once, right after spawn, to compose the provider chain inside the worker. */
 export interface DocgenWorkerInitRequest {
@@ -27,7 +27,17 @@ export interface DocgenWorkerExtractRequest {
   entry: IndexEntry;
 }
 
-export type DocgenWorkerRequest = DocgenWorkerInitRequest | DocgenWorkerExtractRequest;
+/** Sent per listing to summarize the component of each entry. `id` correlates the response. */
+export interface DocgenWorkerSummarizeRequest {
+  type: 'summarize';
+  id: number;
+  entries: IndexEntry[];
+}
+
+export type DocgenWorkerRequest =
+  | DocgenWorkerInitRequest
+  | DocgenWorkerExtractRequest
+  | DocgenWorkerSummarizeRequest;
 
 /** Chain composition succeeded; the worker is ready for extract requests. */
 export interface DocgenWorkerInitSuccess {
@@ -60,4 +70,26 @@ export interface DocgenWorkerExtractFailure {
 
 export type DocgenWorkerExtractResponse = DocgenWorkerExtractSuccess | DocgenWorkerExtractFailure;
 
-export type DocgenWorkerResponse = DocgenWorkerInitResponse | DocgenWorkerExtractResponse;
+/** The summaries, in entry order; absent when a provider module in the chain summarizes nothing. */
+export interface DocgenWorkerSummarizeSuccess {
+  type: 'summarize';
+  id: number;
+  summaries?: ComponentSummary[];
+  error?: undefined;
+}
+
+/** Summarizing threw; `error` describes the failure. */
+export interface DocgenWorkerSummarizeFailure {
+  type: 'summarize';
+  id: number;
+  error: ErrorLike;
+}
+
+export type DocgenWorkerSummarizeResponse =
+  | DocgenWorkerSummarizeSuccess
+  | DocgenWorkerSummarizeFailure;
+
+export type DocgenWorkerResponse =
+  | DocgenWorkerInitResponse
+  | DocgenWorkerExtractResponse
+  | DocgenWorkerSummarizeResponse;

@@ -27,6 +27,8 @@ export type {
   DocgenProviderDescriptor,
   DocgenProviderInput,
   DocgenSubcomponent,
+  DocgenSummary,
+  DocgenSummaryProvider,
   DocgenWorkerModule,
 } from '../../shared/open-service/services/docgen/types.ts';
 export type {

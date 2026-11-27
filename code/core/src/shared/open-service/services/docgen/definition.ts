@@ -67,6 +67,14 @@ const docgenPayloadSchema = v.looseObject({
 
 const docgenOutputSchema = v.optional(docgenPayloadSchema);
 
+// The type test next to this file keeps the schema equal to `ComponentSummary` in `types.ts`.
+const componentSummarySchema = v.object({
+  id: v.string(),
+  name: v.string(),
+  description: v.optional(v.string()),
+  summary: v.optional(v.string()),
+});
+
 /**
  * Definition for the `core/docgen` open service.
  *
@@ -125,6 +133,13 @@ export const docgenServiceDef = defineService({
         'Extracts docgen for every component id in the story index by invoking `extractDocgen` for each.',
       input: v.undefined(),
       output: v.void(),
+      // Handler is supplied at registration time so it can close over the story index.
+    },
+    summarizeComponents: {
+      description:
+        'Returns the name, description and summary of every component in the story index. Asks the summary providers of the docgen providers, and extracts docgen for every component when one of them has none.',
+      input: v.undefined(),
+      output: v.array(componentSummarySchema),
       // Handler is supplied at registration time so it can close over the story index.
     },
   },

@@ -111,8 +111,9 @@ export interface DocgenProviderDescriptor<TOptions = unknown> {
   /** Absolute path to a module that exports {@link DocgenWorkerModule.createDocgenProvider}. */
   moduleSpecifier: string;
   /**
-   * Configuration handed to the module's `createDocgenProvider`, for values the worker cannot
-   * derive on its own (a workspace root, a tsconfig path, a framework option).
+   * Configuration handed to the module's `createDocgenProvider` and `createSummaryProvider`, for
+   * values the worker cannot derive on its own (a workspace root, a tsconfig path, a framework
+   * option).
    *
    * The value is structured-cloned onto the worker thread, so it must be plain JSON-ish data.
    * Functions, closures and class instances are not permitted: they throw at `postMessage` time.
@@ -121,10 +122,41 @@ export interface DocgenProviderDescriptor<TOptions = unknown> {
 }
 
 /**
+ * What a listing shows of a component: the `name`, `description` and `summary` of its docgen
+ * payload. A provider reads them from source, where the props of the payload need a type checker.
+ */
+export interface DocgenSummary {
+  name: string;
+  description?: string;
+  summary?: string;
+}
+
+/** A {@link DocgenSummary} with the id of its component, as `summarizeComponents` returns it. */
+export interface ComponentSummary extends DocgenSummary {
+  id: string;
+}
+
+/**
+ * Summarizes the component of each input, in order. `undefined` hands an input to the provider
+ * below. The outermost answer wins: it is not merged with one from below, as a payload is.
+ */
+export type DocgenSummaryProvider = (
+  inputs: DocgenProviderInput[]
+) => (DocgenSummary | undefined)[] | Promise<(DocgenSummary | undefined)[]>;
+
+/**
  * Contract a worker-target docgen module must satisfy. The worker imports the descriptor's
  * `moduleSpecifier` and calls `createDocgenProvider()` once to build the middleware it folds into
- * the provider chain. Integrations implement only this factory — they never touch threading.
+ * the provider chain. Integrations implement only these factories — they never touch threading.
  */
 export interface DocgenWorkerModule<TOptions = unknown> {
   createDocgenProvider: (options?: TOptions) => DocgenMiddleware | Promise<DocgenMiddleware>;
+  /**
+   * Builds the provider that runs the part of this module's docgen that reads the source, so that
+   * a listing needs no type check. Without one, the listing extracts docgen. A module whose
+   * middleware changes the payload of the provider below it exports none.
+   */
+  createSummaryProvider?: (
+    options?: TOptions
+  ) => DocgenSummaryProvider | Promise<DocgenSummaryProvider>;
 }

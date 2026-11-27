@@ -63,7 +63,7 @@ export const toExtractionError = (error: unknown): ExtractionError =>
 export type RegisterExtractionServiceOptions<
   TState extends ExtractionServiceState,
   TQueries extends Queries<TState>,
-  TCommands,
+  TCommands extends Commands<TState>,
   TQueryName extends keyof TQueries & string = keyof TQueries & string,
   TPayload = TState['components'][string],
 > = {
@@ -89,6 +89,8 @@ export type RegisterExtractionServiceOptions<
     extracted: { payload: TPayload; input: ExtractionInput } | undefined
   ) => void;
   storySignature?: (entry: IndexEntry) => string;
+  /** Handlers of the commands the service defines beyond its two extraction commands. */
+  commands?: ServiceRegistrationOptions<TState, TQueries, TCommands>['commands'];
 };
 
 /**
@@ -402,6 +404,7 @@ export function registerExtractionService<
       },
     },
     commands: {
+      ...options.commands,
       [extractCommand]: {
         handler: (input: { id: string }, ctx: CommandCtx<TState>) => {
           const joined = running.get(input.id);

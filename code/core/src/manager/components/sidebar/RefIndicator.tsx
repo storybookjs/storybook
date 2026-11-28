@@ -137,8 +137,8 @@ export const RefIndicator = React.memo(
         () => list.filter((v) => v.type === 'component').length,
         [list]
       );
-      const leafCount = useMemo(
-        () => list.filter((v) => v.type === 'docs' || v.type === 'story').length,
+      const storyCount = useMemo(
+        () => list.filter((v) => v.type === 'story' && v.subtype !== 'test').length,
         [list]
       );
 
@@ -164,7 +164,7 @@ export const RefIndicator = React.memo(
                   )}
                   {state === 'ready' && (
                     <>
-                      <ReadyMessage {...{ url: ref.url, componentCount, leafCount }} />
+                      <ReadyMessage {...{ url: ref.url, componentCount, storyCount }} />
                       {ref.sourceUrl && <SourceCodeMessage url={ref.sourceUrl} />}
                     </>
                   )}
@@ -222,8 +222,8 @@ export const RefIndicator = React.memo(
 const ReadyMessage: FC<{
   url: string;
   componentCount: number;
-  leafCount: number;
-}> = ({ url, componentCount, leafCount }) => {
+  storyCount: number;
+}> = ({ url, componentCount, storyCount }) => {
   const theme = useTheme();
 
   return (
@@ -232,7 +232,7 @@ const ReadyMessage: FC<{
       <div>
         <MessageTitle>View external Storybook</MessageTitle>
         <div>
-          Explore {componentCount} components and {leafCount} stories in a new browser tab.
+          Explore {componentCount} components and {storyCount} stories in a new browser tab.
         </div>
       </div>
     </Message>

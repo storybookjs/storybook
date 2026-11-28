@@ -1586,7 +1586,13 @@ export class ReactNativeOnDevicePeerMismatchError extends StorybookError {
   constructor(
     public data: {
       cliVersion: string;
-      mismatches: { packageName: string; version: string; storybookPeer: string }[];
+      mismatches: {
+        packageName: string;
+        version: string;
+        storybookPeer: string;
+        parents: string[];
+      }[];
+      suggestedVersion?: string;
     }
   ) {
     super({
@@ -1594,13 +1600,19 @@ export class ReactNativeOnDevicePeerMismatchError extends StorybookError {
       category: Category.CLI_INIT,
       code: 18,
       message: dedent`
-        These React Native Storybook packages do not support Storybook ${data.cliVersion}:
+        The React Native Storybook packages would install Storybook packages that do not support Storybook ${data.cliVersion}:
         ${data.mismatches
           .map(
-            ({ packageName, version, storybookPeer }) =>
-              `- ${packageName}@${version} peers storybook@${storybookPeer}`
+            ({ packageName, version, storybookPeer, parents }) =>
+              `- ${[...parents, `${packageName}@${version}`].join(' > ')} peers storybook@${storybookPeer}`
           )
-          .join('\n')}`,
+          .join('\n')}
+
+        ${
+          data.suggestedVersion
+            ? `Run init again with storybook@${data.suggestedVersion}, which all of these packages support.`
+            : 'Run init again with a Storybook version that all of these peers allow.'
+        }`,
     });
   }
 }

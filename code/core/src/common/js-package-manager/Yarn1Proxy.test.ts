@@ -180,35 +180,56 @@ describe('Yarn 1 Proxy', () => {
     });
   });
 
-  describe('getPublishedPeerDependencies', () => {
-    const readPeers = () =>
-      yarn1Proxy.getPublishedPeerDependencies('@storybook/react-native', '11.0.0-next.0');
+  describe('getPublishedManifest', () => {
+    const published = {
+      version: '11.0.0-next.2',
+      versions: ['11.0.0-next.1', '11.0.0-next.2'],
+      time: { '11.0.0-next.2': '2026-11-15T10:00:00.000Z' },
+      dependencies: { '@storybook/react': '^11.0.0-beta.3' },
+      peerDependencies: { storybook: '^11.0.0-beta.1' },
+    };
+    const readManifest = () =>
+      yarn1Proxy.getPublishedManifest('@storybook/react-native', '11.0.0-next.2');
 
-    describe('when the version has peer dependencies', () => {
+    describe('when the package manager prints the manifest', () => {
       beforeEach(() => {
         mockedExecuteCommand.mockResolvedValue({
-          stdout: '{"type":"inspect","data":{"storybook":"^10.5.4"}}',
+          stdout: JSON.stringify({
+            type: 'inspect',
+            data: { name: '@storybook/react-native', ...published },
+          }),
         } as any);
       });
 
-      it('reads them through the package manager', async () => {
-        await expect(readPeers()).resolves.toEqual({ storybook: '^10.5.4' });
+      it('reads it through the package manager', async () => {
+        await expect(readManifest()).resolves.toEqual(published);
         expect(mockedExecuteCommand).toHaveBeenCalledWith(
           expect.objectContaining({
             command: 'yarn',
-            args: ['info', '@storybook/react-native@11.0.0-next.0', 'peerDependencies', '--json'],
+            args: ['info', '@storybook/react-native@11.0.0-next.2', '--json'],
           })
+        );
+      });
+
+      it('reads the latest version when no version is given', async () => {
+        await expect(yarn1Proxy.getPublishedManifest('@storybook/react-native')).resolves.toEqual(
+          published
+        );
+        expect(mockedExecuteCommand).toHaveBeenCalledWith(
+          expect.objectContaining({ args: ['info', '@storybook/react-native', '--json'] })
         );
       });
     });
 
-    describe('when the version has no peer dependencies', () => {
+    describe('when Yarn prints something other than an inspect payload', () => {
       beforeEach(() => {
-        mockedExecuteCommand.mockResolvedValue({ stdout: '{"type":"inspect"}' } as any);
+        mockedExecuteCommand.mockResolvedValue({
+          stdout: '{"type":"warning","data":"No license field"}',
+        } as any);
       });
 
-      it('returns an empty object', async () => {
-        await expect(readPeers()).resolves.toEqual({});
+      it('returns null', async () => {
+        await expect(readManifest()).resolves.toBeNull();
       });
     });
 
@@ -218,7 +239,7 @@ describe('Yarn 1 Proxy', () => {
       });
 
       it('returns null', async () => {
-        await expect(readPeers()).resolves.toBeNull();
+        await expect(readManifest()).resolves.toBeNull();
       });
     });
   });

@@ -1,4 +1,5 @@
 import { readFileSync, writeFileSync } from 'node:fs';
+import { homedir } from 'node:os';
 import { join } from 'node:path';
 
 import { logger, prompt } from 'storybook/internal/node-logger';
@@ -9,24 +10,55 @@ import {
 
 // eslint-disable-next-line depend/ban-dependencies
 import type { ResultPromise } from 'execa';
+import { coerce, gte } from 'semver';
 import { dedent } from 'ts-dedent';
 
 import type { ExecuteCommandOptions } from '../utils/command.ts';
 import { executeCommand } from '../utils/command.ts';
 import { JsPackageManager, PackageManagerName } from './JsPackageManager.ts';
 import type { PackageJson } from './PackageJson.ts';
-import type { InstallationMetadata } from './types.ts';
+import type { InstallationMetadata, ReleaseAgeGate } from './types.ts';
 import {
   findInstallationsInDependencyTree,
   getErrorLogs,
   getLatestStableVersionAdheringToMinimumAgeGate,
   getStorybookRerunCommand,
   getStorybookRerunInstruction,
-  hasStorybookMinimumAgeExclusionNames,
+  getStorybookReleaseAgeGateMinutes,
+  isOldEnough,
+  parseExactVersionsPattern,
   parsePackageTimeMap,
   parseReleaseTime,
   STORYBOOK_PACKAGE_NAMES,
 } from './util.ts';
+
+const withoutTomlComments = (toml: string) => toml.replace(/#.*$/gm, '');
+
+const AGE_SETTING = /^([ \t]*)((?:install\.)?)minimumReleaseAge\s*=\s*(.*)$/m;
+
+const EXCLUDES_KEY = /^([ \t]*)((?:install\.)?minimumReleaseAgeExcludes)\s*=\s*\[/m;
+
+const findExcludesSetting = (toml: string) => {
+  const key = EXCLUDES_KEY.exec(toml);
+  if (!key) {
+    return null;
+  }
+
+  const token = /\s+|,|#[^\n]*|"((?:[^"\\\n]|\\.)*)"|'([^'\n]*)'/y;
+  const entries: string[] = [];
+  token.lastIndex = key.index + key[0].length;
+  while (toml[token.lastIndex] !== ']') {
+    const match = token.exec(toml);
+    if (!match) {
+      return { start: key.index, end: key.index, indent: key[1], key: key[2], entries: null };
+    }
+    const entry = match[1] ?? match[2];
+    if (entry !== undefined) {
+      entries.push(entry);
+    }
+  }
+  return { start: key.index, end: token.lastIndex + 1, indent: key[1], key: key[2], entries };
+};
 
 type NpmDependency = {
   version: string;
@@ -243,15 +275,11 @@ export class BUNProxy extends JsPackageManager {
     nonInteractive: boolean;
     installContext: 'create' | 'upgrade';
   }): Promise<void> {
-    const bunfig = this.readBunfig();
-    const minimumReleaseAgeSeconds = this.getMinimumReleaseAgeSeconds(bunfig);
+    const minimumReleaseAgeSeconds = Math.round(
+      getStorybookReleaseAgeGateMinutes(await this.getReleaseAgeGate(), storybookVersion) * 60
+    );
 
     if (!minimumReleaseAgeSeconds) {
-      return;
-    }
-
-    const excludes = this.getMinimumReleaseAgeExcludes(bunfig ?? '');
-    if (hasStorybookMinimumAgeExclusionNames(excludes)) {
       return;
     }
 
@@ -270,8 +298,7 @@ export class BUNProxy extends JsPackageManager {
       return;
     }
 
-    const ageSeconds = Math.floor((Date.now() - publishedAt.getTime()) / 1_000);
-    if (ageSeconds >= minimumReleaseAgeSeconds) {
+    if (isOldEnough(publishedAt, minimumReleaseAgeSeconds / 60)) {
       return;
     }
 
@@ -399,18 +426,14 @@ export class BUNProxy extends JsPackageManager {
     }
   }
 
-  protected async runGetPeerDependencies(
-    packageSpec: string
-  ): Promise<Record<string, string> | undefined> {
+  protected async runGetPublishedManifest(packageSpec: string): Promise<unknown> {
     const result = await executeCommand({
       command: 'npm',
       cwd: this.cwd,
-      args: ['info', packageSpec, 'peerDependencies', '--json'],
+      args: ['info', packageSpec, '--json'],
       stdio: 'pipe',
     });
-    // npm prints nothing when the version has no peer dependencies.
-    const output = typeof result.stdout === 'string' ? result.stdout.trim() : '';
-    return output ? JSON.parse(output) : undefined;
+    return JSON.parse(typeof result.stdout === 'string' ? result.stdout : '');
   }
 
   /**
@@ -425,18 +448,53 @@ export class BUNProxy extends JsPackageManager {
     };
   }
 
-  private getMinimumReleaseAgeSeconds(bunfig = this.readBunfig()): number | null {
-    if (!bunfig) {
+  async getReleaseAgeGate(): Promise<ReleaseAgeGate | null> {
+    const bunfig = this.readBunfig() ?? '';
+    const settings = withoutTomlComments(bunfig);
+    const seconds = this.getMinimumReleaseAgeSeconds(settings);
+    const excludes = this.getMinimumReleaseAgeExcludes(bunfig);
+    if (
+      !excludes ||
+      (seconds === null && /\bminimumReleaseAge\b/.test(settings)) ||
+      /\bminimumReleaseAge/.test(withoutTomlComments(this.readGlobalBunfigs()))
+    ) {
+      logger.debug('Could not read the bun release age settings from bunfig.toml.');
       return null;
     }
-
-    const match = bunfig.match(/^minimumReleaseAge\s*=\s*(\d+)\s*$/m);
-    if (!match) {
-      return null;
+    const minutes = (seconds ?? 0) / 60;
+    const rules = excludes.map(parseExactVersionsPattern);
+    let honorsVersions = false;
+    if (minutes > 0 && rules.some((rule) => !!rule?.versions.length)) {
+      try {
+        const result = await executeCommand({
+          command: 'bun',
+          args: ['--version'],
+          cwd: this.cwd,
+          stdio: 'pipe',
+        });
+        const bunVersion = coerce(typeof result.stdout === 'string' ? result.stdout : '');
+        honorsVersions = !!bunVersion && gte(bunVersion, '1.4.4');
+      } catch (error) {
+        logger.debug(`Could not read the bun version: ${String(error)}`);
+        return null;
+      }
     }
 
-    const parsedValue = Number.parseInt(match[1], 10);
-    return Number.isFinite(parsedValue) && parsedValue > 0 ? parsedValue : null;
+    return {
+      strict: true,
+      getMinutes: () => minutes,
+      isExcluded: (packageName, version) =>
+        rules.some(
+          (rule) =>
+            rule?.packageName === packageName &&
+            (rule.versions.length === 0 || (honorsVersions && rule.versions.includes(version)))
+        ),
+    };
+  }
+
+  private getMinimumReleaseAgeSeconds(settings: string): number | null {
+    const value = settings.match(AGE_SETTING)?.[3].trim() ?? '';
+    return /^\d[\d_]*$/.test(value) ? Number(value.replaceAll('_', '')) : null;
   }
 
   private async getPackageTimeMap(packageName: string): Promise<Record<string, string> | null> {
@@ -484,13 +542,17 @@ export class BUNProxy extends JsPackageManager {
     const lineEnding = currentContent.includes('\r\n') ? '\r\n' : '\n';
     // Bun matches these against exact package names, so a pattern such as `@storybook/*` does nothing.
     const nextExcludes = Array.from(
-      new Set([...this.getMinimumReleaseAgeExcludes(currentContent), ...STORYBOOK_PACKAGE_NAMES])
+      new Set([
+        ...(this.getMinimumReleaseAgeExcludes(currentContent) ?? []),
+        ...STORYBOOK_PACKAGE_NAMES,
+      ])
     );
-    const replacement = [
-      'minimumReleaseAgeExcludes = [',
-      ...nextExcludes.map((name) => `  "${name}",`),
-      ']',
-    ].join(lineEnding);
+    const formatList = (indent: string, key: string) =>
+      [
+        `${indent}${key} = [`,
+        ...nextExcludes.map((name) => `${indent}  "${name}",`),
+        `${indent}]`,
+      ].join(lineEnding);
 
     // `minimumReleaseAgeExcludes` belongs in Bun's `[install]` table. Restricting
     // the rewrite to that slice avoids accidentally appending the key into a later table.
@@ -500,35 +562,39 @@ export class BUNProxy extends JsPackageManager {
           currentContent.slice(0, installSectionRange.start),
           this.updateMinimumReleaseAgeExcludesInContent(
             currentContent.slice(installSectionRange.start, installSectionRange.end),
-            replacement,
+            formatList,
             lineEnding
           ),
           currentContent.slice(installSectionRange.end),
         ].join('')
-      : this.updateMinimumReleaseAgeExcludesInContent(currentContent, replacement, lineEnding);
+      : this.updateMinimumReleaseAgeExcludesInContent(currentContent, formatList, lineEnding);
 
     writeFileSync(bunfigPath, nextContent);
   }
 
   private updateMinimumReleaseAgeExcludesInContent(
     content: string,
-    replacement: string,
+    formatList: (indent: string, key: string) => string,
     lineEnding: string
   ) {
     // Keep an existing list in place when it already exists. Otherwise, insert the
     // new property directly after `minimumReleaseAge` so related Bun settings stay together.
-    if (content.match(/^minimumReleaseAgeExcludes\s*=\s*\[[\s\S]*?\]/m)) {
-      return content.replace(/^minimumReleaseAgeExcludes\s*=\s*\[[\s\S]*?\]/m, replacement);
+    const excludes = findExcludesSetting(content);
+    if (excludes) {
+      return excludes.entries
+        ? `${content.slice(0, excludes.start)}${formatList(excludes.indent, excludes.key)}${content.slice(excludes.end)}`
+        : content;
     }
 
-    if (content.match(/^minimumReleaseAge\s*=\s*.+$/m)) {
+    if (AGE_SETTING.test(content)) {
       return content.replace(
-        /^minimumReleaseAge\s*=\s*.+$/m,
-        (minimumReleaseAgeLine) => `${minimumReleaseAgeLine}${lineEnding}${replacement}`
+        AGE_SETTING,
+        (minimumReleaseAgeLine, indent: string, prefix: string) =>
+          `${minimumReleaseAgeLine}${lineEnding}${formatList(indent, `${prefix}minimumReleaseAgeExcludes`)}`
       );
     }
 
-    return `${content}${content.trim().length > 0 ? `${lineEnding}${lineEnding}` : ''}${replacement}${lineEnding}`;
+    return `${content}${content.trim().length > 0 ? `${lineEnding}${lineEnding}` : ''}${formatList('', 'minimumReleaseAgeExcludes')}${lineEnding}`;
   }
 
   private getTomlSectionRange(content: string, sectionName: string) {
@@ -550,13 +616,12 @@ export class BUNProxy extends JsPackageManager {
     };
   }
 
-  private getMinimumReleaseAgeExcludes(bunfig: string): string[] {
-    const match = bunfig.match(/^minimumReleaseAgeExcludes\s*=\s*\[([\s\S]*?)\]/m);
-    if (!match) {
-      return [];
+  private getMinimumReleaseAgeExcludes(bunfig: string): string[] | null {
+    const excludes = findExcludesSetting(bunfig);
+    if (!excludes) {
+      return /\bminimumReleaseAgeExcludes\b/.test(withoutTomlComments(bunfig)) ? null : [];
     }
-
-    return Array.from(match[1].matchAll(/(["'])([^"']+)\1/g), (entry) => entry[2]);
+    return excludes.entries;
   }
 
   private readBunfig(): string | null {
@@ -565,6 +630,19 @@ export class BUNProxy extends JsPackageManager {
     } catch {
       return null;
     }
+  }
+
+  private readGlobalBunfigs(): string {
+    return [process.env.XDG_CONFIG_HOME, homedir()]
+      .filter((dir): dir is string => !!dir)
+      .map((dir) => {
+        try {
+          return readFileSync(join(dir, '.bunfig.toml'), 'utf-8');
+        } catch {
+          return '';
+        }
+      })
+      .join('\n');
   }
 
   private extractMinimumReleaseAgePackage(logs: string): string | null {

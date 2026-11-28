@@ -8,20 +8,22 @@ import {
 
 // eslint-disable-next-line depend/ban-dependencies
 import type { ResultPromise } from 'execa';
+import picomatch from 'picomatch';
 import { dedent } from 'ts-dedent';
 
 import type { ExecuteCommandOptions } from '../utils/command.ts';
 import { executeCommand } from '../utils/command.ts';
 import { JsPackageManager, PackageManagerName } from './JsPackageManager.ts';
 import type { PackageJson } from './PackageJson.ts';
-import type { InstallationMetadata } from './types.ts';
+import type { InstallationMetadata, ReleaseAgeGate } from './types.ts';
 import {
   findInstallationsInDependencyTree,
-  getAgeInMinutes,
   getErrorLogs,
   getLatestStableVersionAdheringToMinimumAgeGate,
   getStorybookRerunCommand,
   getStorybookRerunInstruction,
+  getStorybookReleaseAgeGateMinutes,
+  isOldEnough,
   parsePackageTimeMap,
   parsePositiveIntegerConfigValue,
   parseReleaseTime,
@@ -43,6 +45,8 @@ export type NpmListOutput = {
 };
 
 const NPM_CONFIG_WORKSPACE_ARGS = ['--workspaces=false', '--include-workspace-root'] as const;
+
+const UNSET_CONFIG_VALUES = ['', 'null', 'undefined'];
 
 const NPM_ERROR_REGEX = /npm (ERR!|error) (code|errno) (\w+)/i;
 
@@ -240,9 +244,12 @@ export class NPMProxy extends JsPackageManager {
     nonInteractive: boolean;
     installContext: 'create' | 'upgrade';
   }): Promise<void> {
-    const minimumReleaseAgeDays = await this.getMinimumReleaseAge();
+    const minimumReleaseAgeMinutes = getStorybookReleaseAgeGateMinutes(
+      await this.getReleaseAgeGate(),
+      storybookVersion
+    );
 
-    if (!minimumReleaseAgeDays) {
+    if (!minimumReleaseAgeMinutes) {
       return;
     }
 
@@ -261,14 +268,13 @@ export class NPMProxy extends JsPackageManager {
       return;
     }
 
-    const ageDays = getAgeInMinutes(publishedAt, new Date()) / (24 * 60);
-    if (ageDays >= minimumReleaseAgeDays) {
+    if (isOldEnough(publishedAt, minimumReleaseAgeMinutes)) {
       return;
     }
 
     const compatibleVersion = getLatestStableVersionAdheringToMinimumAgeGate(
       timeMap,
-      minimumReleaseAgeDays * 24 * 60
+      minimumReleaseAgeMinutes
     );
     const error = new MinimumReleaseAgeHandledError({
       message: this.createMinimumReleaseAgeRerunMessage({
@@ -339,18 +345,14 @@ export class NPMProxy extends JsPackageManager {
     }
   }
 
-  protected async runGetPeerDependencies(
-    packageSpec: string
-  ): Promise<Record<string, string> | undefined> {
+  protected async runGetPublishedManifest(packageSpec: string): Promise<unknown> {
     const result = await executeCommand({
       command: 'npm',
-      args: ['info', packageSpec, 'peerDependencies', '--json'],
+      args: ['info', packageSpec, '--json'],
       cwd: this.cwd,
       stdio: 'pipe',
     });
-    // npm prints nothing when the version has no peer dependencies.
-    const output = typeof result.stdout === 'string' ? result.stdout.trim() : '';
-    return output ? JSON.parse(output) : undefined;
+    return JSON.parse(typeof result.stdout === 'string' ? result.stdout : '');
   }
 
   /**
@@ -365,17 +367,55 @@ export class NPMProxy extends JsPackageManager {
     };
   }
 
-  private async getMinimumReleaseAge(): Promise<number | null> {
-    const result = await executeCommand({
-      command: 'npm',
-      args: ['config', 'get', 'min-release-age', ...NPM_CONFIG_WORKSPACE_ARGS],
-      cwd: this.cwd,
-      stdio: 'pipe',
-    });
+  async getReleaseAgeGate(): Promise<ReleaseAgeGate | null> {
+    let config: Record<string, string>;
+    try {
+      const result = await executeCommand({
+        command: 'npm',
+        args: [
+          'config',
+          'get',
+          'min-release-age',
+          'min-release-age-exclude',
+          'before',
+          ...NPM_CONFIG_WORKSPACE_ARGS,
+        ],
+        cwd: this.cwd,
+        stdio: 'pipe',
+      });
+      config = Object.fromEntries(
+        (typeof result.stdout === 'string' ? result.stdout : '')
+          .split('\n')
+          .filter((line) => line.includes('='))
+          .map((line) => [
+            line.slice(0, line.indexOf('=')).trim(),
+            line.slice(line.indexOf('=') + 1).trim(),
+          ])
+      );
+    } catch (error) {
+      logger.debug(`Could not read the npm release age settings: ${String(error)}`);
+      return null;
+    }
 
-    return parsePositiveIntegerConfigValue(
-      typeof result.stdout === 'string' ? result.stdout : undefined
-    );
+    if (!UNSET_CONFIG_VALUES.includes(config.before ?? '')) {
+      return null;
+    }
+
+    const minutes = (parsePositiveIntegerConfigValue(config['min-release-age']) ?? 0) * 24 * 60;
+    const excludes = (config['min-release-age-exclude'] ?? '')
+      .split(',')
+      .map((pattern) => pattern.trim())
+      .filter((pattern) => !UNSET_CONFIG_VALUES.includes(pattern));
+    return {
+      strict: true,
+      getMinutes: () => minutes,
+      isExcluded: (packageName) =>
+        excludes.some(
+          (pattern) =>
+            packageName === pattern ||
+            picomatch.isMatch(packageName, pattern, { nonegate: true, noextglob: true })
+        ),
+    };
   }
 
   private async getPackageTimeMap(packageName: string): Promise<Record<string, string> | null> {

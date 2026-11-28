@@ -1,8 +1,8 @@
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { homedir, tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { logger, prompt } from 'storybook/internal/node-logger';
 import { MinimumReleaseAgeHandledError } from 'storybook/internal/server-errors';
@@ -27,6 +27,7 @@ vi.mock('storybook/internal/node-logger', () => ({
 }));
 
 vi.mock(import('../utils/command.ts'), { spy: true });
+vi.mock(import('node:os'), { spy: true });
 
 const mockedExecuteCommand = vi.mocked(executeCommand);
 
@@ -38,6 +39,12 @@ describe('BUN Proxy', () => {
     bunProxy = new BUNProxy();
     JsPackageManager.clearLatestVersionCache();
     vi.clearAllMocks();
+    vi.mocked(homedir).mockReturnValue(join(tmpdir(), 'storybook-bun-proxy-missing-home'));
+    vi.stubEnv('XDG_CONFIG_HOME', '');
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
   });
 
   it('type should be bun', () => {
@@ -223,6 +230,84 @@ describe('BUN Proxy', () => {
   });
 
   describe('updateMinimumReleaseAgeExcludes', () => {
+    const storybookEntries = (indent: string) =>
+      STORYBOOK_PACKAGE_NAMES.map((name) => `${indent}  "${name}",`);
+
+    it.each([
+      {
+        form: 'indented settings',
+        bunfig: [
+          '[install]',
+          '  minimumReleaseAge = 86400',
+          '  minimumReleaseAgeExcludes = ["react"]',
+        ],
+        expected: [
+          '[install]',
+          '  minimumReleaseAge = 86400',
+          '  minimumReleaseAgeExcludes = [',
+          '    "react",',
+          ...storybookEntries('  '),
+          '  ]',
+        ],
+      },
+      {
+        form: 'dotted keys',
+        bunfig: ['install.minimumReleaseAge = 86400'],
+        expected: [
+          'install.minimumReleaseAge = 86400',
+          'install.minimumReleaseAgeExcludes = [',
+          ...storybookEntries(''),
+          ']',
+        ],
+      },
+      {
+        form: 'a list with a bracket in a comment',
+        bunfig: [
+          '[install]',
+          'minimumReleaseAge = 86_400',
+          'minimumReleaseAgeExcludes = [',
+          '  "react", # reviewed [react]',
+          ']',
+        ],
+        expected: [
+          '[install]',
+          'minimumReleaseAge = 86_400',
+          'minimumReleaseAgeExcludes = [',
+          '  "react",',
+          ...storybookEntries(''),
+          ']',
+        ],
+      },
+      {
+        form: 'a single quoted list',
+        bunfig: ['[install]', 'minimumReleaseAge = 86400', "minimumReleaseAgeExcludes = ['react']"],
+        expected: [
+          '[install]',
+          'minimumReleaseAge = 86400',
+          'minimumReleaseAgeExcludes = [',
+          '  "react",',
+          ...storybookEntries(''),
+          ']',
+        ],
+      },
+    ])('edits $form in place, keeping their entries', ({ bunfig, expected }) => {
+      const tempDir = mkdtempSync(join(tmpdir(), 'storybook-bun-proxy-'));
+      const bunfigPath = join(tempDir, 'bunfig.toml');
+      writeFileSync(join(tempDir, 'package.json'), '{}\n');
+      writeFileSync(bunfigPath, [...bunfig, ''].join('\n'));
+
+      try {
+        const proxy = new BUNProxy({ cwd: tempDir }) as unknown as {
+          updateMinimumReleaseAgeExcludes(): void;
+        };
+        proxy.updateMinimumReleaseAgeExcludes();
+
+        expect(readFileSync(bunfigPath, 'utf-8')).toBe([...expected, ''].join('\n'));
+      } finally {
+        rmSync(tempDir, { recursive: true, force: true });
+      }
+    });
+
     it('adds minimumReleaseAgeExcludes inside the install section', () => {
       const tempDir = mkdtempSync(join(tmpdir(), 'storybook-bun-proxy-'));
       const bunfigPath = join(tempDir, 'bunfig.toml');
@@ -337,33 +422,206 @@ describe('BUN Proxy', () => {
     });
   });
 
-  describe('getPublishedPeerDependencies', () => {
-    const readPeers = () =>
-      bunProxy.getPublishedPeerDependencies('@storybook/react-native', '11.0.0-next.0');
+  describe('getReleaseAgeGate', () => {
+    let tempDir: string;
 
-    describe('when the version has peer dependencies', () => {
+    beforeEach(() => {
+      tempDir = mkdtempSync(join(tmpdir(), 'storybook-bun-proxy-'));
+      writeFileSync(join(tempDir, 'package.json'), '{}\n');
+    });
+
+    afterEach(() => {
+      rmSync(tempDir, { recursive: true, force: true });
+    });
+
+    describe('when bunfig sets minimumReleaseAge', () => {
       beforeEach(() => {
-        mockedExecuteCommand.mockResolvedValue({ stdout: '{"storybook":"^10.5.4"}' } as any);
+        writeFileSync(
+          join(tempDir, 'bunfig.toml'),
+          [
+            '[install]',
+            'minimumReleaseAge = 86400',
+            'minimumReleaseAgeExcludes = ["storybook", "@storybook/*", "@storybook/react@11.0.0-rc.0"]',
+            '',
+          ].join('\n')
+        );
       });
 
-      it('reads them through the package manager', async () => {
-        await expect(readPeers()).resolves.toEqual({ storybook: '^10.5.4' });
+      it('returns a strict gate in minutes', async () => {
+        mockedExecuteCommand.mockResolvedValueOnce({ stdout: '1.4.5\n' } as any);
+
+        const gate = await new BUNProxy({ cwd: tempDir }).getReleaseAgeGate();
+
+        expect(gate?.strict).toBe(true);
+        expect(gate?.getMinutes('@storybook/react')).toBe(24 * 60);
+      });
+
+      it('excludes exact names only, since bun has no globs', async () => {
+        mockedExecuteCommand.mockResolvedValueOnce({ stdout: '1.4.5\n' } as any);
+
+        const gate = await new BUNProxy({ cwd: tempDir }).getReleaseAgeGate();
+
+        expect(gate?.isExcluded('storybook', '11.0.0-rc.0')).toBe(true);
+        expect(gate?.isExcluded('@storybook/react-native', '11.0.0-next.2')).toBe(false);
+      });
+
+      it('excludes exact versions from bun 1.4.4', async () => {
+        mockedExecuteCommand.mockResolvedValueOnce({ stdout: '1.4.4\n' } as any);
+
+        const gate = await new BUNProxy({ cwd: tempDir }).getReleaseAgeGate();
+
+        expect(gate?.isExcluded('@storybook/react', '11.0.0-rc.0')).toBe(true);
+        expect(gate?.isExcluded('@storybook/react', '11.0.0-beta.5')).toBe(false);
         expect(mockedExecuteCommand).toHaveBeenCalledWith(
-          expect.objectContaining({
-            command: 'npm',
-            args: ['info', '@storybook/react-native@11.0.0-next.0', 'peerDependencies', '--json'],
-          })
+          expect.objectContaining({ command: 'bun', args: ['--version'] })
         );
+      });
+
+      it('ignores exact versions before bun 1.4.4', async () => {
+        mockedExecuteCommand.mockResolvedValueOnce({ stdout: '1.4.3\n' } as any);
+
+        const gate = await new BUNProxy({ cwd: tempDir }).getReleaseAgeGate();
+
+        expect(gate?.isExcluded('@storybook/react', '11.0.0-rc.0')).toBe(false);
+      });
+
+      it('returns null when the bun version cannot be read', async () => {
+        mockedExecuteCommand.mockRejectedValueOnce(new Error('bun is missing'));
+
+        await expect(new BUNProxy({ cwd: tempDir }).getReleaseAgeGate()).resolves.toBeNull();
       });
     });
 
-    describe('when the version has no peer dependencies', () => {
+    describe('when there is no bunfig', () => {
+      it('returns no gate', async () => {
+        const gate = await new BUNProxy({ cwd: tempDir }).getReleaseAgeGate();
+
+        expect(gate?.getMinutes('@storybook/react')).toBe(0);
+        expect(mockedExecuteCommand).not.toHaveBeenCalled();
+      });
+    });
+
+    it.each([
+      { form: 'a trailing comment', bunfig: '[install]\nminimumReleaseAge = 86400 # one day\n' },
+      { form: 'digit separators', bunfig: '[install]\nminimumReleaseAge = 86_400\n' },
+      { form: 'a dotted key', bunfig: 'install.minimumReleaseAge = 86400\n' },
+    ])('reads minimumReleaseAge written with $form like bun', async ({ bunfig }) => {
+      writeFileSync(join(tempDir, 'bunfig.toml'), bunfig);
+
+      const gate = await new BUNProxy({ cwd: tempDir }).getReleaseAgeGate();
+
+      expect(gate?.getMinutes('@storybook/react')).toBe(24 * 60);
+    });
+
+    it.each([
+      { form: 'single quotes', list: "['@storybook/react']" },
+      {
+        form: 'several lines with comments',
+        list: '[\n  "storybook", # sb\n  "@storybook/react",\n]',
+      },
+      {
+        form: 'a bracket in a comment',
+        list: '[\n  "storybook", # reviewed [sb]\n  "@storybook/react",\n]',
+      },
+    ])('reads minimumReleaseAgeExcludes written with $form like bun', async ({ list }) => {
+      writeFileSync(
+        join(tempDir, 'bunfig.toml'),
+        `[install]\nminimumReleaseAge = 86400\nminimumReleaseAgeExcludes = ${list}\n`
+      );
+
+      const gate = await new BUNProxy({ cwd: tempDir }).getReleaseAgeGate();
+
+      expect(gate?.isExcluded('@storybook/react', '11.0.0-rc.0')).toBe(true);
+    });
+
+    it('reads a dotted minimumReleaseAgeExcludes like bun', async () => {
+      writeFileSync(
+        join(tempDir, 'bunfig.toml'),
+        'install.minimumReleaseAge = 86400\ninstall.minimumReleaseAgeExcludes = ["@storybook/react"]\n'
+      );
+
+      const gate = await new BUNProxy({ cwd: tempDir }).getReleaseAgeGate();
+
+      expect(gate?.isExcluded('@storybook/react', '11.0.0-rc.0')).toBe(true);
+    });
+
+    it.each([
+      {
+        form: 'an inline table',
+        bunfig: 'install = { minimumReleaseAgeExcludes = ["storybook"] }\n',
+      },
+      {
+        form: 'an entry that is not a string',
+        bunfig: '[install]\nminimumReleaseAgeExcludes = ["storybook", 42]\n',
+      },
+    ])('returns null when minimumReleaseAgeExcludes is $form', async ({ bunfig }) => {
+      writeFileSync(join(tempDir, 'bunfig.toml'), bunfig);
+
+      await expect(new BUNProxy({ cwd: tempDir }).getReleaseAgeGate()).resolves.toBeNull();
+    });
+
+    it('ignores a minimumReleaseAge that is commented out', async () => {
+      writeFileSync(join(tempDir, 'bunfig.toml'), '[install]\n# minimumReleaseAge = 86400\n');
+
+      const gate = await new BUNProxy({ cwd: tempDir }).getReleaseAgeGate();
+
+      expect(gate?.getMinutes('@storybook/react')).toBe(0);
+    });
+
+    it('returns null when bunfig sets minimumReleaseAge in a form it cannot read', async () => {
+      writeFileSync(join(tempDir, 'bunfig.toml'), 'install = { minimumReleaseAge = 86400 }\n');
+
+      await expect(new BUNProxy({ cwd: tempDir }).getReleaseAgeGate()).resolves.toBeNull();
+    });
+
+    it('returns null when a global bunfig sets minimumReleaseAge, which bun 1.4 reads', async () => {
+      const home = mkdtempSync(join(tmpdir(), 'storybook-bun-proxy-home-'));
+      writeFileSync(join(home, '.bunfig.toml'), '[install]\nminimumReleaseAge = 86400\n');
+      vi.mocked(homedir).mockReturnValue(home);
+
+      try {
+        await expect(new BUNProxy({ cwd: tempDir }).getReleaseAgeGate()).resolves.toBeNull();
+      } finally {
+        rmSync(home, { recursive: true, force: true });
+      }
+    });
+  });
+
+  describe('getPublishedManifest', () => {
+    const published = {
+      version: '11.0.0-next.2',
+      versions: ['11.0.0-next.1', '11.0.0-next.2'],
+      time: { '11.0.0-next.2': '2026-11-15T10:00:00.000Z' },
+      dependencies: { '@storybook/react': '^11.0.0-beta.3' },
+      peerDependencies: { storybook: '^11.0.0-beta.1' },
+    };
+    const readManifest = () =>
+      bunProxy.getPublishedManifest('@storybook/react-native', '11.0.0-next.2');
+
+    describe('when the package manager prints the manifest', () => {
       beforeEach(() => {
-        mockedExecuteCommand.mockResolvedValue({ stdout: '' } as any);
+        mockedExecuteCommand.mockResolvedValue({
+          stdout: JSON.stringify({ name: '@storybook/react-native', ...published }),
+        } as any);
       });
 
-      it('returns an empty object', async () => {
-        await expect(readPeers()).resolves.toEqual({});
+      it('reads it through the package manager', async () => {
+        await expect(readManifest()).resolves.toEqual(published);
+        expect(mockedExecuteCommand).toHaveBeenCalledWith(
+          expect.objectContaining({
+            command: 'npm',
+            args: ['info', '@storybook/react-native@11.0.0-next.2', '--json'],
+          })
+        );
+      });
+
+      it('reads the latest version when no version is given', async () => {
+        await expect(bunProxy.getPublishedManifest('@storybook/react-native')).resolves.toEqual(
+          published
+        );
+        expect(mockedExecuteCommand).toHaveBeenCalledWith(
+          expect.objectContaining({ args: ['info', '@storybook/react-native', '--json'] })
+        );
       });
     });
 
@@ -373,7 +631,7 @@ describe('BUN Proxy', () => {
       });
 
       it('returns null', async () => {
-        await expect(readPeers()).resolves.toBeNull();
+        await expect(readManifest()).resolves.toBeNull();
       });
     });
   });

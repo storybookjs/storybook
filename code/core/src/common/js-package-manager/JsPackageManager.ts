@@ -23,8 +23,8 @@ import { getBundledVersion } from './PackageJson.ts';
 import type { PackageJson, PackageJsonWithDepsAndDevDeps } from './PackageJson.ts';
 import { LOCK_FILES } from './constants.ts';
 import { type OverrideSource, toOverrides } from './overrides.ts';
-import type { InstallationMetadata } from './types.ts';
-import { getInstallErrorTail } from './util.ts';
+import type { InstallationMetadata, PublishedManifest, ReleaseAgeGate } from './types.ts';
+import { NO_RELEASE_AGE_GATE, getInstallErrorTail, parsePublishedManifest } from './util.ts';
 
 export enum PackageManagerName {
   NPM = 'npm',
@@ -108,6 +108,8 @@ export type PackageJsonInfo = {
 
 export abstract class JsPackageManager {
   abstract readonly type: PackageManagerName;
+
+  readonly prefersLatestTag: boolean = true;
 
   /** The path to the primary package.json file (contains the `storybook` dependency). */
   readonly primaryPackageJson: PackageJsonInfo;
@@ -237,6 +239,10 @@ export abstract class JsPackageManager {
     nonInteractive: boolean;
     installContext: 'create' | 'upgrade';
   }): Promise<void> {}
+
+  async getReleaseAgeGate(): Promise<ReleaseAgeGate | null> {
+    return NO_RELEASE_AGE_GATE;
+  }
 
   async dedupeDependencies(options?: { force?: boolean; legacyPeerDeps?: boolean }) {
     await prompt.executeTask(
@@ -782,22 +788,21 @@ export abstract class JsPackageManager {
   }
 
   /**
-   * Get the `peerDependencies` of a published package version. The lookup runs through the
-   * package manager, so the user's registry, auth, proxy, and certificate settings apply.
-   *
-   * @param packageName Name of the package
-   * @param version Exact version to read
-   * @returns The peer dependencies, an empty object if there are none, or `null` if the lookup
-   *   failed
+   * Get the manifest of a published package version, or of its `latest` version when no version
+   * is given. The lookup runs through the package manager, so the user's registry, auth, proxy,
+   * and certificate settings apply. Returns `null` if the lookup failed.
    */
-  public async getPublishedPeerDependencies(
+  public async getPublishedManifest(
     packageName: string,
-    version: string
-  ): Promise<Record<string, string> | null> {
+    version?: string
+  ): Promise<PublishedManifest | null> {
+    const packageSpec = version ? `${packageName}@${version}` : packageName;
     try {
-      return (await this.runGetPeerDependencies(`${packageName}@${version}`)) ?? {};
+      const manifest = parsePublishedManifest(await this.runGetPublishedManifest(packageSpec));
+      invariant(manifest, `No published manifest found for ${packageSpec}`);
+      return manifest;
     } catch (e) {
-      logger.debug(`Failed to fetch the peer dependencies of ${packageName}@${version}: ${e}`);
+      logger.debug(`Failed to fetch the published manifest of ${packageSpec}: ${e}`);
       return null;
     }
   }
@@ -911,14 +916,8 @@ export abstract class JsPackageManager {
   ): // Use generic and conditional type to force `string[]` if fetchAllVersions is true and `string` if false
   Promise<T extends true ? string[] : string>;
 
-  /**
-   * Read the `peerDependencies` field of a published package version from the registry
-   *
-   * @param packageSpec Package name and exact version, e.g. `storybook@11.0.0`
-   */
-  protected abstract runGetPeerDependencies(
-    packageSpec: string
-  ): Promise<Record<string, string> | undefined>;
+  /** Read the manifest of a published package version, or of `latest` for a bare package name */
+  protected abstract runGetPublishedManifest(packageSpec: string): Promise<unknown>;
 
   public abstract getRegistryURL(): Promise<string | undefined>;
 
@@ -1078,12 +1077,25 @@ export abstract class JsPackageManager {
     });
   }
 
-  /** The package.json beside the closest lockfile, else the workspace root, else the primary one. */
-  #findRootPackageJsonPath(): string {
-    const lockfilePath = find.any(LOCK_FILES, {
+  public readLockfile(): string | null {
+    const lockfilePath = this.#findLockfilePath();
+    try {
+      return lockfilePath ? readFileSync(lockfilePath, 'utf-8') : null;
+    } catch {
+      return null;
+    }
+  }
+
+  #findLockfilePath() {
+    return find.any(LOCK_FILES, {
       cwd: this.primaryPackageJson.operationDir,
       last: getProjectRoot(),
     });
+  }
+
+  /** The package.json beside the closest lockfile, else the workspace root, else the primary one. */
+  #findRootPackageJsonPath(): string {
+    const lockfilePath = this.#findLockfilePath();
     if (lockfilePath) {
       return join(dirname(lockfilePath), 'package.json');
     }

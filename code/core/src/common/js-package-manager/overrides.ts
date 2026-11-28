@@ -31,3 +31,21 @@ export function toOverrides(value: unknown): Overrides | undefined {
     })
   );
 }
+
+const OVERRIDE_TARGET = /(?:^|[>/])((?:@[^/@>]+\/)?[^/@>]+?)(?:@[^>]*)?$/;
+
+export function getOverriddenPackages(sources: OverrideSource[]): Set<string> {
+  const packages = new Set<string>();
+  const collect = (overrides: Overrides, parent?: string) => {
+    for (const [selector, value] of Object.entries(overrides)) {
+      const target = selector === '.' ? parent : selector.match(OVERRIDE_TARGET)?.[1];
+      if (typeof value !== 'string') {
+        collect(value, target);
+      } else if (target) {
+        packages.add(target);
+      }
+    }
+  };
+  sources.forEach(({ overrides }) => collect(overrides));
+  return packages;
+}

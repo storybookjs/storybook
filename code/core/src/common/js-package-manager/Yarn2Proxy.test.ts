@@ -169,44 +169,142 @@ describe('Yarn 2 Proxy', () => {
     });
   });
 
-  describe('getPublishedPeerDependencies', () => {
-    const readPeers = () =>
-      yarn2Proxy.getPublishedPeerDependencies('@storybook/react-native', '11.0.0-next.0');
+  it('resolves a range to its highest release instead of the latest tag', () => {
+    expect(yarn2Proxy.prefersLatestTag).toBe(false);
+  });
 
-    describe('when the version has peer dependencies', () => {
+  describe('getReleaseAgeGate', () => {
+    let config: Record<string, string>;
+
+    beforeEach(() => {
+      config = {
+        npmMinimalAgeGate: '1440',
+        npmPreapprovedPackages: JSON.stringify([
+          '@storybook/addon-*',
+          '@storybook/react@^11.0.0-rc.0',
+        ]),
+        npmScopes: 'undefined',
+      };
+      mockedExecuteCommand.mockImplementation(
+        ({ args }) => Promise.resolve({ stdout: `${config[String(args?.[2])]}\n` }) as any
+      );
+    });
+
+    it('returns a strict gate with the global npmMinimalAgeGate', async () => {
+      const gate = await yarn2Proxy.getReleaseAgeGate();
+
+      expect(gate?.strict).toBe(true);
+      expect(gate?.getMinutes('@storybook/react')).toBe(24 * 60);
+      expect(gate?.getMinutes('storybook')).toBe(24 * 60);
+    });
+
+    it('matches preapproved descriptors with globs and ranges like Yarn', async () => {
+      const gate = await yarn2Proxy.getReleaseAgeGate();
+
+      expect(gate?.isExcluded('@storybook/addon-ondevice-actions', '11.0.0-next.2')).toBe(true);
+      expect(gate?.isExcluded('@storybook/react', '11.0.0-rc.1')).toBe(true);
+      expect(gate?.isExcluded('@storybook/react', '11.0.0-beta.5')).toBe(false);
+      expect(gate?.isExcluded('@storybook/react-native', '11.0.0-next.2')).toBe(false);
+    });
+
+    describe('when npmScopes configures the storybook scope', () => {
       beforeEach(() => {
-        mockedExecuteCommand.mockResolvedValue({
-          stdout: '{"name":"@storybook/react-native","peerDependencies":{"storybook":"^10.5.4"}}',
-        } as any);
+        config.npmMinimalAgeGate = '2880';
+        config.npmScopes = JSON.stringify({
+          storybook: { npmRegistryServer: 'https://registry.yarnpkg.com', npmMinimalAgeGate: 0 },
+          other: { npmMinimalAgeGate: { secs: 3600, nanos: 0 } },
+        });
       });
 
-      it('reads them through the package manager', async () => {
-        await expect(readPeers()).resolves.toEqual({ storybook: '^10.5.4' });
-        expect(mockedExecuteCommand).toHaveBeenCalledWith(
-          expect.objectContaining({
-            command: 'yarn',
-            args: [
-              'npm',
-              'info',
-              '@storybook/react-native@11.0.0-next.0',
-              '--fields',
-              'peerDependencies',
-              '--json',
-            ],
-          })
-        );
+      it('uses the scope gate for scoped packages', async () => {
+        const gate = await yarn2Proxy.getReleaseAgeGate();
+
+        expect(gate?.getMinutes('@storybook/react')).toBe(0);
+        expect(gate?.getMinutes('@other/package')).toBe(60);
+        expect(gate?.getMinutes('storybook')).toBe(2880);
       });
     });
 
-    describe('when the version has no peer dependencies', () => {
+    describe('when the gate is readable but npmPreapprovedPackages is not', () => {
+      beforeEach(() => {
+        config.npmPreapprovedPackages = 'unimplemented; use --json to display container contents';
+      });
+
+      it('returns null', async () => {
+        await expect(yarn2Proxy.getReleaseAgeGate()).resolves.toBeNull();
+      });
+
+      it('returns no gate when no gate is set', async () => {
+        config.npmMinimalAgeGate = '0';
+
+        const gate = await yarn2Proxy.getReleaseAgeGate();
+
+        expect(gate?.getMinutes('@storybook/react')).toBe(0);
+      });
+    });
+
+    describe('when Yarn does not know the age gate settings', () => {
+      beforeEach(() => {
+        mockedExecuteCommand.mockImplementation(({ args }) =>
+          args?.includes('npmScopes')
+            ? (Promise.resolve({ stdout: 'undefined\n' }) as any)
+            : Promise.reject(new Error('Unrecognized setting'))
+        );
+      });
+
+      it('returns no gate', async () => {
+        const gate = await yarn2Proxy.getReleaseAgeGate();
+
+        expect(gate?.getMinutes('@storybook/react')).toBe(0);
+      });
+    });
+
+    describe('when npmScopes is unreadable', () => {
+      beforeEach(() => {
+        config.npmScopes = '{not json';
+      });
+
+      it('returns null', async () => {
+        await expect(yarn2Proxy.getReleaseAgeGate()).resolves.toBeNull();
+      });
+    });
+  });
+
+  describe('getPublishedManifest', () => {
+    const published = {
+      version: '11.0.0-next.2',
+      versions: ['11.0.0-next.1', '11.0.0-next.2'],
+      time: { '11.0.0-next.2': '2026-11-15T10:00:00.000Z' },
+      dependencies: { '@storybook/react': '^11.0.0-beta.3' },
+      peerDependencies: { storybook: '^11.0.0-beta.1' },
+    };
+    const readManifest = () =>
+      yarn2Proxy.getPublishedManifest('@storybook/react-native', '11.0.0-next.2');
+
+    describe('when the package manager prints the manifest', () => {
       beforeEach(() => {
         mockedExecuteCommand.mockResolvedValue({
-          stdout: '{"name":"@storybook/react-native"}',
+          stdout: JSON.stringify({ name: '@storybook/react-native', ...published }),
         } as any);
       });
 
-      it('returns an empty object', async () => {
-        await expect(readPeers()).resolves.toEqual({});
+      it('reads it through the package manager', async () => {
+        await expect(readManifest()).resolves.toEqual(published);
+        expect(mockedExecuteCommand).toHaveBeenCalledWith(
+          expect.objectContaining({
+            command: 'yarn',
+            args: ['npm', 'info', '@storybook/react-native@11.0.0-next.2', '--json'],
+          })
+        );
+      });
+
+      it('reads the latest version when no version is given', async () => {
+        await expect(yarn2Proxy.getPublishedManifest('@storybook/react-native')).resolves.toEqual(
+          published
+        );
+        expect(mockedExecuteCommand).toHaveBeenCalledWith(
+          expect.objectContaining({ args: ['npm', 'info', '@storybook/react-native', '--json'] })
+        );
       });
     });
 
@@ -216,7 +314,7 @@ describe('Yarn 2 Proxy', () => {
       });
 
       it('returns null', async () => {
-        await expect(readPeers()).resolves.toBeNull();
+        await expect(readManifest()).resolves.toBeNull();
       });
     });
   });
@@ -340,6 +438,7 @@ describe('Yarn 2 Proxy', () => {
       mockedExecuteCommand
         .mockResolvedValueOnce({ stdout: '1440\n' } as any)
         .mockResolvedValueOnce({ stdout: '[]\n' } as any)
+        .mockResolvedValueOnce({ stdout: 'undefined\n' } as any)
         .mockResolvedValueOnce({
           stdout: JSON.stringify({
             name: 'storybook',
@@ -394,6 +493,7 @@ describe('Yarn 2 Proxy', () => {
         .mockResolvedValueOnce({
           stdout: "[\n  'foo',\n  '@storybook/preset-react-webpack',\n]\n",
         } as any)
+        .mockResolvedValueOnce({ stdout: 'undefined\n' } as any)
         .mockResolvedValueOnce({
           stdout: JSON.stringify({
             name: 'storybook',
@@ -462,6 +562,7 @@ describe('Yarn 2 Proxy', () => {
       mockedExecuteCommand
         .mockResolvedValueOnce({ stdout: '86400s\n' } as any)
         .mockResolvedValueOnce({ stdout: '[]\n' } as any)
+        .mockResolvedValueOnce({ stdout: 'undefined\n' } as any)
         .mockResolvedValueOnce({
           stdout: JSON.stringify({
             name: 'storybook',
@@ -489,7 +590,8 @@ describe('Yarn 2 Proxy', () => {
         .mockResolvedValueOnce({ stdout: '1440\n' } as any)
         .mockResolvedValueOnce({
           stdout: 'unimplemented; use --json to display container contents for now\n',
-        } as any);
+        } as any)
+        .mockResolvedValueOnce({ stdout: 'undefined\n' } as any);
 
       await yarn2Proxy.precheckStorybookPackageInstall({
         storybookVersion: '10.4.0-alpha.17',
@@ -505,7 +607,11 @@ describe('Yarn 2 Proxy', () => {
     });
 
     it('should gracefully skip the precheck on older Yarn Berry versions without npmMinimalAgeGate', async () => {
-      mockedExecuteCommand.mockRejectedValueOnce(new Error('Unknown configuration setting'));
+      mockedExecuteCommand.mockImplementation(({ args }) =>
+        args?.includes('npmScopes')
+          ? (Promise.resolve({ stdout: 'undefined\n' }) as any)
+          : Promise.reject(new Error('Unknown configuration setting'))
+      );
 
       await expect(
         yarn2Proxy.precheckStorybookPackageInstall({
@@ -520,6 +626,7 @@ describe('Yarn 2 Proxy', () => {
       mockedExecuteCommand
         .mockResolvedValueOnce({ stdout: '1440\n' } as any)
         .mockResolvedValueOnce({ stdout: '[]\n' } as any)
+        .mockResolvedValueOnce({ stdout: 'undefined\n' } as any)
         .mockResolvedValueOnce({
           stdout: JSON.stringify({
             name: 'storybook',
@@ -548,6 +655,7 @@ describe('Yarn 2 Proxy', () => {
       mockedExecuteCommand
         .mockResolvedValueOnce({ stdout: '1440\n' } as any)
         .mockResolvedValueOnce({ stdout: '[]\n' } as any)
+        .mockResolvedValueOnce({ stdout: 'undefined\n' } as any)
         .mockResolvedValueOnce({
           stdout: JSON.stringify({
             name: 'storybook',
@@ -583,7 +691,8 @@ describe('Yarn 2 Proxy', () => {
         .mockResolvedValueOnce({ stdout: '1440\n' } as any)
         .mockResolvedValueOnce({
           stdout: `[\n${STORYBOOK_PACKAGE_PATTERNS.map((pattern) => `  '${pattern}',`).join('\n')}\n]\n`,
-        } as any);
+        } as any)
+        .mockResolvedValueOnce({ stdout: 'undefined\n' } as any);
 
       await expect(
         yarn2Proxy.precheckStorybookPackageInstall({

@@ -1,13 +1,13 @@
 import { MinimumReleaseAgeHandledError } from 'storybook/internal/server-errors';
 
-import { compare, gt, prerelease, valid } from 'semver';
+import { compare, gt, maxSatisfying, prerelease, satisfies, valid } from 'semver';
 
 import { logger } from '../../node-logger/index.ts';
 import { isCI } from '../utils/envs.ts';
 import versions from '../versions.ts';
 import type { JsPackageManager } from './JsPackageManager.ts';
 import { PackageManagerName } from './JsPackageManager.ts';
-import type { InstallationMetadata } from './types.ts';
+import type { InstallationMetadata, PublishedManifest, ReleaseAgeGate } from './types.ts';
 
 export type StorybookInstallContext = 'create' | 'upgrade';
 
@@ -26,20 +26,44 @@ export const STORYBOOK_PACKAGE_PATTERNS: readonly string[] = [
 
 const escapePatternForRegex = (pattern: string) => pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-const packagePatternToRegex = (pattern: string) =>
-  new RegExp(`^${escapePatternForRegex(pattern).replace(/\\\*/g, '.*')}$`);
-
-export const hasStorybookMinimumAgeExclusions = (configuredPatterns: readonly string[]) => {
-  return STORYBOOK_PACKAGE_PATTERNS.every((storybookPattern) =>
-    configuredPatterns.some((configuredPattern) =>
-      packagePatternToRegex(configuredPattern).test(storybookPattern)
-    )
-  );
+export const packagePatternToRegex = (pattern: string, questionMarkWildcard = false) => {
+  const source = escapePatternForRegex(pattern).replace(/\\\*/g, '.*');
+  return new RegExp(`^${questionMarkWildcard ? source.replace(/\\\?/g, '.') : source}$`);
 };
 
-/** For a package manager that matches exclusions against exact package names, such as Bun. */
-export const hasStorybookMinimumAgeExclusionNames = (configuredNames: readonly string[]) =>
-  STORYBOOK_PACKAGE_NAMES.every((name) => configuredNames.includes(name));
+export const NO_RELEASE_AGE_GATE: ReleaseAgeGate = {
+  strict: true,
+  getMinutes: () => 0,
+  isExcluded: () => false,
+};
+
+const excludesStorybookPackages = (gate: ReleaseAgeGate, version: string) =>
+  STORYBOOK_PACKAGE_NAMES.every((name) => gate.isExcluded(name, version));
+
+export const getStorybookReleaseAgeGateMinutes = (
+  gate: ReleaseAgeGate | null,
+  storybookVersion: string
+) =>
+  gate?.strict && !excludesStorybookPackages(gate, storybookVersion)
+    ? gate.getMinutes('storybook')
+    : 0;
+
+export const parseExactVersionsPattern = (
+  pattern: string
+): { packageName: string; versions: string[] } | null => {
+  const separator = pattern.indexOf('@', 1);
+  if (separator === -1) {
+    return { packageName: pattern, versions: [] };
+  }
+
+  const exactVersions = pattern
+    .slice(separator + 1)
+    .split('||')
+    .map((version) => valid(version));
+  return exactVersions.every((version): version is string => version !== null)
+    ? { packageName: pattern.slice(0, separator), versions: exactVersions }
+    : null;
+};
 
 /**
  * Checks whether the package manager's age gate would block this Storybook version, before a
@@ -73,7 +97,7 @@ export const findInstallationsInDependencyTree = (
   tree: DependencyTree,
   pattern: string[]
 ): Pick<InstallationMetadata, 'dependencies' | 'duplicatedDependencies'> => {
-  const regexes = pattern.map(packagePatternToRegex);
+  const regexes = pattern.map((entry) => packagePatternToRegex(entry));
   const versions: Record<string, string[]> = {};
   let level = Object.entries(tree);
   while (level.length > 0) {
@@ -195,6 +219,36 @@ export const readPackageVersions = (value: unknown): string[] | null => {
   return null;
 };
 
+const readDependencyMap = (value: unknown): Record<string, string> =>
+  Object.fromEntries(
+    Object.entries(value && typeof value === 'object' ? value : {}).filter(
+      (entry): entry is [string, string] => typeof entry[1] === 'string'
+    )
+  );
+
+export const parsePublishedManifest = (value: unknown): PublishedManifest | null => {
+  const manifest = Array.isArray(value) && value.length === 1 ? value[0] : value;
+  if (!manifest || typeof manifest !== 'object') {
+    return null;
+  }
+
+  const { version, versions, time, dependencies, peerDependencies } = manifest as Record<
+    string,
+    unknown
+  >;
+  if (typeof version !== 'string' || !valid(version)) {
+    return null;
+  }
+
+  return {
+    version,
+    versions: readPackageVersions(versions) ?? [],
+    time: parsePackageTimeMap(time) ?? {},
+    dependencies: readDependencyMap(dependencies),
+    peerDependencies: readDependencyMap(peerDependencies),
+  };
+};
+
 export const parseReleaseTime = (value: unknown): Date | null => {
   if (typeof value !== 'string' || value.length === 0) {
     return null;
@@ -225,9 +279,71 @@ export const parsePackageTimeMap = (value: unknown): Record<string, string> | nu
   return timeMap;
 };
 
-export const getAgeInMinutes = (publishedAt: Date, now = new Date()) => {
-  return Math.floor((now.getTime() - publishedAt.getTime()) / 60_000);
+export const isOldEnough = (publishedAt: Date, minutes: number, now = new Date()) =>
+  now.getTime() - publishedAt.getTime() >= minutes * 60_000;
+
+export type ReleaseAgeVerdict = 'allowed' | 'held back' | 'unknown';
+
+export const getReleaseAgeVerdict = (
+  gate: ReleaseAgeGate | null,
+  packageName: string,
+  version: string,
+  time: Record<string, string>,
+  now = new Date()
+): ReleaseAgeVerdict => {
+  if (!gate) {
+    return 'unknown';
+  }
+
+  const minutes = gate.getMinutes(packageName);
+  if (minutes <= 0 || gate.isExcluded(packageName, version)) {
+    return 'allowed';
+  }
+
+  const publishedAt = parseReleaseTime(time[version]);
+  if (!publishedAt) {
+    return 'unknown';
+  }
+
+  return isOldEnough(publishedAt, minutes, now) ? 'allowed' : 'held back';
 };
+
+export const selectInstallableVersion = ({
+  packageName,
+  range,
+  latest,
+  gate,
+  prefersLatestTag = true,
+  now = new Date(),
+}: {
+  packageName: string;
+  range: string;
+  latest: PublishedManifest;
+  gate: ReleaseAgeGate | null;
+  prefersLatestTag?: boolean;
+  now?: Date;
+}): string | null => {
+  const matching = [...new Set([latest.version, ...latest.versions])].filter((version) =>
+    satisfies(version, range)
+  );
+  const verdicts = matching.map((version) =>
+    getReleaseAgeVerdict(gate, packageName, version, latest.time, now)
+  );
+  if (verdicts.includes('unknown')) {
+    return null;
+  }
+
+  const allowed = matching.filter((_, index) => verdicts[index] === 'allowed');
+  const installable = allowed.length > 0 ? allowed : matching;
+  return prefersLatestTag && installable.includes(latest.version)
+    ? latest.version
+    : maxSatisfying(installable, range);
+};
+
+export const isPackageInLockfile = (lockfile: string, packageName: string) =>
+  [`${packageName}@`, `${packageName}"`, `${packageName}'`].some((entry) =>
+    lockfile.includes(entry)
+  );
 
 export const getLatestStableVersionAdheringToMinimumAgeGate = (
   timeMap: Record<string, string>,

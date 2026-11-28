@@ -8,31 +8,57 @@ import versions from '../versions.ts';
 import { PackageManagerName } from './JsPackageManager.ts';
 import { NPMProxy } from './NPMProxy.ts';
 import { PNPMProxy } from './PNPMProxy.ts';
+import type { PublishedManifest, ReleaseAgeGate } from './types.ts';
 import {
-  getAgeInMinutes,
+  NO_RELEASE_AGE_GATE,
   getErrorLogs,
   getLatestStableVersionAdheringToMinimumAgeGate,
   getMswInitCommand,
   getRemotePackageRunnerArgs,
   getStorybookRerunCommand,
   getStorybookRerunInstruction,
+  getStorybookReleaseAgeGateMinutes,
+  getReleaseAgeVerdict,
   getVitestStorybookRunCommand,
-  hasStorybookMinimumAgeExclusionNames,
-  hasStorybookMinimumAgeExclusions,
   isNpmPeerResolutionError,
+  isOldEnough,
+  isPackageInLockfile,
+  parseExactVersionsPattern,
   parsePackageData,
   parsePackageTimeMap,
   parsePositiveIntegerConfigValue,
+  parsePublishedManifest,
   parseReleaseTime,
   parseYarnMinimalAgeGateMinutes,
   readPackageVersions,
   runStorybookInstallPrecheck,
+  selectInstallableVersion,
   STORYBOOK_PACKAGE_NAMES,
   STORYBOOK_PACKAGE_PATTERNS,
 } from './util.ts';
 
 vi.mock('../../node-logger/index.ts', { spy: true });
 vi.mock('../utils/envs.ts', { spy: true });
+
+const now = new Date('2026-11-24T12:00:00.000Z');
+const hoursAgo = (hours: number) => new Date(now.getTime() - hours * 60 * 60_000).toISOString();
+const gateOf = (
+  minutes: number,
+  isExcluded: ReleaseAgeGate['isExcluded'] = () => false
+): ReleaseAgeGate => ({ strict: true, getMinutes: () => minutes, isExcluded });
+const react: PublishedManifest = {
+  version: '10.6.8',
+  versions: ['10.6.7', '10.6.8', '11.0.0-beta.3', '11.0.0-beta.4', '11.0.0-rc.0'],
+  time: {
+    '10.6.7': hoursAgo(300),
+    '10.6.8': hoursAgo(100),
+    '11.0.0-beta.3': hoursAgo(250),
+    '11.0.0-beta.4': hoursAgo(30),
+    '11.0.0-rc.0': hoursAgo(5),
+  },
+  dependencies: {},
+  peerDependencies: {},
+};
 
 describe('js package manager util', () => {
   it('parses package data', () => {
@@ -89,6 +115,215 @@ describe('js package manager util', () => {
     expect(readPackageVersions(null)).toBeNull();
   });
 
+  it('parses published manifests', () => {
+    expect(
+      parsePublishedManifest({
+        name: '@storybook/react',
+        version: '11.0.0-rc.0',
+        versions: ['11.0.0-beta.3', '11.0.0-rc.0'],
+        time: { '11.0.0-rc.0': '2026-11-24T13:46:30.813Z' },
+        dependencies: { '@storybook/global': '^5.0.0', broken: null },
+        peerDependencies: { storybook: '^11.0.0-rc.0' },
+      })
+    ).toEqual({
+      version: '11.0.0-rc.0',
+      versions: ['11.0.0-beta.3', '11.0.0-rc.0'],
+      time: { '11.0.0-rc.0': '2026-11-24T13:46:30.813Z' },
+      dependencies: { '@storybook/global': '^5.0.0' },
+      peerDependencies: { storybook: '^11.0.0-rc.0' },
+    });
+  });
+
+  it('parses a published manifest without versions or dependencies', () => {
+    expect(parsePublishedManifest({ name: '@storybook/global', version: '5.0.0' })).toEqual({
+      version: '5.0.0',
+      versions: [],
+      time: {},
+      dependencies: {},
+      peerDependencies: {},
+    });
+  });
+
+  it('parses a published manifest wrapped in an array', () => {
+    expect(
+      parsePublishedManifest([
+        { version: '11.0.0-next.2', peerDependencies: { storybook: '^11.0.0-beta.1' } },
+      ])
+    ).toEqual({
+      version: '11.0.0-next.2',
+      versions: [],
+      time: {},
+      dependencies: {},
+      peerDependencies: { storybook: '^11.0.0-beta.1' },
+    });
+  });
+
+  it.each([
+    { pattern: 'storybook', expected: { packageName: 'storybook', versions: [] } },
+    { pattern: '@storybook/*', expected: { packageName: '@storybook/*', versions: [] } },
+    {
+      pattern: '@storybook/react@11.0.0-rc.0',
+      expected: { packageName: '@storybook/react', versions: ['11.0.0-rc.0'] },
+    },
+    {
+      pattern: 'axios@0.18.1 || 0.21.1',
+      expected: { packageName: 'axios', versions: ['0.18.1', '0.21.1'] },
+    },
+    { pattern: '@storybook/react@^11.0.0', expected: null },
+  ])('parses the exclusion pattern $pattern', ({ pattern, expected }) => {
+    expect(parseExactVersionsPattern(pattern)).toEqual(expected);
+  });
+
+  it.each([
+    { name: 'an unreadable gate', gate: null, version: '11.0.0-rc.0', expected: 'unknown' },
+    { name: 'no gate', gate: NO_RELEASE_AGE_GATE, version: '11.0.0-rc.1', expected: 'allowed' },
+    {
+      name: 'an excluded release',
+      gate: gateOf(1440, (_, version) => version === '11.0.0-rc.0'),
+      version: '11.0.0-rc.0',
+      expected: 'allowed',
+    },
+    { name: 'an old release', gate: gateOf(1440), version: '11.0.0-beta.4', expected: 'allowed' },
+    { name: 'a new release', gate: gateOf(1440), version: '11.0.0-rc.0', expected: 'held back' },
+    {
+      name: 'a release without a publish time',
+      gate: gateOf(1440),
+      version: '11.0.0-rc.1',
+      expected: 'unknown',
+    },
+  ])('judges the age of $name', ({ gate, version, expected }) => {
+    expect(getReleaseAgeVerdict(gate, '@storybook/react', version, react.time, now)).toBe(expected);
+  });
+
+  it.each([
+    {
+      name: 'latest when it satisfies the range',
+      range: '^10.6.0',
+      gate: NO_RELEASE_AGE_GATE,
+      expected: '10.6.8',
+    },
+    {
+      name: 'the highest match otherwise',
+      range: '^11.0.0-beta.3',
+      gate: NO_RELEASE_AGE_GATE,
+      expected: '11.0.0-rc.0',
+    },
+    {
+      name: 'the highest release the gate allows',
+      range: '^11.0.0-beta.3',
+      gate: gateOf(1440),
+      expected: '11.0.0-beta.4',
+    },
+    {
+      name: 'an older release when the gate holds latest back',
+      range: '^10.6.0',
+      gate: gateOf(200 * 60),
+      expected: '10.6.7',
+    },
+    {
+      name: 'an excluded release despite the gate',
+      range: '^11.0.0-beta.3',
+      gate: gateOf(1440, (_, version) => version === '11.0.0-rc.0'),
+      expected: '11.0.0-rc.0',
+    },
+    {
+      name: 'the highest match when the gate allows none',
+      range: '^11.0.0-rc.0',
+      gate: gateOf(1440),
+      expected: '11.0.0-rc.0',
+    },
+    {
+      name: 'nothing when no release matches',
+      range: '^12.0.0',
+      gate: NO_RELEASE_AGE_GATE,
+      expected: null,
+    },
+    {
+      name: 'nothing when the gate is unreadable',
+      range: '^11.0.0-beta.3',
+      gate: null,
+      expected: null,
+    },
+  ])('selects $name', ({ range, gate, expected }) => {
+    expect(
+      selectInstallableVersion({ packageName: '@storybook/react', range, latest: react, gate, now })
+    ).toBe(expected);
+  });
+
+  it('selects the highest match over latest for a package manager that ignores the tag', () => {
+    const withNewerPatch = {
+      ...react,
+      versions: [...react.versions, '10.6.9'],
+      time: { ...react.time, '10.6.9': hoursAgo(48) },
+    };
+    const select = (prefersLatestTag: boolean) =>
+      selectInstallableVersion({
+        packageName: '@storybook/react',
+        range: '^10.6.0',
+        latest: withNewerPatch,
+        gate: NO_RELEASE_AGE_GATE,
+        prefersLatestTag,
+        now,
+      });
+
+    expect(select(true)).toBe('10.6.8');
+    expect(select(false)).toBe('10.6.9');
+  });
+
+  it.each([
+    {
+      manager: 'npm',
+      lockfile: '    "node_modules/@storybook/react": {\n      "version": "10.6.7",',
+    },
+    { manager: 'Yarn 1', lockfile: '"@storybook/react@^10.6.7":\n  version "10.6.7"' },
+    { manager: 'Yarn Berry', lockfile: '"@storybook/react@npm:^10.6.7":\n  version: 10.6.7' },
+    { manager: 'pnpm', lockfile: "  '@storybook/react@10.6.7':\n    resolution: {}" },
+    { manager: 'bun', lockfile: '    "@storybook/react": ["@storybook/react@10.6.7", "", {}],' },
+  ])('finds a package in a $manager lockfile', ({ lockfile }) => {
+    expect(isPackageInLockfile(lockfile, '@storybook/react')).toBe(true);
+  });
+
+  it('does not mistake a package for one whose name starts with it', () => {
+    const lockfile = [
+      '"node_modules/@storybook/react-native": {',
+      '"@storybook/react-dom-shim@npm:10.6.7":',
+    ].join('\n');
+
+    expect(isPackageInLockfile(lockfile, '@storybook/react')).toBe(false);
+  });
+
+  it('selects nothing when a matching release has no publish time under a gate', () => {
+    const withoutTimes = { ...react, time: { '11.0.0-rc.0': hoursAgo(5) } };
+    expect(
+      selectInstallableVersion({
+        packageName: '@storybook/react',
+        range: '^11.0.0-beta.3',
+        latest: withoutTimes,
+        gate: gateOf(1440),
+        now,
+      })
+    ).toBeNull();
+    expect(
+      selectInstallableVersion({
+        packageName: '@storybook/react',
+        range: '^11.0.0-beta.3',
+        latest: withoutTimes,
+        gate: NO_RELEASE_AGE_GATE,
+        now,
+      })
+    ).toBe('11.0.0-rc.0');
+  });
+
+  it.each([
+    { input: null, description: 'null' },
+    { input: '', description: 'empty output' },
+    { input: { name: '@storybook/react' }, description: 'a manifest without a version' },
+    { input: { version: 'next' }, description: 'a manifest whose version is a dist-tag' },
+    { input: [{ version: '1.0.0' }, { version: '2.0.0' }], description: 'several manifests' },
+  ])('rejects $description as a published manifest', ({ input }) => {
+    expect(parsePublishedManifest(input)).toBeNull();
+  });
+
   it('parses release times', () => {
     expect(parseReleaseTime('2026-05-11T11:59:00.000Z')).toEqual(
       new Date('2026-05-11T11:59:00.000Z')
@@ -134,10 +369,24 @@ describe('js package manager util', () => {
     expect(parsePackageTimeMap(input)).toBeNull();
   });
 
-  it('computes package age in minutes', () => {
-    expect(
-      getAgeInMinutes(new Date('2026-05-11T11:00:00.000Z'), new Date('2026-05-11T12:30:00.000Z'))
-    ).toBe(90);
+  it.each([
+    { age: 'exactly at the gate', publishedAt: '2026-05-11T10:30:00.000Z', minutes: 90, old: true },
+    {
+      age: 'just short of the gate',
+      publishedAt: '2026-05-11T10:30:00.001Z',
+      minutes: 90,
+      old: false,
+    },
+    {
+      age: 'past a gate of 90 seconds',
+      publishedAt: '2026-05-11T11:58:20.000Z',
+      minutes: 1.5,
+      old: true,
+    },
+  ])('compares a release $age against the age gate', ({ publishedAt, minutes, old }) => {
+    expect(isOldEnough(new Date(publishedAt), minutes, new Date('2026-05-11T12:00:00.000Z'))).toBe(
+      old
+    );
   });
 
   it('finds the latest mature stable version', () => {
@@ -152,19 +401,6 @@ describe('js package manager util', () => {
         new Date('2026-05-11T12:00:00.000Z')
       )
     ).toBe('10.3.2');
-  });
-
-  it('detects when Storybook minimum-age exclusions are already configured', () => {
-    expect(hasStorybookMinimumAgeExclusions(STORYBOOK_PACKAGE_PATTERNS)).toBe(true);
-    expect(hasStorybookMinimumAgeExclusions(['storybook', '@storybook/react-vite'])).toBe(false);
-    expect(hasStorybookMinimumAgeExclusions(['*storybook*', 'sb', 'chromatic'])).toBe(true);
-    expect(hasStorybookMinimumAgeExclusions(['*storybook*', 'sb'])).toBe(false);
-  });
-
-  it('detects exclusions for a package manager that matches exact names', () => {
-    expect(hasStorybookMinimumAgeExclusionNames(STORYBOOK_PACKAGE_NAMES)).toBe(true);
-    expect(hasStorybookMinimumAgeExclusionNames(STORYBOOK_PACKAGE_PATTERNS)).toBe(false);
-    expect(hasStorybookMinimumAgeExclusionNames(STORYBOOK_PACKAGE_NAMES.slice(1))).toBe(false);
   });
 
   // Storybook writes these lists into the config of users' package managers, and asks again when an
@@ -246,6 +482,34 @@ describe('js package manager util', () => {
 
       expect(logger.debug).toHaveBeenCalledWith(expect.stringContaining('yarn not found'));
     });
+  });
+
+  it('reads how long a strict gate holds a Storybook install back', () => {
+    const excluding = (patterns: readonly string[]) =>
+      gateOf(1440, (packageName, version) =>
+        patterns.some(
+          (pattern) => pattern === packageName || pattern === `${packageName}@${version}`
+        )
+      );
+
+    expect(
+      getStorybookReleaseAgeGateMinutes(excluding(['storybook', '@storybook/react-vite']), '10.4.0')
+    ).toBe(1440);
+    expect(getStorybookReleaseAgeGateMinutes(excluding(STORYBOOK_PACKAGE_NAMES), '10.4.0')).toBe(0);
+    expect(
+      getStorybookReleaseAgeGateMinutes(
+        excluding(STORYBOOK_PACKAGE_NAMES.filter((name) => name !== 'create-storybook')),
+        '10.4.0'
+      )
+    ).toBe(1440);
+    expect(
+      getStorybookReleaseAgeGateMinutes(
+        excluding(STORYBOOK_PACKAGE_NAMES.map((name) => `${name}@10.4.0`)),
+        '10.4.1'
+      )
+    ).toBe(1440);
+    expect(getStorybookReleaseAgeGateMinutes({ ...gateOf(1440), strict: false }, '10.4.0')).toBe(0);
+    expect(getStorybookReleaseAgeGateMinutes(null, '10.4.0')).toBe(0);
   });
 
   it('builds rerun guidance', () => {

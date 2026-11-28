@@ -152,6 +152,22 @@ export const mapElements = (highlights: HighlightOptions[]): Map<HTMLElement, Hi
   return map;
 };
 
+/**
+ * Whether two `mapElements` results for the same highlights list track the same elements. Ids are
+ * unique in that list and every field except `selectors` is copied from the highlight with that
+ * id, so comparing the id and the selectors is enough.
+ */
+export const isSameElementMap = (a: Map<HTMLElement, Highlight>, b: Map<HTMLElement, Highlight>) =>
+  a.size === b.size &&
+  Array.from(b).every(([element, next]) => {
+    const current = a.get(element);
+    return (
+      current?.id === next.id &&
+      current.selectors.length === next.selectors.length &&
+      current.selectors.every((selector, i) => selector === next.selectors[i])
+    );
+  });
+
 export const mapBoxes = (elements: Map<HTMLElement, Highlight>): Box[] =>
   Array.from(elements.entries())
     .map<Box>(([element, { id, selectors, styles, hoverStyles, focusStyles, menu }]) => {

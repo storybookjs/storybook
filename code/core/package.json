@@ -359,6 +359,7 @@
     "detect-indent": "^7.0.1",
     "detect-port": "^1.6.1",
     "diff": "^8.0.2",
+    "dompurify": "^3.4.17",
     "downshift": "^9.0.4",
     "ejs": "^3.1.10",
     "empathic": "^2.0.0",

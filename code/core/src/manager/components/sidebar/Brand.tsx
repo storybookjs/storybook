@@ -1,5 +1,7 @@
 import React from 'react';
 
+import DOMPurify from 'dompurify';
+
 import { StorybookLogo } from 'storybook/internal/components';
 
 import { styled, withTheme } from 'storybook/theming/emotion';
@@ -44,10 +46,19 @@ export const Brand = withTheme(({ theme }) => {
       return null;
     }
 
+    // Keep `target` so links inside a custom title still open where their author intended.
+    const sanitizedTitle = DOMPurify.sanitize(title, { ADD_ATTR: ['target'] });
+
     if (!url) {
-      return <div dangerouslySetInnerHTML={{ __html: title }} />;
+      return <div dangerouslySetInnerHTML={{ __html: sanitizedTitle }} />;
     }
-    return <LogoLink href={url} target={targetValue} dangerouslySetInnerHTML={{ __html: title }} />;
+    return (
+      <LogoLink
+        href={url}
+        target={targetValue}
+        dangerouslySetInnerHTML={{ __html: sanitizedTitle }}
+      />
+    );
   }
 
   const logo = image ? <Img src={image} alt={title} /> : <StorybookLogoStyled alt={title} />;

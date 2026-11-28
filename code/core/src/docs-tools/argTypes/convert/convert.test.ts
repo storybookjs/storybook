@@ -8,6 +8,8 @@ import { mapValues } from 'es-toolkit/object';
 import requireFromString from 'require-from-string';
 
 import { normalizeNewlines } from '../utils.ts';
+import type { DocgenInfo } from '../docgen/types.ts';
+
 import { convert } from './index.ts';
 
 expect.addSnapshotSerializer({
@@ -275,7 +277,6 @@ describe('storybook type system', () => {
       expect(convertTs(input)).toMatchInlineSnapshot(`
         {
           "intersectionType": {
-            "raw": "ItemInterface & PersonInterface",
             "name": "intersection",
             "value": [
               {
@@ -286,10 +287,10 @@ describe('storybook type system', () => {
                 "name": "other",
                 "value": "PersonInterface"
               }
-            ]
+            ],
+            "raw": "ItemInterface & PersonInterface"
           },
           "intersectionWithInlineType": {
-            "raw": "ItemInterface & { inlineValue: string }",
             "name": "intersection",
             "value": [
               {
@@ -305,10 +306,206 @@ describe('storybook type system', () => {
                   }
                 }
               }
+            ],
+            "raw": "ItemInterface & { inlineValue: string }"
+          }
+        }
+      `);
+    });
+    it('open string unions and intersections', () => {
+      const input = readFixture('typescript/open-string-unions.tsx');
+      expect(convertTs(input)).toMatchInlineSnapshot(`
+        {
+          "openUnion": {
+            "raw": "'sm' | 'md' | (string & {})",
+            "name": "string"
+          },
+          "openIntersection": {
+            "name": "string",
+            "raw": "string & {}"
+          },
+          "openBare": {
+            "raw": "'sm' | (string & {})",
+            "name": "string"
+          },
+          "openSpacing": {
+            "raw": "'sm' | (string & {})",
+            "name": "string"
+          },
+          "nullableOpen": {
+            "raw": "'a' | null | (string & {})",
+            "name": "string"
+          },
+          "unresolvedMixed": {
+            "raw": "'a' | Custom | (string & {})",
+            "name": "union",
+            "value": [
+              {
+                "name": "other",
+                "value": "literal"
+              },
+              {
+                "raw": "'x' | 'y'",
+                "name": "enum",
+                "value": [
+                  "x",
+                  "y"
+                ]
+              },
+              {
+                "name": "other",
+                "value": "unknown"
+              }
+            ]
+          },
+          "closedUnion": {
+            "raw": "'a' | 'b'",
+            "name": "enum",
+            "value": [
+              "a",
+              "b"
+            ]
+          },
+          "withNull": {
+            "raw": "'a' | 'b' | null",
+            "name": "enum",
+            "value": [
+              "a",
+              "b",
+              null
+            ]
+          },
+          "mixedUnion": {
+            "raw": "'a' | Custom",
+            "name": "union",
+            "value": [
+              {
+                "name": "other",
+                "value": "literal"
+              },
+              {
+                "raw": "'x' | 'y'",
+                "name": "enum",
+                "value": [
+                  "x",
+                  "y"
+                ]
+              }
+            ]
+          },
+          "mixedOpen": {
+            "raw": "'sm' | 42 | (string & {})",
+            "name": "union",
+            "value": [
+              {
+                "name": "other",
+                "value": "literal"
+              },
+              {
+                "name": "other",
+                "value": "literal"
+              },
+              {
+                "name": "other",
+                "value": "unknown"
+              }
+            ]
+          },
+          "nestedIdiom": {
+            "raw": "'a' | Array<string & {}>",
+            "name": "union",
+            "value": [
+              {
+                "name": "other",
+                "value": "literal"
+              },
+              {
+                "raw": "Array<string & {}>",
+                "name": "array",
+                "value": [
+                  {
+                    "name": "string",
+                    "raw": "string & {}"
+                  }
+                ]
+              }
+            ]
+          },
+          "unresolvedBare": {
+            "raw": "'a' | (string & {}) | Custom",
+            "name": "union",
+            "value": [
+              {
+                "name": "other",
+                "value": "literal"
+              },
+              {
+                "name": "other",
+                "value": "unknown"
+              },
+              {
+                "raw": "'x' | 'y'",
+                "name": "enum",
+                "value": [
+                  "x",
+                  "y"
+                ]
+              }
             ]
           }
         }
       `);
+    });
+    // react-docgen-typescript emits `'sm' | 'md' | (string & {})` as an enum
+    // with a `string & {}` member; the prop accepts any string.
+    it('open string enums from react-docgen-typescript', () => {
+      const openEnum = {
+        type: {
+          name: 'enum',
+          value: [{ value: '"sm"' }, { value: '"md"' }, { value: 'string & {}' }],
+        },
+        required: false,
+        description: '',
+        defaultValue: { value: '' },
+      } satisfies DocgenInfo;
+      expect(convert(openEnum)).toMatchInlineSnapshot(`
+        {
+          "name": "string"
+        }
+      `);
+
+      // A numeric member means the prop is not string-only, so the enum is kept.
+      const mixedEnum = {
+        type: {
+          name: 'enum',
+          value: [{ value: '"sm"' }, { value: '42' }, { value: 'string & {}' }],
+        },
+        required: false,
+        description: '',
+        defaultValue: { value: '' },
+      } satisfies DocgenInfo;
+      expect(convert(mixedEnum)).toMatchInlineSnapshot(`
+        {
+          "name": "enum",
+          "value": [
+            "sm",
+            42,
+            "string & {}"
+          ]
+        }
+      `);
+
+      // A member that only contains the idiom is not an open string.
+      const nestedEnum = {
+        type: {
+          name: 'enum',
+          value: [{ value: '"a"' }, { value: 'Array<string & {}>' }],
+        },
+        required: false,
+        description: '',
+        defaultValue: { value: '' },
+      } satisfies DocgenInfo;
+      expect(convert(nestedEnum)?.name).toBe('enum');
     });
     it('arrays', () => {
       const input = readFixture('typescript/arrays.tsx');
@@ -479,7 +676,6 @@ describe('storybook type system', () => {
             "name": "string"
           },
           "aliasesIntersection": {
-            "raw": "StringAlias & NumberAlias",
             "name": "intersection",
             "value": [
               {
@@ -488,7 +684,8 @@ describe('storybook type system', () => {
               {
                 "name": "number"
               }
-            ]
+            ],
+            "raw": "StringAlias & NumberAlias"
           },
           "aliasesUnion": {
             "raw": "StringAlias | NumberAlias",

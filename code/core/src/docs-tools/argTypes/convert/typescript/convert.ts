@@ -1,8 +1,14 @@
 import { UnknownArgTypesError } from 'storybook/internal/preview-errors';
 import type { SBType } from 'storybook/internal/types';
 
-import { parseLiteral } from '../utils.ts';
-import type { TSSigType, TSType } from './types.ts';
+import {
+  isOpenStringMember,
+  isParenthesizedOpenStringMember,
+  isStringLiteralValue,
+  parseLiteral,
+  splitTopLevelUnionMembers,
+} from '../utils.ts';
+import type { TSIntersectionType, TSSigType, TSType } from './types.ts';
 
 // Type guards for narrowing TSType discriminant unions
 type TSLiteralType = Extract<TSType, { name: 'literal' }>;
@@ -29,6 +35,31 @@ const convertSig = (type: TSSigType) => {
     default:
       throw new UnknownArgTypesError({ type, language: 'Typescript' });
   }
+};
+
+// Docgen emits standalone `string & {}` as an `intersection` of `string` and an
+// empty object signature, which collapses to `string` (a text control) instead of
+// an unusable object control.
+const isEmptyObjectSignature = (type: TSType): boolean =>
+  type.name === 'signature' && type.type === 'object' && type.signature.properties.length === 0;
+
+const convertIntersection = (type: TSIntersectionType): SBType | void => {
+  const meaningful = type.elements.filter((element) => !isEmptyObjectSignature(element));
+  if (meaningful.length === 1) {
+    return convert(meaningful[0]);
+  }
+  return {
+    name: 'intersection',
+    value: type.elements.map(convert).filter((value): value is SBType => value !== undefined),
+  };
+};
+
+const collapsesToString = (type: TSType): boolean => {
+  if (type.name !== 'intersection') {
+    return false;
+  }
+  const meaningful = type.elements.filter((element) => !isEmptyObjectSignature(element));
+  return meaningful.length === 1 && meaningful[0].name === 'string';
 };
 
 export const convert = (type: TSType): SBType | void => {
@@ -69,10 +100,47 @@ export const convert = (type: TSType): SBType | void => {
           ),
         };
       }
+      // A union of string literals and a `string & {}` member accepts any string,
+      // so it is a text control, not a closed enum. Docgen emits the idiom in two
+      // shapes: parenthesized members become `{ name: 'unknown' }` (which carries no
+      // raw text, so one `unknown` cannot be told from another), and bare
+      // `string & {}` becomes an intersection of `string` and an empty object
+      // signature. The idiom is counted per top-level union member: a count over
+      // the whole raw text would also fire on nested uses like `Array<string & {}>`
+      // or partial text like `mystring & {}`, and a parenthesized idiom must
+      // "pay for" every `unknown` member or types like `(Foo)` would silently be
+      // treated as strings. Mixed unions like `'sm' | 42 | (string & {})` keep
+      // their type.
+      if (typeof raw === 'string') {
+        const members = splitTopLevelUnionMembers(raw);
+        const parenthesizedIdioms = members.filter(isParenthesizedOpenStringMember).length;
+        const bareIdioms = members.filter(
+          (member) => isOpenStringMember(member) && !isParenthesizedOpenStringMember(member)
+        ).length;
+        const unknownCount = nonUndefinedElements.filter(
+          (element) => element.name === 'unknown'
+        ).length;
+        const allStringCompatible = nonUndefinedElements.every(
+          (element) =>
+            element.name === 'unknown' ||
+            element.name === 'null' ||
+            (isLiteral(element) && isStringLiteralValue(element.value)) ||
+            collapsesToString(element)
+        );
+        if (
+          parenthesizedIdioms >= unknownCount &&
+          parenthesizedIdioms + bareIdioms > 0 &&
+          allStringCompatible
+        ) {
+          return { ...base, name: 'string' };
+        }
+      }
       return { ...base, name, value: type.elements.map(convert) };
     }
-    case 'intersection':
-      return { ...base, name, value: type.elements.map(convert) };
+    case 'intersection': {
+      const converted = convertIntersection(type);
+      return converted ? { ...converted, ...base } : converted;
+    }
     default:
       return { ...base, name: 'other', value: name };
   }

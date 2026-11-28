@@ -7,8 +7,13 @@ interface TSBaseType {
 
 type TSArgType = TSType;
 
-type TSCombinationType = TSBaseType & {
-  name: 'union' | 'intersection';
+type TSUnionType = TSBaseType & {
+  name: 'union';
+  elements: TSType[];
+};
+
+export type TSIntersectionType = TSBaseType & {
+  name: 'intersection';
   elements: TSType[];
 };
 
@@ -58,11 +63,19 @@ type TSArrayType = TSBaseType & {
 
 export type TSSigType = TSObjectSigType | TSFuncSigType;
 
+// Docgen emits `{ name: 'unknown' }` for type members it cannot resolve,
+// e.g. the `string & {}` member of an open string union.
+type TSUnknownType = TSBaseType & {
+  name: 'unknown';
+};
+
 export type TSType =
   | TSScalarType
   | TSUndefinedType
   | TSNullType
   | TSLiteralType
-  | TSCombinationType
+  | TSUnionType
+  | TSIntersectionType
   | TSSigType
-  | TSArrayType;
+  | TSArrayType
+  | TSUnknownType;

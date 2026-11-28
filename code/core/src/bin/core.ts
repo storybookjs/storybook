@@ -12,6 +12,7 @@ import leven from 'leven';
 import picocolors from 'picocolors';
 
 import { version } from '../../package.json';
+import { registerExportCommand } from '../cli/export/register.ts';
 import { registerSkillsCommand } from '../cli/skills/register.ts';
 import { registerToolsPassthrough } from '../cli/tools/register.ts';
 import { build } from '../cli/build.ts';
@@ -187,6 +188,8 @@ command('build')
 
     logger.outro('Storybook build completed successfully');
   });
+
+registerExportCommand(command('export'));
 
 command('index')
   .option('-o, --output-file <file-name>', 'JSON file to output index')

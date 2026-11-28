@@ -1338,6 +1338,19 @@ export class FindPackageVersionsError extends StorybookError {
   }
 }
 
+export class DesignExportError extends StorybookError {
+  constructor(public data: { message: string; cause?: unknown }) {
+    super({
+      name: 'DesignExportError',
+      category: Category.CLI,
+      code: 4,
+      isHandledError: true,
+      message: data.message,
+      cause: data.cause,
+    });
+  }
+}
+
 export class IncompatiblePostCssConfigError extends StorybookError {
   constructor(public data: { error: Error }) {
     super({

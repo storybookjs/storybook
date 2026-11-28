@@ -1,0 +1,64 @@
+---
+title: Export a library to Claude Design
+sidebar:
+  title: Design exports
+---
+
+The `storybook export` command captures every story variant as an editable HTML artboard. It places variants together by component on one canvas and writes the result to a ZIP for a manual Claude Design import. Documentation pages are excluded.
+
+## Export your library
+
+Run the command from a project with Playwright installed. The exporter launches its own Chromium instance with a fresh browser context. It does not use your personal browser profile or sign-in state.
+
+```shell
+npm install --save-dev playwright
+npx playwright install chromium
+```
+
+Start or publish your Storybook, then export it:
+
+```shell
+npx storybook export --format claude-design --url http://localhost:6006 --output-file storybook-design.zip
+```
+
+Use the URL of the Storybook root, including any hosting subdirectory. The target must use Storybook 11 (`11.0.0-rc.1` or later) and serve `project.json`, a version 5 `index.json`, and `iframe.html`. The exporter checks the metadata before visiting a story because older previews may run play functions despite `embed=true`. Rebuild older hosted Storybooks with the current Storybook version. Query parameters and fragments in `--url` are discarded. For a Storybook behind interactive authentication, run an accessible local instance.
+
+The default viewport is 1280 × 800 pixels. Use `--width` and `--height` to select another viewport, and `--timeout` to change the 30,000 millisecond time limit per story:
+
+```shell
+npx storybook export --format claude-design --url http://localhost:6006 --output-file mobile-design.zip --width 390 --height 844 --timeout 60000
+```
+
+The ZIP contains:
+
+- `canvas.json`: artboard files, titles, dimensions, and positions, grouped by component.
+- `story-*.dc.html`: editable text and DOM elements with captured styles and form values.
+- `assets/`: referenced images and fonts, shared across artboards.
+- `storybook.json`: original story IDs and their corresponding artboard files.
+- `README.md`: the import instructions and fidelity limits.
+
+## Import into Claude Design
+
+Attach the ZIP to a Claude chat with Design support. Ask Claude to create a new Design artifact using every supplied artboard, preserving the DOM, text, styles, assets, dimensions, and canvas positions. Have it adapt the canvas metadata to its current format and supply its own editor runtime and Content Security Policy. The archive does not redistribute Claude's runtime.
+
+Check that the variants occupy separate artboards on one canvas, then edit a text element directly. Review fonts, images, and layout against Storybook before continuing the design.
+
+This is a manual import workflow. It does not call a Claude upload API or promise compatibility with an undocumented native project format. Claude may need to translate the canvas metadata and HTML wrapper.
+
+## What is captured
+
+The artboards preserve the initial rendered visual state at the chosen viewport, including text, DOM elements, computed styles, CSS pseudo-elements, images, CSS-declared fonts, form values, and content rendered into the document body outside the story root. Password and file input values are omitted.
+
+The exporter waits for Storybook's render-complete event, images, and fonts. It disables play functions and captures stories sequentially. Stories that mount only inside `play` need an ordinary initial render before they can be exported. Story loaders, decorators, and rendering code still execute, just as they do when opening a story in a browser.
+
+Application logic, event handlers, hover states, responsive CSS rules, and component source are not included. Exported controls are visual starting points. Edits in Claude do not synchronize back to Storybook. Re-export to a new ZIP to capture library changes; existing design edits are not merged.
+
+Canvas, audio, video, iframes, embedded objects, shadow DOM, SVG animation, external SVG `use` references, programmatic `FontFace` fonts, and blob URLs cannot be preserved by this exporter. These cause the export to fail with a story-specific error. Use ordinary DOM, inline SVG symbols, CSS `@font-face`, and HTTP or data resources for exportable variants. CSS `image-set` URLs must use `url()` syntax.
+
+## Failed or interrupted exports
+
+The command creates the archive only after all stories and resources have been captured. An existing output file is never overwritten, including when two exports target the same filename. The parent output directory must already exist. Capture failures, missing resources, and cancellation do not publish a partial archive. Cancellation before the final publication step leaves no ZIP. Once that atomic step starts, the command finishes publication and cleanup and reports the complete archive as a success.
+
+The uncompressed archive is limited to 256 MiB. If the limit is exceeded, reduce the library or asset sizes. A story timeout closes the export's browser and cancels outstanding resource requests. Fix the reported story or increase `--timeout` before trying again.
+
+Review the captured story content and asset/font licenses before sharing the ZIP.

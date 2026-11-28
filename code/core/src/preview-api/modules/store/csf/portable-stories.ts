@@ -132,11 +132,11 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
 
   const reporting = new ReporterAPI();
 
-  const initializeContext = () => {
+  const initializeContext = (extraArgs?: Partial<TArgs>) => {
     const context: StoryContextWithArgTypes<TRenderer> = prepareContext({
       hooks: new HooksContext(),
       globals,
-      args: { ...story.initialArgs },
+      args: { ...story.initialArgs, ...extraArgs },
       viewMode: 'story',
       reporting,
       loaded: {},
@@ -230,14 +230,10 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
 
   const composedStory: ComposedStoryFn<TRenderer, Partial<TArgs>> = Object.assign(
     function storyFn(extraArgs?: Partial<TArgs>) {
-      const context = initializeContext();
+      const context = initializeContext(extraArgs);
       if (loadedContext) {
         context.loaded = loadedContext.loaded;
       }
-      context.args = {
-        ...context.initialArgs,
-        ...extraArgs,
-      };
       return story.unboundStoryFn(context);
     },
     {

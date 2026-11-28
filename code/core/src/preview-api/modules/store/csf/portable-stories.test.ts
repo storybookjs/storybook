@@ -156,6 +156,27 @@ describe('composeStory', () => {
     expect(decoratorFromStoryAnnotations).toHaveBeenCalledOnce();
   });
 
+  it('should map args and leave out conditional args when the story is called', () => {
+    const Story: Story = {
+      render: (args) => args,
+      args: { label: 'Bold', advanced: false, extra: 'advanced only' },
+      argTypes: {
+        label: { options: ['Normal', 'Bold'], mapping: { Bold: 'mapped bold' } },
+        extra: { if: { arg: 'advanced' } },
+      },
+    };
+
+    const composedStory = composeStory(Story, meta);
+
+    expect(composedStory()).toEqual({ label: 'mapped bold', primary: true, advanced: false });
+    expect(composedStory({ advanced: true })).toEqual({
+      label: 'mapped bold',
+      primary: true,
+      advanced: true,
+      extra: 'advanced only',
+    });
+  });
+
   it('should compose with a play function', async () => {
     const spy = vi.fn();
     const Story: Story = () => {};

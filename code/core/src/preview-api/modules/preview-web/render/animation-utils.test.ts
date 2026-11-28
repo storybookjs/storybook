@@ -204,6 +204,56 @@ describe('pauseAnimations', () => {
     expect(animation.play).toHaveBeenCalledTimes(1);
     expect(animation.playState).toBe('running');
   });
+
+  test('does not restart CSS transitions that pauseAnimations finished', () => {
+    const transition = new TestCSSTransition();
+    transition.currentTime = 40;
+    stubAnimations(document, [transition]);
+
+    restore = pauseAnimations(true);
+    expect(transition.finish).toHaveBeenCalledTimes(1);
+    expect(transition.playState).toBe('finished');
+    const timeAfterFinish = transition.currentTime;
+
+    restore();
+    restore = () => {};
+
+    expect(transition.play).not.toHaveBeenCalled();
+    expect(transition.playState).toBe('finished');
+    expect(transition.currentTime).toBe(timeAfterFinish);
+  });
+
+  test('does not restart idle animations during cleanup', () => {
+    const animation = new TestCSSAnimation();
+    animation.currentTime = 40;
+    stubAnimations(document, [animation]);
+
+    restore = pauseAnimations();
+    animation.playState = 'idle';
+
+    restore();
+    restore = () => {};
+
+    expect(animation.play).not.toHaveBeenCalled();
+    expect(animation.playState).toBe('idle');
+  });
+
+  test('restores CSS transitions that were only paused, not finished', () => {
+    const transition = new TestCSSTransition();
+    transition.currentTime = 40;
+    stubAnimations(document, [transition]);
+
+    restore = pauseAnimations(false);
+    expect(transition.playState).toBe('paused');
+    expect(transition.currentTime).toBe(0);
+
+    restore();
+    restore = () => {};
+
+    expect(transition.currentTime).toBe(40);
+    expect(transition.play).toHaveBeenCalledTimes(1);
+    expect(transition.playState).toBe('running');
+  });
 });
 
 describe('waitForAnimations', () => {

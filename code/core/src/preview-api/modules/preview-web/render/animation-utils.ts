@@ -67,6 +67,12 @@ export function pauseAnimations(atEnd = true): CleanupCallback {
     while (previousStates.length > 0) {
       const { animation, playState, currentTime } = previousStates.pop()!;
       try {
+        if (
+          animation.playState === 'idle' ||
+          (animation instanceof CSSTransition && animation.playState === 'finished')
+        ) {
+          continue;
+        }
         animation.currentTime = currentTime;
         if (playState === 'paused') {
           animation.pause();

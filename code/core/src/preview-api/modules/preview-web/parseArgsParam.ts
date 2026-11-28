@@ -20,6 +20,12 @@ const validateArgs = (key = '', value: unknown): boolean => {
     return false;
   }
 
+  // `__proto__` passes VALIDATION_REGEXP, but assigning it back reaches the
+  // setter inherited from `Object.prototype` instead of adding an entry.
+  if (key === '__proto__') {
+    return false;
+  }
+
   if (value === null || value === undefined) {
     return true;
   } // encoded as `!null` or `!undefined` // encoded as `!null` or `!undefined`

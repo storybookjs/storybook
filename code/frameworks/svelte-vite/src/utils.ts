@@ -1,5 +1,6 @@
 import { SvelteViteWithSvelteKitError } from 'storybook/internal/server-errors';
 import type { Options } from 'storybook/internal/types';
+import { normalizePath } from 'vite';
 
 import { hasVitePlugins } from '@storybook/builder-vite';
 
@@ -24,7 +25,7 @@ export async function handleSvelteKit(plugins: PluginOption[], options: Options)
     'vite-plugin-sveltekit-compile',
   ]);
 
-  if (hasSvelteKitPlugins && !framework.includes('@storybook/sveltekit')) {
+  if (hasSvelteKitPlugins && !normalizePath(framework).includes('@storybook/sveltekit')) {
     throw new SvelteViteWithSvelteKitError();
   }
 }

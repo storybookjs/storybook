@@ -380,7 +380,7 @@ describe('manifests', () => {
         jsDocTags: {},
       }));
 
-      const storyDocsProvider = vi.fn<StoryDocsProvider>(async () => ({
+      const storyDocsProvider = vi.fn<StoryDocsProvider['extract']>(async () => ({
         id: 'button',
         name: 'Button',
         path: './button.stories.tsx',
@@ -490,7 +490,7 @@ describe('manifests', () => {
         },
       };
 
-      const storyDocsProvider = vi.fn<StoryDocsProvider>(async () => ({
+      const storyDocsProvider = vi.fn<StoryDocsProvider['extract']>(async () => ({
         id: 'billboard',
         name: 'Billboard',
         path: './billboard.stories.tsx',

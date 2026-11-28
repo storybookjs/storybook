@@ -1,5 +1,5 @@
 import { error, log, shouldLog } from '../logger/index.ts';
-import { getTerminalWidth, wrapTextForClack, wrapTextForClackHint } from '../wrap-utils.ts';
+import { getTerminalWidth, wrapTextForClack } from '../wrap-utils.ts';
 import { getPromptProvider } from './prompt-config.ts';
 import type {
   BasePromptOptions,
@@ -105,18 +105,7 @@ export const multiselect = async <T>(
   options: MultiSelectPromptOptions<T>,
   promptOptions?: PromptOptions
 ): Promise<T[]> => {
-  return getPromptProvider().multiselect(
-    {
-      ...options,
-      options: options.options.map((opt) => ({
-        ...opt,
-        hint: opt.hint
-          ? wrapTextForClackHint(opt.hint, undefined, opt.label || String(opt.value), 0)
-          : undefined,
-      })),
-    },
-    promptOptions
-  );
+  return getPromptProvider().multiselect(options, promptOptions);
 };
 
 export const spinner = (options: SpinnerOptions): SpinnerInstance => {

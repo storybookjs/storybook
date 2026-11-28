@@ -8,7 +8,7 @@ import { initTelemetryChannel, makePayload } from './telemetry-channel.ts';
 vi.mock('storybook/internal/telemetry', () => ({
   telemetry: vi.fn(),
   getLastEvents: vi.fn().mockResolvedValue({}),
-  getSessionId: vi.fn().mockResolvedValue('test-session-id'),
+  getSessionId: vi.fn().mockReturnValue('test-session-id'),
   isTelemetryModuleEnabled: vi.fn().mockReturnValue(true),
   setTelemetryEnabled: vi.fn(),
 }));

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { AddonVitestService } from 'storybook/internal/cli';
 import { type JsPackageManager, PackageManagerName } from 'storybook/internal/common';
@@ -57,7 +57,8 @@ describe('AddonConfigurationCommand', () => {
       mockPackageManager,
       { packageManager: PackageManagerName.NPM, yes: false, disableTelemetry: false },
       mockAddonVitestService,
-      mockTelemetryService
+      mockTelemetryService,
+      () => true
     );
 
     vi.clearAllMocks();
@@ -244,7 +245,8 @@ describe('AddonConfigurationCommand', () => {
         mockPackageManager,
         { packageManager: PackageManagerName.NPM, yes: true, disableTelemetry: false },
         mockAddonVitestService,
-        mockTelemetryService
+        mockTelemetryService,
+        () => true
       );
       vi.mocked(prompt.taskLog).mockReturnValue(mockTaskLog);
 
@@ -254,6 +256,64 @@ describe('AddonConfigurationCommand', () => {
       });
 
       expect(addonVitestPostinstall).toHaveBeenCalledWith(expect.objectContaining({ yes: true }));
+      expect(mockAddonVitestService.installPlaywright).toHaveBeenCalledWith({
+        yes: true,
+        useRemotePkg: false,
+      });
+    });
+  });
+
+  describe('Playwright question', () => {
+    const isTTYDescriptors = {
+      stdin: Object.getOwnPropertyDescriptor(process.stdin, 'isTTY'),
+      stdout: Object.getOwnPropertyDescriptor(process.stdout, 'isTTY'),
+    };
+
+    afterEach(() => {
+      for (const stream of ['stdin', 'stdout'] as const) {
+        const descriptor = isTTYDescriptors[stream];
+        if (descriptor) {
+          Object.defineProperty(process[stream], 'isTTY', descriptor);
+        } else {
+          Reflect.deleteProperty(process[stream], 'isTTY');
+        }
+      }
+      vi.unstubAllEnvs();
+    });
+
+    const configureVitestIn = async (terminal: { stdin: boolean; stdout: boolean; ci: string }) => {
+      Object.defineProperty(process.stdin, 'isTTY', { value: terminal.stdin, configurable: true });
+      Object.defineProperty(process.stdout, 'isTTY', {
+        value: terminal.stdout,
+        configurable: true,
+      });
+      vi.stubEnv('CI', terminal.ci);
+      vi.mocked(prompt.taskLog).mockReturnValue(mockTaskLog);
+
+      await new AddonConfigurationCommand(
+        mockPackageManager,
+        { packageManager: PackageManagerName.NPM, yes: false, disableTelemetry: false },
+        mockAddonVitestService,
+        mockTelemetryService
+      ).execute({ addons: ['@storybook/addon-vitest'], configDir: '.storybook' });
+    };
+
+    it('asks about Playwright when stdin and stdout are terminals', async () => {
+      await configureVitestIn({ stdin: true, stdout: true, ci: 'false' });
+
+      expect(mockAddonVitestService.installPlaywright).toHaveBeenCalledWith({
+        yes: false,
+        useRemotePkg: false,
+      });
+    });
+
+    it.each([
+      { when: 'stdin is not a terminal', stdin: false, stdout: true, ci: 'false' },
+      { when: 'stdout is not a terminal', stdin: true, stdout: false, ci: 'false' },
+      { when: 'CI is set', stdin: true, stdout: true, ci: 'true' },
+    ])('installs Playwright without asking when $when', async (terminal) => {
+      await configureVitestIn(terminal);
+
       expect(mockAddonVitestService.installPlaywright).toHaveBeenCalledWith({
         yes: true,
         useRemotePkg: false,

@@ -1,3 +1,20 @@
+## 11.0.0-rc.2
+
+- CLI: Fail init on a closed stdin and skip the Playwright question without a terminal - [#37814](https://github.com/storybookjs/storybook/pull/37814), thanks @jackeddisciple!
+- CLI: Offer agent skills for Astro - [#37519](https://github.com/storybookjs/storybook/pull/37519), thanks @lukemcd!
+- CSF-tools: Let story-sort-to-main edit previews with unrelated named exports - [#37608](https://github.com/storybookjs/storybook/pull/37608), thanks @lazerg!
+- Controls: Improve Object control JSON editor accessibility - [#37605](https://github.com/storybookjs/storybook/pull/37605), thanks @Sidnioulz!
+- Core: Upgrade Clack to 1.9.0 and keep the CLI prompt layout - [#36911](https://github.com/storybookjs/storybook/pull/36911), thanks @valentinpalkovic!
+- Docgen: Keep parsed files when heap pressure recycles a TypeScript program - [#37793](https://github.com/storybookjs/storybook/pull/37793), thanks @kasperpeulen!
+- Docs: Fill live story snippets on the server and in the manager - [#37205](https://github.com/storybookjs/storybook/pull/37205), thanks @JReinhold!
+- Preview: Respect prefers-reduced-motion when scrolling to an anchor - [#36155](https://github.com/storybookjs/storybook/pull/36155), thanks @TheSeydiCharyyev!
+- React: Remove unused React import from CLI templates - [#37799](https://github.com/storybookjs/storybook/pull/37799), thanks @jackeddisciple!
+- Sveltekit: Normalize framework path before check - [#37821](https://github.com/storybookjs/storybook/pull/37821), thanks @huang-julien!
+- Telemetry: Send events from a detached process so no command waits for the endpoint - [#36156](https://github.com/storybookjs/storybook/pull/36156), thanks @kasperpeulen!
+- Test: Replace the focus accessor with a writable wrapper - [#37066](https://github.com/storybookjs/storybook/pull/37066), thanks @valentinpalkovic!
+- Vitest: Autoinstall @types/node for Vitest addon - [#37810](https://github.com/storybookjs/storybook/pull/37810), thanks @huang-julien!
+- Web-components: Preserve HTML in "Show code" for string stories - [#35237](https://github.com/storybookjs/storybook/pull/35237), thanks @yatishgoel!
+
 ## 11.0.0-rc.1
 
 - Addon Vitest: Run selected story files as Vitest runs test files - [#37777](https://github.com/storybookjs/storybook/pull/37777), thanks @kasperpeulen!

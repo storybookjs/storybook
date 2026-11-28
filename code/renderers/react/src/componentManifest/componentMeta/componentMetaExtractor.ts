@@ -24,6 +24,7 @@
 import type ts from 'typescript';
 
 import { extractComponentJsDocInfo } from 'storybook/internal/component-meta';
+import type { JsDocTags } from 'storybook/internal/docs-tools';
 
 import type { ComponentRef, ResolvedComponentTarget } from '../types.ts';
 import { groupByToMap } from '../utils.ts';
@@ -51,6 +52,8 @@ export interface PropItem {
   required: boolean;
   type: PropItemType;
   description: string;
+  // Args-table callback tags; component-level jsDocTags stores raw tags.
+  jsDocTags?: JsDocTags;
   defaultValue: { value: string } | null;
   parent?: ParentType;
   declarations?: ParentType[];
@@ -1409,6 +1412,42 @@ function getJSDocDefault(
 // Single prop extraction
 // ---------------------------------------------------------------------------
 
+function extractPropJsDocTags(
+  typescript: DocgenTypeScript,
+  prop: ts.Symbol,
+  checker: DocgenTypeChecker
+): JsDocTags | undefined {
+  const jsDocTags: JsDocTags = {};
+  for (const { name, text } of prop.getJsDocTags(checker as ts.TypeChecker)) {
+    if (name === 'param') {
+      // The native adapter flattens the parameter name and description into one display part.
+      const parameterName = text?.find((part) => part.kind === 'parameterName');
+      const descriptionText = typescript.displayPartsToString(
+        text?.filter((part) => part !== parameterName)
+      );
+      const parameter = parameterName
+        ? [parameterName.text, descriptionText]
+        : descriptionText
+            .trim()
+            .match(/^(\S+)([\s\S]*)$/)
+            ?.slice(1);
+      if (parameter) {
+        const [paramName, description] = parameter;
+        (jsDocTags.params ??= []).push({
+          name: paramName,
+          description: description.trimStart().replace(/^- /, '').trim() || null,
+        });
+      }
+    } else if (name === 'returns' || name === 'return') {
+      jsDocTags.returns = {
+        description:
+          typescript.displayPartsToString(text).trimStart().replace(/^- /, '').trim() || null,
+      };
+    }
+  }
+  return Object.keys(jsDocTags).length > 0 ? jsDocTags : undefined;
+}
+
 function extractPropItem(
   typescript: DocgenTypeScript,
   checker: DocgenTypeChecker,
@@ -1434,6 +1473,8 @@ function extractPropItem(
     prop.getDocumentationComment(checker as ts.TypeChecker)
   );
 
+  const jsDocTags = extractPropJsDocTags(typescript, prop, checker);
+
   const parent = getParentType(typescript, prop);
   const declarations = getAllDeclarationParents(typescript, prop);
 
@@ -1448,6 +1489,7 @@ function extractPropItem(
     required: isRequired,
     type,
     description,
+    ...(jsDocTags ? { jsDocTags } : {}),
     defaultValue: defaultStr !== undefined ? { value: defaultStr } : null,
     parent,
     declarations,

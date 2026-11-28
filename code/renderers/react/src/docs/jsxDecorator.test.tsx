@@ -147,6 +147,20 @@ describe('renderJsx', () => {
 
       expect(renderJsx(<MyExoticComponentRef>I am forwardRef!</MyExoticComponentRef>))
         .toMatchInlineSnapshot(`
+          <MyExoticComponent>
+            I am forwardRef!
+          </MyExoticComponent>
+        `);
+    });
+
+    it('with an anonymous render function', () => {
+      // oxlint-disable-next-line react/display-name -- the render function is anonymous on purpose
+      const MyExoticComponentRef = React.forwardRef<FC, PropsWithChildren>((props, _ref) => (
+        <div>{props.children}</div>
+      ));
+
+      expect(renderJsx(<MyExoticComponentRef>I am forwardRef!</MyExoticComponentRef>))
+        .toMatchInlineSnapshot(`
           <React.ForwardRef>
             I am forwardRef!
           </React.ForwardRef>
@@ -195,9 +209,9 @@ describe('renderJsx', () => {
     });
 
     expect(renderJsx(<MyMemoComponentRef>I am memo!</MyMemoComponentRef>)).toMatchInlineSnapshot(`
-      <React.Memo>
+      <MyMemoComponent>
         I am memo!
-      </React.Memo>
+      </MyMemoComponent>
     `);
 
     // if docgenInfo is present, it should use the displayName from there
@@ -208,6 +222,33 @@ describe('renderJsx', () => {
       <MyMemoComponentRef>
         I am memo!
       </MyMemoComponentRef>
+    `);
+  });
+
+  it('memo component wrapping a forwardRef component', () => {
+    const MyMemoForwardRef: FC<PropsWithChildren> = React.memo(
+      React.forwardRef<FC, PropsWithChildren>(function MyForwardRefComponent(props, _ref) {
+        return <div>{props.children}</div>;
+      })
+    );
+
+    expect(renderJsx(<MyMemoForwardRef>I am memo!</MyMemoForwardRef>)).toMatchInlineSnapshot(`
+      <MyForwardRefComponent>
+        I am memo!
+      </MyForwardRefComponent>
+    `);
+  });
+
+  it('memo component with an anonymous inner component', () => {
+    // oxlint-disable-next-line react/display-name -- the inner component is anonymous on purpose
+    const MyMemoAnonymous: FC<PropsWithChildren> = React.memo((props: PropsWithChildren) => (
+      <div>{props.children}</div>
+    ));
+
+    expect(renderJsx(<MyMemoAnonymous>I am memo!</MyMemoAnonymous>)).toMatchInlineSnapshot(`
+      <React.Memo>
+        I am memo!
+      </React.Memo>
     `);
   });
 

@@ -5,6 +5,10 @@ import { vitestCommonConfig } from '../../vitest.shared';
 export default mergeConfig(
   vitestCommonConfig,
   defineConfig({
-    // Add custom config here
+    test: {
+      typecheck: {
+        enabled: true,
+      },
+    },
   })
 );

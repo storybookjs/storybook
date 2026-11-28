@@ -14,7 +14,10 @@ export type ParsedDocgen = {
       type?: string;
       defaultValue?: string;
       required?: boolean;
-      /** Per-prop JSDoc tags from server docgen (`reactComponentMeta`). */
+      /**
+       * Per-prop JSDoc tags from `reactComponentMeta.jsDocTags` or, when present,
+       * react-docgen-typescript `prop.tags` (with `shouldIncludePropTagMap`).
+       */
       tags?: Record<string, string[]>;
     }
   >;
@@ -60,7 +63,7 @@ type ComponentDoc = {
       required?: boolean;
       type?: { name?: string; raw?: string; value?: { value: string }[] };
       defaultValue?: { value?: string } | null;
-      jsDocTags?: Record<string, string[]>;
+      /** Present when RDT runs with `shouldIncludePropTagMap`. */
       tags?: Record<string, unknown>;
     }
   >;
@@ -82,9 +85,19 @@ const docgenTypeString = (propType?: {
   return propType?.raw ?? propType?.name;
 };
 
-// Storybook's `reactComponentMeta` payload is not the same full schema as
-// `react-docgen-typescript`'s `ComponentDoc`, but `props` has the same type shape.
-type ComponentDocLike = Pick<ComponentDoc, 'props' | 'tags'>;
+/**
+ * Shared shape for RDT `ComponentDoc` and Storybook `reactComponentMeta`.
+ * `jsDocTags` is the server-docgen field; RDT props may instead carry `tags`.
+ */
+type ComponentDocLike = {
+  tags?: Record<string, unknown>;
+  props?: Record<
+    string,
+    NonNullable<ComponentDoc['props']>[string] & {
+      jsDocTags?: Record<string, string[]>;
+    }
+  >;
+};
 
 // Serialize a react-docgen tsType into a TypeScript-like string when raw is not available
 function serializeTsType(tsType: PropDescriptor['tsType']): string | undefined {
@@ -176,24 +189,36 @@ const tagValues = (value: unknown): string[] => {
   return [typeof value === 'object' ? JSON.stringify(value) : String(value)];
 };
 
-const parsePropTags = (
-  prop: NonNullable<ComponentDoc['props']>[string]
-): Record<string, string[]> | undefined => {
-  const rawTags = prop.jsDocTags ?? prop.tags;
-  if (!rawTags) {
-    return undefined;
-  }
+const normalizeTags = (raw?: Record<string, unknown>): Record<string, string[]> | undefined => {
   const tags = Object.fromEntries(
-    Object.entries(rawTags).map(([tagName, value]) => [tagName, tagValues(value)])
+    Object.entries(raw ?? {}).map(([name, value]) => [name, tagValues(value)])
   );
   return Object.keys(tags).length > 0 ? tags : undefined;
 };
 
+const parsePropTags = (
+  prop: NonNullable<ComponentDocLike['props']>[string]
+): Record<string, string[]> | undefined => {
+  if (prop.jsDocTags) {
+    return normalizeTags(prop.jsDocTags);
+  }
+  if (!prop.tags) {
+    return undefined;
+  }
+  // RDT with shouldIncludePropTagMap joins repeated @tag values with '\n'.
+  // Expand those back to one entry each so docs-show prints `@example` per occurrence.
+  const expanded = Object.fromEntries(
+    Object.entries(prop.tags).map(([name, value]) => [
+      name,
+      typeof value === 'string' ? value.split('\n') : value,
+    ])
+  );
+  return normalizeTags(expanded);
+};
+
 const parseComponentDocLike = (componentDoc: ComponentDocLike): ParsedDocgen => {
   const props = componentDoc.props ?? {};
-  const tags = Object.fromEntries(
-    Object.entries(componentDoc.tags ?? {}).map(([tagName, value]) => [tagName, tagValues(value)])
-  );
+  const tags = normalizeTags(componentDoc.tags);
   const parsedDocgen: ParsedDocgen = {
     props: Object.fromEntries(
       Object.entries(props).map(([propName, prop]) => {
@@ -215,7 +240,7 @@ const parseComponentDocLike = (componentDoc: ComponentDocLike): ParsedDocgen => 
     ),
   };
 
-  if (Object.keys(tags).length > 0) {
+  if (tags) {
     parsedDocgen.tags = tags;
   }
 

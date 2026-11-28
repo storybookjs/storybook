@@ -1360,9 +1360,6 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
 
       const result = formatComponentManifest(manifest);
 
-      expect(result).toContain('@example "4"');
-      expect(result).toContain('@example { initial: "2", md: "4" }');
-      expect(result).toContain('@example "column"');
       expect(result).toMatchInlineSnapshot(`
         "# Stack
 
@@ -1376,16 +1373,50 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
            * Space between children, from the spacing scale.
            * @example "4"
            * @example { initial: "2", md: "4" }
-          */
+           */
           gap?: string | Record<string, string> = 0;
           /**
            * Main axis.
            * @example "column"
-          */
+           */
           direction?: "row" | "column" = row;
         }
         \`\`\`"
       `);
+    });
+
+    it('prints each RDT-joined prop.tags example as its own @example (#37540)', () => {
+      // Builder RDT path: shouldIncludePropTagMap joins repeated tags with '\n'.
+      // parseReactDocgenTypescript expands them before formatting.
+      const manifest: ComponentManifest = {
+        id: 'stack',
+        name: 'Stack',
+        path: 'src/components/Stack.tsx',
+        reactDocgenTypescript: {
+          displayName: 'Stack',
+          filePath: 'src/components/Stack.tsx',
+          description: '',
+          methods: [],
+          props: {
+            gap: {
+              name: 'gap',
+              description: 'Space between children.',
+              type: { name: 'string' },
+              defaultValue: null,
+              required: false,
+              tags: {
+                example: '"4"\n{ initial: "2", md: "4" }',
+              },
+            },
+          },
+        },
+      };
+
+      const result = formatComponentManifest(manifest);
+
+      expect(result).toContain('   * @example "4"');
+      expect(result).toContain('   * @example { initial: "2", md: "4" }');
+      expect(result).not.toContain('\n   * { initial: "2", md: "4" }\n');
     });
 
     it('should omit props section when reactDocgen is not present', () => {

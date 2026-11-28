@@ -1,5 +1,5 @@
 /**
- * Canonical component-level JSDoc extraction for the TS-backed docgen providers.
+ * Canonical symbol-level (component or member) JSDoc extraction for the TS-backed docgen providers.
  *
  * TypeScript's own JSDoc semantics are the contract: whatever `getDocumentationComment` /
  * `getJsDocTags` report is what Storybook documents, matching IDE hovers. Notably, a bare

@@ -1392,19 +1392,20 @@ function extractStaticDefaultProps(
   return defaults;
 }
 
-/** Extracts a default value from JSDoc @default / @defaultValue tags on a prop's declaration. */
-function getJSDocDefault(
-  typescript: DocgenTypeScript,
-  prop: ts.Symbol,
-  checker: DocgenTypeChecker
-): string | undefined {
-  const tags = prop.getJsDocTags(checker as ts.TypeChecker);
-  for (const tag of tags) {
-    if (tag.name === 'default' || tag.name === 'defaultValue') {
-      return typescript.displayPartsToString(tag.text) || undefined;
-    }
-  }
-  return undefined;
+/**
+ * Tag names dropped by open-service state. Keep in sync with `FORBIDDEN_KEYS` in
+ * `code/core/src/shared/open-service/plain-object.ts` (renderer cannot import that module).
+ * Filtering here avoids empty `jsDocTags: {}` after those keys are stripped later.
+ */
+const DROPPED_PROP_JSDOC_TAG_NAMES = new Set(['__proto__', 'constructor', 'prototype']);
+
+function getSafePropJsDocTags(
+  jsDocTags: Record<string, string[]>
+): Record<string, string[]> | undefined {
+  const safeTags = Object.fromEntries(
+    Object.entries(jsDocTags).filter(([name]) => !DROPPED_PROP_JSDOC_TAG_NAMES.has(name))
+  );
+  return Object.keys(safeTags).length > 0 ? safeTags : undefined;
 }
 
 // ---------------------------------------------------------------------------
@@ -1437,11 +1438,12 @@ function extractPropItem(
   const parent = getParentType(typescript, prop);
   const declarations = getAllDeclarationParents(typescript, prop);
 
-  // Default value: prefer destructuring default, then JSDoc @default
+  // Default value: prefer destructuring default, then JSDoc @default / @defaultValue
   const propName = prop.getName();
   const destructuringDefault = defaultsMap?.get(propName);
-  const jsDocDefault = getJSDocDefault(typescript, prop, checker);
+  const jsDocDefault = jsDocTags.default?.[0] || jsDocTags.defaultValue?.[0] || undefined;
   const defaultStr = destructuringDefault ?? jsDocDefault;
+  const safeJsDocTags = getSafePropJsDocTags(jsDocTags);
 
   return {
     name: propName,
@@ -1451,7 +1453,7 @@ function extractPropItem(
     defaultValue: defaultStr !== undefined ? { value: defaultStr } : null,
     parent,
     declarations,
-    ...(Object.keys(jsDocTags).length > 0 ? { jsDocTags } : {}),
+    ...(safeJsDocTags ? { jsDocTags: safeJsDocTags } : {}),
   };
 }
 

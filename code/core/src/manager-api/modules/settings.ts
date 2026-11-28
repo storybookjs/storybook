@@ -16,8 +16,10 @@ export interface SubAPI {
    *
    * @param path - The path of the settings page to navigate to. The path NOT should include the
    *   `/settings` prefix.
+   * @param options - Pass `{ replace: true }` to replace the current history entry instead of
+   *   adding one.
    */
-  changeSettingsTab: (path: string) => void;
+  changeSettingsTab: (path: string, options?: { replace?: boolean }) => void;
   /** Closes the settings screen and returns to the last tracked story or the first story. */
   closeSettings: () => void;
   /**
@@ -32,7 +34,12 @@ export interface SubState {
   settings: API_Settings;
 }
 
-export const init: ModuleFn<SubAPI, SubState> = ({ store, navigate, fullAPI }): any => {
+export const init: ModuleFn<SubAPI, SubState> = ({
+  store,
+  navigate,
+  fullAPI,
+  path: initialPath,
+}): any => {
   const isSettingsScreenActive = () => {
     const { path } = fullAPI.getUrlState();
     return !!(path || '').match(/^\/settings/);
@@ -49,8 +56,8 @@ export const init: ModuleFn<SubAPI, SubState> = ({ store, navigate, fullAPI }): 
         fullAPI.selectFirstStory();
       }
     },
-    changeSettingsTab: (path: string) => {
-      navigate(`/settings/${path}`);
+    changeSettingsTab: (path: string, options?: { replace?: boolean }) => {
+      navigate(`/settings/${path}`, options);
     },
     isSettingsScreenActive,
     retrieveSelection() {
@@ -70,5 +77,14 @@ export const init: ModuleFn<SubAPI, SubState> = ({ store, navigate, fullAPI }): 
   return {
     state: { settings: { lastTrackedStoryId: null } },
     api,
+    init: () => {
+      // The settings page lives under `/settings/`. Without the trailing slash the path matches
+      // neither the settings page nor the preview, which leaves the main area empty.
+      // This only checks the path the manager was loaded with. Navigating to `/settings` later,
+      // from inside the app, is not handled here.
+      if (initialPath === '/settings') {
+        navigate('/settings/', { replace: true });
+      }
+    },
   };
 };

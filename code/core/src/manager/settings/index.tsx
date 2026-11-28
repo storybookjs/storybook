@@ -42,10 +42,10 @@ const RouteWrapper: FC<{ children: ReactNode; path: string }> = ({ children, pat
   );
 };
 
-const Pages: FC<{
+export const Pages: FC<{
   onClose: () => void;
   enableShortcuts?: boolean;
-  changeTab: (tab: string) => void;
+  changeTab: (tab: string, options?: { replace?: boolean }) => void;
   enableWhatsNew: boolean;
 }> = ({ changeTab, onClose, enableShortcuts = true, enableWhatsNew }) => {
   React.useEffect(() => {
@@ -145,7 +145,9 @@ const Pages: FC<{
               </>
             }
             selected={selected}
-            onSelectionChange={changeTab}
+            // With no tab in the URL (`/settings/`), the tab list selects the first tab by itself.
+            // Replace the history entry then, so Back skips the tab-less URL.
+            onSelectionChange={(tab) => changeTab(tab, { replace: !selected })}
           />
         );
       }}
@@ -156,7 +158,8 @@ const Pages: FC<{
 const SettingsPages: FC = () => {
   const api = useStorybookApi();
   const state = useStorybookState();
-  const changeTab = (tab: string) => api.changeSettingsTab(tab);
+  const changeTab = (tab: string, options?: { replace?: boolean }) =>
+    api.changeSettingsTab(tab, options);
 
   return (
     <Pages

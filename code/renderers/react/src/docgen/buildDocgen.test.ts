@@ -97,6 +97,10 @@ describe('buildDocgenPayload', () => {
       const meta = payload!.reactComponentMeta as ComponentDoc | undefined;
       expect(Object.keys(meta?.props ?? {}).sort()).toEqual(['disabled', 'label']);
       expect(meta?.props.label.required).toBe(true);
+      // Docgen payloads must stay portable: no absolute paths from the build machine.
+      expect(path.isAbsolute(meta?.filePath ?? '')).toBe(false);
+      expect(path.isAbsolute(meta?.props.label.parent?.fileName ?? '')).toBe(false);
+      expect(meta?.props.label.declarations?.every((d) => !path.isAbsolute(d.fileName))).toBe(true);
       expect(payload!.argTypes?.label).toMatchObject({
         name: 'label',
         type: { name: 'string', required: true },

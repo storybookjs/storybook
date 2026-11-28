@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
+import type { PreparedStory } from 'storybook/internal/types';
+
 import { parseArgsParam } from '../preview-web/parseArgsParam.ts';
 import { ArgsStore } from './ArgsStore.ts';
 
@@ -227,17 +229,60 @@ describe('ArgsStore', () => {
       expect(store.get('id')).toEqual({ code: '007', month: '03', count: 1.5 });
     });
 
+    it('keeps Date args parsed from the URL instead of turning them into empty objects or dropping them', () => {
+      const store = new ArgsStore();
+      const initialDate = new Date('2010-02-01T00:00:00.000Z');
+      const urlDate = new Date('2024-01-02T03:04:05.000Z');
+      const story = {
+        id: 'id',
+        initialArgs: { inferredDate: initialDate, typedDate: initialDate },
+        argTypes: {
+          inferredDate: { control: { type: 'date' }, type: { name: 'object', value: {} } },
+          typedDate: { control: { type: 'date' }, type: { name: 'date' } },
+        },
+      } as unknown as PreparedStory;
+      store.setInitial(story);
+
+      store.updateFromPersisted(
+        story,
+        parseArgsParam(
+          'inferredDate:!date(2024-01-02T03:04:05.000Z);typedDate:!date(2024-01-02T03:04:05.000Z)'
+        )
+      );
+      expect(store.get('id')).toEqual({ inferredDate: urlDate, typedDate: urlDate });
+
+      store.updateFromPersisted(
+        story,
+        parseArgsParam('inferredDate:1704164645000;typedDate:1704164645000')
+      );
+      expect(store.get('id')).toEqual({
+        inferredDate: 1704164645000,
+        typedDate: 1704164645000,
+      });
+    });
+
     // Server docgen keeps `argTypes` annotation-only, so a plain `args` entry arrives here without
     // a type and would be dropped rather than applied.
     describe('with docgenServer', () => {
       it('types args from their initial value when the story declares no argTypes', () => {
         vi.stubGlobal('FEATURES', { docgenServer: true });
         const store = new ArgsStore();
-        const story = { id: 'id', initialArgs: { a: 'Button', b: 1 }, argTypes: {} } as any;
+        const urlDate = new Date('2024-01-02T03:04:05.000Z');
+        const story = {
+          id: 'id',
+          initialArgs: { a: 'Button', b: 1, c: new Date('2010-02-01T00:00:00.000Z') },
+          argTypes: {},
+        } as unknown as PreparedStory;
         store.setInitial(story);
 
-        store.updateFromPersisted(story, { a: 'Hello world', b: '42' });
-        expect(store.get('id')).toEqual({ a: 'Hello world', b: 42 });
+        store.updateFromPersisted(
+          story,
+          parseArgsParam('a:Hello+world;b:42.0;c:!date(2024-01-02T03:04:05.000Z)')
+        );
+        expect(store.get('id')).toEqual({ a: 'Hello world', b: 42, c: urlDate });
+
+        store.updateFromPersisted(story, parseArgsParam('c:1704164645000'));
+        expect(store.get('id')).toEqual({ a: 'Hello world', b: 42, c: 1704164645000 });
       });
     });
   });

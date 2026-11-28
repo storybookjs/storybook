@@ -28,16 +28,32 @@ const HEADER = [
   'Delete this file when you are done.',
 ].join('\n');
 
+// oxfmt (and other Markdown formatters) require every row of a table to share one column width,
+// so the generated file must emit padded cells to stay lint-clean.
+const renderTable = (rows: [string, string][]) => {
+  const widths = [
+    Math.max('File'.length, ...rows.map(([file]) => file.length)),
+    Math.max('Reason'.length, ...rows.map(([, reason]) => reason.length)),
+  ];
+  const row = ([file, reason]: [string, string]) =>
+    `| ${file.padEnd(widths[0])} | ${reason.padEnd(widths[1])} |`;
+  return [
+    row(['File', 'Reason']),
+    `| ${'-'.repeat(widths[0])} | ${'-'.repeat(widths[1])} |`,
+    ...rows.map(row),
+  ].join('\n');
+};
+
 const renderSections = (failures: FixFileFailure[], root: string) =>
   [...Map.groupBy(failures, ({ fixId }) => fixId)].map(([fixId, fixFailures]) =>
     [
       `## ${fixId}`,
       '',
-      '| File | Reason |',
-      '| ---- | ------ |',
-      ...fixFailures.map(
-        ({ file, message }) =>
-          `| \`${cell(slash(relative(root, file)))}\` | ${cell(slash(message).replaceAll(`${slash(root)}/`, ''))} |`
+      renderTable(
+        fixFailures.map(({ file, message }) => [
+          `\`${cell(slash(relative(root, file)))}\``,
+          cell(slash(message).replaceAll(`${slash(root)}/`, '')),
+        ])
       ),
     ].join('\n')
   );

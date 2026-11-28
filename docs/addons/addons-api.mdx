@@ -119,7 +119,7 @@ Get the manager and preview URLs for a story. URLs are relative to the current S
   - `base`: Return an absolute href based on the current origin or network address.
   - `inheritArgs`: Inherit args from the current URL. If `storyId` matches current story, `inheritArgs` defaults to true.
   - `inheritGlobals`: Inherit globals from the current URL. Defaults to true.
-  - `queryParams`: Additional query params to append to the URL (`args` and `globals` are merged when inheriting).
+  - `queryParams`: Additional query params to append to the URL (`args` and `globals` are merged when inheriting). Layout params such as `full`, `nav`, `panel`, `toolbar` and `path` apply to `managerHref` only.
   - `refId`: ID of the ref to get the URL for (for composed Storybooks)
   - `viewMode`: The view mode to use, defaults to 'story'.
 

@@ -10,6 +10,8 @@ export const createIndexer = (): Indexer => ({
     try {
       const { meta, stories } = await parseForIndexer(filename);
 
+      const metaTags = [...(meta.tags ?? []), SVELTE_CSF_V5_TAG];
+
       return stories.map((story) => {
         return {
           type: 'story',
@@ -19,6 +21,7 @@ export const createIndexer = (): Indexer => ({
           title: makeTitle(meta.title),
           ...(meta.metaId ? { metaId: meta.metaId } : {}),
           tags: [...(meta.tags ?? []), ...(story.tags ?? []), SVELTE_CSF_V5_TAG],
+          metaTags,
         } satisfies IndexInput;
       });
     } catch (error) {

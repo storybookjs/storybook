@@ -10,6 +10,7 @@ import type { IndexerOptions } from 'storybook/internal/types';
 
 import { createIndexer } from './index.ts';
 import { parseForIndexer } from './parser.ts';
+import { SVELTE_CSF_V5_TAG } from '../constants.ts';
 import { MissingModuleTagError } from '../utils/error/parser/extract/svelte.ts';
 
 vi.mock('./parser.ts', () => ({ parseForIndexer: vi.fn() }));
@@ -38,6 +39,25 @@ const catchError = (fn: () => unknown) => {
 describe('createIndexer', () => {
   beforeEach(() => {
     vi.mocked(logger.shouldLog).mockReturnValue(false);
+  });
+
+  it('gives every story the tags of the meta as metaTags', async () => {
+    vi.mocked(parseForIndexer).mockResolvedValue({
+      meta: { title: 'Button', tags: ['autodocs', '!manifest'] },
+      stories: [
+        { exportName: 'Primary', name: 'Primary', tags: ['!dev'] },
+        { exportName: 'Secondary', name: 'Secondary', tags: [] },
+      ],
+    });
+
+    const inputs = await createIndexer().createIndex(FILENAME, {
+      makeTitle: (title) => title ?? '',
+    } as IndexerOptions);
+
+    expect(inputs.map((input) => input.metaTags)).toEqual([
+      ['autodocs', '!manifest', SVELTE_CSF_V5_TAG],
+      ['autodocs', '!manifest', SVELTE_CSF_V5_TAG],
+    ]);
   });
 
   it('rethrows a Svelte CSF error as it is', async () => {

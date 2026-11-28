@@ -2406,6 +2406,8 @@ describe('CsfFile', () => {
             - component-tag
             - story-tag
             - play-fn
+          metaTags:
+            - component-tag
           __id: component-id--a
           __stats:
             factory: false
@@ -2428,6 +2430,8 @@ describe('CsfFile', () => {
             - component-tag
             - story-tag
             - play-fn
+          metaTags:
+            - component-tag
           __id: component-id--b
           __stats:
             factory: false
@@ -2467,6 +2471,8 @@ describe('CsfFile', () => {
           title: custom foo title
           metaId: component-id
           tags:
+            - component-tag
+          metaTags:
             - component-tag
           __id: custom-story-id
           __stats:
@@ -2512,6 +2518,11 @@ describe('CsfFile', () => {
             - story-tag
             - story-tag-dup
             - story-tag-dup
+            - inherit-tag-dup
+          metaTags:
+            - component-tag
+            - component-tag-dup
+            - component-tag-dup
             - inherit-tag-dup
           __id: custom-foo-title--a
           __stats:
@@ -2573,6 +2584,7 @@ describe('CsfFile', () => {
         - exportName: A
           title: custom foo title
           tags: []
+          metaTags: []
           __id: custom-foo-title--a
           __stats:
             factory: false
@@ -2612,6 +2624,7 @@ describe('CsfFile', () => {
         - exportName: A
           title: custom foo title
           tags: []
+          metaTags: []
           __id: custom-foo-title--a
           __stats:
             factory: false
@@ -2651,6 +2664,7 @@ describe('CsfFile', () => {
           exportName: A
           title: custom foo title
           tags: []
+          metaTags: []
           __id: custom-foo-title--a
           __stats:
             factory: false
@@ -2690,6 +2704,7 @@ describe('CsfFile', () => {
           exportName: A
           title: custom foo title
           tags: []
+          metaTags: []
           __id: custom-foo-title--a
           __stats:
             factory: false

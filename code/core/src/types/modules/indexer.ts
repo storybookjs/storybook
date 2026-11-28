@@ -133,6 +133,11 @@ export type BaseIndexInput = {
   /** Tags for filtering entries in Storybook and its tools. */
   tags?: Tag[];
   /**
+   * The tags of the meta alone, before any story adds or removes tags. Docs entries of the file take
+   * their tags from here. If unspecified, they take the {@link tags} of the file's first entry.
+   */
+  metaTags?: Tag[];
+  /**
    * The id of the entry, auto-generated from {@link title}/{@link metaId} and {@link exportName} if
    * unspecified. If specified, the story in the CSF file _must_ have a matching id set at
    * `parameters.__id`, to be correctly matched. Only use this if you need to override the

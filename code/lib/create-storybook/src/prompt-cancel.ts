@@ -1,3 +1,5 @@
+import { type PromptCancelReason, logger } from 'storybook/internal/node-logger';
+
 import type { TelemetryService } from './services/TelemetryService.ts';
 
 const PROMPT_CANCEL_TIMEOUT_MS = 2_000;
@@ -6,7 +8,12 @@ export const createPromptCancelOptions = (
   telemetryService: Pick<TelemetryService, 'trackPromptCancel'>,
   promptName: string
 ) => ({
-  async onCancel() {
+  async onCancel(reason: PromptCancelReason) {
+    if (reason === 'stdin-ended') {
+      logger.error('Prompt aborted: stdin ended before an answer was received.');
+      process.exit(1);
+    }
+
     let timeout: ReturnType<typeof setTimeout> | undefined;
     const timeoutPromise = new Promise<void>((resolve) => {
       timeout = setTimeout(resolve, PROMPT_CANCEL_TIMEOUT_MS);

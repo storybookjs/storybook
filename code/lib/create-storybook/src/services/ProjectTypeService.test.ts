@@ -19,6 +19,7 @@ describe('ProjectTypeService', () => {
     } as unknown as JsPackageManager;
     vi.spyOn(logger, 'error').mockImplementation(() => undefined as any);
     vi.spyOn(logger, 'warn').mockImplementation(() => undefined as any);
+    vi.spyOn(logger, 'step').mockImplementation(() => {});
   });
 
   afterEach(() => {
@@ -354,8 +355,38 @@ describe('ProjectTypeService', () => {
 
           await expect(detect({ dependencies: { remix: tag } })).resolves.toBe(ProjectType.HTML);
           expect(pm.getDeclaredVersionSpecifier).toHaveBeenCalledWith('remix');
+          expect(logger.step).toHaveBeenCalledWith('Remix 3 detected, using the HTML renderer');
         }
       );
+
+      it('says that Remix 3 uses the HTML renderer', async () => {
+        await detect({ dependencies: { remix: '^3.0.0' } });
+
+        expect(logger.step).toHaveBeenCalledTimes(1);
+        expect(logger.step).toHaveBeenCalledWith('Remix 3 detected, using the HTML renderer');
+      });
+
+      it.each([
+        ['a Remix 2 project', { dependencies: { '@remix-run/dev': '^2.15.0', react: '^18.2.0' } }],
+        ['remix@2', { dependencies: { remix: '^2.0.0', react: '^18.2.0' } }],
+        ['a React project', { dependencies: { react: '^19.0.0' } }],
+      ])('does not mention Remix 3 for %s', async (_, packageJson) => {
+        await detect(packageJson);
+
+        expect(logger.step).not.toHaveBeenCalled();
+      });
+
+      it('does not mention Remix 3 when options.html skips detection', async () => {
+        pm.primaryPackageJson.packageJson = {
+          dependencies: { remix: '^3.0.0' },
+          devDependencies: {},
+        };
+
+        await expect(
+          new ProjectTypeService(pm).autoDetectProjectType({ html: true } as CommandOptions)
+        ).resolves.toBe(ProjectType.HTML);
+        expect(logger.step).not.toHaveBeenCalled();
+      });
 
       it('does not treat a remix dist-tag as Remix 3 when version 2 is installed', async () => {
         (pm.getDeclaredVersionSpecifier as any) = vi.fn(async () => '2.15.0');

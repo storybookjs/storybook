@@ -17,6 +17,7 @@ const packageManagerWith = (dependencies: Record<string, string>) =>
   ({
     isDependencyInstalled: (name: string) => name in dependencies,
     getDeclaredVersionSpecifier: async (name: string) => dependencies[name] ?? null,
+    getNearestDeclaredRange: (name: string) => dependencies[name] ?? null,
     addDependencies: vi.fn().mockResolvedValue(undefined),
     upgradeDeclaredDependency: vi.fn(),
   }) as unknown as JsPackageManager;
@@ -223,6 +224,39 @@ describe('typescript-compiler-api', () => {
 
   it('stays quiet for a renderer without TypeScript docgen', async () => {
     await expect(checkTs('@storybook/preact-vite', { typescript: '^7.0.2' })).resolves.toBeNull();
+  });
+
+  it('uses the installed TypeScript 6 when the app declares TypeScript 7', async () => {
+    vi.mocked(readTypeScriptPackageForDocgen).mockReturnValueOnce({
+      version: '6.0.2',
+      packageDir: '/project/node_modules/typescript',
+    });
+
+    await expect(
+      checkFix(typescriptCompilerApi, {
+        mainConfig: { framework: '@storybook/vue3-vite' } as StorybookConfigRaw,
+        packageManager: packageManagerWith({ typescript: '7.0.2' }),
+        configDir: '/project/.storybook',
+        ...upgrade,
+      } as CheckOptions)
+    ).resolves.toBeNull();
+  });
+
+  it('uses the installed TypeScript when the declared range is broad', async () => {
+    vi.mocked(readTypeScriptPackageForDocgen).mockReturnValueOnce({
+      version: '7.0.2',
+      packageDir: '/project/node_modules/typescript',
+    });
+    const packageManager = packageManagerWith({ typescript: '>=6' });
+
+    await expect(
+      checkFix(typescriptCompilerApi, {
+        mainConfig: { framework: '@storybook/vue3-vite' } as StorybookConfigRaw,
+        packageManager,
+        configDir: '/project/.storybook',
+        ...upgrade,
+      } as CheckOptions)
+    ).resolves.toEqual({ version: '7.0.2' });
   });
 });
 

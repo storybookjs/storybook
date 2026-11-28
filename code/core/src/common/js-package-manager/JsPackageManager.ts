@@ -362,6 +362,26 @@ export abstract class JsPackageManager {
   }
 
   /**
+   * Resolve the semver range declared in the package.json nearest to the command, or null when it
+   * has none. Unlike `getAllDependencies`, which merges manifests with the root winning, this keeps
+   * the workspace closest to the project. PNPMProxy resolves a `catalog:` reference to its range.
+   */
+  public getNearestDeclaredRange(packageName: string): string | null {
+    for (const packageJsonPath of this.packageJsonPaths) {
+      const packageJson = JsPackageManager.getPackageJson(packageJsonPath);
+      const declared =
+        packageJson.peerDependencies?.[packageName] ??
+        packageJson.devDependencies?.[packageName] ??
+        packageJson.dependencies?.[packageName];
+      if (declared) {
+        const range = this.getDeclaredRange(packageName, declared);
+        return range && validRange(range) ? range : null;
+      }
+    }
+    return null;
+  }
+
+  /**
    * Write `name@version` upgrade specifiers for dependencies that `declared` references through a
    * catalog into the catalog file, and return the remaining specifiers for package.json. Only
    * PNPMProxy supports catalogs, so the base implementation writes nothing and returns every

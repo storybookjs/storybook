@@ -92,6 +92,33 @@ describe('PNPMProxy catalogs', () => {
       expect(readFileSync).not.toHaveBeenCalledWith(WORKSPACE_YAML, expect.anything());
     });
 
+    it('uses the declared catalog version when installed copies are ignored', async () => {
+      vi.spyOn(pnpmProxy, 'getInstalledVersion').mockResolvedValue('7.0.2');
+      vi.mocked(pnpmProxy.getAllDependencies).mockRestore();
+      JsPackageManager.packageJsonCache.clear();
+      pnpmProxy.packageJsonPaths = ['/root/apps/web/package.json'];
+      vol.fromJSON({
+        '/root/apps/web/package.json': JSON.stringify({
+          devDependencies: { typescript: 'catalog:' },
+        }),
+        [WORKSPACE_YAML]: 'catalog:\n  typescript: 6.0.2\n',
+      });
+
+      await expect(pnpmProxy.getNearestDeclaredRange('typescript')).toBe('6.0.2');
+    });
+
+    it('uses the app declaration before a root declaration with real manifests', async () => {
+      vi.mocked(pnpmProxy.getAllDependencies).mockRestore();
+      JsPackageManager.packageJsonCache.clear();
+      pnpmProxy.packageJsonPaths = ['/root/apps/web/package.json', '/root/package.json'];
+      vol.fromJSON({
+        '/root/apps/web/package.json': JSON.stringify({ devDependencies: { typescript: '6.0.2' } }),
+        '/root/package.json': JSON.stringify({ devDependencies: { typescript: '7.0.2' } }),
+      });
+
+      await expect(pnpmProxy.getNearestDeclaredRange('typescript')).toBe('6.0.2');
+    });
+
     it('reads the default catalog when declared as "catalog:" and not installed', async () => {
       vi.spyOn(pnpmProxy, 'getAllDependencies').mockReturnValue({ vitest: 'catalog:' });
       vol.fromJSON({ [WORKSPACE_YAML]: 'catalog:\n  vitest: ^3.2.0\n' });

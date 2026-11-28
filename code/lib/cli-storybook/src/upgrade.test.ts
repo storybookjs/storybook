@@ -592,7 +592,7 @@ describe('withNpmForceFallback', () => {
     expect(installDependencies.mock.calls[0]).toEqual([]);
   });
 
-  it('retries npm with --legacy-peer-deps on a peer dependency conflict without --force', async () => {
+  it('retries npm with --force on a peer dependency conflict', async () => {
     const installDependencies = vi
       .fn()
       .mockRejectedValueOnce(new Error('npm error code ERESOLVE'))
@@ -601,24 +601,7 @@ describe('withNpmForceFallback', () => {
 
     await withNpmForceFallback(manager, installDependencies);
 
-    expect(installDependencies.mock.calls).toEqual([[], [{ legacyPeerDeps: true }]]);
-  });
-
-  it('retries npm with --force only after the --legacy-peer-deps retry fails', async () => {
-    const installDependencies = vi
-      .fn()
-      .mockRejectedValueOnce(new Error('npm error code ERESOLVE'))
-      .mockRejectedValueOnce(new Error('npm error code ERESOLVE'))
-      .mockResolvedValue(undefined);
-    const manager = { type: PackageManagerName.NPM } as unknown as JsPackageManager;
-
-    await withNpmForceFallback(manager, installDependencies);
-
-    expect(installDependencies.mock.calls).toEqual([
-      [],
-      [{ legacyPeerDeps: true }],
-      [{ force: true }],
-    ]);
+    expect(installDependencies.mock.calls).toEqual([[], [{ force: true }]]);
   });
 
   it('rethrows npm failures other than peer dependency conflicts without a second install', async () => {

@@ -95,11 +95,16 @@ export class VitestManager {
       ]),
     ];
 
-    const potentialConfigFileLocations = walk.up(packageRoot || process.cwd(), {
-      last: getProjectRoot(),
-    });
+    // The Storybook config dir itself comes last (e.g. `.storybook/vitest.config.ts`), so a config
+    // found in the package or above it keeps winning. Such a config is passed to Vitest as its
+    // config, with the package root as its root.
+    const potentialConfigFileLocations = [
+      ...walk.up(packageRoot || process.cwd(), { last: getProjectRoot() }),
+      ...(configDir ? [resolve(configDir)] : []),
+    ];
 
     let vitestConfigLocation: string | undefined;
+    let vitestConfigInConfigDir: string | undefined;
     let firstVitestConfig: string | undefined;
 
     for (const location of potentialConfigFileLocations) {
@@ -109,10 +114,18 @@ export class VitestManager {
           last: getProjectRoot(),
         });
         if (maybe && existsSync(maybe)) {
-          firstVitestConfig ??= dirname(maybe);
+          // Only the package and the folders above it give the fallback root, as before.
+          if (!configDir || location !== resolve(configDir)) {
+            firstVitestConfig ??= dirname(maybe);
+          }
           const content = readFileSync(maybe, 'utf8');
           if (content.includes('storybookTest') || content.includes('@storybook/addon-vitest')) {
-            vitestConfigLocation = dirname(maybe);
+            if (configDir && location === resolve(configDir)) {
+              vitestConfigInConfigDir = maybe;
+              vitestConfigLocation = packageRoot;
+            } else {
+              vitestConfigLocation = dirname(maybe);
+            }
             break;
           }
         }
@@ -129,6 +142,7 @@ export class VitestManager {
     try {
       this.vitest = await createVitest('test', {
         root: vitestConfigLocation ?? vitestConfigFallbackLocation,
+        ...(vitestConfigInConfigDir ? { config: vitestConfigInConfigDir } : {}),
         configLoader: this.testManager.configLoader,
         watch: true,
         passWithNoTests: false,

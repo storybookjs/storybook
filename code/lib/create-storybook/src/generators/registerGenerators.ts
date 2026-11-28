@@ -1,6 +1,7 @@
 import angularGenerator from './ANGULAR/index.ts';
 import astroGenerator from './ASTRO/index.ts';
-import emberGenerator from './EMBER/index.ts';
+// TODO(SB 11.1): re-enable Ember support once the community ember-storybook package supports SB11 — https://github.com/ember-integrations/ember-storybook/issues/123 (also merge https://github.com/ember-integrations/ember-storybook/pull/122) and it is released.
+// import emberGenerator from './EMBER/index.ts';
 import { generatorRegistry } from './GeneratorRegistry.ts';
 import htmlGenerator from './HTML/index.ts';
 import nextjsGenerator from './NEXTJS/index.ts';
@@ -31,7 +32,8 @@ const setOfGenerators = new Set<GeneratorModule>([
   nextjsGenerator,
   svelteGenerator,
   svelteKitGenerator,
-  emberGenerator,
+  // TODO(SB 11.1): re-enable Ember support once the community ember-storybook package supports SB11 — https://github.com/ember-integrations/ember-storybook/issues/123 (also merge https://github.com/ember-integrations/ember-storybook/pull/122) and it is released.
+  // emberGenerator,
   htmlGenerator,
   webComponentsGenerator,
   preactGenerator,

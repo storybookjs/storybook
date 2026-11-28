@@ -9,6 +9,7 @@ import { Option, program } from 'commander';
 import { version } from '../../package.json';
 import type { CommandOptions } from '../generators/types.ts';
 import { initiate } from '../initiate.ts';
+import { deferredProjectTypes } from '../services/ProjectTypeService.ts';
 import { isAgent, detectAgent } from 'std-env';
 
 addToGlobalContext('cliVersion', version);
@@ -50,7 +51,9 @@ const createStorybookProgram = program
   .addOption(
     new Option('--type <type>', 'Add Storybook for a specific project type').choices(
       Object.values(ProjectType).filter(
-        (type) => ![ProjectType.UNDETECTED, ProjectType.UNSUPPORTED, ProjectType.NX].includes(type)
+        (type) =>
+          ![ProjectType.UNDETECTED, ProjectType.UNSUPPORTED, ProjectType.NX].includes(type) &&
+          !deferredProjectTypes.has(type)
       )
     )
   )

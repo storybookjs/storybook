@@ -1,6 +1,19 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildDesignFiles, readStoryIndex } from './format.ts';
+import { buildDesignFiles, readStoryIndex, validatePreviewVersion } from './format.ts';
+
+describe('validatePreviewVersion', () => {
+  it.each([{}, { storybookVersion: '10.5.0' }, { storybookVersion: 'unknown' }])(
+    'rejects previews without the play suppression contract: %j',
+    (metadata) => {
+      expect(() => validatePreviewVersion(metadata)).toThrow(/disable play/);
+    }
+  );
+
+  it('accepts the preview version that implements embedded rendering without plays', () => {
+    expect(() => validatePreviewVersion({ storybookVersion: '11.0.0-rc.1' })).not.toThrow();
+  });
+});
 
 describe('readStoryIndex', () => {
   it('exports every story while excluding generated documentation pages', () => {

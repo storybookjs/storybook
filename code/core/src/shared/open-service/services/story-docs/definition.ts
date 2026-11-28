@@ -1,11 +1,16 @@
 import * as v from 'valibot';
 
-import { type SnippetTemplate, isSnippetTemplate } from '../../../../docs-tools/snippetTemplate.ts';
+import {
+  type SnippetTemplate,
+  getPrintHole,
+  isSnippetTemplate,
+} from '../../../../docs-tools/snippetTemplate.ts';
 
 import { defineService } from 'storybook/open-service';
 import type { ServiceInstanceOf } from '../../types.ts';
 import { readComponent } from '../component-state-key.ts';
 import type { StoryDocsById, StoryDocsPayload } from './types.ts';
+import { selectLiveSnippetForStory } from './live-snippet.ts';
 import { storyDocsQueryStaticPath } from './paths.ts';
 
 const storyDocsScopeSchema = v.picklist(['all', 'manifest']);
@@ -13,6 +18,29 @@ export type StoryDocsScope = v.InferOutput<typeof storyDocsScopeSchema>;
 
 const storyDocsQueryInputSchema = v.object({ id: v.string(), scope: storyDocsScopeSchema });
 const storyDocsCommandInputSchema = v.object({ id: v.string() });
+
+const argsSchema = v.record(v.string(), v.unknown());
+
+const liveSnippetInputSchema = v.object({
+  storyId: v.string(),
+  args: v.pipe(
+    argsSchema,
+    v.description(
+      'The args that differ from those the story is written with, by their new values. Every other arg keeps its text from the static snippet.'
+    )
+  ),
+  unset: v.optional(
+    v.pipe(
+      v.array(v.string()),
+      v.description('Names of args the story is written with that it no longer has.')
+    )
+  ),
+});
+
+const liveSnippetOutputSchema = v.object({
+  snippet: v.optional(v.string()),
+  warning: v.optional(v.string()),
+});
 
 const storyDocsErrorSchema = v.object({
   name: v.string(),
@@ -109,6 +137,21 @@ export const storyDocsServiceDef = defineService({
         await ctx.self.commands.extractStoryDocs({ id });
       },
       staticPath: (input) => storyDocsQueryStaticPath(input.id),
+    },
+    liveSnippet: {
+      description:
+        "Returns one story's snippet with `args` filled into its template by the renderer's hole printer, or its static snippet, with a warning when that does not follow `args`.",
+      input: liveSnippetInputSchema,
+      output: liveSnippetOutputSchema,
+      // No load of its own: each new `args` would be a new load key, and a load would extract the
+      // story docs again.
+      handler: (input, ctx) =>
+        selectLiveSnippetForStory(
+          ctx.self.queries.storyDocs.get({ id: input.storyId.split('--')[0]!, scope: 'all' }),
+          input.storyId,
+          { args: input.args, unset: input.unset },
+          getPrintHole()
+        ),
     },
     storyDocsForAllComponents: {
       description:

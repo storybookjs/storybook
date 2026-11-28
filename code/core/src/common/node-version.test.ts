@@ -9,6 +9,7 @@ vi.mock('./utils/paths.ts', () => ({
 
 import {
   MIN_SUPPORTED_NODE_DESCRIPTION,
+  MIN_SUPPORTED_TYPES_NODE_RANGE,
   formatMinVersion,
   isNodeVersionSupported,
 } from './node-version.ts';
@@ -81,6 +82,12 @@ describe('node-version', () => {
   describe('MIN_SUPPORTED_NODE_DESCRIPTION', () => {
     it('formats current minimum as human-readable string', () => {
       expect(MIN_SUPPORTED_NODE_DESCRIPTION).toBe('22.12+');
+    });
+  });
+
+  describe('MIN_SUPPORTED_TYPES_NODE_RANGE', () => {
+    it('pins @types/node to the lowest supported Node major', () => {
+      expect(MIN_SUPPORTED_TYPES_NODE_RANGE).toBe('^22');
     });
   });
 });

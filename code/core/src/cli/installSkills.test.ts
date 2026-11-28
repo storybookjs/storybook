@@ -80,6 +80,7 @@ describe('supportsSkills', () => {
     [SupportedRenderer.SVELTE, SupportedFramework.SVELTE_VITE, true],
     [SupportedRenderer.SVELTE, SupportedFramework.SVELTEKIT, true],
     [SupportedRenderer.WEB_COMPONENTS, SupportedFramework.WEB_COMPONENTS_VITE, true],
+    [SupportedRenderer.ASTRO, SupportedFramework.ASTRO, true],
     [SupportedRenderer.HTML, SupportedFramework.HTML_VITE, false],
     [undefined, undefined, false],
   ])('%s (%s) is %s', (renderer, framework, expected) => {

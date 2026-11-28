@@ -4,7 +4,7 @@ import os from 'node:os';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { JsPackageManager } from 'storybook/internal/common';
-import { getProjectRoot } from 'storybook/internal/common';
+import { MIN_SUPPORTED_TYPES_NODE_RANGE, getProjectRoot } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
 
 import * as find from 'empathic/find';
@@ -203,6 +203,46 @@ describe('AddonVitestService', () => {
 
       expect(deps).toContain('vitest@latest');
     });
+
+    it('adds @types/node pinned to the lowest supported Node major for TypeScript projects', async () => {
+      vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({ typescript: '^5' });
+
+      const deps = await service.collectDependencies();
+
+      // The generated Vitest config uses `node:path` and `import.meta.dirname`
+      expect(deps.filter((d) => d.startsWith('@types/node'))).toEqual([
+        `@types/node@${MIN_SUPPORTED_TYPES_NODE_RANGE}`,
+      ]);
+    });
+
+    it('adds an @types/node range that keeps the latest Vitest installable', async () => {
+      vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({ typescript: '^5' });
+
+      const deps = await service.collectDependencies();
+
+      const range = deps.find((d) => d.startsWith('@types/node@'))!.slice('@types/node@'.length);
+      expect(canInstallLatestVitest({ '@types/node': range })).toBe(true);
+    });
+
+    it('does not add @types/node if the project is not a TypeScript project', async () => {
+      const deps = await service.collectDependencies();
+
+      expect(deps.some((d) => d.startsWith('@types/node'))).toBe(false);
+    });
+
+    it.each(['^24', 'catalog:'])(
+      'does not add @types/node when the project already declares it (%s)',
+      async (typesNodeSpecifier) => {
+        vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({
+          typescript: '^5',
+          '@types/node': typesNodeSpecifier,
+        });
+
+        const deps = await service.collectDependencies();
+
+        expect(deps.some((d) => d.startsWith('@types/node'))).toBe(false);
+      }
+    );
   });
 
   describe('canInstallLatestVitest', () => {

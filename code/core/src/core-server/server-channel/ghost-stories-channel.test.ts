@@ -133,7 +133,7 @@ describe('ghostStoriesChannel', () => {
       vi.mocked(mockTelemetry.getLastEvents).mockResolvedValue({
         init: { body: { sessionId: 'test-session' } },
       } as any);
-      vi.mocked(mockTelemetry.getSessionId).mockResolvedValue('test-session');
+      vi.mocked(mockTelemetry.getSessionId).mockReturnValue('test-session');
 
       // Has React + Vitest
       vi.mocked(mockTelemetry.getStorybookMetadata).mockResolvedValue({
@@ -232,7 +232,7 @@ describe('ghostStoriesChannel', () => {
       vi.mocked(mockTelemetry.getLastEvents).mockResolvedValue({
         init: { body: { sessionId: 'test-session' } },
       } as any);
-      vi.mocked(mockTelemetry.getSessionId).mockResolvedValue('test-session');
+      vi.mocked(mockTelemetry.getSessionId).mockReturnValue('test-session');
 
       // Has React + Vitest
       vi.mocked(mockTelemetry.getStorybookMetadata).mockResolvedValue({
@@ -352,7 +352,7 @@ describe('ghostStoriesChannel', () => {
           'ghost-stories': { timestamp: Date.now(), body: {} },
           init: { body: { sessionId: 'test-session' } },
         } as any);
-        vi.mocked(mockTelemetry.getSessionId).mockResolvedValue('test-session');
+        vi.mocked(mockTelemetry.getSessionId).mockReturnValue('test-session');
 
         initGhostStoriesChannel(mockChannel, {} as Options);
 
@@ -433,7 +433,7 @@ describe('ghostStoriesChannel', () => {
         vi.mocked(mockTelemetry.getLastEvents).mockResolvedValue({
           init: { body: { sessionId: 'test-session' } },
         } as any);
-        vi.mocked(mockTelemetry.getSessionId).mockResolvedValue('test-session');
+        vi.mocked(mockTelemetry.getSessionId).mockReturnValue('test-session');
         vi.mocked(mockTelemetry.getStorybookMetadata).mockResolvedValue({
           renderer: '@storybook/vue',
           addons: { '@storybook/addon-vitest': {} },
@@ -458,7 +458,7 @@ describe('ghostStoriesChannel', () => {
         vi.mocked(mockTelemetry.getLastEvents).mockResolvedValue({
           init: { body: { sessionId: 'test-session' } },
         } as any);
-        vi.mocked(mockTelemetry.getSessionId).mockResolvedValue('test-session');
+        vi.mocked(mockTelemetry.getSessionId).mockReturnValue('test-session');
         vi.mocked(mockTelemetry.getStorybookMetadata).mockResolvedValue({
           renderer: '@storybook/react',
           addons: {},
@@ -485,7 +485,7 @@ describe('ghostStoriesChannel', () => {
         vi.mocked(mockTelemetry.getLastEvents).mockResolvedValue({
           init: { body: { sessionId: 'test-session' } },
         } as any);
-        vi.mocked(mockTelemetry.getSessionId).mockResolvedValue('test-session');
+        vi.mocked(mockTelemetry.getSessionId).mockReturnValue('test-session');
         vi.mocked(mockTelemetry.getStorybookMetadata).mockResolvedValue({
           renderer: '@storybook/react',
           addons: { '@storybook/addon-vitest': {} },
@@ -524,7 +524,7 @@ describe('ghostStoriesChannel', () => {
         vi.mocked(mockTelemetry.getLastEvents).mockResolvedValue({
           init: { body: { sessionId: 'test-session' } },
         } as any);
-        vi.mocked(mockTelemetry.getSessionId).mockResolvedValue('test-session');
+        vi.mocked(mockTelemetry.getSessionId).mockReturnValue('test-session');
         vi.mocked(mockTelemetry.getStorybookMetadata).mockResolvedValue({
           renderer: '@storybook/react',
           addons: { '@storybook/addon-vitest': {} },
@@ -564,7 +564,7 @@ describe('ghostStoriesChannel', () => {
         vi.mocked(mockTelemetry.getLastEvents).mockResolvedValue({
           init: { body: { sessionId: 'test-session' } },
         } as any);
-        vi.mocked(mockTelemetry.getSessionId).mockResolvedValue('test-session');
+        vi.mocked(mockTelemetry.getSessionId).mockReturnValue('test-session');
         vi.mocked(mockTelemetry.getStorybookMetadata).mockResolvedValue({
           renderer: '@storybook/react',
           addons: { '@storybook/addon-vitest': {} },
@@ -607,7 +607,7 @@ describe('ghostStoriesChannel', () => {
         vi.mocked(mockTelemetry.getLastEvents).mockResolvedValue({
           init: { body: { sessionId: 'test-session' } },
         } as any);
-        vi.mocked(mockTelemetry.getSessionId).mockResolvedValue('test-session');
+        vi.mocked(mockTelemetry.getSessionId).mockReturnValue('test-session');
         vi.mocked(mockTelemetry.getStorybookMetadata).mockResolvedValue({
           renderer: '@storybook/react',
           addons: { '@storybook/addon-vitest': {} },

@@ -130,6 +130,11 @@
       "code": "./src/docs-tools/index.ts",
       "default": "./dist/docs-tools/index.js"
     },
+    "./internal/docs-tools/snippets": {
+      "types": "./dist/docs-tools/snippets.d.ts",
+      "code": "./src/docs-tools/snippets.ts",
+      "default": "./dist/docs-tools/snippets.js"
+    },
     "./internal/instrumenter": {
       "types": "./dist/instrumenter/index.d.ts",
       "code": "./src/instrumenter/index.ts",
@@ -203,6 +208,7 @@
       "code": "./src/telemetry/index.ts",
       "default": "./dist/telemetry/index.js"
     },
+    "./internal/telemetry/sender": "./dist/telemetry/sender.js",
     "./internal/tools": {
       "types": "./dist/cli/tools/sdk/index.d.ts",
       "code": "./src/cli/tools/sdk/index.ts",
@@ -287,7 +293,7 @@
   "devDependencies": {
     "@aw-web-design/x-default-browser": "1.4.126",
     "@babel/core": "^7.28.5",
-    "@clack/prompts": "1.0.0-alpha.7",
+    "@clack/prompts": "1.9.0",
     "@devtools-ds/object-inspector": "^1.1.2",
     "@discoveryjs/json-ext": "^0.5.3",
     "@emotion/cache": "^11.14.0",

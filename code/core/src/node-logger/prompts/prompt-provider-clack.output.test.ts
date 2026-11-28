@@ -1,4 +1,7 @@
-import { afterEach, beforeEach, expect, it, vi } from 'vitest';
+import { WriteStream } from 'node:tty';
+import { stripVTControlCharacters } from 'node:util';
+
+import { afterEach, beforeEach, expect, it, onTestFinished, vi } from 'vitest';
 
 vi.mock('../logger/log-tracker.ts', { spy: true });
 
@@ -71,3 +74,52 @@ it.each([
     expect(laterChunks.some((chunk): boolean => chunk.includes(text))).toBe(true);
   }
 });
+
+const MIGRATION_URL =
+  'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#parameterscomponentsubtitle-removed';
+
+// With colors, Clack wraps option lines 10 columns early, as it counts its guide bar's color codes.
+// Without colors at 100 columns, protectUrls' own URL length cap is what shortens the link.
+it.each([
+  { columns: 50, FORCE_COLOR: '1', NO_COLOR: undefined, colored: true, rowWidth: 40 },
+  { columns: 50, FORCE_COLOR: '0', NO_COLOR: undefined, colored: false, rowWidth: 50 },
+  { columns: 50, FORCE_COLOR: undefined, NO_COLOR: '1', colored: false, rowWidth: 50 },
+  { columns: 100, FORCE_COLOR: '1', NO_COLOR: undefined, colored: true, rowWidth: 90 },
+  { columns: 100, FORCE_COLOR: '0', NO_COLOR: undefined, colored: false, rowWidth: 95 },
+])(
+  'a multiselect hint link keeps its own row at $columns columns (FORCE_COLOR=$FORCE_COLOR, NO_COLOR=$NO_COLOR)',
+  async ({ columns, FORCE_COLOR, NO_COLOR, colored, rowWidth }): Promise<void> => {
+    // Node reads NO_COLOR in tty.WriteStream#getColorDepth, which the worker's stdout lacks.
+    Object.defineProperties(process.stdout, {
+      columns: { configurable: true, value: columns },
+      getColorDepth: { configurable: true, value: WriteStream.prototype.getColorDepth },
+    });
+    onTestFinished((): void => {
+      Reflect.deleteProperty(process.stdout, 'columns');
+      Reflect.deleteProperty(process.stdout, 'getColorDepth');
+    });
+    vi.stubEnv('TERM_PROGRAM', 'iTerm.app');
+    vi.stubEnv('TERM_PROGRAM_VERSION', '3.4.0');
+    vi.stubEnv('FORCE_COLOR', FORCE_COLOR);
+    vi.stubEnv('NO_COLOR', NO_COLOR);
+
+    const answer = new ClackPromptProvider().multiselect(
+      {
+        message: 'Select automigrations to run',
+        options: [{ value: 'fix', label: 'fix', hint: `Move it\nMore info: ${MIGRATION_URL}` }],
+      },
+      { onCancel: (): void => {} }
+    );
+    process.stdin.emit('end');
+    await expect(answer).rejects.toThrow('stdin ended');
+
+    const frame = chunks.find((chunk): boolean => chunk.includes('More info')) ?? '';
+    expect(frame.includes('\x1b[36m')).toBe(colored);
+    expect(frame).toContain(`\x1b]8;;${MIGRATION_URL}\x07`);
+    const linkRow = stripVTControlCharacters(frame)
+      .split('\n')
+      .find((row): boolean => row.includes('More info'));
+    expect(linkRow).toMatch(/^│ {2}More info: https:\/\/github\.com\/\S+\.\.\.\)$/);
+    expect(linkRow?.length).toBe(rowWidth);
+  }
+);

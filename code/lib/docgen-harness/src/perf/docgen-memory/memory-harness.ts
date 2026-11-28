@@ -63,7 +63,8 @@ interface ComponentMetaManagerLike {
 
 type ComponentMetaManagerCtor = new (
   typescript: unknown,
-  recycleHeapPressureRatio?: number
+  recycleHeapPressureRatio?: number,
+  options?: { keepParsedFilesOnRecycle?: boolean }
 ) => ComponentMetaManagerLike;
 
 const TYPESCRIPT_APIS = ['compiler', 'native'] as const;
@@ -307,9 +308,11 @@ harnessMain(async () => {
 
   const project = resolveProject(options);
   const ComponentMetaManager = await loadComponentMetaManager();
+  // The docgen worker's configuration, whose per-component extraction the live mode mirrors.
   const manager = new ComponentMetaManager(
     await loadTestTypeScript(options.typescript),
-    options.recycleHeapPressureRatio
+    options.recycleHeapPressureRatio,
+    { keepParsedFilesOnRecycle: true }
   );
   const entries = buildStoryRefs(project.componentPaths, project.storyPaths);
 

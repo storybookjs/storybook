@@ -163,6 +163,18 @@ describe('prepareStory', () => {
 
       expect(parameters).toEqual(expect.objectContaining({ __isArgsStory: false }));
     });
+
+    it('sets `__hasSourceTransform` only for a story with a `docs.source.transform`', () => {
+      const withTransform = prepareStory(
+        { id, name, moduleExport, parameters: { docs: { source: { transform: () => '' } } } },
+        { id, title },
+        { render: () => {} }
+      );
+      const without = prepareStory({ id, name, moduleExport }, { id, title }, { render: () => {} });
+
+      expect(withTransform.parameters.__hasSourceTransform).toBe(true);
+      expect(without.parameters).not.toHaveProperty('__hasSourceTransform');
+    });
   });
 
   describe('args/initialArgs', () => {

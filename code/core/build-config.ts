@@ -102,6 +102,11 @@ const config: BuildEntries = {
         dts: false,
       },
       {
+        exportEntries: ['./internal/telemetry/sender'],
+        entryPoint: './src/telemetry/sender.ts',
+        dts: false,
+      },
+      {
         exportEntries: ['./internal/telemetry'],
         entryPoint: './src/telemetry/index.ts',
       },
@@ -240,6 +245,10 @@ const config: BuildEntries = {
       {
         exportEntries: ['./internal/docs-tools'],
         entryPoint: './src/docs-tools/index.ts',
+      },
+      {
+        exportEntries: ['./internal/docs-tools/snippets'],
+        entryPoint: './src/docs-tools/snippets.ts',
       },
       {
         exportEntries: ['./internal/core-events'],

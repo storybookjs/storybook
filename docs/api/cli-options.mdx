@@ -99,6 +99,23 @@ Options include:
 | `--enable-crash-reports`        | Enables sending crash reports to Storybook's telemetry. Learn more about it [here](../configure/telemetry.mdx#crash-reports-disabled-by-default).<br />`storybook build --enable-crash-reports`                                                |
 | `--preview-only`                | Skips Storybook's manager from building and produces a "preview only" app, which is designed to be used in [unsupported browsers](../sharing/publish-storybook.mdx#build-storybook-for-older-browsers). <br />`storybook build --preview-only` |
 
+### `export`
+
+Export a running or hosted Storybook as editable artboards for a manual Claude Design import. See [Design exports](../sharing/claude-design-export.mdx) for setup, import instructions, and fidelity limits.
+
+```shell
+storybook export --format claude-design --url http://localhost:6006 --output-file storybook-design.zip
+```
+
+| Option                     | Description                                                                                   |
+| -------------------------- | --------------------------------------------------------------------------------------------- |
+| `--format <format>`        | Required. Currently accepts `claude-design`.                                                  |
+| `--url <url>`              | Required. HTTP or HTTPS URL of the Storybook root, including its hosting subdirectory.        |
+| `--output-file <file>`     | ZIP path to create. Defaults to `storybook-design.zip`. Existing files are never overwritten. |
+| `--width <pixels>`         | Viewport width, from 1 to 16384. Defaults to 1280.                                            |
+| `--height <pixels>`        | Viewport height, from 1 to 16384. Defaults to 800.                                            |
+| `--timeout <milliseconds>` | Time limit per story, from 1 to 600000. Defaults to 30000.                                    |
+
 ### `init`
 
 <Callout variant="info">

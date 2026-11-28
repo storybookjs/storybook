@@ -466,7 +466,7 @@ describe('storybook type system', () => {
         },
         required: false,
         description: '',
-        defaultValue: null,
+        defaultValue: { value: '' },
       } satisfies DocgenInfo;
       expect(convert(openEnum)).toMatchInlineSnapshot(`
         {
@@ -482,7 +482,7 @@ describe('storybook type system', () => {
         },
         required: false,
         description: '',
-        defaultValue: null,
+        defaultValue: { value: '' },
       } satisfies DocgenInfo;
       expect(convert(mixedEnum)).toMatchInlineSnapshot(`
         {
@@ -503,7 +503,7 @@ describe('storybook type system', () => {
         },
         required: false,
         description: '',
-        defaultValue: null,
+        defaultValue: { value: '' },
       } satisfies DocgenInfo;
       expect(convert(nestedEnum)?.name).toBe('enum');
     });

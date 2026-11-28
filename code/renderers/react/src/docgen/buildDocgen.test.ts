@@ -139,6 +139,63 @@ describe('buildDocgenPayload', () => {
   });
 
   it(
+    'preserves per-prop JSDoc @example tags on reactComponentMeta (#37540)',
+    { timeout: 30_000 },
+    async () => {
+      tempDir = createTempDir('docgen-build');
+
+      const files = writeFiles(tempDir, {
+        'tsconfig.json': tsconfigJSON(),
+        'Stack.tsx': dedent`
+        import React from 'react';
+
+        type StackProps = {
+          /**
+           * Space between children, from the spacing scale.
+           * @example "4"
+           * @example { initial: "2", md: "4" }
+           */
+          gap?: string | Record<string, string>;
+          /**
+           * Main axis.
+           * @example "column"
+           */
+          direction?: 'row' | 'column';
+          /** Ordinary prop without tags. */
+          label?: string;
+        };
+
+        export const Stack = (_props: StackProps) => <div />;
+      `,
+        'Stack.stories.tsx': dedent`
+        import { Stack } from './Stack';
+        export default { component: Stack, title: 'Layout/Stack' };
+        export const Primary = () => <Stack />;
+      `,
+      });
+
+      componentMetaManager = new ComponentMetaManager(typescript);
+
+      const payload = await buildDocgenPayload(
+        { entry: makeStoryIndexEntry(files['Stack.stories.tsx'], 'Layout/Stack') },
+        {
+          componentMetaManager,
+          resolvePath: (p) => (path.isAbsolute(p) ? p : path.join(tempDir!, p)),
+        }
+      );
+
+      const meta = payload!.reactComponentMeta as ComponentDoc | undefined;
+      expect(meta?.props.gap.jsDocTags).toEqual({
+        example: ['"4"', '{ initial: "2", md: "4" }'],
+      });
+      expect(meta?.props.direction.jsDocTags).toEqual({
+        example: ['"column"'],
+      });
+      expect(meta?.props.label.jsDocTags).toBeUndefined();
+    }
+  );
+
+  it(
     'shows a default the checker cannot resolve as written, not as a string',
     { timeout: 30_000 },
     async () => {

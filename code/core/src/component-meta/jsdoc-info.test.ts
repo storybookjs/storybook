@@ -35,6 +35,16 @@ function extract(docblockBody: string) {
 }
 
 describe('extractComponentJsDocInfo', () => {
+  it.each(['constructor', 'toString', '__proto__', 'hasOwnProperty'])(
+    'preserves repeated @%s tags',
+    (tag) => {
+      expect(extract(`A button.\n\n@${tag} first\n@${tag} second`)).toMatchObject({
+        description: 'A button.',
+        jsDocTags: { [tag]: ['first', 'second'] },
+      });
+    }
+  );
+
   it('extracts a line-leading block tag', () => {
     expect(extract('A button.\n\n@since 8.0')).toMatchInlineSnapshot(`
       {

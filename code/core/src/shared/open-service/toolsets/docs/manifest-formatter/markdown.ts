@@ -233,15 +233,18 @@ function formatPropsSection(
     const isRequired = propInfo.required ?? true;
     const hasDefault = propInfo.defaultValue !== undefined;
     const { description } = propInfo;
+    const examples = propInfo.tags?.[EXAMPLE_JSDOC_TAG_NAME] ?? [];
+    const docLines = [
+      ...(description?.split('\n') ?? []),
+      ...examples.flatMap((example) => `@example ${example}`.split('\n')),
+    ].map((line) => line.trimEnd());
 
-    if (description !== undefined) {
-      if (description.includes('\n')) {
-        parts.push('  /**');
-        parts.push(`    ${description}`);
-        parts.push('  */');
-      } else {
-        parts.push(`  /** ${description} */`);
-      }
+    if (docLines.length === 1 && examples.length === 0) {
+      parts.push(`  /** ${docLines[0]} */`);
+    } else if (docLines.length > 0) {
+      parts.push('  /**');
+      parts.push(...docLines.map((line) => `   * ${line}`.trimEnd()));
+      parts.push('   */');
     }
 
     let propLine = `  ${propName}`;

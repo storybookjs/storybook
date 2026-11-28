@@ -1,5 +1,5 @@
 /**
- * Canonical component-level JSDoc extraction for the TS-backed docgen providers.
+ * Canonical symbol-level (component or member) JSDoc extraction for the TS-backed docgen providers.
  *
  * TypeScript's own JSDoc semantics are the contract: whatever `getDocumentationComment` /
  * `getJsDocTags` report is what Storybook documents, matching IDE hovers. Notably, a bare
@@ -82,7 +82,7 @@ export function extractComponentJsDocInfo<TChecker>(
 ): ComponentJsDocInfo {
   const description = typescript.displayPartsToString(symbol.getDocumentationComment(checker));
 
-  const jsDocTags: Record<string, string[]> = {};
+  const jsDocTags: Record<string, string[]> = Object.create(null);
   for (const tag of symbol.getJsDocTags(checker)) {
     (jsDocTags[tag.name] ??= []).push(typescript.displayPartsToString(tag.text ?? []).trim());
   }

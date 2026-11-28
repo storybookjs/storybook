@@ -1293,6 +1293,132 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
       `);
     });
 
+    it('keeps fenced prop examples inside the Props block', () => {
+      const manifest: ComponentManifest = {
+        id: 'button',
+        name: 'Button',
+        path: 'Button.tsx',
+        reactComponentMeta: {
+          props: {
+            label: {
+              name: 'label',
+              required: true,
+              type: { name: 'string' },
+              description: 'First line.\nSecond line.',
+              defaultValue: null,
+              jsDocTags: { example: ['```tsx\n<Button label="Hello" />\n```\nMore text.'] },
+            },
+            disabled: {
+              name: 'disabled',
+              required: false,
+              type: { name: 'boolean' },
+              defaultValue: null,
+            },
+          },
+        },
+      };
+      const result = formatComponentManifest(manifest);
+      expect(result.split('\n').filter((line) => line === '```')).toHaveLength(2);
+      expect(result).toContain(
+        '   * @example ```tsx\n   * <Button label="Hello" />\n   * ```\n   * More text.'
+      );
+      expect(result).toContain('   * First line.\n   * Second line.');
+      expect(result).toContain('  disabled?: boolean;');
+      expect(result.indexOf('  disabled?: boolean;')).toBeLessThan(result.lastIndexOf('```'));
+    });
+
+    it('prints prop @example tags from reactComponentMeta (#37540)', () => {
+      const manifest: ComponentManifest = {
+        id: 'stack',
+        name: 'Stack',
+        path: 'src/components/Stack.tsx',
+        reactComponentMeta: {
+          props: {
+            gap: {
+              name: 'gap',
+              description: 'Space between children, from the spacing scale.',
+              type: { name: 'string | Record<string, string>' },
+              defaultValue: { value: '0' },
+              required: false,
+              jsDocTags: {
+                example: ['"4"', '{ initial: "2", md: "4" }'],
+              },
+            },
+            direction: {
+              name: 'direction',
+              description: 'Main axis.',
+              type: { name: '"row" | "column"' },
+              defaultValue: { value: 'row' },
+              required: false,
+              jsDocTags: {
+                example: ['"column"'],
+              },
+            },
+          },
+        },
+      };
+
+      const result = formatComponentManifest(manifest);
+
+      expect(result).toMatchInlineSnapshot(`
+        "# Stack
+
+        ID: stack
+
+        ## Props
+
+        \`\`\`
+        export type Props = {
+          /**
+           * Space between children, from the spacing scale.
+           * @example "4"
+           * @example { initial: "2", md: "4" }
+           */
+          gap?: string | Record<string, string> = 0;
+          /**
+           * Main axis.
+           * @example "column"
+           */
+          direction?: "row" | "column" = row;
+        }
+        \`\`\`"
+      `);
+    });
+
+    it('prints each RDT-joined prop.tags example as its own @example (#37540)', () => {
+      // Builder RDT path: shouldIncludePropTagMap joins repeated tags with '\n'.
+      // parseReactDocgenTypescript expands them before formatting.
+      const manifest: ComponentManifest = {
+        id: 'stack',
+        name: 'Stack',
+        path: 'src/components/Stack.tsx',
+        reactDocgenTypescript: {
+          displayName: 'Stack',
+          filePath: 'src/components/Stack.tsx',
+          description: '',
+          methods: [],
+          props: {
+            gap: {
+              name: 'gap',
+              description: 'Space between children.',
+              type: { name: 'string' },
+              defaultValue: null,
+              required: false,
+              tags: {
+                example: '"4"\n{ initial: "2", md: "4" }',
+              },
+            },
+          },
+        },
+      };
+
+      const result = formatComponentManifest(manifest);
+
+      expect(result).toContain('   * @example "4"');
+      expect(result).toContain('   * @example { initial: "2", md: "4" }');
+      expect(result).not.toContain('\n   * { initial: "2", md: "4" }\n');
+    });
+
     it('should omit props section when reactDocgen is not present', () => {
       const manifest: ComponentManifest = {
         id: 'button',

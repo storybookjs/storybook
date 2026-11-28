@@ -947,6 +947,33 @@ describe('prop extraction', () => {
   });
 
   describe('JSDoc', () => {
+    it.each(['constructor', 'toString', '__proto__', 'hasOwnProperty'])(
+      'preserves repeated @%s prop tags without dropping the component',
+      async (tag) => {
+        const entry = await extract(
+          'Button',
+          dedent`
+            import React from 'react';
+            interface Props {
+              /**
+               * The button label.
+               * @${tag} first
+               * @${tag} second
+               */
+              label: string;
+              plain?: boolean;
+            }
+            export const Button = (props: Props) => <button />;
+          `
+        );
+        expect(entry.component?.reactComponentMeta?.props?.label).toMatchObject({
+          description: 'The button label.',
+          jsDocTags: { [tag]: ['first', 'second'] },
+        });
+        expect(entry.component?.reactComponentMeta?.props?.plain).not.toHaveProperty('jsDocTags');
+      }
+    );
+
     it('extracts prop-level descriptions', async () => {
       const entry = await extract(
         'Button',

@@ -96,7 +96,8 @@
     {
       "files": ["**/*.ts", "**/*.tsx"],
       "rules": {
-        "local-rules/no-untracked-service-state-key-check": "error"
+        "local-rules/no-untracked-service-state-key-check": "error",
+        "local-rules/no-module-scope-platform-check": "error"
       }
     },
     {
@@ -183,7 +184,8 @@
       "files": ["**/*.test.*", "**/*.spec.*", "**/*.test-d.*", "**/*.mockdata.*"],
       "rules": {
         "local-rules/no-uncategorized-errors": "off",
-        "local-rules/storybook-monorepo-imports": "off"
+        "local-rules/storybook-monorepo-imports": "off",
+        "local-rules/no-module-scope-platform-check": "off"
       }
     },
     {

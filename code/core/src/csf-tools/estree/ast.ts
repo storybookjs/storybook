@@ -61,9 +61,10 @@ const labelStart = (diagnostic: E.OxcError) => diagnostic.labels?.[0]?.start;
 // a test that mocks `node:fs`, this process reads trees through JSON from then on.
 // Off on Windows until oxc PR #27566 lands: the 6 GiB there is committed memory, not reserved
 // address space, and its allocation fails without that much RAM and pagefile (oxc issue #11834).
-export const rawTransferAvailable = process.platform !== 'win32' && rawTransferSupported();
+export const isRawTransferAvailable = () => process.platform !== 'win32' && rawTransferSupported();
 
-let rawTransferEnabled = rawTransferAvailable;
+/** Forced on or off by `withRawTransfer`, or off once a raw parse failed; unset follows the host. */
+let rawTransferEnabled: boolean | undefined;
 
 // The option is missing from the `ParserOptions` type of oxc-parser 0.154.
 type ParseOptions = E.ParserOptions & { experimentalRawTransfer: boolean };
@@ -87,7 +88,7 @@ export const withRawTransfer = <T>(enabled: boolean, fn: () => T): T => {
 };
 
 const parseWith = (code: string, fileName: string | undefined, lang: Lang): ParseAttempt => {
-  const rawTransfer = rawTransferEnabled;
+  const rawTransfer = rawTransferEnabled ?? isRawTransferAvailable();
   const name = fileName ?? `file.${lang}`;
   const options: ParseOptions = {
     lang,

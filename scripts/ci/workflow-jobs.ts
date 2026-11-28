@@ -22,7 +22,12 @@ import { getChangedFiles, getFocusJobs } from './focus.ts';
 import { getInitEmpty, initEmptyNoOpJob } from './init-empty.ts';
 import { getSandboxes, getWindowsSandboxes, sandboxesNoOpJob } from './sandboxes.ts';
 import { getTestStorybooks, testStorybooksNoOpJob } from './test-storybooks.ts';
-import { type JobOrNoOpJob, type Workflow, isWorkflowOrAbove } from './utils/types.ts';
+import {
+  type JobOrNoOpJob,
+  type Workflow,
+  isWindowsWorkflow,
+  isWorkflowOrAbove,
+} from './utils/types.ts';
 
 export function getJobs(workflow: Workflow, baseRef: string): JobOrNoOpJob[] {
   const jobs: JobOrNoOpJob[] = [];
@@ -30,8 +35,8 @@ export function getJobs(workflow: Workflow, baseRef: string): JobOrNoOpJob[] {
     jobs.push(...getFocusJobs(getChangedFiles(baseRef)));
   } else if (isWorkflowOrAbove(workflow, 'docs')) {
     jobs.push(fmt);
-  } else if (workflow === 'windows') {
-    jobs.push(build_windows, testUnit_windows, ...getWindowsSandboxes());
+  } else if (isWindowsWorkflow(workflow)) {
+    jobs.push(build_windows, testsUnit_linux, testUnit_windows, ...getWindowsSandboxes());
   } else {
     const sandboxes = getSandboxes(workflow);
     const testStorybooks = getTestStorybooks();

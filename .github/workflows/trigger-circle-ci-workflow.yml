@@ -46,7 +46,7 @@ on:
 # the concurrency group before the job `if` can skip the run.
 # The CI workflow label list here and in the job `if`s must match the one in `get-parameters`.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}${{ github.event.action == 'labeled' && !contains(fromJSON('["ci:focus","ci:normal","ci:docs","ci:daily","ci:windows"]'), github.event.label.name) && format('-{0}', github.run_id) || '' }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}${{ github.event.action == 'labeled' && !contains(fromJSON('["ci:focus","ci:normal","ci:docs","ci:daily","ci:windows","ci:windows-full"]'), github.event.label.name) && format('-{0}', github.run_id) || '' }}
   cancel-in-progress: true
 
 jobs:
@@ -55,7 +55,7 @@ jobs:
     if: >-
       github.repository_owner == 'storybookjs' &&
       (github.event.action != 'labeled' ||
-        contains(fromJSON('["ci:focus","ci:normal","ci:docs","ci:daily","ci:windows"]'), github.event.label.name))
+        contains(fromJSON('["ci:focus","ci:normal","ci:docs","ci:daily","ci:windows","ci:windows-full"]'), github.event.label.name))
     runs-on: ubuntu-latest
     permissions: {}
     steps:
@@ -79,7 +79,7 @@ jobs:
     if: >-
       github.repository_owner == 'storybookjs' &&
       (github.event.action != 'labeled' ||
-        contains(fromJSON('["ci:focus","ci:normal","ci:docs","ci:daily","ci:windows"]'), github.event.label.name))
+        contains(fromJSON('["ci:focus","ci:normal","ci:docs","ci:daily","ci:windows","ci:windows-full"]'), github.event.label.name))
     runs-on: ubuntu-latest
     permissions: {}
     steps:
@@ -89,7 +89,7 @@ jobs:
           LABELS: ${{ toJSON(github.event.pull_request.labels.*.name) }}
         run: |
           WORKFLOW=$(echo "$LABELS" | jq -r '
-            map(select(startswith("ci:")) | ltrimstr("ci:") | select(IN("focus", "normal", "docs", "daily", "windows")))
+            map(select(startswith("ci:")) | ltrimstr("ci:") | select(IN("focus", "normal", "docs", "daily", "windows", "windows-full")))
             | join(",")')
           echo "workflow=$WORKFLOW" >> "$GITHUB_OUTPUT"
       - id: trusted-author

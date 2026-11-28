@@ -6,6 +6,11 @@ import { defineConfig } from 'vitest/config';
 
 const require = createRequire(import.meta.url);
 
+/** Records OS-dependent API use per test file, to pick the Windows unit test subset. */
+export const osProbeSetupFiles = process.env.STORYBOOK_OS_PROBE_DIR
+  ? [resolve(__dirname, '../scripts/ci/os-probe/probe.ts')]
+  : [];
+
 /**
  * Loads .md/.html imports as text, matching the esbuild `loader` option in
  * scripts/build/utils/generate-bundle.ts. Used by the MCP packages, which
@@ -44,7 +49,7 @@ export const vitestCommonConfig = defineConfig({
         inline: ['chai', '@vitest/expect'],
       },
     },
-    setupFiles: [resolve(__dirname, './vitest-setup.ts')],
+    setupFiles: [resolve(__dirname, './vitest-setup.ts'), ...osProbeSetupFiles],
     // Disable globals due to https://github.com/testing-library/user-event/pull/1176 not being released yet
     globals: false,
     testTimeout: 10000,

@@ -15,7 +15,7 @@ import {
   outerSpan,
   parseModule,
   placeableTextOf,
-  rawTransferAvailable,
+  isRawTransferAvailable,
   textOf,
   walk,
   withRawTransfer,
@@ -24,7 +24,7 @@ import {
 vi.mock('oxc-parser', { spy: true });
 
 // Where raw transfer is in use, both ways of reading the tree run.
-const transfers = rawTransferAvailable ? [true, false] : [false];
+const transfers = isRawTransferAvailable() ? [true, false] : [false];
 
 describe('parseModule', () => {
   const flowBody = 'const x: { +readOnly: number } = {};';

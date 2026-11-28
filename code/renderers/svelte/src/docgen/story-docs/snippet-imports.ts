@@ -316,17 +316,17 @@ function markupReferences(markup: string, typescript: boolean) {
 
 function freeNames(code: string, statement: boolean, typescript: boolean) {
   const editor = new SourceEditor(statement ? code : `(${code})`, scriptFile(typescript));
-  return { values: [...editor.scopes.unbound], types: typeReferences(editor.program) };
+  return { values: [...editor.scopes.unboundValues], types: typeReferences(editor.program) };
 }
 
 function typeReferences(node: Node): string[] {
   const names: string[] = [];
   walkEstree(node, (child) => {
-    // `Props` in `let value: Props` and `Base` in `interface Props extends Base`.
+    // `Props` in `let value: Props`, `Base` in `interface Props extends Base`, and `class C implements Props`.
     let name: Node | undefined =
       child.type === 'TSTypeReference'
         ? child.typeName
-        : child.type === 'TSInterfaceHeritage'
+        : child.type === 'TSInterfaceHeritage' || child.type === 'TSClassImplements'
           ? child.expression
           : undefined;
     while (name?.type === 'TSQualifiedName') name = name.left;

@@ -711,6 +711,34 @@ describe('sourceUrlManifestProvider', () => {
     );
   });
 
+  it('loads a large manifest that takes several seconds to arrive', async () => {
+    vi.useFakeTimers();
+    // Node's `AbortSignal.timeout` ignores fake timers, so swap in one that follows them.
+    vi.spyOn(AbortSignal, 'timeout').mockImplementation((ms) => {
+      const controller = new AbortController();
+      setTimeout(() => controller.abort(new DOMException('timed out', 'TimeoutError')), ms);
+      return controller.signal;
+    });
+    vi.mocked(fetch).mockImplementation(
+      (_url, init) =>
+        new Promise((resolve, reject) => {
+          init?.signal?.addEventListener('abort', () => reject(init.signal!.reason));
+          setTimeout(
+            () => resolve(new Response('{}', { headers: { 'content-type': 'application/json' } })),
+            8_000
+          );
+        })
+    );
+
+    try {
+      const result = sourceUrlManifestProvider(undefined, './manifests/components.json', source);
+      await vi.advanceTimersByTimeAsync(8_000);
+      await expect(result).resolves.toBe('{}');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('fetches under the source url, keeping its sub-path', async () => {
     await sourceUrlManifestProvider(undefined, './manifests/components.json', source);
 

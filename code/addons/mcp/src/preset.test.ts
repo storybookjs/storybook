@@ -335,6 +335,38 @@ describe('experimental_devServer', () => {
     expect(mcpServerHandler).not.toHaveBeenCalled();
   });
 
+  it('answers requests without re-checking an unreachable ref', async () => {
+    vi.useFakeTimers();
+    try {
+      const mcpServerHandler = vi
+        .spyOn(mcpHandlerModule, 'mcpServerHandler')
+        .mockResolvedValue(undefined);
+      const fetchMock = vi.fn().mockRejectedValue(new TypeError('fetch failed'));
+      vi.stubGlobal('fetch', fetchMock);
+      await (experimental_devServer as any)(mockApp, createOptionsWithPrivateRef());
+      await mcpHandler({ headers: { 'content-type': 'application/json' } }, {});
+      fetchMock.mockClear();
+
+      await vi.advanceTimersByTimeAsync(5_000);
+      const res = { writeHead: vi.fn(), end: vi.fn() };
+      await mcpHandler({ headers: { 'content-type': 'application/json' } }, res);
+
+      expect(fetchMock).not.toHaveBeenCalled();
+      expect(res.writeHead).not.toHaveBeenCalledWith(401, expect.anything());
+      expect(mcpServerHandler).toHaveBeenCalledTimes(2);
+      expect(mcpServerHandler).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          sources: [
+            { id: 'local', title: 'Local' },
+            { id: 'private', title: 'Private', url: 'https://private.example.com' },
+          ],
+        })
+      );
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('should advertise the basePath-prefixed resource metadata in the OAuth challenge', async () => {
     vi.spyOn(mcpHandlerModule, 'mcpServerHandler').mockResolvedValue(undefined);
     stubPrivateRefDiscovery();

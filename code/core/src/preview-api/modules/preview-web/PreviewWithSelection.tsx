@@ -47,6 +47,7 @@ import type { Selection, SelectionStore } from './SelectionStore.ts';
 import type { View } from './View.ts';
 import { shouldAutoplay } from './embedMode.ts';
 import { getEmbedResizeViewport } from './getEmbedResizeViewport.ts';
+import { parseArgsParam } from './parseArgsParam.ts';
 import { CsfDocsRender } from './render/CsfDocsRender.ts';
 import { MdxDocsRender } from './render/MdxDocsRender.ts';
 import { PREPARE_ABORTED } from './render/Render.ts';
@@ -95,6 +96,10 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
   currentRender?: PossibleRender<TRenderer>;
 
   private pendingPreloads = new Map<PreloadSource | undefined, PreloadEntriesPayload>();
+
+  // URL args that arrived with a SET_CURRENT_STORY selection, held until a render for that
+  // selection consumes them. A competing startup render must not discard them.
+  private pendingSelectionArgs?: { selection: Selection; args: Args };
 
   private preloadsDrained: Promise<void> | null = null;
 
@@ -280,13 +285,24 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
     });
   }
 
-  async onSetCurrentStory(selection: { storyId: StoryId; viewMode?: ViewMode }) {
+  async onSetCurrentStory({
+    args: argsParam,
+    ...selection
+  }: {
+    storyId: StoryId;
+    viewMode?: ViewMode;
+    args?: string;
+  }) {
     /**
      * At the end of the initialization promise we will read the current story from the selection
      * store, so make sure we've updated it with the new selection or we'll lose track of it at the
      * end of init.
      */
     this.selectionStore.setSelection({ viewMode: 'story', ...selection });
+    this.pendingSelectionArgs =
+      typeof argsParam === 'string' && this.selectionStore.selection
+        ? { selection: this.selectionStore.selection, args: parseArgsParam(argsParam) }
+        : undefined;
 
     await this.storeInitializationPromise;
 
@@ -447,9 +463,24 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
 
     const implementationChanged = !storyIdChanged && lastRender && !render.isEqual(lastRender);
 
-    if (persistedArgs && isStoryRender(render)) {
-      invariant(!!render.story);
-      this.storyStoreValue.args.updateFromPersisted(render.story, persistedArgs);
+    const pendingArgs =
+      this.pendingSelectionArgs?.selection === selection
+        ? this.pendingSelectionArgs.args
+        : undefined;
+    this.pendingSelectionArgs = undefined;
+    const argsToApply = persistedArgs ?? pendingArgs;
+    if (argsToApply) {
+      if (isStoryRender(render)) {
+        invariant(!!render.story);
+        this.storyStoreValue.args.setFromPersisted(render.story, argsToApply);
+      } else {
+        // URL args describe the docs entry's own story only; applying them to every story in
+        // the referenced CSF files would leak them into sibling stories.
+        const story = isCsfDocsRender(render) ? render.story : render.attachedStory;
+        if (story) {
+          this.storyStoreValue.args.setFromPersisted(story, argsToApply);
+        }
+      }
     }
 
     // Don't re-render the story if nothing has changed to justify it

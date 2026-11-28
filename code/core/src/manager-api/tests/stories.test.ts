@@ -1294,6 +1294,42 @@ describe('stories API', () => {
       expect(moduleArgs.navigate).toHaveBeenCalledWith(path, undefined);
     });
 
+    it('does not carry the previous story args over to a different story', () => {
+      const moduleArgs = createMockModuleArgs({
+        initialState: {
+          storyId: 'component-a--story-1',
+          customQueryParams: { args: 'foo:a', globals: 'g:1', theme: 'dark' },
+        } as Partial<State>,
+      });
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+
+      api.setIndex({ v: 5, entries: mockEntries });
+      api.selectStory('component-a--story-2');
+
+      expect(moduleArgs.navigate).toHaveBeenCalledWith(
+        '/story/component-a--story-2&globals=g:1&theme=dark',
+        undefined
+      );
+    });
+
+    it('keeps the args param when the selected story stays the same', () => {
+      const moduleArgs = createMockModuleArgs({
+        initialState: {
+          storyId: 'component-a--story-1',
+          customQueryParams: { args: 'foo:a', globals: 'g:1' },
+        } as Partial<State>,
+      });
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+
+      api.setIndex({ v: 5, entries: mockEntries });
+      api.selectStory('component-a--story-1');
+
+      expect(moduleArgs.navigate).toHaveBeenCalledWith(
+        '/story/component-a--story-1&args=foo:a&globals=g:1',
+        undefined
+      );
+    });
+
     it('keeps group selection in child order when the group has direct docs', () => {
       const moduleArgs = createMockModuleArgs({});
       const { api } = initStories(moduleArgs as unknown as ModuleArgs);

@@ -23,7 +23,7 @@ import {
 } from 'storybook/internal/core-events';
 import { sanitize, toId } from 'storybook/internal/csf';
 import type { NavigateOptions } from 'storybook/internal/router';
-import { queryFromLocation } from 'storybook/internal/router';
+import { parsePath, queryFromLocation } from 'storybook/internal/router';
 import type {
   API_ComposedRef,
   API_DocsEntry,
@@ -51,6 +51,7 @@ import type {
 import { isReviewManagerRoute } from '../../shared/review/routes.ts';
 
 import { throttle } from 'es-toolkit/function';
+import { omit } from 'es-toolkit/object';
 
 import { BUILT_IN_FILTERS } from '../../shared/constants/tags.ts';
 import { countStatusesByValue } from '../../shared/status-store/index.ts';
@@ -451,8 +452,15 @@ export const init: ModuleFn<SubAPI, SubState> = ({
   docsOptions = {},
 }) => {
   const navigateWithQueryParams = (path: string, options?: NavigateOptions) => {
-    const { customQueryParams } = store.getState();
-    navigate(buildNavigationUrl(path, customQueryParams ?? {}), options);
+    const { customQueryParams, storyId, refId } = store.getState();
+    // The `args` param describes the selected story's edits, so it must not carry over to a
+    // different story's URL. History restores it through the stored location instead.
+    const { storyId: targetStoryId, refId: targetRefId } = parsePath(path.split('#')[0]);
+    const queryParams =
+      targetStoryId === storyId && targetRefId === refId
+        ? (customQueryParams ?? {})
+        : omit(customQueryParams ?? {}, ['args']);
+    navigate(buildNavigationUrl(path, queryParams), options);
   };
 
   const persistFilters = (inputPatch: Parameters<typeof store.setState>[0]) => {

@@ -71,6 +71,7 @@ const Preview = React.memo<PreviewProps>(function Preview(props) {
         api.emit(SET_CURRENT_STORY, {
           storyId: id,
           viewMode,
+          args: api.getQueryParam('args'),
           options: { target: refId },
         });
       }

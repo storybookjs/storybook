@@ -72,6 +72,21 @@ export class ArgsStore {
     return this.updateFromDelta(story, mappedPersisted);
   }
 
+  /**
+   * URL args are persisted as a diff against `initialArgs`, so restoring them replaces the
+   * current edits entirely instead of merging into them. `combineArgs` handles the sparse
+   * values the URL format produces the same way `updateFromDelta` does.
+   */
+  setFromPersisted(story: PreparedStory<any>, persisted: Args) {
+    const mappedPersisted = mapArgsToTypes(persisted, argTypesForValidation(story));
+    const validatedPersisted = validateOptions(mappedPersisted, argTypesForValidation(story));
+
+    this.argsByStoryId[story.id] = combineArgs(
+      this.initialArgsByStoryId[story.id] ?? story.initialArgs,
+      validatedPersisted
+    );
+  }
+
   update(storyId: StoryId, argsUpdate: Partial<Args>) {
     if (!(storyId in this.argsByStoryId)) {
       throw new Error(`No args known for ${storyId} -- has it been rendered yet?`);

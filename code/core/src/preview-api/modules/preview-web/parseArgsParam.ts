@@ -6,7 +6,10 @@ import { type Options, parse } from 'picoquery';
 import { dedent } from 'ts-dedent';
 
 // Keep this in sync with validateArgs in router/src/utils.ts
-const VALIDATION_REGEXP = /^[a-zA-Z0-9 _-]*$/;
+const KEY_REGEXP = /^[a-zA-Z0-9 _-]*$/;
+// Block structural delimiters (;:), HTML-injection vectors (<>"`) and control chars in values.
+// Everything else is allowed so text controls can contain special characters like / * . @ etc.
+const UNSAFE_VALUE_REGEXP = /[;:<>"`\x00-\x1F\x7F]/;
 const NUMBER_REGEXP = /^-?[0-9]+(\.[0-9]+)?$/;
 const HEX_REGEXP = /^#([a-f0-9]{3,4}|[a-f0-9]{6}|[a-f0-9]{8})$/i;
 const COLOR_REGEXP =
@@ -16,30 +19,23 @@ const validateArgs = (key = '', value: unknown): boolean => {
     return false;
   }
 
-  if (key === '' || !VALIDATION_REGEXP.test(key)) {
+  if (key === '' || !KEY_REGEXP.test(key)) {
     return false;
   }
 
   if (value === null || value === undefined) {
-    return true;
-  } // encoded as `!null` or `!undefined` // encoded as `!null` or `!undefined`
+    return true; // encoded as `!null` or `!undefined`
+  }
 
-  // encoded as `!null` or `!undefined`
   if (value instanceof Date) {
-    return true;
-  } // encoded as modified ISO string // encoded as modified ISO string
+    return true; // encoded as modified ISO string
+  }
 
-  // encoded as modified ISO string
   if (typeof value === 'number' || typeof value === 'boolean') {
     return true;
   }
   if (typeof value === 'string') {
-    return (
-      VALIDATION_REGEXP.test(value) ||
-      NUMBER_REGEXP.test(value) ||
-      HEX_REGEXP.test(value) ||
-      COLOR_REGEXP.test(value)
-    );
+    return !UNSAFE_VALUE_REGEXP.test(value);
   }
 
   if (Array.isArray(value)) {

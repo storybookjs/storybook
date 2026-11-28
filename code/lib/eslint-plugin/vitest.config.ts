@@ -7,6 +7,9 @@ export default mergeConfig(
   defineConfig({
     test: {
       setupFiles: ['./vitest-setup.ts'],
+      typecheck: {
+        enabled: true,
+      },
     },
   })
 );

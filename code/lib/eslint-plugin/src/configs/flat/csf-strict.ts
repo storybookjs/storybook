@@ -3,10 +3,12 @@
  * This file has been automatically generated,
  * in order to update its content, execute "yarn update-rules" or rebuild this package.
  */
-import config from './csf.ts';
+import type { CompatibleFlatConfig } from '../../types/index.ts';
 
-export default [
-  ...config,
+import baseConfig from './csf.ts';
+
+const config: CompatibleFlatConfig[] = [
+  ...baseConfig,
   {
     name: 'storybook:csf-strict:rules',
     files: ['**/*.stories.@(ts|tsx|js|jsx|mjs|cjs)', '**/*.story.@(ts|tsx|js|jsx|mjs|cjs)'],
@@ -18,3 +20,5 @@ export default [
     } as const,
   },
 ];
+
+export default config;

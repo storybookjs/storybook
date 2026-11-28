@@ -114,8 +114,6 @@ export function extractEntries(
 
       if (doc) {
         entryComponent.reactComponentMeta = doc;
-        entryComponent.componentJsDocTags = doc.jsDocTags;
-        entryComponent.importOverride = entryComponent.componentJsDocTags?.import?.[0]?.trim();
       }
     } catch (error) {
       // One bad component should not kill the entire batch.

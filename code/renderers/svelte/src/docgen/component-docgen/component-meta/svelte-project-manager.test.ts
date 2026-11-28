@@ -2,7 +2,6 @@
 import {
   mkdirSync,
   mkdtempSync,
-  readFileSync,
   rmSync,
   symlinkSync,
   unlinkSync,
@@ -238,10 +237,7 @@ describe('library props in the server docgen', () => {
       'src/List.svelte': `<script lang="ts">\n  type T = $$Generic<string>;\n  export let items: T[] = [];\n</script>\n`,
     });
     const path = join(root, 'src/List.svelte');
-    const docgen = new SvelteComponentMetaManager().generateDocgen(path, {
-      server: true,
-      documentationSource: readFileSync(path, 'utf8'),
-    });
+    const docgen = new SvelteComponentMetaManager().generateDocgen(path, { server: true });
 
     expect(docgen.typeParams).toBe('T extends string');
   });

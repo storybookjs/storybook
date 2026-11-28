@@ -83,15 +83,8 @@ const componentEntry = (overrides: Record<string, unknown> = {}): AngularClassMe
     ...overrides,
   }) as unknown as AngularClassMeta;
 
-const metaFor = (
-  classMeta: AngularClassMeta,
-  jsDocInfo?: AngularComponentMetaResult['jsDocInfo']
-): AngularComponentMetaResult =>
-  ({
-    entry: classMeta,
-    json: { components: [classMeta] },
-    ...(jsDocInfo ? { jsDocInfo } : {}),
-  }) as AngularComponentMetaResult;
+const metaFor = (classMeta: AngularClassMeta): AngularComponentMetaResult =>
+  ({ entry: classMeta, json: { components: [classMeta] } }) as AngularComponentMetaResult;
 
 const managerReturning = (meta: AngularComponentMetaResult | undefined) => ({
   extractComponentMeta: vi.fn<AngularComponentMetaSource['extractComponentMeta']>(() => meta),
@@ -118,8 +111,6 @@ describe('buildDocgenPayload', () => {
       id: 'button',
       name: 'ButtonComponent',
       path: entry.importPath,
-      description: 'Renders a button.',
-      jsDocTags: {},
       renderer: 'angular',
       apiDescription: expect.stringContaining('export type ButtonComponentInputs = {'),
     });
@@ -153,121 +144,54 @@ describe('buildDocgenPayload', () => {
     expect(payload?.angularComponentMeta?.standalone).toBe(expected);
   });
 
-  describe('description and JSDoc tags', () => {
-    it.each([
-      [
-        'falls back to the trimmed rawdescription when TypeScript JSDoc is unavailable',
-        '\n\nRenders a button.\n',
-        'ignored',
-        'Renders a button.',
-      ],
-      [
-        'falls back to the description when rawdescription is empty',
-        '',
-        'Renders a button.',
-        'Renders a button.',
-      ],
-      ['reports no description when both are empty', '', '', undefined],
-    ])('%s', (_name, rawdescription, description, expected) => {
-      givenStoryFile();
-      const manager = managerReturning(metaFor(componentEntry({ rawdescription, description })));
-
-      expect(buildDocgenPayload({ entry }, context(manager))?.description).toBe(expected);
+  it('reads the name, description and tags from the source, not from the analyzer', () => {
+    givenStoryFile();
+    const classMeta = componentEntry({
+      name: 'AnalyzerName',
+      description: 'Analyzer prose.',
+      rawdescription: 'Analyzer prose.',
+      jsdoctags: [{ tagName: { escapedText: 'summary' }, comment: 'Analyzer summary' }],
     });
 
-    it('publishes TypeScript-rendered tags and sources `summary` from a @summary tag', () => {
-      givenStoryFile();
-      const manager = managerReturning(
-        metaFor(componentEntry(), {
-          description: 'Renders a TypeScript-documented button.',
-          jsDocTags: {
-            summary: ['A clickable button'],
-            see: ['a', 'b'],
-            internal: [''],
-          },
-        })
-      );
+    const payload = buildDocgenPayload({ entry }, context(managerReturning(metaFor(classMeta))));
 
-      const payload = buildDocgenPayload({ entry }, context(manager));
+    expect({
+      name: payload?.name,
+      description: payload?.description,
+      summary: payload?.summary,
+      jsDocTags: payload?.jsDocTags,
+    }).toMatchInlineSnapshot(`
+      {
+        "description": "Renders with {@link IconButton} in prose.
+      Use together with",
+        "jsDocTags": {
+          "deprecated": [
+            "Use NewButton.",
+          ],
+          "example": [
+            "<sb-button label="Save">
+      Save
+      </sb-button>",
+          ],
+          "see": [
+            "ButtonGroup for accessibility.",
+          ],
+        },
+        "name": "ButtonComponent",
+        "summary": undefined,
+      }
+    `);
+  });
 
-      expect(payload?.description).toBe('Renders a TypeScript-documented button.');
-      expect(payload?.jsDocTags).toEqual({
-        summary: ['A clickable button'],
-        see: ['a', 'b'],
-        internal: [''],
-      });
-      expect(payload?.summary).toBe('A clickable button');
-    });
+  it('keeps the docs of the source when the analyzer has no metadata', () => {
+    givenStoryFile();
 
-    // TypeScript reports an empty description for a docblock that is nothing but tags, and for a
-    // class with no docblock at all. Neither means "the analyzer's description is wrong", so an
-    // empty one falls through rather than overwriting it.
-    it('falls back to analyzer prose when TypeScript reports an empty description', () => {
-      givenStoryFile();
-      const manager = managerReturning(
-        metaFor(componentEntry({ rawdescription: 'Legacy analyzer prose.' }), {
-          description: '',
-          jsDocTags: { deprecated: ['Use NewButton.'] },
-        })
-      );
+    const payload = buildDocgenPayload({ entry }, context(managerReturning(undefined)));
 
-      const payload = buildDocgenPayload({ entry }, context(manager));
-
-      expect(payload?.description).toBe('Legacy analyzer prose.');
-      expect(payload?.jsDocTags).toEqual({ deprecated: ['Use NewButton.'] });
-    });
-
-    it('leaves the description undefined for an undocumented component', () => {
-      givenStoryFile();
-      const manager = managerReturning(
-        metaFor(componentEntry({ rawdescription: undefined, description: undefined }), {
-          description: '',
-          jsDocTags: {},
-        })
-      );
-
-      const payload = buildDocgenPayload({ entry }, context(manager));
-
-      expect(payload?.description).toBeUndefined();
-    });
-
-    it('falls back to analyzer tags when TypeScript JSDoc is unavailable', () => {
-      givenStoryFile();
-      const manager = managerReturning(
-        metaFor(
-          componentEntry({
-            jsdoctags: [
-              { tagName: { escapedText: 'summary' }, comment: 'A clickable button' },
-              { tagName: { escapedText: 'see' }, comment: 'a' },
-              { tagName: { escapedText: 'see' }, comment: 'b' },
-              { tagName: { escapedText: 'internal' } },
-              { comment: 'orphan' },
-              {},
-            ],
-          })
-        )
-      );
-
-      const payload = buildDocgenPayload({ entry }, context(manager));
-
-      expect({ summary: payload?.summary, jsDocTags: payload?.jsDocTags }).toMatchInlineSnapshot(`
-          {
-            "jsDocTags": {
-              "internal": [
-                "",
-              ],
-              "see": [
-                "a",
-                "b",
-              ],
-              "summary": [
-                "A clickable button",
-              ],
-            },
-            "summary": "A clickable button",
-          }
-        `);
-    });
+    expect(payload?.error?.name).toBe('AngularComponentMetaNotFound');
+    expect(payload?.description).toBe(
+      'Renders with {@link IconButton} in prose.\nUse together with'
+    );
   });
 
   describe('extraction rules on the analyzer path', () => {
@@ -288,7 +212,6 @@ describe('buildDocgenPayload', () => {
 
       const payload = buildDocgenPayload({ entry }, context(managerReturning(metaFor(classMeta))));
 
-      expect(payload?.jsDocTags).toEqual({});
       expect(payload?.argTypes?.items?.table?.defaultValue).toEqual({
         summary: '[] as Array<string>',
       });

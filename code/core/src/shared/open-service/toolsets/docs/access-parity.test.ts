@@ -108,10 +108,19 @@ function serviceToolset() {
   const services: Record<string, object> = {
     'core/docgen': {
       queries: {
-        docgenForAllComponents: { loaded: async () => ({ button: docgenPayload }) },
         docgen: {
           loaded: async ({ id }: { id: string }) => (id === 'button' ? docgenPayload : undefined),
         },
+      },
+      commands: {
+        summarizeComponents: async () => [
+          {
+            id: 'button',
+            name: docgenPayload.name,
+            description: docgenPayload.description,
+            summary: docgenPayload.summary,
+          },
+        ],
       },
     },
     'core/story-docs': {
@@ -288,10 +297,9 @@ describe('docs tools render the same text in dev and from a built Storybook', ()
   function devAccess() {
     const services: Record<string, object> = {
       'core/docgen': {
-        queries: {
-          docgenForAllComponents: { loaded: async () => ({}) },
-          docgen: { loaded: async () => undefined },
-        },
+        queries: { docgen: { loaded: async () => undefined } },
+        // No docgen names the component, so its summary names it by its id.
+        commands: { summarizeComponents: async () => [{ id: componentId, name: componentId }] },
       },
       'core/story-docs': {
         queries: {

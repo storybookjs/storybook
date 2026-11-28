@@ -34,10 +34,9 @@ function mergeTags(
 /**
  * Splits a bare docblock body (no `/**` markers) into its description and a compact tag map.
  *
- * For docblocks that only exist as raw text — CSF story/meta docblocks and TS-less docgen engines.
- * When a TS checker and symbol are available, `extractComponentJsDocInfo` in
- * `core/src/component-meta/jsdoc-info.ts` is the canonical extractor instead; the two differ on
- * malformed input (this one only treats line-leading `@tags` as tags).
+ * For CSF story and meta docblocks. The docblocks on a component's declaration are read by
+ * {@link extractDeclarationJSDocInfo}; the two differ on malformed input (this one only treats
+ * line-leading `@tags` as tags).
  */
 export function extractJSDocInfo(jsdocComment: string) {
   const lines = jsdocComment.split('\n');
@@ -68,6 +67,44 @@ export function extractJSDocInfo(jsdocComment: string) {
       ])
     ) as JsDocTagMap,
   };
+}
+
+// TypeScript starts a tag at an `@` that opens a line, or that sits between a space and text.
+const TYPESCRIPT_TAG_START = /^[ \t]*@|[ \t]@(?!\s)/m;
+
+/**
+ * The description and tag map of a declaration, from the bare bodies of its docblocks, as an
+ * editor shows them on hover. A tag can start mid-sentence, and a name declared more than once, as
+ * a component with overloads or with a type of its name, has the descriptions of its docblocks on
+ * a line each.
+ *
+ * This is how docgen reads the docs of a component. It follows TypeScript for docblocks as they
+ * are usually written, and is not its parser:
+ *
+ * - An inline `{@link}` stays as written, where TypeScript prints it by what it resolves to.
+ * - A line of a tag's text loses its indentation, where TypeScript keeps what goes beyond the
+ *   tag's own.
+ * - An `@` after a space starts a tag between backticks too, where TypeScript reads on in the text
+ *   of a tag.
+ */
+export function extractDeclarationJSDocInfo(docblocks: string[]) {
+  const descriptions = new Set<string>();
+  const tags: JsDocTagMap = {};
+  for (const docblock of docblocks) {
+    const [description, ...tagTexts] = docblock.split(TYPESCRIPT_TAG_START);
+    if (description.trim()) {
+      descriptions.add(description.trim());
+    }
+    for (const tagText of tagTexts) {
+      const name = /^[\w$-]*/.exec(tagText)![0];
+      const value = tagText
+        .slice(name.length)
+        .replace(/^[ \t]+/gm, '')
+        .trim();
+      (tags[name] ??= []).push(value);
+    }
+  }
+  return { description: [...descriptions].join('\n'), tags };
 }
 
 /**

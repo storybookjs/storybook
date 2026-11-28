@@ -292,10 +292,6 @@ describe('prop extraction via story JSX', () => {
     expect(entry.component?.reactComponentMeta).toMatchObject({
       displayName: 'Accordion.Root',
       exportName: 'Accordion',
-      description: 'Compound root description',
-      jsDocTags: {
-        summary: ['Compound root summary'],
-      },
       props: {
         multiple: {
           type: { name: 'boolean' },
@@ -342,10 +338,6 @@ describe('prop extraction via story JSX', () => {
     expect(entry.component?.reactComponentMeta).toMatchObject({
       displayName: 'Popover.Panel',
       exportName: 'Panel',
-      description: 'Panel description',
-      jsDocTags: {
-        summary: ['Panel summary'],
-      },
       props: {
         label: {
           type: { name: 'string' },
@@ -405,10 +397,6 @@ describe('prop extraction via story JSX', () => {
     expect(entry.component?.reactComponentMeta).toMatchObject({
       displayName: 'Button.Aligner',
       exportName: 'default',
-      description: 'Aligner description',
-      jsDocTags: {
-        summary: ['Aligner summary'],
-      },
       props: {
         side: {
           type: {

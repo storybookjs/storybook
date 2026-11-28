@@ -16,7 +16,7 @@ import {
   resolveReference,
   stringOption,
 } from './decorators.ts';
-import { getJsDocDescription, getJsDocTagsField, hasJsDocTag } from './jsdoc.ts';
+import { hasJsDocTag } from './jsdoc.ts';
 import { TypeIndex } from './type-index.ts';
 
 /** A context over one source file; shared between the file's analysis and its argTypes extraction. */
@@ -70,11 +70,7 @@ export function analyzeSourceFile(
     const name = statement.name.text;
     const file = sourceFile.fileName;
     const members = collectClassMembers(ctx, statement, kind);
-    const common = {
-      file,
-      ...getJsDocDescription(ts, statement),
-      ...getJsDocTagsField(ts, statement),
-    };
+    const common = { file };
 
     if (kind === 'component' || kind === 'directive') {
       const { selector, standalone } = componentMetadata(ctx, statement, kind);

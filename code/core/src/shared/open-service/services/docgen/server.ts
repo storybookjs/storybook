@@ -1,12 +1,17 @@
 import type { ChannelLike } from 'storybook/internal/channels';
-import { getStoryImportPathFromEntry } from '../../../../common/utils/select-component-entry.ts';
-import type { StoryIndex } from '../../../../types/modules/indexer.ts';
+import { logger } from 'storybook/internal/node-logger';
+import {
+  getStoryImportPathFromEntry,
+  selectComponentEntriesByComponentId,
+} from '../../../../common/utils/select-component-entry.ts';
+import type { IndexEntry, StoryIndex } from '../../../../types/modules/indexer.ts';
 import {
   registerExtractionService,
   subscribeExtractionServiceToModuleGraphChanges,
 } from '../extraction-service.server.ts';
+import { readComponent } from '../component-state-key.ts';
 import { docgenServiceDef } from './definition.ts';
-import type { DocgenProvider } from './types.ts';
+import type { ComponentSummary, DocgenProvider } from './types.ts';
 
 export type RegisterDocgenServiceOptions = {
   /**
@@ -16,6 +21,11 @@ export type RegisterDocgenServiceOptions = {
   getIndex: () => Promise<StoryIndex>;
   /** Fully composed docgen provider chain from `presets.apply('experimental_docgenProvider', ...)`. */
   docgenProvider: DocgenProvider;
+  /**
+   * Summarizes the component of each entry through the summary providers of the chain. Resolves to
+   * `undefined` when a provider has none, so that docgen has to be extracted for the summaries.
+   */
+  summarize?: (entries: IndexEntry[]) => Promise<ComponentSummary[] | undefined>;
 };
 
 /** Registers the `core/docgen` open service against the process-global registry. */
@@ -34,6 +44,34 @@ export function registerDocgenService(options: RegisterDocgenServiceOptions) {
     toQueryInput: (id) => ({ id }),
     extractCommand: 'extractDocgen',
     extractAllCommand: 'extractAllDocgen',
+    commands: {
+      summarizeComponents: {
+        handler: async (_input, ctx) => {
+          const entries = selectComponentEntriesByComponentId(
+            Object.values((await options.getIndex()).entries)
+          );
+          // A worker that cannot summarize must not cost the listing: extraction reports a
+          // failing component in its payload.
+          const summaries = await options.summarize?.([...entries.values()]).catch((error) => {
+            logger.debug(`Summarizing components failed, so their docgen is extracted: ${error}`);
+            return undefined;
+          });
+          if (summaries) {
+            return summaries;
+          }
+          const allDocgen = await ctx.self.queries.docgenForAllComponents.loaded();
+          return Array.from(entries.keys(), (id) => {
+            const { name = id, description, summary } = readComponent(allDocgen, id) ?? {};
+            return {
+              id,
+              name,
+              ...(description !== undefined ? { description } : {}),
+              ...(summary !== undefined ? { summary } : {}),
+            };
+          });
+        },
+      },
+    },
   });
 }
 

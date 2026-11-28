@@ -3,6 +3,8 @@ import type {
   DocgenPayload,
   DocgenProvider,
   DocgenProviderInput,
+  DocgenSummary,
+  DocgenSummaryProvider,
 } from '../../shared/open-service/services/docgen/types.ts';
 import { STORY_FILE_TEST_REGEXP, getStoryImportPathFromEntry } from './select-component-entry.ts';
 
@@ -126,4 +128,39 @@ export function createLazyDocgenMiddleware<TManager>({
       const downstream = await nextDocgen(input);
       return { ...downstream, ...ours };
     };
+}
+
+/**
+ * Builds a renderer's summary provider from the part of its docgen that needs no manager: the name
+ * and docs it reads from source. It answers for the story files that
+ * {@link createLazyDocgenMiddleware} extracts from, and hands any other path to the provider below.
+ */
+export function createDocgenSummaryProvider({
+  storyFileTest = STORY_FILE_TEST_REGEXP,
+  summarize,
+}: {
+  storyFileTest?: RegExp;
+  /** Summarizes one component. Returns `undefined` where the docgen delegates downstream. */
+  summarize: (
+    input: DocgenProviderInput
+  ) => DocgenSummary | undefined | Promise<DocgenSummary | undefined>;
+}): DocgenSummaryProvider {
+  return async (inputs) => {
+    const summaries: (DocgenSummary | undefined)[] = [];
+    // One at a time, so the parsed files of one story are released before the next is read.
+    for (const input of inputs) {
+      const storyImportPath = getStoryImportPathFromEntry(input.entry);
+      if (!storyImportPath || !storyFileTest.test(storyImportPath)) {
+        summaries.push(undefined);
+        continue;
+      }
+      try {
+        summaries.push(await summarize(input));
+      } catch {
+        // Left to the provider below, so that the other components keep their summary.
+        summaries.push(undefined);
+      }
+    }
+    return summaries;
+  };
 }

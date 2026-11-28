@@ -1,22 +1,21 @@
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
-import { preprocess } from 'svelte/compiler';
-
 import type {
   DocgenPayload,
   DocgenProviderInput,
   DocgenSubcomponent,
+  DocgenSummary,
 } from 'storybook/internal/types';
 import {
   componentPathFromStory,
   getComponentIdFromEntry,
   getStoryImportPathFromEntry,
 } from 'storybook/internal/common';
-import { extractComponentDescription } from 'storybook/internal/csf-tools';
 
 import { buildApiDescription } from './api-description/api-description.ts';
 import { createServerArgTypes } from './arg-types/create-server-arg-types.ts';
+import { readComponentDescription } from './component-comment.ts';
 import {
   resolveStoryComponent,
   resolveStorySubcomponents,
@@ -24,6 +23,35 @@ import {
 import type { SvelteComponentMetaManager } from './component-meta/svelte-project-manager.ts';
 
 export type BuildDocgenContext = { componentMetaManager: SvelteComponentMetaManager };
+
+// What the source says of the component a story file documents: its name, and the docs in its
+// `@component` comment. `undefined` when the story file documents no Svelte component.
+async function describeStoryComponent(input: DocgenProviderInput) {
+  const component = await resolveStoryComponent(input.entry);
+  return (
+    component && {
+      component,
+      docs: { name: component.name, ...(await readDocs(component.componentPath)) },
+    }
+  );
+}
+
+const titleName = ({ entry }: DocgenProviderInput) => entry.title.split('/').at(-1) ?? entry.title;
+
+// The part of `buildDocgenPayload` that comes from source, which needs no type checker.
+export async function buildDocgenSummary(
+  input: DocgenProviderInput
+): Promise<DocgenSummary | undefined> {
+  if (!getStoryImportPathFromEntry(input.entry)) return undefined;
+  try {
+    const described = await describeStoryComponent(input);
+    if (!described) return undefined;
+    const { name, description, summary } = described.docs;
+    return { name, description, summary };
+  } catch {
+    return { name: titleName(input) };
+  }
+}
 
 export async function buildDocgenPayload(
   input: DocgenProviderInput,
@@ -33,15 +61,18 @@ export async function buildDocgenPayload(
   if (!path) return undefined;
   const base = {
     id: getComponentIdFromEntry(input.entry),
-    name: input.entry.title.split('/').at(-1) ?? input.entry.title,
+    name: titleName(input),
     path,
     jsDocTags: {},
     renderer: 'svelte',
   };
+  let docs: Awaited<ReturnType<typeof readDocs>> | undefined;
   try {
-    const component = await resolveStoryComponent(input.entry);
-    if (!component) return undefined;
-    const docs = await componentDocs(component.componentPath, component.name, context);
+    const described = await describeStoryComponent(input);
+    if (!described) return undefined;
+    const { component } = described;
+    docs = described.docs;
+    const props = componentProps(component.componentPath, component.name, context);
     const subcomponents: Record<string, DocgenSubcomponent> = {};
     for (const [name, subcomponent] of Object.entries(
       await resolveStorySubcomponents(input.entry)
@@ -50,7 +81,8 @@ export async function buildDocgenPayload(
         subcomponents[name] = {
           name,
           path: componentPathFromStory(path, resolve(path), subcomponent.componentPath),
-          ...(await componentDocs(subcomponent.componentPath, name, context)),
+          ...(await readDocs(subcomponent.componentPath)),
+          ...componentProps(subcomponent.componentPath, name, context),
         };
       } catch {
         continue;
@@ -58,13 +90,14 @@ export async function buildDocgenPayload(
     }
     return {
       ...base,
-      name: component.name,
       ...docs,
+      ...props,
       ...(Object.keys(subcomponents).length ? { subcomponents } : {}),
     };
   } catch (error) {
     return {
       ...base,
+      ...docs,
       error: {
         name: 'Svelte docgen failed',
         message: error instanceof Error ? error.message : String(error),
@@ -73,15 +106,14 @@ export async function buildDocgenPayload(
   }
 }
 
-async function componentDocs(componentPath: string, name: string, context: BuildDocgenContext) {
-  const source = await readFile(componentPath, 'utf8');
-  const documentationSource = await preprocess(source, { style: () => ({ code: '' }) });
-  const docgen = context.componentMetaManager.generateDocgen(componentPath, {
-    server: true,
-    documentationSource: documentationSource.code,
-  });
+// What the source says of a component, in its `@component` comment.
+const readDocs = async (componentPath: string) =>
+  readComponentDescription(await readFile(componentPath, 'utf8'));
+
+// The props of a component, which the type checker finds.
+function componentProps(componentPath: string, name: string, context: BuildDocgenContext) {
+  const docgen = context.componentMetaManager.generateDocgen(componentPath, { server: true });
   return {
-    ...extractComponentDescription(undefined, docgen.description, docgen.jsDocTags),
     argTypes: createServerArgTypes(docgen),
     apiDescription: buildApiDescription(name, docgen),
   };

@@ -2,7 +2,11 @@ import { expect, it } from 'vitest';
 
 import { dedent } from 'ts-dedent';
 
-import { extractComponentDescription, extractJSDocInfo } from './jsdoc.ts';
+import {
+  extractComponentDescription,
+  extractDeclarationJSDocInfo,
+  extractJSDocInfo,
+} from './jsdoc.ts';
 
 it('should extract @summary tag', () => {
   const code = dedent`description\n@summary\n my summary`;
@@ -122,5 +126,50 @@ it('trims a single-word tag value, whose name and empty description would otherw
   ).toEqual({
     summary: ['Clickable'],
     deprecated: ['Use NewButton.'],
+  });
+});
+
+it('reads a declaration docblock as TypeScript does, with a tag that starts mid-sentence', () => {
+  expect(
+    extractDeclarationJSDocInfo([
+      dedent`
+        Wraps the @angular/cdk overlay, see {@link Overlay}.
+
+        @summary for menus
+          and popovers
+        @deprecated
+        @example <Menu />
+        @example <Popover />
+      `,
+    ])
+  ).toEqual({
+    description: 'Wraps the',
+    tags: {
+      angular: ['/cdk overlay, see {@link Overlay}.'],
+      summary: ['for menus\nand popovers'],
+      deprecated: [''],
+      example: ['<Menu />', '<Popover />'],
+    },
+  });
+});
+
+it('reads an email address and a docblock without tags as description only', () => {
+  expect(extractDeclarationJSDocInfo(['Mail us at help@example.com.'])).toEqual({
+    description: 'Mail us at help@example.com.',
+    tags: {},
+  });
+});
+
+it('reads the docblocks of one name as TypeScript merges them: a description on a line each, once', () => {
+  expect(
+    extractDeclarationJSDocInfo([
+      'With a label.\n@summary labelled',
+      '@deprecated',
+      'With a count.',
+      'With a label.',
+    ])
+  ).toEqual({
+    description: 'With a label.\nWith a count.',
+    tags: { summary: ['labelled'], deprecated: [''] },
   });
 });

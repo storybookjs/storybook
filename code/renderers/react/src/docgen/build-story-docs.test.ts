@@ -108,6 +108,34 @@ describe('buildStoryDocsPayload', () => {
     expect(primaryStory!.snippet).toMatch(/<Button label="hi"/);
   });
 
+  it('imports the component as the `@import` tag in its docblock says', async () => {
+    tempDir = createTempDir('story-docs-import-tag');
+
+    const files = writeFiles(tempDir, {
+      'Button.tsx': dedent`
+        import React from 'react';
+        /**
+         * A button.
+         *
+         * @import import { Button } from '@acme/ui';
+         */
+        export const Button = (_props: { label: string }) => <button />;
+      `,
+      'Button.stories.tsx': dedent`
+        import { Button } from './Button';
+        export default { component: Button, title: 'Forms/Button' };
+        export const Primary = { args: { label: 'hi' } };
+      `,
+    });
+
+    const payload = await buildStoryDocsPayload(
+      { entry: makeStoryIndexEntry(files['Button.stories.tsx'], 'Forms/Button') },
+      { resolvePath: (p) => (path.isAbsolute(p) ? p : path.join(tempDir!, p)) }
+    );
+
+    expect(payload?.import).toBe("import { Button } from '@acme/ui';");
+  });
+
   it('carries a template for the preview to fill next to the static snippet', async () => {
     tempDir = createTempDir('story-docs-build');
 

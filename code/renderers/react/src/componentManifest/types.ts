@@ -1,9 +1,12 @@
-import type { ComponentImportRef, JsDocTagMap } from 'storybook/internal/csf-tools';
+import type { DeclarationDocs } from 'storybook/internal/common';
+import type { ComponentImportRef } from 'storybook/internal/csf-tools';
 
 import type ts from 'typescript';
 
 export type ComponentRef = ComponentImportRef & {
-  componentJsDocTags?: JsDocTagMap;
+  // The docs in the docblock on the component's declaration, read from source. Set on the component
+  // and the subcomponents that a story file documents.
+  jsDoc?: DeclarationDocs;
   /**
    * The file the story file's import resolves to, which names the package in the import lines. The
    * engines can document another file: the one core's resolver finds the component declared in.

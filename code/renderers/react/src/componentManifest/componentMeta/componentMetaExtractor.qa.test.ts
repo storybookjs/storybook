@@ -566,9 +566,7 @@ describe('real-world component patterns', () => {
       );
 
       expect(entry.component?.reactComponentMeta).toMatchObject({
-        description: 'Primary UI component for user interaction',
         displayName: 'Button',
-        jsDocTags: { import: ["import { Button } from '@design-system/components/override';"] },
         props: {
           primary: { description: 'Description of primary', defaultValue: { value: 'false' } },
           size: { defaultValue: { value: "'medium'" } },

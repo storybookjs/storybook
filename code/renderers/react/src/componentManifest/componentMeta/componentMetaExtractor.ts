@@ -23,8 +23,6 @@
  */
 import type ts from 'typescript';
 
-import { extractComponentJsDocInfo } from 'storybook/internal/component-meta';
-
 import type { ComponentRef, ResolvedComponentTarget } from '../types.ts';
 import { groupByToMap } from '../utils.ts';
 import type { DocgenTypeChecker, DocgenTypeScript } from '@storybook/component-meta-typescript';
@@ -60,8 +58,6 @@ export interface ComponentDoc {
   displayName?: string;
   exportName: string;
   filePath: string;
-  description: string;
-  jsDocTags?: Record<string, string[]>;
   props: Record<string, PropItem>;
 }
 
@@ -1721,30 +1717,10 @@ export function serializeComponentDoc(
     }) ??
     displayNameOverride;
 
-  const resolvedJsDocInfo = extractComponentJsDocInfo(typescript, checker, resolved);
-  const description = resolvedJsDocInfo.description;
-  const selectedJsDocTags = resolvedJsDocInfo.jsDocTags;
-  const exportResolved =
-    exportSymbol && exportSymbol !== resolved
-      ? resolveAliasedSymbol(typescript, checker, exportSymbol)
-      : undefined;
-  const exportJsDocTags = exportResolved
-    ? extractComponentJsDocInfo(typescript, checker, exportResolved).jsDocTags
-    : undefined;
-  const jsDocTags =
-    selectedJsDocTags?.import || !exportJsDocTags?.import
-      ? selectedJsDocTags
-      : {
-          ...(selectedJsDocTags ?? {}),
-          import: exportJsDocTags.import,
-        };
-
   return {
     displayName,
     exportName,
     filePath,
-    description,
-    jsDocTags,
     props,
   };
 }

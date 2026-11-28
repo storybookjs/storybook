@@ -211,7 +211,7 @@ describe('delegated command dispatch', () => {
     const error = await promise.catch((caught: unknown) => caught);
     expect(error).toBeInstanceOf(OpenServiceRemoteCommandConfigDriftError);
     expect((error as Error).message).toBe(
-      'The Storybook this runtime is attached to reported it has no handler for remote command "internal-fixture/delegated-local-implementation.doThing". The two processes are running different configurations (for example a feature flag enabled in one but not the other). Restart the attached Storybook with a configuration matching this process.'
+      'The Storybook this runtime is attached to reported it has no handler for remote command "internal-fixture/delegated-local-implementation.doThing". The two processes are running different configurations (for example a feature flag enabled in one but not the other) or different Storybook versions. Restart the attached Storybook so that it matches this process.'
     );
   });
 

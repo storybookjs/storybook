@@ -22,7 +22,6 @@ import {
   OpenServiceMissingServiceError,
 } from '../../../../server-errors.ts';
 import { Tag } from '../../../constants/tags.ts';
-import { readComponent } from '../../services/component-state-key.ts';
 import type { DocgenService } from '../../services/docgen/definition.ts';
 import type { StoryDocsService } from '../../services/story-docs/definition.ts';
 import type { ToolsetGetService } from '../../toolset-definition.ts';
@@ -147,8 +146,14 @@ export function createServiceDocsAccess({
     classification: DocsClassification,
     withStoryIds: boolean
   ): Promise<Record<string, ComponentManifestV1>> {
-    // Every component must be listed even without a prior extraction, so load rather than read.
-    const allDocgen = await getDocgen().queries.docgenForAllComponents.loaded();
+    // A name and a one-line summary are all a listing shows of a component's docgen, so it asks
+    // for those alone instead of extracting the docgen of every component.
+    const summaries = new Map(
+      (await getDocgen().commands.summarizeComponents(undefined)).map((summary) => [
+        summary.id,
+        summary,
+      ])
+    );
 
     const storyDocs = getStoryDocs();
     const storyBasedIds = withStoryIds
@@ -171,12 +176,12 @@ export function createServiceDocsAccess({
 
     const components: Record<string, ComponentManifestV1> = {};
     for (const id of classification.componentIds) {
-      const payload = readComponent(allDocgen, id);
+      const { name = id, description, summary } = summaries.get(id) ?? {};
       components[id] = {
         id,
-        name: payload?.name ?? id,
-        ...(payload?.description !== undefined ? { description: payload.description } : {}),
-        ...(payload?.summary !== undefined ? { summary: payload.summary } : {}),
+        name,
+        ...(description !== undefined ? { description } : {}),
+        ...(summary !== undefined ? { summary } : {}),
         ...(classification.storyBasedIds.has(id) && withStoryIds
           ? { stories: adaptCoreStories(storiesById.get(id)?.stories) ?? [] }
           : {}),

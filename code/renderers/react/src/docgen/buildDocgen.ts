@@ -3,6 +3,7 @@ import type {
   DocgenPayload,
   DocgenProviderInput,
   DocgenSubcomponent,
+  DocgenSummary,
   StrictArgTypes,
 } from 'storybook/internal/types';
 
@@ -10,7 +11,10 @@ import { type DocgenResult, getStoryImportPathFromEntry } from 'storybook/intern
 import { logger } from 'storybook/internal/node-logger';
 import path from 'pathe';
 
-import { buildComponentDocgenFromResolved } from '../componentManifest/buildReactComponentDocgen.ts';
+import {
+  buildComponentDocgenFromResolved,
+  describeComponent,
+} from '../componentManifest/buildReactComponentDocgen.ts';
 import {
   type ComponentMetaManager,
   isExtractable,
@@ -200,12 +204,28 @@ export async function buildDocgenPayloads(
   return extractEach(inputs, (input) => buildDocgenPayload(input, { ...context, batchFiles }));
 }
 
+// The part of `buildDocgenPayload` that comes from source, which needs no type checker.
+export async function buildDocgenSummary(
+  input: DocgenProviderInput,
+  context: Pick<BuildDocgenContext, 'typescriptOptions' | 'resolvePath'> = {}
+): Promise<DocgenSummary | undefined> {
+  const story = await resolveStory(input, context);
+  if (!story) {
+    return undefined;
+  }
+  const { name, description, summary } = describeComponent({
+    entry: input.entry,
+    ...story.resolved,
+  });
+  return { name, description, summary };
+}
+
 /**
  * Build a {@link DocgenPayload} for the component found in one CSF story file.
  *
  * Uses {@link resolveStoryFileComponents} and {@link buildComponentDocgenFromResolved} for
- * shared field shaping, runs RCM `batchExtract`, then returns component docgen without story
- * snippets (those live in `core/story-docs`).
+ * shared field shaping, runs RCM `batchExtract` for the props, then returns component docgen
+ * without story snippets (those live in `core/story-docs`).
  *
  * Returns `undefined` when the story file cannot be read or parsed — the docgen-service provider
  * chain treats undefined as "no docgen here, fall through to the next provider". Resolution errors

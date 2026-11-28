@@ -2,19 +2,15 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import svelte2tsx, { internalHelpers } from 'svelte2tsx';
-import { VERSION, parse } from 'svelte/compiler';
+import { VERSION } from 'svelte/compiler';
 import ts from 'typescript';
-
-import { extractComponentComment } from '../component-comment.ts';
 
 export type Docgen = {
   name?: string;
-  description?: string;
   /** The `generics` attribute of the instance script, such as `Value extends string`. */
   typeParams?: string;
   /** The library types the props extend whose members `props` leaves out, such as `HTMLInputAttributes`. */
   omittedTypes?: string[];
-  jsDocTags?: Record<string, string[]>;
   props: PropInfo[];
   events?: PropInfo[];
   slots?: PropInfo[];
@@ -227,7 +223,7 @@ export interface SvelteCommandLine {
   projectReferences?: readonly ts.ProjectReference[];
 }
 
-export type DocgenOptions = { server?: boolean; documentationSource?: string };
+export type DocgenOptions = { server?: boolean };
 
 /** Map a `.svelte` component to the `.svelte.tsx` file svelte2tsx compiles it to. */
 export function virtualFileName(fileName: string): string {
@@ -787,8 +783,6 @@ export function extractDocgen(
     }
   });
 
-  const source = options.documentationSource;
-  const docs = source ? extractComponentComment(parse(source, { modern: true })) : undefined;
   // svelte2tsx gives the render function the type params of both the `generics` attribute and
   // Svelte 4's `type T = $$Generic<string>`.
   const typeParams = renderFunction.typeParameters?.map((param) => param.getText()).join(', ');
@@ -802,6 +796,5 @@ export function extractDocgen(
     slots,
     ...(typeParams ? { typeParams } : {}),
     ...(omittedTypes.length ? { omittedTypes } : {}),
-    ...(docs ? { description: docs.description.trim(), jsDocTags: docs.tags } : {}),
   };
 }

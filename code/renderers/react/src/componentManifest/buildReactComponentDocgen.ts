@@ -133,36 +133,35 @@ function relativizeComponentMetaPaths(doc: ComponentDoc): ComponentDoc {
   };
 }
 
+// The docblock of a component: as read from the source on its declaration, or as react-docgen
+// reports it of the component it found.
+const getJsDoc = (component: ComponentRef | undefined) =>
+  component?.jsDoc ??
+  (component?.reactDocgen?.type === 'success'
+    ? { description: component.reactDocgen.data.description, tags: undefined }
+    : undefined);
+
 function getComponentDocgenData(component: ComponentRef | undefined, docgenEngine: DocgenEngine) {
   let reactDocgen;
   let reactDocgenTypescript;
   let reactComponentMeta;
-  let docgenDescription;
-  let docgenJsDocTags;
   let docgenError;
 
   if (docgenEngine === 'react-docgen') {
     const result = component?.reactDocgen;
     reactDocgen = result?.type === 'success' ? result.data : undefined;
-    docgenDescription = reactDocgen?.description;
     docgenError = result?.type === 'error' ? result.error : undefined;
   } else if (docgenEngine === 'react-docgen-typescript') {
     reactDocgenTypescript = component?.reactDocgenTypescript;
-    docgenDescription = reactDocgenTypescript?.description;
-    docgenJsDocTags = component?.componentJsDocTags;
     docgenError = component?.reactDocgenTypescriptError;
   } else {
     reactComponentMeta = component?.reactComponentMeta
       ? relativizeComponentMetaPaths(component.reactComponentMeta)
       : undefined;
-    docgenDescription = reactComponentMeta?.description;
-    docgenJsDocTags = component?.componentJsDocTags;
   }
 
   return {
-    docgenDescription,
     docgenError,
-    docgenJsDocTags,
     reactComponentMeta,
     reactDocgen,
     reactDocgenTypescript,
@@ -186,18 +185,13 @@ function createSubcomponentDocgen({
     buildImportStatements({ refs: component ? [component] : [], packageName })
       .join('\n')
       .trim() || getFallbackImport(packageName, component?.componentName);
-  const {
-    reactDocgen,
-    reactDocgenTypescript,
-    reactComponentMeta,
-    docgenDescription,
-    docgenJsDocTags,
-    docgenError,
-  } = getComponentDocgenData(component, docgenEngine);
+  const { reactDocgen, reactDocgenTypescript, reactComponentMeta, docgenError } =
+    getComponentDocgenData(component, docgenEngine);
+  const jsDoc = getJsDoc(component);
   const { description, summary, jsDocTags } = extractComponentDescription(
     undefined,
-    docgenDescription,
-    docgenJsDocTags
+    jsDoc?.description,
+    jsDoc?.tags
   );
 
   return {
@@ -218,6 +212,30 @@ function createSubcomponentDocgen({
             message: `No component file found for the "${declaredName}" subcomponent.`,
           }
         : undefined),
+  };
+}
+
+// The part of the docgen of a component that the source gives, which needs no engine. The docblock
+// on the meta wins over the one on the component's declaration.
+export function describeComponent({
+  entry,
+  csf,
+  componentName,
+  component,
+}: {
+  entry: IndexEntry;
+  csf: ParsedCsf;
+  componentName: string | undefined;
+  component: ComponentRef | undefined;
+}) {
+  const jsDoc = getJsDoc(component);
+  return {
+    name: componentName ?? entry.title.split('/').at(-1)!.replace(/\s+/g, ''),
+    ...extractComponentDescription(
+      extractDescription(csf._metaStatement, csf.editor) || undefined,
+      jsDoc?.description,
+      jsDoc?.tags
+    ),
   };
 }
 
@@ -325,25 +343,16 @@ export function buildComponentDocgenFromResolved({
   subcomponents: ResolvedSubcomponent[];
   docgenEngine: DocgenEngine;
 }): ComponentDocgenFromResolved {
-  const id = getComponentIdFromEntry(entry);
-  const title = entry.title.split('/').at(-1)!.replace(/\s+/g, '');
   const packageName = getImportablePackageName(component?.path, storyPath);
 
   const base = {
-    id,
-    name: componentName ?? title,
+    id: getComponentIdFromEntry(entry),
     path: storyFilePath,
-    jsDocTags: {},
+    ...describeComponent({ entry, csf, componentName, component }),
   } satisfies Partial<ComponentDocgenFromResolved>;
 
-  const {
-    reactDocgen,
-    reactDocgenTypescript,
-    reactComponentMeta,
-    docgenDescription,
-    docgenJsDocTags,
-    docgenError,
-  } = getComponentDocgenData(component, docgenEngine);
+  const { reactDocgen, reactDocgenTypescript, reactComponentMeta, docgenError } =
+    getComponentDocgenData(component, docgenEngine);
 
   if (!reactDocgen && !reactDocgenTypescript && !reactComponentMeta) {
     const error = !csf._meta?.component
@@ -359,7 +368,6 @@ export function buildComponentDocgenFromResolved({
 
     return {
       ...base,
-      jsDocTags: base.jsDocTags ?? {},
       error: docgenError ?? {
         name: error.name,
         message:
@@ -370,12 +378,6 @@ export function buildComponentDocgenFromResolved({
     };
   }
 
-  const metaJsDoc = extractDescription(csf._metaStatement, csf.editor) || undefined;
-  const { description, summary, jsDocTags } = extractComponentDescription(
-    metaJsDoc,
-    docgenDescription,
-    docgenJsDocTags
-  );
   const subcomponentEntries = Object.fromEntries(
     subcomponents.map((subcomponent) => [
       subcomponent.name,
@@ -391,12 +393,9 @@ export function buildComponentDocgenFromResolved({
 
   return {
     ...base,
-    description,
-    summary,
     reactDocgen,
     reactDocgenTypescript,
     reactComponentMeta,
-    jsDocTags,
     ...(Object.keys(subcomponentEntries).length > 0 ? { subcomponents: subcomponentEntries } : {}),
     error: docgenError,
   };

@@ -47,6 +47,61 @@ function makeGetIndex(entries: IndexEntry[]) {
 }
 
 describe('docgen open service', () => {
+  describe('summarizeComponents command', () => {
+    const entries = [
+      makeStoryEntry('forms-submit--primary', 'Forms/Submit'),
+      makeStoryEntry('layout-page--default', 'Layout/Page'),
+    ];
+
+    it('returns what the summary providers report for the component entries, without extracting docgen', async () => {
+      const provider = vi.fn<DocgenProvider>();
+      const summarize = vi.fn(async () => [
+        { id: 'forms-submit', name: 'Button', summary: 'for user actions' },
+        { id: 'layout-page', name: 'Page' },
+      ]);
+      const service = registerDocgenService({
+        getIndex: makeGetIndex(entries),
+        docgenProvider: provider,
+        summarize,
+      });
+
+      await expect(service.commands.summarizeComponents(undefined)).resolves.toEqual([
+        { id: 'forms-submit', name: 'Button', summary: 'for user actions' },
+        { id: 'layout-page', name: 'Page' },
+      ]);
+      expect(summarize).toHaveBeenCalledWith(entries);
+      expect(provider).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      ['a provider has no summary provider', async () => undefined],
+      [
+        'the worker cannot summarize',
+        async () => {
+          throw new Error('docgen worker is no longer running');
+        },
+      ],
+    ])('extracts docgen for each component when %s', async (_, summarize) => {
+      const service = registerDocgenService({
+        getIndex: makeGetIndex(entries),
+        docgenProvider: async ({ entry }) =>
+          entry.id === entries[0].id
+            ? makeDocgenPayload({
+                id: 'forms-submit',
+                name: 'my-button',
+                summary: 'From the engine',
+              })
+            : undefined,
+        summarize,
+      });
+
+      await expect(service.commands.summarizeComponents(undefined)).resolves.toEqual([
+        { id: 'forms-submit', name: 'my-button', summary: 'From the engine' },
+        { id: 'layout-page', name: 'layout-page' },
+      ]);
+    });
+  });
+
   describe('extractDocgen command', () => {
     it('hands the resolved index entry to the provider, stores its payload, and returns it', async () => {
       const entry = makeStoryEntry('button--secondary', 'Button');

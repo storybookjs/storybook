@@ -7,19 +7,28 @@ import { logger } from 'storybook/internal/node-logger';
 import type { IndexEntry } from '../../../../../types/modules/indexer.ts';
 import { importMetaResolve } from '../../../../utils/module.ts';
 import type { ErrorLike } from '../../module-graph/types.ts';
-import type { DocgenPayload, DocgenProviderDescriptor } from '../types.ts';
-import type { DocgenWorkerRequest, DocgenWorkerResponse } from './protocol.ts';
+import type { ComponentSummary, DocgenPayload, DocgenProviderDescriptor } from '../types.ts';
+import type {
+  DocgenWorkerExtractSuccess,
+  DocgenWorkerRequest,
+  DocgenWorkerResponse,
+  DocgenWorkerSummarizeSuccess,
+} from './protocol.ts';
 
 // Resolved via the export map, not a hard-coded dist path, so strict layouts like pnpm's work.
 const WORKER_SPECIFIER = 'storybook/internal/docgen-worker';
 
+type Reply = DocgenWorkerExtractSuccess | DocgenWorkerSummarizeSuccess;
+
 interface Pending {
-  resolve: (payload: DocgenPayload | undefined) => void;
+  resolve: (reply: Reply) => void;
   reject: (error: unknown) => void;
 }
 
 export interface DocgenWorkerClient {
   extract(entry: IndexEntry): Promise<DocgenPayload | undefined>;
+  /** The summary of each entry's component; `undefined` when a provider module summarizes nothing. */
+  summarize(entries: IndexEntry[]): Promise<ComponentSummary[] | undefined>;
 }
 
 function errorLikeToError(errorLike: ErrorLike): Error {
@@ -90,6 +99,27 @@ class DocgenWorker implements DocgenWorkerClient {
   }
 
   async extract(entry: IndexEntry): Promise<DocgenPayload | undefined> {
+    const reply = await this.request<DocgenWorkerExtractSuccess>((id) => ({
+      type: 'extract',
+      id,
+      entry,
+    }));
+    return reply.payload;
+  }
+
+  async summarize(entries: IndexEntry[]): Promise<ComponentSummary[] | undefined> {
+    const reply = await this.request<DocgenWorkerSummarizeSuccess>((id) => ({
+      type: 'summarize',
+      id,
+      entries,
+    }));
+    return reply.summaries;
+  }
+
+  // The worker answers a request with the reply of its type, under the id of the request.
+  private async request<TReply extends Reply>(
+    toMessage: (id: number) => DocgenWorkerRequest
+  ): Promise<TReply> {
     if (this.death) {
       // Carries the death forward: the crash itself is one event, but every later extract fails on
       // it, so a bare "no longer running" is the only thing anyone downstream ever sees.
@@ -98,11 +128,11 @@ class DocgenWorker implements DocgenWorkerClient {
       });
     }
     await this.ready;
-    return new Promise<DocgenPayload | undefined>((resolve, reject) => {
+    return new Promise<TReply>((resolve, reject) => {
       const id = this.nextId++;
-      this.pending.set(id, { resolve, reject });
+      this.pending.set(id, { resolve: resolve as Pending['resolve'], reject });
       this.keepProcessAliveWhileBusy();
-      this.post({ type: 'extract', id, entry });
+      this.post(toMessage(id));
     });
   }
 
@@ -119,7 +149,7 @@ class DocgenWorker implements DocgenWorkerClient {
   }
 
   private handleMessage(msg: DocgenWorkerResponse): void {
-    if (msg.type !== 'extract') {
+    if (msg.type === 'init') {
       return;
     }
     const pending = this.pending.get(msg.id);
@@ -127,12 +157,12 @@ class DocgenWorker implements DocgenWorkerClient {
       return;
     }
     this.pending.delete(msg.id);
-    this.served = true;
+    this.served ||= msg.type === 'extract';
     this.keepProcessAliveWhileBusy();
     if (msg.error) {
       pending.reject(errorLikeToError(msg.error));
     } else {
-      pending.resolve(msg.payload);
+      pending.resolve(msg);
     }
   }
 
@@ -180,15 +210,17 @@ export function createDocgenWorkerClient(
   }
 
   let worker: DocgenWorker | undefined;
+  const liveWorker = () => {
+    if (worker?.replaceable) {
+      logger.debug('docgen worker died after serving requests; spawning a replacement');
+      worker = undefined;
+    }
+    worker ??= new DocgenWorker(scriptPath, descriptors);
+    return worker;
+  };
 
   return {
-    async extract(entry) {
-      if (worker?.replaceable) {
-        logger.debug('docgen worker died after serving requests; spawning a replacement');
-        worker = undefined;
-      }
-      worker ??= new DocgenWorker(scriptPath, descriptors);
-      return worker.extract(entry);
-    },
+    extract: async (entry) => liveWorker().extract(entry),
+    summarize: async (entries) => liveWorker().summarize(entries),
   };
 }

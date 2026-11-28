@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import type { IndexEntry } from '../../../../../types/modules/indexer.ts';
 import type { DocgenProviderDescriptor } from '../types.ts';
 import type { DocgenWorkerRequest, DocgenWorkerResponse } from './protocol.ts';
 
@@ -134,6 +135,33 @@ describe('createDocgenWorkerClient', () => {
   });
 });
 
+describe('DocgenWorkerClient.summarize', () => {
+  it.each([
+    ['the summaries the worker reports', [{ id: 'button', name: 'Button' }]],
+    ['undefined when a provider module summarizes nothing', undefined],
+  ])('dispatches the entries and resolves %s', async (_, summaries) => {
+    const { createDocgenWorkerClient } = await loadModule();
+    const client = createDocgenWorkerClient(DESCRIPTORS)!;
+
+    const entries = [{ id: 'button--primary', importPath: './button.stories.tsx' }] as IndexEntry[];
+    const promise = client.summarize(entries);
+    const worker = fakeWorkers[0];
+    ackInit(worker);
+    await Promise.resolve();
+
+    const summarizeMsg = worker.posted.find((m) => m.type === 'summarize');
+    expect(summarizeMsg).toMatchObject({ type: 'summarize', entries });
+
+    worker.emit('message', {
+      type: 'summarize',
+      id: (summarizeMsg as { id: number }).id,
+      summaries,
+    } satisfies DocgenWorkerResponse);
+
+    await expect(promise).resolves.toEqual(summaries);
+  });
+});
+
 describe('DocgenWorkerClient.extract', () => {
   it('waits for init, dispatches the entry, and resolves the payload', async () => {
     const { createDocgenWorkerClient } = await loadModule();
@@ -262,5 +290,28 @@ describe('DocgenWorkerClient.extract', () => {
       payload: { id: 'y', name: 'Y', path: './y.stories.ts', jsDocTags: {} },
     } satisfies DocgenWorkerResponse);
     await expect(second).resolves.toMatchObject({ id: 'y' });
+  });
+
+  it('does not spawn a replacement for a worker that only summarized before it died', async () => {
+    const { createDocgenWorkerClient } = await loadModule();
+    const client = createDocgenWorkerClient(DESCRIPTORS)!;
+
+    const summaries = client.summarize([]);
+    ackInit(fakeWorkers[0]);
+    await Promise.resolve();
+    const summarizeMsg = fakeWorkers[0].posted.find((m) => m.type === 'summarize') as {
+      id: number;
+    };
+    fakeWorkers[0].emit('message', {
+      type: 'summarize',
+      id: summarizeMsg.id,
+      summaries: [],
+    } satisfies DocgenWorkerResponse);
+    await summaries;
+
+    fakeWorkers[0].emit('error', new Error('worker ran out of memory'));
+
+    await expect(client.extract({ id: 'y' } as any)).rejects.toThrow('no longer running');
+    expect(fakeWorkers).toHaveLength(1);
   });
 });

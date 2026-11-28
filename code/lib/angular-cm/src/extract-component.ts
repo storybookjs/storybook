@@ -1,8 +1,4 @@
 import { isInNodeModules } from 'storybook/internal/common';
-import {
-  type ComponentJsDocInfo,
-  extractComponentJsDocInfo,
-} from 'storybook/internal/component-meta';
 import { logger } from 'storybook/internal/node-logger';
 
 import type * as ts from 'typescript';
@@ -32,16 +28,7 @@ export function extractComponent(
   const entry = pickEntry(typescript, fileMeta, sourceFile, names);
   if (entry) {
     debug(`${describe(entry)} from ${sourceFile.fileName}`);
-    return {
-      entry,
-      json: fileMeta,
-      context,
-      ...jsDocInfoField(
-        typescript,
-        checker,
-        findClassDeclaration(typescript, sourceFile, entry.name)
-      ),
-    };
+    return { entry, json: fileMeta, context };
   }
   const viaExports = extractViaModuleExports(
     typescript,
@@ -155,12 +142,7 @@ const extractViaModuleExports = (
         : analyzeSourceFile(typescript, declarationFile, checker, targetContext);
     const entry = findRecord(targetMeta, declaration.name.text);
     if (entry) {
-      return {
-        entry,
-        json: targetMeta,
-        context: targetContext,
-        ...jsDocInfoField(typescript, checker, declaration),
-      };
+      return { entry, json: targetMeta, context: targetContext };
     }
   }
   return undefined;
@@ -192,26 +174,6 @@ const findRecord = (
   name: string | undefined
 ): AngularClassMeta | undefined =>
   name ? allRecords(fileMeta).find((record) => record.name === name) : undefined;
-
-function findClassDeclaration(
-  typescript: DocgenTypeScript,
-  sourceFile: ts.SourceFile,
-  name: string
-): ts.ClassDeclaration | undefined {
-  return sourceFile.statements.find(
-    (statement): statement is ts.ClassDeclaration =>
-      typescript.isClassDeclaration(statement) && statement.name?.text === name
-  );
-}
-
-function jsDocInfoField(
-  typescript: DocgenTypeScript,
-  checker: DocgenTypeChecker,
-  declaration: ts.ClassDeclaration | undefined
-): { jsDocInfo?: ComponentJsDocInfo } {
-  const symbol = declaration?.name && checker.getSymbolAtLocation(declaration.name);
-  return symbol ? { jsDocInfo: extractComponentJsDocInfo(typescript, checker, symbol) } : {};
-}
 
 function findDefaultExportedClassName(
   typescript: DocgenTypeScript,

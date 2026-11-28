@@ -2,9 +2,8 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 
 import type { JsPackageManager } from 'storybook/internal/common';
-import { getProjectRoot } from 'storybook/internal/common';
-import { CLI_COLORS } from 'storybook/internal/node-logger';
-import { logger, prompt } from 'storybook/internal/node-logger';
+import { MIN_SUPPORTED_TYPES_NODE_RANGE, getProjectRoot } from 'storybook/internal/common';
+import { CLI_COLORS, logger, prompt } from 'storybook/internal/node-logger';
 import { ErrorCollector } from 'storybook/internal/telemetry';
 
 import * as find from 'empathic/find';
@@ -83,6 +82,7 @@ export class AddonVitestService {
    * - Base packages: vitest, @vitest/browser-playwright, playwright
    * - Next.js specific: @storybook/nextjs-vite
    * - Coverage reporter: @vitest/coverage-v8
+   * - Node.js type definitions: @types/node
    */
   async collectDependencies(): Promise<string[]> {
     const allDeps = this.packageManager.getAllDependencies();
@@ -118,9 +118,15 @@ export class AddonVitestService {
       dependencies.push('@vitest/coverage-v8');
     }
 
+    // The Vitest config template uses `node:path` and `import.meta.dirname`, both typed by
+    // `@types/node`. Remove this once the template no longer relies on Node.js APIs.
+    if (allDeps.typescript && !allDeps['@types/node']) {
+      dependencies.push(`@types/node@${MIN_SUPPORTED_TYPES_NODE_RANGE}`);
+    }
+
     // Pin the vitest-related packages to the resolved vitest version, letting the package manager
-    // apply its own convention (e.g. registering pnpm catalog entries). Playwright is versioned
-    // independently, so it is left untouched.
+    // apply its own convention (e.g. registering pnpm catalog entries). Playwright and
+    // `@types/node` are versioned independently, so they are left untouched.
     const related = dependencies.filter((pkg) => pkg.includes('vitest'));
     const rest = dependencies.filter((pkg) => !pkg.includes('vitest'));
     return [

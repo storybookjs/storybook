@@ -1,7 +1,7 @@
 import { SourceType, getSourceSnippetRuntime } from 'storybook/internal/docs-tools';
 import type { DecoratorFunction, Parameters } from 'storybook/internal/types';
 
-import { printHole } from './print-hole.ts';
+import './register-print-hole.ts';
 import { sourceDecorator } from './sourceDecorator';
 
 // Read at module scope because the preview's <head> assigns `FEATURES` from a blocking script,
@@ -14,7 +14,6 @@ export const parameters: Parameters = {
       type: SourceType.DYNAMIC,
       // The server snippet is the TypeScript host component that renders the story.
       language: snippetRuntime === 'server' ? 'ts' : 'html',
-      ...(snippetRuntime === 'server' ? { printHole } : {}),
     },
   },
 };

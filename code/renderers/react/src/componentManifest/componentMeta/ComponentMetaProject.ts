@@ -109,10 +109,19 @@ export class ComponentMetaProject
       (s) => s, // asScriptId - identity for React (no URI mapping needed)
       projectHost
     );
-    // Like tsserver, read a referenced project's sources instead of its .d.ts output, so its
-    // components stay in the program. The flag is internal on LanguageServiceHost's typings.
+    const getHostScriptVersion = languageServiceHost.getScriptVersion;
     this.service = typescript.createLanguageService(
-      Object.assign(languageServiceHost, { useSourceOfProjectReferenceRedirect: () => true }),
+      Object.assign(languageServiceHost, {
+        // Like tsserver, read a referenced project's sources instead of its .d.ts output, so its
+        // components stay in the program. The flag is internal on LanguageServiceHost's typings.
+        useSourceOfProjectReferenceRedirect: () => true,
+        // The registry hands a file parsed by one project to another project that asks for the same
+        // version. The host counts versions from 0 for each project, so the mtime tells them apart.
+        getScriptVersion: (fileName: string) => {
+          const hostVersion = getHostScriptVersion(fileName);
+          return `${hostVersion}:${this.files.getScriptVersion(fileName)}`;
+        },
+      }),
       this.documentRegistry
     );
   }
@@ -145,7 +154,7 @@ export class ComponentMetaProject
     );
 
     // Targeted warmup: re-extract in the background so the next request is instant. Only the types
-    // the stories actually need get resolved, and TypeScript caches those on the AST nodes, so the
+    // the stories actually need get resolved, and the type checker caches those, so the
     // real extraction that follows hits cached results.
     if (versionMoved && this.entries.length > 0) {
       clearTimeout(this.warmupTimer);

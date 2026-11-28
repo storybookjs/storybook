@@ -81,6 +81,11 @@ export interface ComponentMetaProjectFactory<
   /** Project for files no discovered tsconfig covers; owns its own default compiler options. */
   createInferredProject(): P;
   /**
+   * Set when the projects share their parsed files. A heap-pressure recycle then builds the
+   * replacement of a project before it disposes the project, so those files stay parsed.
+   */
+  sharesParsedFiles?: boolean;
+  /**
    * Called when heap pressure recycles the projects. A factory-owned cache that outlives individual
    * projects has to be dropped here too, or the memory floor survives the mechanism meant to lower
    * it.

@@ -4,7 +4,12 @@ import { join } from 'node:path';
 
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { UnprintableArgError, fillTemplate, printValue } from 'storybook/internal/docs-tools';
+import {
+  UnprintableArgError,
+  argChanges,
+  fillTemplate,
+  printValue,
+} from 'storybook/internal/docs-tools';
 import type { IndexEntry } from 'storybook/internal/types';
 
 import type { WebComponentsDocgenPayload } from '../docgen/component-docgen/build-docgen.ts';
@@ -184,7 +189,7 @@ describe('a changed arg', () => {
         const { arg, own, story } = await build(place, value);
         const filled = fillTemplate(
           seed.template as HtmlSnippetTemplate,
-          { initialArgs: { [arg]: seedArg }, unmappedArgs: { [arg]: own } },
+          argChanges({ initialArgs: { [arg]: seedArg }, unmappedArgs: { [arg]: own } }),
           printHole
         );
         expect(filled, JSON.stringify(value)).toBe(story.snippet);

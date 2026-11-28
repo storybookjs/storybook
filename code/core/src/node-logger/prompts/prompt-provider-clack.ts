@@ -1,10 +1,10 @@
 import type { Writable } from 'node:stream';
-import { stripVTControlCharacters } from 'node:util';
+import { stripVTControlCharacters, styleText } from 'node:util';
 
 import * as clack from '@clack/prompts';
 
 import { logTracker } from '../logger/log-tracker.ts';
-import { wrapTextForClackHint } from '../wrap-utils.ts';
+import { getTerminalWidth, protectUrls } from '../wrap-utils.ts';
 import type {
   ConfirmPromptOptions,
   MultiSelectPromptOptions,
@@ -49,6 +49,11 @@ const formatTaskLogMessage = (message: string) => {
     })
     .join('\n');
 };
+
+// Clack wraps option lines short of the terminal by the length of its guide bar prefix, color codes
+// included. Fitting a hint link to that width, minus the hint's closing parenthesis, keeps a link
+// that starts its own hint line on that line.
+const getClackOptionLineInset = (): number => `${styleText('cyan', clack.S_BAR)}  `.length;
 
 // One reason→message mapping, shared by the terminal cancel message and PromptAbortedError, so
 // the two cannot drift apart.
@@ -137,7 +142,7 @@ export class ClackPromptProvider extends PromptProvider {
     try {
       const result = await clack.confirm({
         ...options,
-        message: wrapTextForClackHint(options.message, undefined, undefined, 2),
+        message: protectUrls(options.message),
         signal,
       });
       await this.handleAbort(result, promptOptions, isStdinEnded());
@@ -153,7 +158,7 @@ export class ClackPromptProvider extends PromptProvider {
     try {
       const result = await clack.select<T>({
         ...options,
-        message: wrapTextForClackHint(options.message, undefined, undefined, 2),
+        message: protectUrls(options.message),
         signal,
       });
       await this.handleAbort(result, promptOptions, isStdinEnded());
@@ -168,10 +173,15 @@ export class ClackPromptProvider extends PromptProvider {
     options: MultiSelectPromptOptions<T>,
     promptOptions?: PromptOptions
   ): Promise<T[]> {
+    const maxLineWidth = getTerminalWidth() - getClackOptionLineInset() - 1;
     const { signal, isStdinEnded, dispose } = stdinEndAbort();
     try {
       const result = await clack.multiselect<T>({
         ...options,
+        options: options.options.map((option) => ({
+          ...option,
+          hint: option.hint ? protectUrls(option.hint, { maxLineWidth }) : undefined,
+        })),
         required: options.required,
         signal,
       });

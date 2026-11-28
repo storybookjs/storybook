@@ -30,6 +30,15 @@ export function formatMinVersion(v: MinNodeVersion): string {
   return `${v.major}.${v.minor}.${v.patch}+`;
 }
 
+/**
+ * `@types/node` range to add to projects whose generated code needs Node.js types. Pinned to the
+ * lowest Node major Storybook supports rather than the Node version running the CLI, so it is the
+ * same on every machine and the types never claim APIs newer than what Storybook relies on.
+ */
+export const MIN_SUPPORTED_TYPES_NODE_RANGE = `^${Math.min(
+  ...MIN_SUPPORTED_NODE_VERSIONS.map((v) => v.major)
+)}`;
+
 /** Human-readable description like "20.19+ or 22.12+" */
 export const MIN_SUPPORTED_NODE_DESCRIPTION =
   MIN_SUPPORTED_NODE_VERSIONS.map(formatMinVersion).join(' or ');

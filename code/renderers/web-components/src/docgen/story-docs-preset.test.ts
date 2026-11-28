@@ -44,10 +44,10 @@ const options = (): Options =>
 describe('experimental_storyDocsProvider', () => {
   it('logs file-level story-docs failures before falling back', async () => {
     vi.mocked(buildStoryDocsPayload).mockRejectedValue(new Error('parse failed'));
-    const nextStoryDocs = vi.fn(async () => ({ id: 'downstream' }));
+    const nextStoryDocs = { extract: vi.fn(async () => ({ id: 'downstream' })) };
     const provider = await experimental_storyDocsProvider(nextStoryDocs as never, options());
 
-    await expect(provider({ entry })).resolves.toEqual({ id: 'downstream' });
+    await expect(provider.extract({ entry })).resolves.toEqual({ id: 'downstream' });
 
     expect(logger.debug).toHaveBeenCalledWith(
       expect.stringContaining(

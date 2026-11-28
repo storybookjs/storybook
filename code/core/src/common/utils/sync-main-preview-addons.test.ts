@@ -269,11 +269,11 @@ describe('syncPreviewAddonsWithMainConfig', () => {
     expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('other code refers to'));
   });
 
-  it('leaves alone, with a warning, a preview that mixes a default export with named exports', async () => {
+  it('leaves alone, with a warning, a preview that also exports its addons by name', async () => {
     const originalCode = dedent`
       import { definePreview } from "@storybook/react/preview";
 
-      export const tags = [];
+      export const addons = [];
       export default definePreview({});
     `;
     const preview = loadConfig(originalCode).parse();
@@ -289,6 +289,29 @@ describe('syncPreviewAddonsWithMainConfig', () => {
     expect(logger.warn).toHaveBeenCalledWith(
       expect.stringContaining('Not synchronizing the preview addons')
     );
+  });
+
+  it('syncs a preview that mixes a default export with unrelated named exports', async () => {
+    const originalCode = dedent`
+      import { definePreview } from "@storybook/react/preview";
+
+      export const tags = [];
+      export default definePreview({});
+    `;
+    const preview = loadConfig(originalCode).parse();
+
+    (getAddonAnnotations as Mock).mockImplementation(() => {
+      return { importName: 'addonA11yAnnotations', importPath: '@storybook/addon-a11y/preview' };
+    });
+
+    const result = await syncPreviewAddonsWithMainConfig(mainConfig, preview, configDir);
+    expect(printConfig(result).code).toMatchInlineSnapshot(`
+      import { definePreview } from "@storybook/react/preview";
+      import * as addonA11yAnnotations from "@storybook/addon-a11y/preview";
+
+      export const tags = [];
+      export default definePreview({ addons: [addonA11yAnnotations] });
+    `);
   });
 
   it('should add an empty addons array if no addons are installed', async () => {

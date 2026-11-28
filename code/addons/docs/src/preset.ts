@@ -138,7 +138,7 @@ async function webpack(webpackConfig: any = {}, options: DocsOptions) {
 
 const docs: PresetProperty<'docs'> = (input = {}, options) => {
   if (options?.build?.test?.disableAutoDocs) {
-    return undefined;
+    return {};
   }
 
   const result: StorybookConfigRaw['docs'] = {

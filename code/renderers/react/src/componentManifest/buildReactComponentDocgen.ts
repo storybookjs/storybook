@@ -17,6 +17,7 @@ import path from 'pathe';
 
 import type { ComponentDoc, PropItem } from './componentMeta/componentMetaExtractor.ts';
 import type { ComponentRef } from './getComponentImports.ts';
+import { getImportablePackageName, withExportSubpaths } from './packageExports.ts';
 import type { DocObj } from './reactDocgen.ts';
 import type { ComponentDocWithExportName } from './reactDocgenTypescript.ts';
 import {
@@ -24,7 +25,6 @@ import {
   type ResolvedSubcomponent,
   extractStorySnippets,
 } from './resolveComponents.ts';
-import { cachedFindUp, cachedReadTextFileSync } from './utils.ts';
 
 export type DocgenEngine = 'react-docgen' | 'react-docgen-typescript' | 'react-component-meta';
 
@@ -51,50 +51,6 @@ export interface ReactComponentManifest extends ComponentManifest {
   reactComponentMeta?: ComponentDoc;
   subcomponents?: Record<string, ReactSubcomponentManifest>;
   [key: string]: unknown;
-}
-
-const ROOT_ENTRY_FIELDS = ['main', 'module', 'types', 'typings', 'browser'];
-
-// Whether the bare package name resolves: `exports` decides when present, the main fields otherwise.
-function hasRootEntry(pkg: Record<string, unknown>) {
-  const { exports } = pkg;
-  if (exports === undefined) {
-    return ROOT_ENTRY_FIELDS.some((field) => field in pkg);
-  }
-  // A string, or an array of fallbacks, is the root entry itself.
-  if (typeof exports !== 'object' || Array.isArray(exports)) {
-    return true;
-  }
-  if (exports === null) {
-    return false;
-  }
-  // An object lists either subpaths (`"."`, `"./button"`) or conditions (`"import"`, `"default"`).
-  // Conditions describe the root.
-  const subpaths = Object.keys(exports).filter((key) => key.startsWith('.'));
-  return subpaths.length === 0 || subpaths.includes('.');
-}
-
-// An app's own package (private, with no root entry) cannot be imported by name, so its
-// components keep the import the story wrote.
-function getImportablePackageName(componentPath: string | undefined, fallbackPath: string) {
-  const nearestPkg = cachedFindUp('package.json', {
-    cwd: path.dirname(componentPath ?? fallbackPath),
-  });
-
-  try {
-    if (!nearestPkg) {
-      return undefined;
-    }
-
-    const parsed = JSON.parse(cachedReadTextFileSync(nearestPkg));
-    if (typeof parsed !== 'object' || !parsed || typeof parsed.name !== 'string') {
-      return undefined;
-    }
-    const importable = parsed.private !== true || hasRootEntry(parsed);
-    return importable ? parsed.name : undefined;
-  } catch {
-    return undefined;
-  }
 }
 
 function getFallbackImport(packageName: string | undefined, componentName: string | undefined) {
@@ -183,7 +139,7 @@ function createSubcomponentDocgen({
   storyFilePath: string;
 }): ReactSubcomponentManifest {
   const imports =
-    buildImportStatements({ refs: component ? [component] : [], packageName })
+    buildImportStatements({ refs: component ? withExportSubpaths([component]) : [], packageName })
       .join('\n')
       .trim() || getFallbackImport(packageName, component?.componentName);
   const {
@@ -251,7 +207,7 @@ export function buildStoryDocsFromResolved({
   const id = getComponentIdFromEntry(entry);
   const title = entry.title.split('/').at(-1)!.replace(/\s+/g, '');
 
-  const packageName = getImportablePackageName(component?.path, storyPath);
+  const packageName = getImportablePackageName(component?.path ?? storyPath);
   const fallbackImport = getFallbackImport(packageName, componentName);
   const storyEntries = extractStorySnippets(
     csf,
@@ -268,7 +224,7 @@ export function buildStoryDocsFromResolved({
   // it. They come after the component refs, so a name both declare keeps the package import.
   const argRefs = storyEntries.imports.map((ref) => ({ ...ref, isPackage: true }));
   const imports =
-    buildImportStatements({ refs: [...allComponents, ...argRefs], packageName })
+    buildImportStatements({ refs: [...withExportSubpaths(allComponents), ...argRefs], packageName })
       .join('\n')
       .trim() || fallbackImport;
 
@@ -327,7 +283,7 @@ export function buildComponentDocgenFromResolved({
 }): ComponentDocgenFromResolved {
   const id = getComponentIdFromEntry(entry);
   const title = entry.title.split('/').at(-1)!.replace(/\s+/g, '');
-  const packageName = getImportablePackageName(component?.path, storyPath);
+  const packageName = getImportablePackageName(component?.path ?? storyPath);
 
   const base = {
     id,

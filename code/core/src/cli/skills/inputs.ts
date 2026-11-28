@@ -47,7 +47,7 @@ async function resolvePreview(configDir = '.storybook') {
 }
 
 // Reads the story files on disk, as the index does, so a Svelte project whose stories are all `.ts`
-// keeps the CSF text. Before the first story, it asks the index whether it would load one.
+// keeps the CSF text. Before the first story, it asks the index whether it would load a `.svelte` one.
 async function writesSvelteCsf(stories: StoriesEntry[], configDir: string): Promise<boolean> {
   if (stories.length === 0) {
     return false;
@@ -70,8 +70,69 @@ async function writesSvelteCsf(stories: StoriesEntry[], configDir: string): Prom
   if (paths.length > 0) {
     return paths.some((path) => path.endsWith('.svelte'));
   }
-  return specifiers.some(({ directory, importPathMatcher }) =>
-    importPathMatcher.test(`${directory}/Example.stories.svelte`)
+  return specifiers.some(({ directory, files, importPathMatcher }) =>
+    [`${directory}/Example.stories.svelte`, ...examplePaths(`${directory}/${files}`)].some(
+      (path) => path.endsWith('.svelte') && importPathMatcher.test(path)
+    )
+  );
+}
+
+// `x{a,b/c}y` becomes `xay` and `xb/cy`.
+function expandBraces(glob: string): string[] {
+  const open = glob.indexOf('{');
+  if (open === -1) {
+    return [glob];
+  }
+  const alternatives: string[] = [];
+  let start = open;
+  let depth = 0;
+  for (let i = open; i < glob.length; i++) {
+    if (glob[i] === '{') {
+      depth++;
+    } else if (glob[i] === ',' && depth === 1) {
+      alternatives.push(glob.slice(start + 1, i));
+      start = i;
+    } else if (glob[i] === '}' && --depth === 0) {
+      alternatives.push(glob.slice(start + 1, i));
+      return alternatives.flatMap((alternative) =>
+        expandBraces(glob.slice(0, open) + alternative + glob.slice(i + 1))
+      );
+    }
+  }
+  return [glob];
+}
+
+// A character a glob class `[...]` or `[!...]` accepts.
+function classCharacter(negated: string, body: string): string {
+  if (!negated) {
+    return body[0];
+  }
+  try {
+    return [...'sxSX0'].find((character) => !new RegExp(`[${body}]`).test(character)) ?? 's';
+  } catch {
+    return 's';
+  }
+}
+
+// Paths a glob could match, with each `*` filled by `svelte` so that a `.svelte` story can show
+// up; a `?` stays, as the matcher accepts it as any character. The index's matcher checks each one, so a glob feature this does not handle can only
+// miss a Svelte project, never report one.
+function examplePaths(glob: string): string[] {
+  let braced = glob.replace(/!\([^()]*\)/g, 'svelte');
+  // Innermost groups first, so `@(mdx|stories.@(ts|svelte))` takes two passes.
+  for (let previous = ''; previous !== braced;) {
+    previous = braced;
+    braced = braced.replace(
+      /[@+?*]\(([^()]*)\)/g,
+      (_, alternatives: string) => `{${alternatives.replaceAll('|', ',')}}`
+    );
+  }
+  return expandBraces(braced).map((path) =>
+    path
+      .replace(/\[([!^]?)([^\]]*)\]/g, (_, negated: string, body: string) =>
+        classCharacter(negated, body)
+      )
+      .replaceAll('*', 'svelte')
   );
 }
 

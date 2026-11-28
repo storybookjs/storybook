@@ -11,6 +11,7 @@ import * as DefaultButtonStories from '../examples/Button.stories';
 import * as ButtonStoriesWithMetaDescriptionAsBoth from '../examples/ButtonWithMetaDescriptionAsBoth.stories';
 import * as ButtonStoriesWithMetaDescriptionAsComment from '../examples/ButtonWithMetaDescriptionAsComment.stories';
 import * as ButtonStoriesWithMetaDescriptionAsParameter from '../examples/ButtonWithMetaDescriptionAsParameter.stories';
+import * as JsDocTagsStories from '../examples/button-with-jsdoc-tags.stories.tsx';
 import * as ParametersStories from '../examples/SourceParameters.stories.tsx';
 import { Description } from './Description';
 import type { DocsContextProps } from './DocsContext.ts';
@@ -199,6 +200,53 @@ export const OfStoryFromStoryDocsService: Story = {
   play: async ({ canvasElement }) => {
     await expect(canvasElement).toHaveTextContent(SERVICE_STORY_DESCRIPTION);
   },
+};
+
+// The JSDoc tag stories show what Autodocs renders for docblocks with tags today, without the
+// story-docs service. They are a baseline, not the wanted output.
+const jsDocTagsParameters = {
+  relativeCsfPaths: ['../examples/button-with-jsdoc-tags.stories'],
+};
+
+export const OfComponentWithJsDocTags: Story = {
+  args: { of: JsDocTagsStories.default.component },
+  parameters: jsDocTagsParameters,
+};
+export const OfMetaWithJsDocTags: Story = {
+  args: { of: JsDocTagsStories.default },
+  parameters: jsDocTagsParameters,
+};
+export const OfStoryWithJsDocTagsAllTags: Story = {
+  args: { of: JsDocTagsStories.AllTags },
+  parameters: jsDocTagsParameters,
+};
+export const OfStoryWithJsDocTagsDescribe: Story = {
+  args: { of: JsDocTagsStories.Describe },
+  parameters: jsDocTagsParameters,
+};
+export const OfStoryWithJsDocTagsDesc: Story = {
+  args: { of: JsDocTagsStories.Desc },
+  parameters: jsDocTagsParameters,
+};
+export const OfStoryWithJsDocTagsInlineDeprecated: Story = {
+  args: { of: JsDocTagsStories.InlineDeprecated },
+  parameters: jsDocTagsParameters,
+};
+export const OfStoryWithJsDocTagsAtInProse: Story = {
+  args: { of: JsDocTagsStories.AtInProse },
+  parameters: jsDocTagsParameters,
+};
+export const OfStoryWithJsDocTagsAtInEmail: Story = {
+  args: { of: JsDocTagsStories.AtInEmail },
+  parameters: jsDocTagsParameters,
+};
+export const OfStoryWithJsDocTagsAtInBackticks: Story = {
+  args: { of: JsDocTagsStories.AtInBackticks },
+  parameters: jsDocTagsParameters,
+};
+export const OfStoryWithJsDocTagsTagThenText: Story = {
+  args: { of: JsDocTagsStories.TagThenText },
+  parameters: jsDocTagsParameters,
 };
 
 export const DefaultAttached: Story = {

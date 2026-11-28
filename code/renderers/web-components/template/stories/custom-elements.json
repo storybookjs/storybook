@@ -157,6 +157,425 @@
           }
         }
       ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "jsdoc-tags/at-in-backticks.js",
+      "declarations": [
+        {
+          "kind": "class",
+          "description": "Use the `@summary` tag.",
+          "name": "AtInBackticks",
+          "members": [
+            {
+              "kind": "field",
+              "name": "label",
+              "privacy": "public",
+              "type": {
+                "text": "string"
+              },
+              "attribute": "label"
+            }
+          ],
+          "attributes": [
+            {
+              "name": "label",
+              "type": {
+                "text": "string"
+              },
+              "fieldName": "label"
+            }
+          ],
+          "superclass": {
+            "name": "LitElement",
+            "package": "lit"
+          },
+          "tagName": "jsdoc-at-in-backticks",
+          "customElement": true
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "AtInBackticks",
+          "declaration": {
+            "name": "AtInBackticks",
+            "module": "jsdoc-tags/at-in-backticks.js"
+          }
+        },
+        {
+          "kind": "custom-element-definition",
+          "name": "jsdoc-at-in-backticks",
+          "declaration": {
+            "name": "AtInBackticks",
+            "module": "jsdoc-tags/at-in-backticks.js"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "jsdoc-tags/at-in-email.js",
+      "declarations": [
+        {
+          "kind": "class",
+          "description": "Mail me@example.com for help.",
+          "name": "AtInEmail",
+          "members": [
+            {
+              "kind": "field",
+              "name": "label",
+              "privacy": "public",
+              "type": {
+                "text": "string"
+              },
+              "attribute": "label"
+            }
+          ],
+          "attributes": [
+            {
+              "name": "label",
+              "type": {
+                "text": "string"
+              },
+              "fieldName": "label"
+            }
+          ],
+          "superclass": {
+            "name": "LitElement",
+            "package": "lit"
+          },
+          "tagName": "jsdoc-at-in-email",
+          "customElement": true
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "AtInEmail",
+          "declaration": {
+            "name": "AtInEmail",
+            "module": "jsdoc-tags/at-in-email.js"
+          }
+        },
+        {
+          "kind": "custom-element-definition",
+          "name": "jsdoc-at-in-email",
+          "declaration": {
+            "name": "AtInEmail",
+            "module": "jsdoc-tags/at-in-email.js"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "jsdoc-tags/at-in-prose.js",
+      "declarations": [
+        {
+          "kind": "class",
+          "description": "A component. Ask",
+          "name": "AtInProse",
+          "members": [
+            {
+              "kind": "field",
+              "name": "label",
+              "privacy": "public",
+              "type": {
+                "text": "string"
+              },
+              "attribute": "label"
+            }
+          ],
+          "attributes": [
+            {
+              "name": "label",
+              "type": {
+                "text": "string"
+              },
+              "fieldName": "label"
+            }
+          ],
+          "superclass": {
+            "name": "LitElement",
+            "package": "lit"
+          },
+          "tagName": "jsdoc-at-in-prose",
+          "customElement": true
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "AtInProse",
+          "declaration": {
+            "name": "AtInProse",
+            "module": "jsdoc-tags/at-in-prose.js"
+          }
+        },
+        {
+          "kind": "custom-element-definition",
+          "name": "jsdoc-at-in-prose",
+          "declaration": {
+            "name": "AtInProse",
+            "module": "jsdoc-tags/at-in-prose.js"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "jsdoc-tags/inline-deprecated.js",
+      "declarations": [
+        {
+          "kind": "class",
+          "description": "A component.",
+          "name": "InlineDeprecated",
+          "members": [
+            {
+              "kind": "field",
+              "name": "label",
+              "privacy": "public",
+              "type": {
+                "text": "string"
+              },
+              "attribute": "label"
+            }
+          ],
+          "attributes": [
+            {
+              "name": "label",
+              "type": {
+                "text": "string"
+              },
+              "fieldName": "label"
+            }
+          ],
+          "superclass": {
+            "name": "LitElement",
+            "package": "lit"
+          },
+          "tagName": "jsdoc-inline-deprecated",
+          "customElement": true
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "InlineDeprecated",
+          "declaration": {
+            "name": "InlineDeprecated",
+            "module": "jsdoc-tags/inline-deprecated.js"
+          }
+        },
+        {
+          "kind": "custom-element-definition",
+          "name": "jsdoc-inline-deprecated",
+          "declaration": {
+            "name": "InlineDeprecated",
+            "module": "jsdoc-tags/inline-deprecated.js"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "jsdoc-tags/tag-then-text.js",
+      "declarations": [
+        {
+          "kind": "class",
+          "description": "A component.",
+          "name": "TagThenText",
+          "members": [
+            {
+              "kind": "field",
+              "name": "label",
+              "privacy": "public",
+              "type": {
+                "text": "string"
+              },
+              "attribute": "label"
+            }
+          ],
+          "attributes": [
+            {
+              "name": "label",
+              "type": {
+                "text": "string"
+              },
+              "fieldName": "label"
+            }
+          ],
+          "superclass": {
+            "name": "LitElement",
+            "package": "lit"
+          },
+          "summary": "a component\nAsk",
+          "tagName": "jsdoc-tag-then-text",
+          "customElement": true
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "TagThenText",
+          "declaration": {
+            "name": "TagThenText",
+            "module": "jsdoc-tags/tag-then-text.js"
+          }
+        },
+        {
+          "kind": "custom-element-definition",
+          "name": "jsdoc-tag-then-text",
+          "declaration": {
+            "name": "TagThenText",
+            "module": "jsdoc-tags/tag-then-text.js"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "jsdoc-tags/tagged-button.js",
+      "declarations": [
+        {
+          "kind": "class",
+          "description": "Component docblock description.",
+          "name": "TaggedButton",
+          "members": [
+            {
+              "kind": "method",
+              "name": "focusButton",
+              "parameters": [
+                {
+                  "name": "options",
+                  "description": "The focus options.",
+                  "type": {
+                    "text": "FocusOptions"
+                  }
+                }
+              ],
+              "description": "Focuses the button.",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              }
+            },
+            {
+              "kind": "field",
+              "name": "label",
+              "privacy": "public",
+              "type": {
+                "text": "string"
+              },
+              "description": "The button text.",
+              "deprecated": "Use the default slot instead.",
+              "default": "undefined",
+              "attribute": "label"
+            },
+            {
+              "kind": "field",
+              "name": "size",
+              "privacy": "public",
+              "type": {
+                "text": "string"
+              },
+              "description": "The button size.",
+              "default": "'medium'",
+              "attribute": "size"
+            },
+            {
+              "kind": "field",
+              "name": "variant",
+              "privacy": "public",
+              "type": {
+                "text": "string"
+              },
+              "description": "The button style.",
+              "summary": "Variant summary",
+              "default": "'primary'",
+              "attribute": "variant"
+            },
+            {
+              "kind": "field",
+              "name": "internalId",
+              "privacy": "public",
+              "type": {
+                "text": "string"
+              },
+              "attribute": "internal-id",
+              "ignore": true,
+              "description": "A property that docgen should hide.",
+              "default": "undefined"
+            }
+          ],
+          "attributes": [
+            {
+              "name": "label",
+              "type": {
+                "text": "string"
+              },
+              "description": "The button text.",
+              "deprecated": "Use the default slot instead.",
+              "default": "undefined",
+              "fieldName": "label"
+            },
+            {
+              "name": "size",
+              "type": {
+                "text": "string"
+              },
+              "description": "The button size.",
+              "default": "'medium'",
+              "fieldName": "size"
+            },
+            {
+              "name": "internal-id",
+              "type": {
+                "text": "string"
+              },
+              "fieldName": "internalId"
+            },
+            {
+              "name": "variant",
+              "type": {
+                "text": "string"
+              },
+              "description": "The button style.",
+              "summary": "Variant summary",
+              "default": "'primary'",
+              "fieldName": "variant"
+            }
+          ],
+          "superclass": {
+            "name": "LitElement",
+            "package": "lit"
+          },
+          "deprecated": "Component deprecated note",
+          "summary": "Component summary",
+          "tagName": "jsdoc-tagged-button",
+          "customElement": true
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "TaggedButton",
+          "declaration": {
+            "name": "TaggedButton",
+            "module": "jsdoc-tags/tagged-button.js"
+          }
+        },
+        {
+          "kind": "custom-element-definition",
+          "name": "jsdoc-tagged-button",
+          "declaration": {
+            "name": "TaggedButton",
+            "module": "jsdoc-tags/tagged-button.js"
+          }
+        }
+      ]
     }
   ]
 }
